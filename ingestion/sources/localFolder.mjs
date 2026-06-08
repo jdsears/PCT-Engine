@@ -1,9 +1,13 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join, extname, relative } from 'node:path';
 import { createHash } from 'node:crypto';
-import { mapFolder, EXCLUDED_FOLDERS } from '../folderMap.mjs';
+import { mapFolder as richardsMapFolder, EXCLUDED_FOLDERS as RICHARDS_EXCLUDED } from '../folderMap.mjs';
 
 const TEXT_EXT = new Set(['.pdf', '.docx', '.pptx', '.ppt', '.doc']);
+
+// A mapping pairs a folder classifier with the set of folders to skip. It
+// defaults to the Richards map, so an unparameterised call behaves as before.
+const RICHARDS_MAPPING = { mapFolder: richardsMapFolder, excludedFolders: RICHARDS_EXCLUDED };
 
 async function walk(dir) {
   const out = [];
@@ -16,13 +20,14 @@ async function walk(dir) {
   return out;
 }
 
-export async function* localFolderSource(root) {
+export async function* localFolderSource(root, mapping = RICHARDS_MAPPING) {
+  const { mapFolder, excludedFolders } = mapping;
   for (const entry of await readdir(root, { withFileTypes: true })) {
     if (entry.name.startsWith('.')) continue;
     const topName = entry.isDirectory() ? entry.name : '(root)';
-    if (EXCLUDED_FOLDERS.has(topName)) continue;
-    const mapping = mapFolder(topName);
-    if (!mapping.include) continue;
+    if (excludedFolders.has(topName)) continue;
+    const folderMeta = mapFolder(topName);
+    if (!folderMeta.include) continue;
 
     const files = entry.isDirectory() ? await walk(join(root, entry.name)) : [join(root, entry.name)];
     for (const path of files) {
@@ -31,7 +36,7 @@ export async function* localFolderSource(root) {
       const bytes = await readFile(path);
       const hash = createHash('sha256').update(bytes).digest('hex');
       const sourceId = relative(root, path);
-      yield { sourceId, path, ext, hash, title: sourceId.split(/[/\\]/).pop(), meta: { ...mapping, topFolder: topName } };
+      yield { sourceId, path, ext, hash, title: sourceId.split(/[/\\]/).pop(), meta: { ...folderMeta, topFolder: topName } };
     }
   }
 }

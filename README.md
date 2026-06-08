@@ -71,18 +71,44 @@ repository root:
 node ingestion/run.mjs "<path to the Richards folder>"
 ```
 
-The run prints a report: documents seen, documents skipped as unchanged, new
-and updated documents, chunks written, chunks by product line or application,
-and any files with no extractable text. Re-running is safe. Each document is
-keyed by a content hash, so unchanged documents are skipped and changed ones
-are replaced.
+The run prints a report: the corpus, documents seen, documents skipped as
+unchanged, new and updated documents, chunks written, chunks by product line,
+application or folder, and any files with no extractable text. Re-running is
+safe. Each document is keyed by a content hash, so unchanged documents are
+skipped and changed ones are replaced.
+
+## Two corpora
+
+The knowledge base holds two corpora in the same `kb_chunks` table, kept apart
+by the `corpus` field in metadata and the `segment` column.
+
+- `richards` is product knowledge: the datasheets, specs and manuals for the
+  Richards product lines. This is the default corpus.
+- `pct` is company knowledge: material about PCT itself, drawn from the PCT
+  Information folder.
+
+Choose the corpus with the `--corpus` flag. It defaults to `richards`:
+
+```
+node ingestion/run.mjs "<path to the Richards folder>"
+node ingestion/run.mjs "<path to the PCT Information folder>" --corpus pct
+```
+
+Each corpus manages only its own rows. Running one does not touch the other, so
+the two can be ingested and re-ingested independently.
 
 ## Folder mapping
 
-`ingestion/folderMap.mjs` maps top-level corpus folders to product lines and
-metadata. Customer lists, example customer communications, and the January 2026
-meeting notes are excluded for now. Files at the corpus root are treated as
+`ingestion/folderMap.mjs` maps the top-level Richards folders to product lines
+and metadata. Customer lists, example customer communications, and the January
+2026 meeting notes are excluded for now. Files at the corpus root are treated as
 overview material.
+
+`ingestion/pctFolderMap.mjs` handles the PCT Information corpus. Its internal
+structure is not yet known here, so every included file is tagged as company
+material under the `company` segment. The walker records each top-level subfolder
+name in metadata, so the structure is kept and the mapping can be enriched once
+the folders are known. The same protected folders are excluded.
 
 ## A note on this build
 

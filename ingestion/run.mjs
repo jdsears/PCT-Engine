@@ -3,10 +3,39 @@ import { extractText } from './extract.mjs';
 import { chunkDocument } from './chunk.mjs';
 import { pool } from '../src/db.mjs';
 import { embedTexts } from '../src/embeddings.mjs';
+import { mapFolder as richardsMapFolder, EXCLUDED_FOLDERS as richardsExcluded } from './folderMap.mjs';
+import { mapFolder as pctMapFolder, EXCLUDED_FOLDERS as pctExcluded } from './pctFolderMap.mjs';
 
-const CORPUS = 'richards';
-const root = process.argv[2];
-if (!root) { console.error('Usage: node ingestion/run.mjs "<path to Richards folder>"'); process.exit(1); }
+// Each corpus pairs a folder mapping with a default sourceType. The default
+// applies only when a chunk carries no docType of its own.
+const CORPORA = {
+  richards: {
+    mapping: { mapFolder: richardsMapFolder, excludedFolders: richardsExcluded },
+    sourceType: (c) => c.docType || (c.contentType === 'table' ? 'product_table' : 'product_datasheet'),
+  },
+  pct: {
+    mapping: { mapFolder: pctMapFolder, excludedFolders: pctExcluded },
+    sourceType: (c) => c.docType || (c.contentType === 'table' ? 'company_table' : 'company_overview'),
+  },
+};
+
+// Usage: node ingestion/run.mjs "<path to corpus folder>" [--corpus richards|pct]
+let CORPUS = 'richards';
+const positional = [];
+const argv = process.argv.slice(2);
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
+  if (a === '--corpus') CORPUS = argv[++i];
+  else if (a.startsWith('--corpus=')) CORPUS = a.slice('--corpus='.length);
+  else positional.push(a);
+}
+const root = positional[0];
+const cfg = CORPORA[CORPUS];
+if (!root || !cfg) {
+  console.error('Usage: node ingestion/run.mjs "<path to corpus folder>" [--corpus richards|pct]');
+  if (CORPUS && !cfg) console.error(`Unknown corpus "${CORPUS}". Known corpora: ${Object.keys(CORPORA).join(', ')}`);
+  process.exit(1);
+}
 
 const vectorLiteral = (a) => '[' + a.join(',') + ']';
 
@@ -28,7 +57,7 @@ async function insertChunks(chunks) {
     const vectors = await embedTexts(slice.map(c => c.content));
     for (let j = 0; j < slice.length; j++) {
       const c = slice[j];
-      const sourceType = c.docType || (c.contentType === 'table' ? 'product_table' : 'product_datasheet');
+      const sourceType = cfg.sourceType(c);
       await pool.query(
         `INSERT INTO kb_chunks (content, embedding, "sourceType", segment, metadata)
          VALUES ($1, $2::vector, $3, $4, $5::jsonb)`,
@@ -47,7 +76,7 @@ const report = { docs: 0, skipped: 0, inserted: 0, updated: 0, chunks: 0, noText
 const known = await existingHashes();
 const seen = new Set();
 
-for await (const doc of localFolderSource(root)) {
+for await (const doc of localFolderSource(root, cfg.mapping)) {
   report.docs++; seen.add(doc.sourceId);
   if (known.get(doc.sourceId) === doc.hash) { report.skipped++; continue; }
 
@@ -72,18 +101,19 @@ for await (const doc of localFolderSource(root)) {
   else report.inserted++;
   await insertChunks(chunks);
   report.chunks += chunks.length;
-  const k = doc.meta.line || doc.meta.application || 'other';
+  const k = doc.meta.line || doc.meta.application || doc.meta.topFolder || 'other';
   report.byLine[k] = (report.byLine[k] || 0) + chunks.length;
 }
 
 for (const sid of known.keys()) if (!seen.has(sid)) await deleteDoc(sid);
 
 console.log('\n=== Ingestion run report ===');
+console.log('Corpus:', CORPUS);
 console.log('Documents seen:', report.docs);
 console.log('Skipped (unchanged):', report.skipped);
 console.log('New documents:', report.inserted, '  Updated documents:', report.updated);
 console.log('Chunks written this run:', report.chunks);
-console.log('Chunks by line or application:', report.byLine);
+console.log('Chunks by line, application or folder:', report.byLine);
 console.log('Files with no extractable text:', report.noText.length);
 for (const f of report.noText) console.log('  -', f);
 console.log('\nDone.');
