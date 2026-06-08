@@ -43,4 +43,11 @@ await show('Content type mix', `
   SELECT metadata->>'contentType' AS type, count(*)::int AS chunks
   FROM kb_chunks GROUP BY 1 ORDER BY 2 DESC`);
 
+await show('Documents ingested', `
+  SELECT metadata->>'corpus' AS corpus,
+         metadata->>'topFolder' AS folder,
+         metadata->>'title' AS title,
+         count(*)::int AS chunks
+  FROM kb_chunks GROUP BY 1, 2, 3 ORDER BY 1, 2, 3`);
+
 await pool.end();
