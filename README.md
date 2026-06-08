@@ -110,6 +110,24 @@ material under the `company` segment. The walker records each top-level subfolde
 name in metadata, so the structure is kept and the mapping can be enriched once
 the folders are known. The same protected folders are excluded.
 
+## Checking the result
+
+Two read-only scripts help confirm the chunks look right after ingestion. They
+read from the database and change nothing. Both need `DATABASE_URL` in the
+shell, and `spotcheck.mjs` also needs `VOYAGE_API_KEY` to embed the query.
+
+```
+node scripts/status.mjs
+node scripts/spotcheck.mjs "CV3000 pressure rating"
+node scripts/spotcheck.mjs "who is PCT" --corpus pct
+```
+
+`status.mjs` prints totals and breakdowns by corpus, segment, sourceType,
+Richards line, PCT folder, and content type. `spotcheck.mjs` embeds a query and
+returns the nearest chunks by cosine similarity, with title, section, and a
+short preview, so retrieval quality can be eyeballed before the chat layer is
+built.
+
 ## A note on this build
 
 The code in this repository was written and verified to load in a clean
