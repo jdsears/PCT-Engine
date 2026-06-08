@@ -84,13 +84,15 @@ const report = { docs: 0, skipped: 0, inserted: 0, updated: 0, chunks: 0, noText
 const known = await existingHashes();
 const seen = new Set();
 
+console.log(`Scanning ${CORPUS} and embedding new or changed files ...`);
 for await (const doc of localFolderSource(root, cfg.mapping)) {
   report.docs++; seen.add(doc.sourceId);
   if (known.get(doc.sourceId) === doc.hash) { report.skipped++; continue; }
 
   try {
+    process.stdout.write(`  reading ${doc.sourceId} ... `);
     const { text } = await extractText(doc.path, doc.ext);
-    if (!text || text.trim().length < 30) { report.noText.push(doc.sourceId); continue; }
+    if (!text || text.trim().length < 30) { report.noText.push(doc.sourceId); console.log('no text'); continue; }
 
     const pages = doc.ext === '.pdf' ? text.split('\f') : [text];
     const chunks = [];
@@ -106,7 +108,7 @@ for await (const doc of localFolderSource(root, cfg.mapping)) {
     });
     // Drop blank chunks so a single empty string cannot fail the whole batch.
     const usable = chunks.filter(c => c.content && c.content.trim());
-    if (usable.length === 0) { report.noText.push(doc.sourceId); continue; }
+    if (usable.length === 0) { report.noText.push(doc.sourceId); console.log('no usable text'); continue; }
 
     if (known.has(doc.sourceId)) await deleteDoc(doc.sourceId);
     await insertChunks(usable);
@@ -114,8 +116,10 @@ for await (const doc of localFolderSource(root, cfg.mapping)) {
     report.chunks += usable.length;
     const k = doc.meta.line || doc.meta.application || doc.meta.topFolder || 'other';
     report.byLine[k] = (report.byLine[k] || 0) + usable.length;
+    console.log(`${usable.length} chunks`);
   } catch (e) {
     // One bad document must not stop the run. Record it and carry on.
+    console.log('failed');
     report.failed.push({ id: doc.sourceId, error: String(e?.message || e).slice(0, 200) });
   }
 }
