@@ -57,9 +57,11 @@ const deleteDoc = (sid) => pool.query(
   `DELETE FROM kb_chunks WHERE metadata->>'corpus' = $1 AND metadata->>'source_id' = $2`, [CORPUS, sid]);
 
 async function insertChunks(chunks) {
+  // Never send a blank string to the embedder; Voyage rejects empty inputs.
+  const clean = chunks.filter(c => c.content && c.content.trim());
   const BATCH = 64;
-  for (let i = 0; i < chunks.length; i += BATCH) {
-    const slice = chunks.slice(i, i + BATCH);
+  for (let i = 0; i < clean.length; i += BATCH) {
+    const slice = clean.slice(i, i + BATCH);
     const vectors = await embedTexts(slice.map(c => c.content));
     for (let j = 0; j < slice.length; j++) {
       const c = slice[j];
@@ -78,7 +80,7 @@ async function insertChunks(chunks) {
   }
 }
 
-const report = { docs: 0, skipped: 0, inserted: 0, updated: 0, chunks: 0, noText: [], byLine: {} };
+const report = { docs: 0, skipped: 0, inserted: 0, updated: 0, chunks: 0, noText: [], failed: [], byLine: {} };
 const known = await existingHashes();
 const seen = new Set();
 
@@ -86,29 +88,36 @@ for await (const doc of localFolderSource(root, cfg.mapping)) {
   report.docs++; seen.add(doc.sourceId);
   if (known.get(doc.sourceId) === doc.hash) { report.skipped++; continue; }
 
-  const { text } = await extractText(doc.path, doc.ext);
-  if (!text || text.trim().length < 30) { report.noText.push(doc.sourceId); continue; }
+  try {
+    const { text } = await extractText(doc.path, doc.ext);
+    if (!text || text.trim().length < 30) { report.noText.push(doc.sourceId); continue; }
 
-  const pages = doc.ext === '.pdf' ? text.split('\f') : [text];
-  const chunks = [];
-  pages.forEach((pageText, idx) => {
-    const baseMeta = {
-      source_id: doc.sourceId, content_hash: doc.hash, title: doc.title,
-      topFolder: doc.meta.topFolder, segment: doc.meta.segment, line: doc.meta.line,
-      campaignLine: doc.meta.campaignLine, application: doc.meta.application,
-      nameable: doc.meta.nameable, manufacturer: doc.meta.manufacturer, docType: doc.meta.docType,
-      page: doc.ext === '.pdf' ? idx + 1 : null, section: null,
-    };
-    for (const ch of chunkDocument(pageText, baseMeta)) chunks.push(ch);
-  });
-  if (chunks.length === 0) { report.noText.push(doc.sourceId); continue; }
+    const pages = doc.ext === '.pdf' ? text.split('\f') : [text];
+    const chunks = [];
+    pages.forEach((pageText, idx) => {
+      const baseMeta = {
+        source_id: doc.sourceId, content_hash: doc.hash, title: doc.title,
+        topFolder: doc.meta.topFolder, segment: doc.meta.segment, line: doc.meta.line,
+        campaignLine: doc.meta.campaignLine, application: doc.meta.application,
+        nameable: doc.meta.nameable, manufacturer: doc.meta.manufacturer, docType: doc.meta.docType,
+        page: doc.ext === '.pdf' ? idx + 1 : null, section: null,
+      };
+      for (const ch of chunkDocument(pageText, baseMeta)) chunks.push(ch);
+    });
+    // Drop blank chunks so a single empty string cannot fail the whole batch.
+    const usable = chunks.filter(c => c.content && c.content.trim());
+    if (usable.length === 0) { report.noText.push(doc.sourceId); continue; }
 
-  if (known.has(doc.sourceId)) { await deleteDoc(doc.sourceId); report.updated++; }
-  else report.inserted++;
-  await insertChunks(chunks);
-  report.chunks += chunks.length;
-  const k = doc.meta.line || doc.meta.application || doc.meta.topFolder || 'other';
-  report.byLine[k] = (report.byLine[k] || 0) + chunks.length;
+    if (known.has(doc.sourceId)) await deleteDoc(doc.sourceId);
+    await insertChunks(usable);
+    if (known.has(doc.sourceId)) report.updated++; else report.inserted++;
+    report.chunks += usable.length;
+    const k = doc.meta.line || doc.meta.application || doc.meta.topFolder || 'other';
+    report.byLine[k] = (report.byLine[k] || 0) + usable.length;
+  } catch (e) {
+    // One bad document must not stop the run. Record it and carry on.
+    report.failed.push({ id: doc.sourceId, error: String(e?.message || e).slice(0, 200) });
+  }
 }
 
 for (const sid of known.keys()) if (!seen.has(sid)) await deleteDoc(sid);
@@ -122,5 +131,7 @@ console.log('Chunks written this run:', report.chunks);
 console.log('Chunks by line, application or folder:', report.byLine);
 console.log('Files with no extractable text:', report.noText.length);
 for (const f of report.noText) console.log('  -', f);
+console.log('Documents that failed:', report.failed.length);
+for (const f of report.failed) console.log('  -', f.id, ':', f.error);
 console.log('\nDone.');
 await pool.end();
