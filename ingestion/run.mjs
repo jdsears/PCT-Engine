@@ -4,7 +4,7 @@ import { chunkDocument } from './chunk.mjs';
 import { pool } from '../src/db.mjs';
 import { embedTexts } from '../src/embeddings.mjs';
 import { mapFolder as richardsMapFolder, EXCLUDED_FOLDERS as richardsExcluded } from './folderMap.mjs';
-import { mapFolder as pctMapFolder, EXCLUDED_FOLDERS as pctExcluded } from './pctFolderMap.mjs';
+import { mapFolder as pctMapFolder, EXCLUDED_FOLDERS as pctExcluded, excludeFile as pctExcludeFile } from './pctFolderMap.mjs';
 
 // Each corpus pairs a folder mapping with a default sourceType. The default
 // applies only when a chunk carries no docType of its own.
@@ -14,7 +14,7 @@ const CORPORA = {
     sourceType: (c) => c.docType || (c.contentType === 'table' ? 'product_table' : 'product_datasheet'),
   },
   pct: {
-    mapping: { mapFolder: pctMapFolder, excludedFolders: pctExcluded },
+    mapping: { mapFolder: pctMapFolder, excludedFolders: pctExcluded, excludeFile: pctExcludeFile },
     sourceType: (c) => c.docType || (c.contentType === 'table' ? 'company_table' : 'company_overview'),
   },
 };

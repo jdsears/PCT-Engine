@@ -21,7 +21,8 @@ async function walk(dir) {
 }
 
 export async function* localFolderSource(root, mapping = RICHARDS_MAPPING) {
-  const { mapFolder, excludedFolders } = mapping;
+  const { mapFolder, excludedFolders, excludeFile } = mapping;
+  const seenHashes = new Set();
   for (const entry of await readdir(root, { withFileTypes: true })) {
     if (entry.name.startsWith('.')) continue;
     const topName = entry.isDirectory() ? entry.name : '(root)';
@@ -33,10 +34,14 @@ export async function* localFolderSource(root, mapping = RICHARDS_MAPPING) {
     for (const path of files) {
       const ext = extname(path).toLowerCase();
       if (!TEXT_EXT.has(ext)) continue;
+      const sourceId = relative(root, path);
+      const title = sourceId.split(/[/\\]/).pop();
+      if (excludeFile && excludeFile(title)) continue;
       const bytes = await readFile(path);
       const hash = createHash('sha256').update(bytes).digest('hex');
-      const sourceId = relative(root, path);
-      yield { sourceId, path, ext, hash, title: sourceId.split(/[/\\]/).pop(), meta: { ...folderMeta, topFolder: topName } };
+      if (seenHashes.has(hash)) continue; // a byte-identical copy was already yielded this run
+      seenHashes.add(hash);
+      yield { sourceId, path, ext, hash, title, meta: { ...folderMeta, topFolder: topName } };
     }
   }
 }

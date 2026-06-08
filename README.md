@@ -112,21 +112,59 @@ the folders are known. The same protected folders are excluded.
 
 ## Checking the result
 
-Two read-only scripts help confirm the chunks look right after ingestion. They
-read from the database and change nothing. Both need `DATABASE_URL` in the
-shell, and `spotcheck.mjs` also needs `VOYAGE_API_KEY` to embed the query.
+Two read-only scripts help confirm the chunks look right. They read from the
+database and change nothing. Both need `DATABASE_URL` in the shell, and
+`spotcheck.mjs` also needs `VOYAGE_API_KEY` to embed the query.
 
 ```
 node scripts/status.mjs
 node scripts/spotcheck.mjs "CV3000 pressure rating"
-node scripts/spotcheck.mjs "who is PCT" --corpus pct
+node scripts/spotcheck.mjs "who is PCT"
 ```
 
 `status.mjs` prints totals and breakdowns by corpus, segment, sourceType,
-Richards line, PCT folder, and content type. `spotcheck.mjs` embeds a query and
-returns the nearest chunks by cosine similarity, with title, section, and a
-short preview, so retrieval quality can be eyeballed before the chat layer is
-built.
+Richards line, PCT folder, and content type. `spotcheck.mjs` runs the hybrid
+search and prints the top results with title, section, line, source type and a
+short preview.
+
+## Search
+
+`src/retrieve.mjs` provides hybrid search over `kb_chunks`. It runs three
+candidate queries and fuses them with Reciprocal Rank Fusion:
+
+- vector similarity on the embedding,
+- lexical full text search on `content_tsv`,
+- a model-code match, for example CV3000, weighted up so a code in the query
+  lifts the right datasheet.
+
+It accepts metadata `filters`, for example `{ line: 'marwin' }`, and every
+result carries citation fields: title, page, section, source id, line, and the
+`nameable` and `manufacturer` flags for the later answer layer. Filter keys are
+restricted to plain identifiers so a request cannot inject SQL.
+
+The search is served over HTTP:
+
+```
+POST /search   { "query": "CV3000 pressure rating", "filters": {}, "k": 8 }
+```
+
+Lexical search needs the second migration, which adds the `content_tsv` column
+and the text and trigram indexes. Apply it with `npm run migrate`.
+
+## Corpus cleanup
+
+One-off maintenance scripts, all needing `DATABASE_URL`:
+
+- `scripts/dedup.mjs [corpus]` removes byte-identical documents filed under more
+  than one path, keeping one copy. Defaults to the richards corpus.
+- `scripts/remove-sales-areas.mjs` removes the sales-areas postcode map, which
+  is held as a structured region lookup rather than embedded.
+- `scripts/inspect.mjs "<substring>"` reports the chunk count per matching
+  document and samples a few chunks, to judge an oversized document.
+- `scripts/remove-doc.mjs "<source_id>"` deletes one document by source id.
+
+Re-ingestion no longer reintroduces byte-identical copies, since the walker
+skips a content hash it has already seen in the same run.
 
 ## A note on this build
 

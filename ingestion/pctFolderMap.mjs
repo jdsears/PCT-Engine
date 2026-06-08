@@ -23,3 +23,10 @@ export function mapFolder(_topFolder) {
     docType: null,
   };
 }
+
+// Files to skip even though their folder is included. The sales-areas postcode
+// map is held as a structured region lookup for the Regional Agents, not
+// embedded, so its label text would only be noise in the index.
+export function excludeFile(title) {
+  return /sales areas/i.test(title || '');
+}
