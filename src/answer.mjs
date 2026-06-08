@@ -26,9 +26,20 @@ export function voiceGate(text) {
   return text
     .replace(/\s*[—–]\s*/g, ', ') // em and en dashes
     .replace(/\bgenuinely\b/gi, '')
-    .replace(/\s{2,}/g, ' ')
-    .replace(/\s+([,.])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')   // collapse runs of spaces but keep line breaks
+    .replace(/[ \t]+([,.])/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')   // at most one blank line between paragraphs
     .trim();
+}
+
+// Strip the Markdown the model sometimes adds, so the reply reads as plain prose.
+export function stripMarkdown(text) {
+  return text
+    .replace(/^[ \t]{0,3}#{1,6}[ \t]+/gm, '') // heading markers, without eating newlines
+    .replace(/\*\*([^*]+)\*\*/g, '$1')      // bold with asterisks
+    .replace(/__([^_]+)__/g, '$1')          // bold with underscores
+    .replace(/`([^`]+)`/g, '$1')            // inline code backticks
+    .replace(/^[ \t]*[*+][ \t]+/gm, '- ');  // normalise bullets to a hyphen
 }
 
 function buildContext(results) {
@@ -50,6 +61,7 @@ export async function ask(question, { k = 10 } = {}) {
     "Answer only from the numbered sources provided. If the answer is not in them, say you do not have it in the documents and suggest the person ask the relevant colleague. " +
     "Cite the sources you rely on with their bracket numbers, for example [1]. " +
     "Write in British English, calm and plain. Do not use em dashes or en dashes. Never use the word \"genuinely\". " +
+    "Reply in plain prose without Markdown. Do not use asterisks, hashes or backticks, and do not write headings. Use short paragraphs, and where you list items put a plain hyphen at the start of the line. " +
     "Do not invent product specifications or numbers; if a figure is not in the sources, say so." +
     blockNote;
 
@@ -69,7 +81,7 @@ export async function ask(question, { k = 10 } = {}) {
   const raw = (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 
   return {
-    answer: voiceGate(raw),
+    answer: voiceGate(stripMarkdown(raw)),
     filters,
     citations: results.map((r, i) => ({
       n: i + 1, title: r.title, section: r.section, page: r.page, line: r.line, sourceId: r.sourceId,
