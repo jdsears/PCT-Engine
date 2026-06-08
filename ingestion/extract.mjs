@@ -1,5 +1,9 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { rm } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 const exec = promisify(execFile);
 
 // Probe whether a command line tool is on PATH. A missing binary rejects with
@@ -23,11 +27,14 @@ async function extractPdf(path) {
 }
 
 async function ocrPdf(path) {
+  // Write the OCR output to the system temp directory, not next to the source,
+  // so the corpus folder stays clean and the scratch file is not re-ingested.
+  const tmp = join(tmpdir(), `pct-ocr-${randomUUID()}.pdf`);
   try {
-    const tmp = path + '.ocr.pdf';
     await exec('ocrmypdf', ['--quiet', '--skip-text', path, tmp], { maxBuffer: 64 * 1024 * 1024 });
     return await extractPdf(tmp);
   } catch { return ''; }
+  finally { await rm(tmp, { force: true }); }
 }
 
 async function extractOffice(path) {
