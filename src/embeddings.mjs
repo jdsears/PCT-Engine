@@ -1,6 +1,7 @@
 const VOYAGE_URL = 'https://api.voyageai.com/v1/embeddings';
 const MODEL = process.env.VOYAGE_MODEL || 'voyage-3.5'; // voyage-3-large for top-end quality
 const DIM = 1024;
+const VOYAGE_TIMEOUT_MS = 120_000; // stop a stalled request from hanging the run
 
 // Embed an array of strings. inputType is 'document' for indexing, 'query' for search.
 export async function embedTexts(texts, inputType = 'document') {
@@ -12,6 +13,7 @@ export async function embedTexts(texts, inputType = 'document') {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ input: texts, model: MODEL, input_type: inputType, output_dimension: DIM }),
+    signal: AbortSignal.timeout(VOYAGE_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`Voyage embed failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
