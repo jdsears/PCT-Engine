@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules
+npm-debug.log*
+
+# OCR scratch files produced during ingestion
+*.ocr.pdf
+
+# OS noise
+.DS_Store

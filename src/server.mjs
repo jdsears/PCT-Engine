@@ -1,0 +1,18 @@
+import express from 'express';
+import { pool } from './db.mjs';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/health', async (_req, res) => {
+  try {
+    const ext = await pool.query(`SELECT extversion FROM pg_extension WHERE extname = 'vector'`);
+    const mig = await pool.query('SELECT count(*)::int AS n FROM schema_migrations');
+    const chunks = await pool.query('SELECT count(*)::int AS n FROM kb_chunks');
+    res.json({ ok: true, pgvector: ext.rows[0]?.extversion ?? null, migrations: mig.rows[0].n, kb_chunks: chunks.rows[0].n });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+app.listen(PORT, () => console.log(`pct-knowledge-copilot listening on ${PORT}`));
