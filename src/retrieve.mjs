@@ -56,14 +56,26 @@ export async function search(query, { filters = {}, k = 8 } = {}) {
   add(lex.rows, 1);
   add(code.rows, 1.5); // a model code in the query is a strong signal, so weight it up
 
-  return [...fused.values()]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, k)
-    .map(({ row, score }) => ({
-      id: row.id, score: Number(score.toFixed(4)),
-      title: row.metadata.title, page: row.metadata.page, section: row.metadata.section,
-      line: row.metadata.line, sourceType: row.sourceType, sourceId: row.metadata.source_id,
-      nameable: row.metadata.nameable, manufacturer: row.metadata.manufacturer,
-      snippet: (row.content || '').slice(0, 240),
-    }));
+  const ranked = [...fused.values()].sort((a, b) => b.score - a.score);
+
+  // Diversity: no single document may take more than MAX_PER_DOC of the returned slots.
+  const MAX_PER_DOC = 3;
+  const perDoc = new Map();
+  const picked = [];
+  for (const item of ranked) {
+    const sid = item.row.metadata.source_id;
+    const n = perDoc.get(sid) || 0;
+    if (n >= MAX_PER_DOC) continue;
+    perDoc.set(sid, n + 1);
+    picked.push(item);
+    if (picked.length >= k) break;
+  }
+
+  return picked.map(({ row, score }) => ({
+    id: row.id, score: Number(score.toFixed(4)),
+    title: row.metadata.title, page: row.metadata.page, section: row.metadata.section,
+    line: row.metadata.line, sourceType: row.sourceType, sourceId: row.metadata.source_id,
+    nameable: row.metadata.nameable, manufacturer: row.metadata.manufacturer,
+    snippet: (row.content || '').slice(0, 240),
+  }));
 }

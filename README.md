@@ -140,7 +140,9 @@ candidate queries and fuses them with Reciprocal Rank Fusion:
 It accepts metadata `filters`, for example `{ line: 'marwin' }`, and every
 result carries citation fields: title, page, section, source id, line, and the
 `nameable` and `manufacturer` flags for the later answer layer. Filter keys are
-restricted to plain identifiers so a request cannot inject SQL.
+restricted to plain identifiers so a request cannot inject SQL. No single
+document may take more than three of the returned slots, so a keyword-heavy
+document cannot crowd out the rest.
 
 The search is served over HTTP:
 
