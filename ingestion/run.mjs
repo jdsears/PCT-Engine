@@ -1,5 +1,5 @@
 import { localFolderSource } from './sources/localFolder.mjs';
-import { extractText } from './extract.mjs';
+import { extractText, checkTooling } from './extract.mjs';
 import { chunkDocument } from './chunk.mjs';
 import { pool } from '../src/db.mjs';
 import { embedTexts } from '../src/embeddings.mjs';
@@ -35,6 +35,12 @@ if (!root || !cfg) {
   console.error('Usage: node ingestion/run.mjs "<path to corpus folder>" [--corpus richards|pct]');
   if (CORPUS && !cfg) console.error(`Unknown corpus "${CORPUS}". Known corpora: ${Object.keys(CORPORA).join(', ')}`);
   process.exit(1);
+}
+
+const tooling = await checkTooling();
+console.log(`PDF tooling: pdftotext ${tooling.pdftotext ? 'found' : 'missing'}, ocrmypdf ${tooling.ocrmypdf ? 'found' : 'missing'}.`);
+if (!tooling.pdftotext) {
+  console.log('Warning: pdftotext is not on PATH, so PDF files will be skipped. Install poppler to read them.');
 }
 
 const vectorLiteral = (a) => '[' + a.join(',') + ']';

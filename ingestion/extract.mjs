@@ -2,6 +2,19 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 const exec = promisify(execFile);
 
+// Probe whether a command line tool is on PATH. A missing binary rejects with
+// ENOENT. Any other outcome means the binary ran, so it is present even if it
+// complained about the arguments.
+async function hasBinary(name) {
+  try { await exec(name, ['--version']); return true; }
+  catch (e) { return e?.code !== 'ENOENT'; }
+}
+
+// Report which PDF tools are available, so a run can warn before it starts.
+export async function checkTooling() {
+  return { pdftotext: await hasBinary('pdftotext'), ocrmypdf: await hasBinary('ocrmypdf') };
+}
+
 async function extractPdf(path) {
   try {
     const { stdout } = await exec('pdftotext', ['-layout', '-enc', 'UTF-8', path, '-'], { maxBuffer: 64 * 1024 * 1024 });
