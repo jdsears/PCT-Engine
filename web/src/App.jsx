@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function App() {
   const [messages, setMessages] = useState([]);
@@ -34,7 +35,9 @@ export default function App() {
         )}
         {messages.map((m, i) => (
           <div key={i} className={`msg ${m.role}`}>
-            <div className="bubble">{m.text}</div>
+            <div className="bubble">
+              {m.role === 'copilot' ? <ReactMarkdown>{m.text}</ReactMarkdown> : m.text}
+            </div>
             {m.citations?.length > 0 && (
               <div className="cites">
                 {m.citations.map(c => (

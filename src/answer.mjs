@@ -20,8 +20,9 @@ export function detectFilters(question) {
   return {};
 }
 
-// Live answers prevent via the prompt and clean any residue.
-// The stricter reject-and-regenerate gate belongs to outbound drafts later, not here.
+// Clean the reply to the house voice. The stricter reject-and-regenerate gate
+// belongs to outbound drafts later, not here. Newlines are kept so the Markdown
+// structure survives for the chat to render.
 export function voiceGate(text) {
   return text
     .replace(/\s*[—–]\s*/g, ', ') // em and en dashes
@@ -30,16 +31,6 @@ export function voiceGate(text) {
     .replace(/[ \t]+([,.])/g, '$1')
     .replace(/\n{3,}/g, '\n\n')   // at most one blank line between paragraphs
     .trim();
-}
-
-// Strip the Markdown the model sometimes adds, so the reply reads as plain prose.
-export function stripMarkdown(text) {
-  return text
-    .replace(/^[ \t]{0,3}#{1,6}[ \t]+/gm, '') // heading markers, without eating newlines
-    .replace(/\*\*([^*]+)\*\*/g, '$1')      // bold with asterisks
-    .replace(/__([^_]+)__/g, '$1')          // bold with underscores
-    .replace(/`([^`]+)`/g, '$1')            // inline code backticks
-    .replace(/^[ \t]*[*+][ \t]+/gm, '- ');  // normalise bullets to a hyphen
 }
 
 function buildContext(results) {
@@ -61,7 +52,7 @@ export async function ask(question, { k = 10 } = {}) {
     "Answer only from the numbered sources provided. If the answer is not in them, say you do not have it in the documents and suggest the person ask the relevant colleague. " +
     "Cite the sources you rely on with their bracket numbers, for example [1]. " +
     "Write in British English, calm and plain. Do not use em dashes or en dashes. Never use the word \"genuinely\". " +
-    "Reply in plain prose without Markdown. Do not use asterisks, hashes or backticks, and do not write headings. Use short paragraphs, and where you list items put a plain hyphen at the start of the line. " +
+    "Format the answer for easy reading with light Markdown: short paragraphs, and a simple bulleted or numbered list when you list items. Use bold sparingly for a key term, and do not use large headings. " +
     "Do not invent product specifications or numbers; if a figure is not in the sources, say so." +
     blockNote;
 
@@ -81,7 +72,7 @@ export async function ask(question, { k = 10 } = {}) {
   const raw = (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 
   return {
-    answer: voiceGate(stripMarkdown(raw)),
+    answer: voiceGate(raw),
     filters,
     citations: results.map((r, i) => ({
       n: i + 1, title: r.title, section: r.section, page: r.page, line: r.line, sourceId: r.sourceId,
