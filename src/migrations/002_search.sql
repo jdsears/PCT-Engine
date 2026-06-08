@@ -1,3 +1,10 @@
+-- Build indexes serially. A parallel index build asks for a large shared
+-- memory segment, and the database container cannot grow it, so it fails with
+-- "could not resize shared memory segment ... No space left on device". Serial
+-- is slower but stays within the container limits.
+SET max_parallel_maintenance_workers = 0;
+SET max_parallel_workers_per_gather = 0;
+
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 ALTER TABLE kb_chunks
