@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.mjs",
     "migrate": "node src/migrate.mjs",
-    "ingest": "node ingestion/run.mjs"
+    "ingest": "node ingestion/run.mjs",
+    "build": "cd web && npm install && npm run build"
   },
   "dependencies": {
     "express": "^4.19.2",

@@ -1,0 +1,78 @@
+import { search } from './retrieve.mjs';
+
+const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
+const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6'; // configurable; confirm against Anthropic docs if it errors
+
+// Light query understanding: detect a named line or application and scope the search.
+const LINE_TERMS = [
+  [/\bjordan\b/i, { line: 'jordan' }],
+  [/\bsteriflow\s+(food|f&b|fb|beverage)/i, { line: 'steriflow_fb' }],
+  [/\bsteriflow\b/i, { line: 'steriflow' }],
+  [/\bmarwin\b/i, { line: 'marwin' }],
+  [/\blow\s*flow\b/i, { line: 'low_flow' }],
+  [/\bhex\s*valve\b/i, { line: 'hexvalve' }],
+  [/\bbestobell\b/i, { line: 'bestobell_steam' }],
+  [/\bequilibar\b/i, { line: 'equilibar' }],
+  [/\bdata\s*cent(re|er)\b/i, { application: 'data_centre' }],
+];
+export function detectFilters(question) {
+  for (const [re, f] of LINE_TERMS) if (re.test(question)) return f;
+  return {};
+}
+
+// Live answers prevent via the prompt and clean any residue.
+// The stricter reject-and-regenerate gate belongs to outbound drafts later, not here.
+export function voiceGate(text) {
+  return text
+    .replace(/\s*[—–]\s*/g, ', ') // em and en dashes
+    .replace(/\bgenuinely\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,.])/g, '$1')
+    .trim();
+}
+
+function buildContext(results) {
+  return results.map((r, i) =>
+    `[${i + 1}] ${r.title}${r.section ? ' | ' + r.section : ''}${r.page ? ' (p' + r.page + ')' : ''}\n${r.content || r.snippet}`
+  ).join('\n\n');
+}
+
+export async function ask(question, { k = 10 } = {}) {
+  const filters = detectFilters(question);
+  const results = await search(question, { filters, k });
+
+  // Supplier-naming guardrail, driven by the nameable flag we tagged at ingestion.
+  const blocked = [...new Set(results.filter(r => r.nameable === false).map(r => r.manufacturer).filter(Boolean))];
+  const blockNote = blocked.length ? ` Do not name these suppliers anywhere in your answer: ${blocked.join(', ')}.` : '';
+
+  const system =
+    "You are the knowledge co-pilot for Premier Control Technologies (PCT), answering questions for the PCT sales team. " +
+    "Answer only from the numbered sources provided. If the answer is not in them, say you do not have it in the documents and suggest the person ask the relevant colleague. " +
+    "Cite the sources you rely on with their bracket numbers, for example [1]. " +
+    "Write in British English, calm and plain. Do not use em dashes or en dashes. Never use the word \"genuinely\". " +
+    "Do not invent product specifications or numbers; if a figure is not in the sources, say so." +
+    blockNote;
+
+  const user = `Question: ${question}\n\nSources:\n${buildContext(results)}`;
+
+  const res = await fetch(CLAUDE_URL, {
+    method: 'POST',
+    headers: {
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, messages: [{ role: 'user', content: user }] }),
+  });
+  if (!res.ok) throw new Error(`Claude answer failed: ${res.status} ${await res.text()}`);
+  const json = await res.json();
+  const raw = (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+
+  return {
+    answer: voiceGate(raw),
+    filters,
+    citations: results.map((r, i) => ({
+      n: i + 1, title: r.title, section: r.section, page: r.page, line: r.line, sourceId: r.sourceId,
+    })),
+  };
+}

@@ -77,5 +77,6 @@ export async function search(query, { filters = {}, k = 8 } = {}) {
     line: row.metadata.line, sourceType: row.sourceType, sourceId: row.metadata.source_id,
     nameable: row.metadata.nameable, manufacturer: row.metadata.manufacturer,
     snippet: (row.content || '').slice(0, 240),
+    content: row.content,
   }));
 }
