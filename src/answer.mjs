@@ -71,11 +71,17 @@ export async function ask(question, { k = 10 } = {}) {
   const json = await res.json();
   const raw = (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 
-  return {
-    answer: voiceGate(raw),
-    filters,
-    citations: results.map((r, i) => ({
-      n: i + 1, title: r.title, section: r.section, page: r.page, line: r.line, sourceId: r.sourceId,
-    })),
-  };
+  const answer = voiceGate(raw);
+
+  // Only surface citation chips for the sources the answer referenced, keeping
+  // their original numbers so they match the [n] markers in the text.
+  const cited = new Set();
+  for (const m of answer.matchAll(/\[([\d,\s]+)\]/g)) {
+    for (const num of m[1].split(/\D+/)) if (num) cited.add(Number(num));
+  }
+  const citations = results
+    .map((r, i) => ({ n: i + 1, title: r.title, section: r.section, page: r.page, line: r.line, sourceId: r.sourceId }))
+    .filter(c => cited.has(c.n));
+
+  return { answer, filters, citations };
 }
