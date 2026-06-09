@@ -39,9 +39,14 @@ function buildContext(results) {
   ).join('\n\n');
 }
 
-export async function ask(question, { k = 10 } = {}) {
-  const filters = detectFilters(question);
-  const results = await search(question, { filters, k });
+export async function ask(question, { history = [], k = 10 } = {}) {
+  // Use the immediate prior turn so a follow-up such as "and the reduced-port
+  // version?" still retrieves and scopes against what was being discussed.
+  const lastUser = history.filter(m => m.role === 'user').slice(-1).map(m => m.text);
+  const retrievalQuery = [...lastUser, question].join('\n');
+  const here = detectFilters(question);
+  const filters = Object.keys(here).length ? here : detectFilters(lastUser.join(' '));
+  const results = await search(retrievalQuery, { filters, k });
 
   // Supplier-naming guardrail, driven by the nameable flag we tagged at ingestion.
   const blocked = [...new Set(results.filter(r => r.nameable === false).map(r => r.manufacturer).filter(Boolean))];
@@ -58,6 +63,16 @@ export async function ask(question, { k = 10 } = {}) {
 
   const user = `Question: ${question}\n\nSources:\n${buildContext(results)}`;
 
+  // Prior turns give the model the thread. Strip stale citation markers so the
+  // bracket numbers in this answer refer only to this turn's sources, and drop a
+  // leading assistant turn so the exchange still starts with a user message.
+  let prior = history.slice(-6).map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.role === 'user' ? m.text : String(m.text || '').replace(/\[[\d,\s]+\]/g, '').replace(/[ \t]{2,}/g, ' ').trim(),
+  })).filter(m => m.content);
+  while (prior.length && prior[0].role === 'assistant') prior = prior.slice(1);
+  const messages = [...prior, { role: 'user', content: user }];
+
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
     headers: {
@@ -65,7 +80,7 @@ export async function ask(question, { k = 10 } = {}) {
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, messages: [{ role: 'user', content: user }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, messages }),
   });
   if (!res.ok) throw new Error(`Claude answer failed: ${res.status} ${await res.text()}`);
   const json = await res.json();

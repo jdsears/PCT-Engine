@@ -30,9 +30,9 @@ app.post('/search', async (req, res) => {
 
 app.post('/ask', async (req, res) => {
   try {
-    const { question } = req.body || {};
+    const { question, history } = req.body || {};
     if (!question) return res.status(400).json({ error: 'question is required' });
-    res.json(await ask(question));
+    res.json(await ask(question, { history: Array.isArray(history) ? history : [] }));
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

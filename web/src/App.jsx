@@ -11,13 +11,14 @@ export default function App() {
   async function send() {
     const q = input.trim();
     if (!q || busy) return;
+    const history = messages.map(({ role, text }) => ({ role, text }));
     setInput('');
     setMessages(m => [...m, { role: 'user', text: q }]);
     setBusy(true);
     try {
       const res = await fetch('/ask', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({ question: q, history }),
       });
       const data = await res.json();
       setMessages(m => [...m, { role: 'copilot', text: data.answer, citations: data.citations || [] }]);
