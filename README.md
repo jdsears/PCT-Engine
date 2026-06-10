@@ -229,14 +229,37 @@ API; when an access gate arrives they sit behind it with the other routes.
   repeat count for identical questions. Each is a candidate for knowledge capture.
 - `GET /api/insights/top-docs?days=90`: the most-cited document titles.
 
-The web app carries an Insights view alongside the co-pilot chat, reached from a
-small Co-pilot and Insights nav added to the header. It reads the three endpoints
-above and renders the reading cards, demand by line, knowledge gaps, most cited
-documents, and the engine-metrics placeholder from the approved design, with a
-young-log line for the first sparse week. It shows only live data; there are no
-sample values in the build. The header nav is a deviation from the design, which
-assumes a six-item sidebar: the app was a single-page chat with nowhere else to
-host the view, so only the two destinations that exist were built.
+The Insights section of the web app reads these three endpoints and renders
+only live data; there are no sample values in the build.
+
+## Web app
+
+The web app is the approved design's full shell: a navy sidebar on desktop, a
+bottom tab bar on mobile, and seven sections that each read live data.
+
+- Co-Pilot is the chat. Answers arrive as cards with their sources as chips,
+  and the thinking state shows the brand wave.
+- Insights renders the usage log: reading cards with a thirty-day sparkline
+  and answer-rate gauge, demand by line, knowledge gaps, most cited documents,
+  and a young-log line while the log is small.
+- Pipeline shows the funnel stages with live counts and the leads at each
+  stage, with the qualification gate marked on the track.
+- Accounts lists the named accounts with ICP scores, domains and Companies
+  House matches, amber-flagged where either is missing. The detail panel holds
+  the explainable score breakdown, recent signals, and register directors.
+- Signals is the observation feed, filterable by kind, each linking to its
+  account.
+- Outbound is the designed placeholder for the next stage and reads the kill
+  switch state from the API.
+- Health shows corpus size, documents by line, last ingestion, database state,
+  Graph connectivity, and the kill switch.
+- The access gate screen is a visual preview; there is no server-side gate
+  yet, and the screen becomes its front door when one arrives.
+
+Six read-only endpoints feed the research sections: `/api/pipeline`,
+`/api/accounts`, `/api/accounts/:id`, `/api/signals`, `/api/outbound/status`
+and `/api/health/cards`. They are open like the rest of the API and sit
+behind the access gate with everything else when it arrives.
 
 ## A note on this build
 
