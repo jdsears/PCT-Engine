@@ -40,6 +40,7 @@ function buildContext(results) {
 }
 
 export async function ask(question, { history = [], k = 10 } = {}) {
+  const startedAt = Date.now();
   // Use the immediate prior turn so a follow-up such as "and the reduced-port
   // version?" still retrieves and scopes against what was being discussed.
   const lastUser = history.filter(m => m.role === 'user').slice(-1).map(m => m.text);
@@ -98,5 +99,14 @@ export async function ask(question, { history = [], k = 10 } = {}) {
     .map((r, i) => ({ n: i + 1, title: r.title, section: r.section, page: r.page, line: r.line, sourceId: r.sourceId }))
     .filter(c => cited.has(c.n));
 
-  return { answer, filters, citations };
+  // declined is an honest, cheap proxy: a grounded answer cites a source, a
+  // decline cites none. citationsUsed reuses the references resolved above.
+  const citationsUsed = citations.map(c => ({ n: c.n, title: c.title }));
+  return {
+    answer, filters, citations,
+    declined: citationsUsed.length === 0,
+    citationsUsed,
+    sourcesOffered: results.length,
+    latencyMs: Date.now() - startedAt,
+  };
 }

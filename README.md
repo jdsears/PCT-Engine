@@ -210,6 +210,28 @@ is never called automatically; spending credits on email resolution is a
 decision for the outbound stage. `scripts/merge-duplicate-accounts.mjs` is the
 one-off cleanup for the duplicated first seed, dry run by default.
 
+## Usage logging and insights
+
+Every co-pilot question is logged to `copilot_queries` (migration 005) after the
+answer is sent, so logging never delays or fails a reply. Each row records the
+question, the line or application filter the answer layer chose, whether the
+answer declined (cited no sources, an honest proxy for a knowledge gap), the
+citations actually used with their titles, how many sources retrieval offered,
+and the latency. No user identity is logged, since there is none under the
+shared access gate.
+
+Three read-only endpoints summarise it. They are open, like the rest of the
+API; when an access gate arrives they sit behind it with the other routes.
+
+- `GET /api/insights/summary?days=30`: questions, decline count and rate, daily
+  counts for a sparkline, top detected lines, and average latency.
+- `GET /api/insights/gaps?days=90`: declined questions, newest first, with a
+  repeat count for identical questions. Each is a candidate for knowledge capture.
+- `GET /api/insights/top-docs?days=90`: the most-cited document titles.
+
+The Insights interface from the brief is deferred: the web app is a single-page
+chat with no dashboard to host it, so the data is exposed here as JSON for now.
+
 ## A note on this build
 
 The code in this repository was written and verified to load in a clean
