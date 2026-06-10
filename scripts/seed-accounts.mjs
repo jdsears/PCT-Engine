@@ -133,23 +133,28 @@ for (const cand of byName.values()) {
   entry.region = regionForPostcode(entry.postcode);
 
   // Reconcile so re-runs are idempotent, including when a previously unmatched
-  // account now matches: find by CH number, else by name, update it; else insert.
+  // account now matches: find by CH number, else by either the registry name or
+  // the original candidate name, update it; else insert. The candidate name
+  // matters because an earlier run may have stored the row under it before a
+  // Companies House match renamed the entry.
   let existingId = null;
   if (entry.chNumber) {
     const { rows } = await pool.query(`SELECT id FROM companies WHERE ch_number = $1`, [entry.chNumber]);
     existingId = rows[0]?.id ?? null;
   }
   if (!existingId) {
-    const { rows } = await pool.query(`SELECT id FROM companies WHERE lower(name) = lower($1)`, [entry.name]);
+    const { rows } = await pool.query(
+      `SELECT id FROM companies WHERE lower(name) IN (lower($1), lower($2)) ORDER BY (ch_number IS NOT NULL) DESC LIMIT 1`,
+      [entry.name, cand.name]);
     existingId = rows[0]?.id ?? null;
   }
   if (existingId) {
     await pool.query(
-      `UPDATE companies SET named_account = true, company_type = $2,
+      `UPDATE companies SET name = $6, named_account = true, company_type = $2,
          ch_number = COALESCE($3, ch_number),
          region = COALESCE(region, $4), postcode = COALESCE(postcode, $5), updated_at = now()
        WHERE id = $1`,
-      [existingId, entry.type, entry.chNumber, entry.region, entry.postcode]);
+      [existingId, entry.type, entry.chNumber, entry.region, entry.postcode, entry.name]);
   } else {
     await pool.query(
       `INSERT INTO companies (name, ch_number, company_type, region, postcode, named_account, source)
