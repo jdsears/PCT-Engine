@@ -229,8 +229,14 @@ API; when an access gate arrives they sit behind it with the other routes.
   repeat count for identical questions. Each is a candidate for knowledge capture.
 - `GET /api/insights/top-docs?days=90`: the most-cited document titles.
 
-The Insights interface from the brief is deferred: the web app is a single-page
-chat with no dashboard to host it, so the data is exposed here as JSON for now.
+The web app carries an Insights view alongside the co-pilot chat, reached from a
+small Co-pilot and Insights nav added to the header. It reads the three endpoints
+above and renders the reading cards, demand by line, knowledge gaps, most cited
+documents, and the engine-metrics placeholder from the approved design, with a
+young-log line for the first sparse week. It shows only live data; there are no
+sample values in the build. The header nav is a deviation from the design, which
+assumes a six-item sidebar: the app was a single-page chat with nowhere else to
+host the view, so only the two destinations that exist were built.
 
 ## A note on this build
 
