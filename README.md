@@ -168,6 +168,39 @@ One-off maintenance scripts, all needing `DATABASE_URL`:
 Re-ingestion no longer reintroduces byte-identical copies, since the walker
 skips a content hash it has already seen in the same run.
 
+## Research stage
+
+The front of the sales funnel: signal sourcing and research feeding a `leads`
+table for the outbound stage to draw from. Migration 003 adds `companies`,
+`contacts`, `signals`, `leads` and a small `kv` store.
+
+- `src/research/region.mjs` maps UK postcodes to the six sales areas. The
+  table is a draft for Andy to verify, plain data so corrections are one-line
+  edits, and unknown postcodes return null.
+- `src/research/companiesHouse.mjs` searches and profiles companies and polls
+  filings into `signals`, rate limited and deduped.
+- `src/research/newsResearch.mjs` sweeps Tavily news for data centre build and
+  contract signals; the query list is editable data.
+- `src/research/findymail.mjs` resolves and verifies contact emails, logging
+  every call and never spending a credit on an already verified contact.
+- `src/research/icp.mjs` scores companies against the Marwin DC campaign ICP.
+  Thresholds and weights are drafts for James and Andy, and every score stores
+  an explainable breakdown.
+- `src/research/linkedinResearch.mjs` is the socket for the Sales Navigator
+  lane via Unipile. It reports unavailable until the accounts are live.
+
+Two commands, both needing `DATABASE_URL` plus the research keys:
+
+```
+node --env-file=.env scripts/seed-accounts.mjs
+node --env-file=.env scripts/research-run.mjs
+```
+
+The first seeds the named-account list and writes `NAMED_ACCOUNTS_DRAFT.md`
+for Andy to curate. The second polls signals, refreshes ICP scores, and
+upserts leads at stage researched; it is idempotent and safe to repeat.
+Nothing in the research stage sends mail, and the kill switch stays on.
+
 ## A note on this build
 
 The code in this repository was written and verified to load in a clean
