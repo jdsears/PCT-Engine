@@ -6,22 +6,26 @@ import { embedTexts } from '../src/embeddings.mjs';
 import { mapFolder as richardsMapFolder, EXCLUDED_FOLDERS as richardsExcluded } from './folderMap.mjs';
 import { mapFolder as pctMapFolder, EXCLUDED_FOLDERS as pctExcluded, excludeFile as pctExcludeFile } from './pctFolderMap.mjs';
 
-// Each corpus pairs a folder mapping with a default sourceType. The default
-// applies only when a chunk carries no docType of its own.
+// Each corpus pairs a folder mapping with a default sourceType and the name of
+// its root folder in the SharePoint library. The sourceType default applies
+// only when a chunk carries no docType of its own.
 const CORPORA = {
   richards: {
     mapping: { mapFolder: richardsMapFolder, excludedFolders: richardsExcluded },
     sourceType: (c) => c.docType || (c.contentType === 'table' ? 'product_table' : 'product_datasheet'),
+    spRoot: 'Richards',
   },
   pct: {
     mapping: { mapFolder: pctMapFolder, excludedFolders: pctExcluded, excludeFile: pctExcludeFile },
     sourceType: (c) => c.docType || (c.contentType === 'table' ? 'company_table' : 'company_overview'),
+    spRoot: 'PCT Information',
   },
 };
 
-// Usage: node ingestion/run.mjs [--source=sharepoint] ["<path to corpus folder>"] [--corpus richards|pct]
+// Usage: node ingestion/run.mjs [--source=sharepoint] [--sp-root="<folder>"] ["<local path>"] [--corpus richards|pct]
 let CORPUS = 'richards';
 let useSharepoint = false;
+let spRoot = null;
 const positional = [];
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
@@ -30,12 +34,13 @@ for (let i = 0; i < argv.length; i++) {
   else if (a.startsWith('--corpus=')) CORPUS = a.slice('--corpus='.length);
   else if (a === '--source=sharepoint') useSharepoint = true;
   else if (a === '--source=local') useSharepoint = false;
+  else if (a.startsWith('--sp-root=')) spRoot = a.slice('--sp-root='.length);
   else if (!a.startsWith('--')) positional.push(a);
 }
 const root = positional[0];
 const cfg = CORPORA[CORPUS];
 if (!cfg || (!useSharepoint && !root)) {
-  console.error('Usage: node ingestion/run.mjs [--source=sharepoint] ["<path to corpus folder>"] [--corpus richards|pct]');
+  console.error('Usage: node ingestion/run.mjs [--source=sharepoint] [--sp-root="<folder>"] ["<local path>"] [--corpus richards|pct]');
   if (CORPUS && !cfg) console.error(`Unknown corpus "${CORPUS}". Known corpora: ${Object.keys(CORPORA).join(', ')}`);
   process.exit(1);
 }
@@ -88,7 +93,7 @@ const known = await existingHashes();
 const seen = new Set();
 
 const source = useSharepoint
-  ? (await import('./sources/sharepointFolder.mjs')).sharepointSource()
+  ? (await import('./sources/sharepointFolder.mjs')).sharepointSource(cfg.mapping, { rootFolder: spRoot ?? cfg.spRoot })
   : localFolderSource(root, cfg.mapping);
 
 console.log(`Scanning ${useSharepoint ? 'the SharePoint site' : CORPUS} and embedding new or changed files ...`);
