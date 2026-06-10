@@ -19,20 +19,23 @@ const CORPORA = {
   },
 };
 
-// Usage: node ingestion/run.mjs "<path to corpus folder>" [--corpus richards|pct]
+// Usage: node ingestion/run.mjs [--source=sharepoint] ["<path to corpus folder>"] [--corpus richards|pct]
 let CORPUS = 'richards';
+let useSharepoint = false;
 const positional = [];
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--corpus') CORPUS = argv[++i];
   else if (a.startsWith('--corpus=')) CORPUS = a.slice('--corpus='.length);
-  else positional.push(a);
+  else if (a === '--source=sharepoint') useSharepoint = true;
+  else if (a === '--source=local') useSharepoint = false;
+  else if (!a.startsWith('--')) positional.push(a);
 }
 const root = positional[0];
 const cfg = CORPORA[CORPUS];
-if (!root || !cfg) {
-  console.error('Usage: node ingestion/run.mjs "<path to corpus folder>" [--corpus richards|pct]');
+if (!cfg || (!useSharepoint && !root)) {
+  console.error('Usage: node ingestion/run.mjs [--source=sharepoint] ["<path to corpus folder>"] [--corpus richards|pct]');
   if (CORPUS && !cfg) console.error(`Unknown corpus "${CORPUS}". Known corpora: ${Object.keys(CORPORA).join(', ')}`);
   process.exit(1);
 }
@@ -84,8 +87,14 @@ const report = { docs: 0, skipped: 0, inserted: 0, updated: 0, chunks: 0, noText
 const known = await existingHashes();
 const seen = new Set();
 
-console.log(`Scanning ${CORPUS} and embedding new or changed files ...`);
-for await (const doc of localFolderSource(root, cfg.mapping)) {
+const source = useSharepoint
+  ? (await import('./sources/sharepointFolder.mjs')).sharepointSource()
+  : localFolderSource(root, cfg.mapping);
+
+console.log(`Scanning ${useSharepoint ? 'the SharePoint site' : CORPUS} and embedding new or changed files ...`);
+let walkComplete = false;
+try {
+for await (const doc of source) {
   report.docs++; seen.add(doc.sourceId);
   if (known.get(doc.sourceId) === doc.hash) { report.skipped++; continue; }
 
@@ -123,8 +132,20 @@ for await (const doc of localFolderSource(root, cfg.mapping)) {
     report.failed.push({ id: doc.sourceId, error: String(e?.message || e).slice(0, 200) });
   }
 }
+walkComplete = true;
+} catch (e) {
+  // The source walk itself failed, for example a SharePoint listing error, so
+  // skip the removal sweep. We never delete chunks for documents we merely
+  // failed to read on this run.
+  console.error('\nSource walk did not complete:', e?.message || e);
+  report.walkError = String(e?.message || e);
+}
 
-for (const sid of known.keys()) if (!seen.has(sid)) await deleteDoc(sid);
+if (walkComplete) {
+  for (const sid of known.keys()) if (!seen.has(sid)) await deleteDoc(sid);
+} else {
+  console.log('Walk incomplete, so the stale-document sweep was skipped.');
+}
 
 console.log('\n=== Ingestion run report ===');
 console.log('Corpus:', CORPUS);
