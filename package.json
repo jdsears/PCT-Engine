@@ -6,12 +6,13 @@
   "scripts": {
     "start": "node src/server.mjs",
     "migrate": "node src/migrate.mjs",
-    "ingest": "node ingestion/run.mjs"
+    "ingest": "node ingestion/run.mjs",
+    "build": "cd web && npm install && npm run build"
   },
   "dependencies": {
     "express": "^4.19.2",
     "pg": "^8.12.0",
     "officeparser": "^5.1.1"
   },
-  "engines": { "node": ">=18" }
+  "engines": { "node": ">=22" }
 }

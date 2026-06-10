@@ -1,20 +1,51 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { rm } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 const exec = promisify(execFile);
+
+// Cap each external tool so one stuck file cannot hang the whole run.
+const MAXBUF = 64 * 1024 * 1024;
+const PDFTOTEXT_TIMEOUT_MS = 60_000;
+const OCR_TIMEOUT_MS = 180_000;
+
+// Probe whether a command line tool is on PATH. A missing binary rejects with
+// ENOENT. Any other outcome means the binary ran, so it is present even if it
+// complained about the arguments.
+async function hasBinary(name) {
+  try { await exec(name, ['--version']); return true; }
+  catch (e) { return e?.code !== 'ENOENT'; }
+}
+
+// Report which PDF tools are available, so a run can warn before it starts.
+export async function checkTooling() {
+  return { pdftotext: await hasBinary('pdftotext'), ocrmypdf: await hasBinary('ocrmypdf') };
+}
 
 async function extractPdf(path) {
   try {
-    const { stdout } = await exec('pdftotext', ['-layout', '-enc', 'UTF-8', path, '-'], { maxBuffer: 64 * 1024 * 1024 });
+    const { stdout } = await exec('pdftotext', ['-layout', '-enc', 'UTF-8', path, '-'], { maxBuffer: MAXBUF, timeout: PDFTOTEXT_TIMEOUT_MS });
     return stdout;
-  } catch { return ''; }
+  } catch (e) {
+    if (e?.killed) console.warn(`\n  pdftotext timed out on ${path}, skipping`);
+    return '';
+  }
 }
 
 async function ocrPdf(path) {
+  // Write the OCR output to the system temp directory, not next to the source,
+  // so the corpus folder stays clean and the scratch file is not re-ingested.
+  const tmp = join(tmpdir(), `pct-ocr-${randomUUID()}.pdf`);
   try {
-    const tmp = path + '.ocr.pdf';
-    await exec('ocrmypdf', ['--quiet', '--skip-text', path, tmp], { maxBuffer: 64 * 1024 * 1024 });
+    await exec('ocrmypdf', ['--quiet', '--skip-text', path, tmp], { maxBuffer: MAXBUF, timeout: OCR_TIMEOUT_MS });
     return await extractPdf(tmp);
-  } catch { return ''; }
+  } catch (e) {
+    if (e?.killed) console.warn(`\n  ocrmypdf timed out on ${path}, skipping`);
+    return '';
+  }
+  finally { await rm(tmp, { force: true }); }
 }
 
 async function extractOffice(path) {

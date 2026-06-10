@@ -71,18 +71,144 @@ repository root:
 node ingestion/run.mjs "<path to the Richards folder>"
 ```
 
-The run prints a report: documents seen, documents skipped as unchanged, new
-and updated documents, chunks written, chunks by product line or application,
-and any files with no extractable text. Re-running is safe. Each document is
-keyed by a content hash, so unchanged documents are skipped and changed ones
-are replaced.
+The run prints a report: the corpus, documents seen, documents skipped as
+unchanged, new and updated documents, chunks written, chunks by product line,
+application or folder, and any files with no extractable text. Re-running is
+safe. Each document is keyed by a content hash, so unchanged documents are
+skipped and changed ones are replaced.
+
+## Two corpora
+
+The knowledge base holds two corpora in the same `kb_chunks` table, kept apart
+by the `corpus` field in metadata and the `segment` column.
+
+- `richards` is product knowledge: the datasheets, specs and manuals for the
+  Richards product lines. This is the default corpus.
+- `pct` is company knowledge: material about PCT itself, drawn from the PCT
+  Information folder.
+
+Choose the corpus with the `--corpus` flag. It defaults to `richards`:
+
+```
+node ingestion/run.mjs "<path to the Richards folder>"
+node ingestion/run.mjs "<path to the PCT Information folder>" --corpus pct
+```
+
+Each corpus manages only its own rows. Running one does not touch the other, so
+the two can be ingested and re-ingested independently.
 
 ## Folder mapping
 
-`ingestion/folderMap.mjs` maps top-level corpus folders to product lines and
-metadata. Customer lists, example customer communications, and the January 2026
-meeting notes are excluded for now. Files at the corpus root are treated as
+`ingestion/folderMap.mjs` maps the top-level Richards folders to product lines
+and metadata. Customer lists, example customer communications, and the January
+2026 meeting notes are excluded for now. Files at the corpus root are treated as
 overview material.
+
+`ingestion/pctFolderMap.mjs` handles the PCT Information corpus. Its internal
+structure is not yet known here, so every included file is tagged as company
+material under the `company` segment. The walker records each top-level subfolder
+name in metadata, so the structure is kept and the mapping can be enriched once
+the folders are known. The same protected folders are excluded.
+
+## Checking the result
+
+Two read-only scripts help confirm the chunks look right. They read from the
+database and change nothing. Both need `DATABASE_URL` in the shell, and
+`spotcheck.mjs` also needs `VOYAGE_API_KEY` to embed the query.
+
+```
+node scripts/status.mjs
+node scripts/spotcheck.mjs "CV3000 pressure rating"
+node scripts/spotcheck.mjs "who is PCT"
+```
+
+`status.mjs` prints totals and breakdowns by corpus, segment, sourceType,
+Richards line, PCT folder, and content type. `spotcheck.mjs` runs the hybrid
+search and prints the top results with title, section, line, source type and a
+short preview.
+
+## Search
+
+`src/retrieve.mjs` provides hybrid search over `kb_chunks`. It runs three
+candidate queries and fuses them with Reciprocal Rank Fusion:
+
+- vector similarity on the embedding,
+- lexical full text search on `content_tsv`,
+- a model-code match, for example CV3000, weighted up so a code in the query
+  lifts the right datasheet.
+
+It accepts metadata `filters`, for example `{ line: 'marwin' }`, and every
+result carries citation fields: title, page, section, source id, line, and the
+`nameable` and `manufacturer` flags for the later answer layer. Filter keys are
+restricted to plain identifiers so a request cannot inject SQL. No single
+document may take more than three of the returned slots, so a keyword-heavy
+document cannot crowd out the rest.
+
+The search is served over HTTP:
+
+```
+POST /search   { "query": "CV3000 pressure rating", "filters": {}, "k": 8 }
+```
+
+Lexical search needs the second migration, which adds the `content_tsv` column
+and the text and trigram indexes. Apply it with `npm run migrate`.
+
+## Corpus cleanup
+
+One-off maintenance scripts, all needing `DATABASE_URL`:
+
+- `scripts/dedup.mjs [corpus]` removes byte-identical documents filed under more
+  than one path, keeping one copy. Defaults to the richards corpus.
+- `scripts/remove-sales-areas.mjs` removes the sales-areas postcode map, which
+  is held as a structured region lookup rather than embedded.
+- `scripts/inspect.mjs "<substring>"` reports the chunk count per matching
+  document and samples a few chunks, to judge an oversized document.
+- `scripts/remove-doc.mjs "<source_id>"` deletes one document by source id.
+
+Re-ingestion no longer reintroduces byte-identical copies, since the walker
+skips a content hash it has already seen in the same run.
+
+## Research stage
+
+The front of the sales funnel: signal sourcing and research feeding a `leads`
+table for the outbound stage to draw from. Migration 003 adds `companies`,
+`contacts`, `signals`, `leads` and a small `kv` store.
+
+- `src/research/region.mjs` maps UK postcodes to the six sales areas. The
+  table is a draft for Andy to verify, plain data so corrections are one-line
+  edits, and unknown postcodes return null.
+- `src/research/companiesHouse.mjs` searches and profiles companies and polls
+  filings into `signals`, rate limited and deduped.
+- `src/research/newsResearch.mjs` sweeps Tavily news for data centre build and
+  contract signals; the query list is editable data.
+- `src/research/findymail.mjs` resolves and verifies contact emails, logging
+  every call and never spending a credit on an already verified contact.
+- `src/research/icp.mjs` scores companies against the Marwin DC campaign ICP.
+  Thresholds and weights are drafts for James and Andy, and every score stores
+  an explainable breakdown.
+- `src/research/linkedinResearch.mjs` is the socket for the Sales Navigator
+  lane via Unipile. It reports unavailable until the accounts are live.
+
+Two commands, both needing `DATABASE_URL` plus the research keys:
+
+```
+node --env-file=.env scripts/seed-accounts.mjs
+node --env-file=.env scripts/research-run.mjs
+```
+
+The first seeds the named-account list and writes `NAMED_ACCOUNTS_DRAFT.md`
+for Andy to curate. The second polls signals, refreshes ICP scores, and
+upserts leads at stage researched; it is idempotent and safe to repeat.
+Nothing in the research stage sends mail, and the kill switch stays on.
+
+Contact discovery does not depend on LinkedIn. The research run resolves each
+named account's official web domain (`src/research/domains.mjs`, conservative,
+null rather than a guess) and pulls current directors from the public register
+into `contacts` with provenance (`src/research/officerContacts.mjs`), skipping
+secretaries and corporate officers and marking the decision orbit. Findymail
+is never called automatically; spending credits on email resolution is a
+decision for the outbound stage. `scripts/merge-duplicate-accounts.mjs` is the
+one-off cleanup for the duplicated first seed, dry run by default.
 
 ## A note on this build
 
