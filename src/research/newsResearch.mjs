@@ -13,23 +13,28 @@ export const DC_SWEEP_QUERIES = [
   { query: 'new UK data centre campus investment announced', type: 'news_dc_build' },
 ];
 
-async function tavily(query, { days = 14, maxResults = 8 } = {}) {
+// Shared Tavily search. The days window only applies to the news topic, so it
+// is omitted for general searches such as domain resolution.
+export async function tavilySearch(query, { days = 14, maxResults = 8, topic = 'news' } = {}) {
+  const body = {
+    api_key: (process.env.TAVILY_API_KEY || '').trim(),
+    query,
+    topic,
+    max_results: maxResults,
+    include_answer: false,
+  };
+  if (topic === 'news') body.days = days;
   const res = await fetch(TAVILY_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      api_key: (process.env.TAVILY_API_KEY || '').trim(),
-      query,
-      topic: 'news',
-      days,
-      max_results: maxResults,
-      include_answer: false,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Tavily ${res.status} on "${query}": ${await res.text()}`);
   const json = await res.json();
   return json.results || [];
 }
+
+const tavily = tavilySearch;
 
 const hash = (s) => createHash('sha256').update(s).digest('hex');
 

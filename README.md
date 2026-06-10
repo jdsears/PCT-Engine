@@ -201,6 +201,15 @@ for Andy to curate. The second polls signals, refreshes ICP scores, and
 upserts leads at stage researched; it is idempotent and safe to repeat.
 Nothing in the research stage sends mail, and the kill switch stays on.
 
+Contact discovery does not depend on LinkedIn. The research run resolves each
+named account's official web domain (`src/research/domains.mjs`, conservative,
+null rather than a guess) and pulls current directors from the public register
+into `contacts` with provenance (`src/research/officerContacts.mjs`), skipping
+secretaries and corporate officers and marking the decision orbit. Findymail
+is never called automatically; spending credits on email resolution is a
+decision for the outbound stage. `scripts/merge-duplicate-accounts.mjs` is the
+one-off cleanup for the duplicated first seed, dry run by default.
+
 ## A note on this build
 
 The code in this repository was written and verified to load in a clean
