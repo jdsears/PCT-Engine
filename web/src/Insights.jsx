@@ -1,17 +1,5 @@
 import { useState, useEffect } from 'react';
-
-// Friendly labels for the line and application keys the answer layer detects.
-const LINE_LABELS = {
-  marwin: 'Marwin', steriflow: 'Steriflow', steriflow_fb: 'Steriflow F&B',
-  jordan: 'Jordan', low_flow: 'Low flow', hexvalve: 'Hex Valve',
-  bestobell_steam: 'Bestobell', equilibar: 'Equilibar', data_centre: 'Data centre',
-  general: 'General',
-};
-const lineLabel = k =>
-  LINE_LABELS[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') : 'General');
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const fmtDay = dt => `${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()]}`;
+import { lineLabel, fmtDay } from './labels.js';
 
 // A grounded answer cites a source; a decline cites none. We never log who asked,
 // so the "when" on a gap is the only time we surface, and only ever relative.
@@ -26,8 +14,7 @@ function fmtWhen(ts) {
 }
 
 // Zero-fill the daily counts to thirty points so the sparkline always reads as a
-// month, not a jagged few. Maps counts across the baseline (4..316) of the 320x56
-// viewBox, with the most recent day carrying the marker dot.
+// month. Geometry matches the design: x from 4 to 316, baseline y 49, rise 38.
 function buildSpark(daily) {
   const map = new Map((daily || []).map(d => [d.day, d.n]));
   const today = new Date();
@@ -37,10 +24,9 @@ function buildSpark(daily) {
     series.push({ dt, n: map.get(dt.toISOString().slice(0, 10)) || 0 });
   }
   const max = Math.max(1, ...series.map(d => d.n));
-  const X0 = 4, X1 = 316, YB = 50, YT = 6;
   const pts = series.map((d, i) => [
-    X0 + (X1 - X0) * (i / (series.length - 1)),
-    YB - (d.n / max) * (YB - YT),
+    4 + i * (312 / (series.length - 1)),
+    49 - (d.n / max) * 38,
   ]);
   const last = pts[pts.length - 1];
   return {
@@ -53,8 +39,8 @@ function buildSpark(daily) {
 function Head({ children }) {
   return (
     <div className="ins-head">
-      <div className="ins-eyebrow">{children}</div>
-      <div className="ins-rule" />
+      <div className="eyebrow">{children}</div>
+      <div className="rule" />
     </div>
   );
 }
@@ -76,10 +62,10 @@ export default function Insights() {
   }, []);
 
   if (state === 'loading') {
-    return <div className="insights"><div className="insights-inner"><p className="ins-note">Loading insights.</p></div></div>;
+    return <div className="content-pad"><p className="muted-note">Loading insights.</p></div>;
   }
   if (state === 'error') {
-    return <div className="insights"><div className="insights-inner"><p className="ins-note">Insights are not available right now.</p></div></div>;
+    return <div className="content-pad"><p className="muted-note">Insights are not available right now.</p></div>;
   }
 
   const { summary, gaps, docs } = data;
@@ -108,9 +94,9 @@ export default function Insights() {
   const cMax = Math.max(1, ...docRows.map(d => d.count));
 
   return (
-    <div className="insights">
-      <div className="insights-inner">
-        {young && <p className="ins-note">Early days. These build as the team uses the co-pilot.</p>}
+    <div className="content-pad">
+      <div className="insights-col">
+        {young && <p className="muted-note">Early days. These build as the team uses the co-pilot.</p>}
 
         {/* Reading cards */}
         <div className="ins-section ins-section--cards">
@@ -119,14 +105,14 @@ export default function Insights() {
             <div className="ins-card ins-card--spark">
               <div className="ins-card-figure">
                 <div className="ins-hero">{questions}</div>
-                <div className="ins-cap">Questions asked</div>
+                <div className="eyebrow">Questions asked</div>
               </div>
               <div className="ins-spark">
                 <svg viewBox="0 0 320 56" className="ins-spark-svg" aria-hidden="true">
-                  <line x1="4" y1="50" x2="316" y2="50" stroke="var(--ins-line)" strokeWidth="1" />
-                  <polyline points={spark.points} fill="none" stroke="var(--pct-dark)" strokeWidth="1.5"
+                  <line x1="4" y1="50" x2="316" y2="50" stroke="var(--line)" strokeWidth="1" />
+                  <polyline points={spark.points} fill="none" stroke="var(--navy)" strokeWidth="1.5"
                     vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-                  <circle cx={spark.cx} cy={spark.cy} r="3" fill="var(--ins-blue)" />
+                  <circle cx={spark.cx} cy={spark.cy} r="3" fill="var(--blue)" />
                 </svg>
                 <div className="ins-spark-dates"><span>{spark.left}</span><span>{spark.right}</span></div>
               </div>
@@ -134,7 +120,7 @@ export default function Insights() {
 
             <div className="ins-card ins-card--rate">
               <div className="ins-hero">{rateLabel}</div>
-              <div className="ins-cap">Answer rate</div>
+              <div className="eyebrow">Answer rate</div>
               <div className="ins-gauge" aria-hidden="true">
                 <div className="ins-gauge-rail" />
                 <div className="ins-gauge-teal" style={{ width: `${rate}%` }} />
@@ -142,12 +128,12 @@ export default function Insights() {
                 <div className="ins-gauge-tick" style={{ left: `${rate}%` }} />
               </div>
               <div className="ins-scale"><span>0</span><span>100</span></div>
-              <div className="ins-legend"><span className="ins-legend-sw" />Declined {declined}</div>
+              <div className="ins-legend"><span className="ins-legend-sw" />Declined {declPct}%</div>
             </div>
 
             <div className="ins-card ins-card--reply">
               <div className="ins-hero">{typical}</div>
-              <div className="ins-cap">Typical reply</div>
+              <div className="eyebrow">Typical reply</div>
             </div>
           </div>
         </div>
@@ -159,7 +145,7 @@ export default function Insights() {
             {demand.map((d, i) => (
               <div className="ins-bar" key={i}>
                 <div className="ins-bar-label">{d.label}</div>
-                <div className="ins-bar-track"><span className="ins-bar-fill" style={{ width: `${(d.count / dMax) * 100}%` }} /></div>
+                <div className="ins-bar-track"><span className="ins-bar-fill" style={{ width: `${Math.round((d.count / dMax) * 100)}%` }} /></div>
                 <div className="ins-bar-count">{d.count}</div>
               </div>
             ))}
@@ -174,8 +160,7 @@ export default function Insights() {
               <div className="ins-gap" key={i}>
                 <span className="ins-gap-tick" />
                 <div className="ins-gap-q">
-                  &#8220;{g.q}&#8221;
-                  {g.times > 1 && <span className="ins-gap-times">&#215;{g.times}</span>}
+                  &#8220;{g.q}&#8221; <span className="ins-gap-times">&#215;{g.times}</span>
                 </div>
                 {g.when && <span className="ins-gap-when">{g.when}</span>}
               </div>
@@ -191,7 +176,7 @@ export default function Insights() {
             {docRows.map((d, i) => (
               <div className="ins-bar" key={i}>
                 <div className="ins-bar-label ins-bar-label--doc">{d.label}</div>
-                <div className="ins-bar-track"><span className="ins-bar-fill" style={{ width: `${(d.count / cMax) * 100}%` }} /></div>
+                <div className="ins-bar-track"><span className="ins-bar-fill" style={{ width: `${Math.round((d.count / cMax) * 100)}%` }} /></div>
                 <div className="ins-bar-count">{d.count}</div>
               </div>
             ))}
@@ -201,7 +186,7 @@ export default function Insights() {
         {/* Engine metrics */}
         <div className="ins-section">
           <Head>Engine metrics</Head>
-          <p className="ins-note">Reply rates, deliverability and pipeline timing arrive with the outbound stage.</p>
+          <p className="muted-note">Reply rates, deliverability and pipeline timing arrive with the outbound stage.</p>
         </div>
       </div>
     </div>
