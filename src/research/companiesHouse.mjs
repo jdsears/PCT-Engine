@@ -16,7 +16,7 @@ async function throttle() {
 
 async function chFetch(path) {
   await throttle();
-  const auth = Buffer.from(`${process.env.COMPANIES_HOUSE_API_KEY}:`).toString('base64');
+  const auth = Buffer.from(`${(process.env.COMPANIES_HOUSE_API_KEY || '').trim()}:`).toString('base64');
   const res = await fetch(`${BASE}${path}`, { headers: { Authorization: `Basic ${auth}` } });
   if (res.status === 404) return null;
   if (res.status === 429) {

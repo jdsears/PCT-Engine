@@ -14,7 +14,7 @@ async function fm(path, body) {
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.FINDYMAIL_API_KEY}`,
+      Authorization: `Bearer ${(process.env.FINDYMAIL_API_KEY || '').trim()}`,
       'content-type': 'application/json',
     },
     body: JSON.stringify(body),

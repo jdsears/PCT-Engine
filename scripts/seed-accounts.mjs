@@ -132,25 +132,31 @@ for (const cand of byName.values()) {
   if (!entry.reason) entry.reason = 'sector presence, no recent news found';
   entry.region = regionForPostcode(entry.postcode);
 
-  // Upsert: match on CH number when we have one, otherwise on normalised name.
+  // Reconcile so re-runs are idempotent, including when a previously unmatched
+  // account now matches: find by CH number, else by name, update it; else insert.
+  let existingId = null;
   if (entry.chNumber) {
+    const { rows } = await pool.query(`SELECT id FROM companies WHERE ch_number = $1`, [entry.chNumber]);
+    existingId = rows[0]?.id ?? null;
+  }
+  if (!existingId) {
+    const { rows } = await pool.query(`SELECT id FROM companies WHERE lower(name) = lower($1)`, [entry.name]);
+    existingId = rows[0]?.id ?? null;
+  }
+  if (existingId) {
+    await pool.query(
+      `UPDATE companies SET named_account = true, company_type = $2,
+         ch_number = COALESCE($3, ch_number),
+         region = COALESCE(region, $4), postcode = COALESCE(postcode, $5), updated_at = now()
+       WHERE id = $1`,
+      [existingId, entry.type, entry.chNumber, entry.region, entry.postcode]);
+  } else {
     await pool.query(
       `INSERT INTO companies (name, ch_number, company_type, region, postcode, named_account, source)
-       VALUES ($1, $2, $3, $4, $5, true, 'seed_research')
-       ON CONFLICT (ch_number) DO UPDATE SET named_account = true, company_type = EXCLUDED.company_type,
-         region = COALESCE(companies.region, EXCLUDED.region), postcode = COALESCE(companies.postcode, EXCLUDED.postcode), updated_at = now()`,
+       VALUES ($1, $2, $3, $4, $5, true, 'seed_research')`,
       [entry.name, entry.chNumber, entry.type, entry.region, entry.postcode]);
-    try { await companyProfile(entry.chNumber); } catch { /* cache is best effort */ }
-  } else {
-    const { rows: existing } = await pool.query(`SELECT id FROM companies WHERE lower(name) = lower($1)`, [entry.name]);
-    if (existing[0]) {
-      await pool.query(`UPDATE companies SET named_account = true, company_type = $2, updated_at = now() WHERE id = $1`, [existing[0].id, entry.type]);
-    } else {
-      await pool.query(
-        `INSERT INTO companies (name, company_type, named_account, source) VALUES ($1, $2, true, 'seed_research')`,
-        [entry.name, entry.type]);
-    }
   }
+  if (entry.chNumber) { try { await companyProfile(entry.chNumber); } catch { /* cache is best effort */ } }
   rows.push(entry);
   console.log(`  ${entry.chNumber ? 'matched ' : 'unmatched'} ${entry.name}`);
 }

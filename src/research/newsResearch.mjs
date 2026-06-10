@@ -18,7 +18,7 @@ async function tavily(query, { days = 14, maxResults = 8 } = {}) {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      api_key: process.env.TAVILY_API_KEY,
+      api_key: (process.env.TAVILY_API_KEY || '').trim(),
       query,
       topic: 'news',
       days,
