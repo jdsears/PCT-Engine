@@ -214,7 +214,10 @@ Contact discovery does not depend on LinkedIn. The research run resolves each
 named account's official web domain (`src/research/domains.mjs`, conservative,
 null rather than a guess) and pulls current directors from the public register
 into `contacts` with provenance (`src/research/officerContacts.mjs`), skipping
-secretaries and corporate officers and marking the decision orbit. Findymail
+secretaries and corporate officers. A register director counts in the decision
+orbit only when the stated occupation names a specifier role, the same title
+test (`src/research/orbitRules.mjs`) the LinkedIn lane uses, so a board with no
+stated trades does not inflate the count. Findymail
 is never called automatically; spending credits on email resolution is a
 decision for the outbound stage. `scripts/merge-duplicate-accounts.mjs` is the
 one-off cleanup for the duplicated first seed, dry run by default.
@@ -258,6 +261,9 @@ that only names the company is not a title, so it yields no write). Searches
 use first and last name and the core company name, not the register strings;
 when a name matches but the row does not prove the employer, the lane spends
 one more call on the profile, so a director costs at most two Unipile calls.
+The people search is scoped to the UK (`LINKEDIN_COUNTRY`, default uk): it
+over-fetches, drops results that name another country, and keeps UK and
+unstated locations, so a hyperscaler's worldwide staff do not crowd the batch.
 Rows
 enriched in the last thirty days are never overwritten. Findymail email
 discovery inside the run requires `EMAIL_DISCOVERY=on` and stays off until
