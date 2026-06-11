@@ -114,30 +114,41 @@ async function getProfile(identifier) {
   });
 }
 
-// Returns { evidence, title } for a candidate, fetching the profile when the
-// search row alone cannot prove the employer. A failure to fetch is treated
-// as no evidence: the row stays untouched rather than guessed at.
+// A written title must read like a job title, not the company name. Heidi
+// Durrant's headline is just "Ada Infrastructure"; writing that as her role
+// is the wrong-title-on-a-real-name failure, worse than leaving the blank.
+function looksLikeTitle(title, companyName) {
+  const t = String(title || '').trim();
+  if (t.length < 3) return false;
+  const titleCore = coreTokens(t);
+  if (!titleCore.length) return false;
+  const compCore = new Set(coreTokens(companyName));
+  return !titleCore.every(tok => compCore.has(tok)); // all-company-words is not a title
+}
+
+// Returns { evidence, title } for a candidate. Evidence requires the employer
+// to be proven and a real job title to exist, from the search row or, failing
+// that, one profile fetch of the person's positions. A headline that only
+// names the company is not a title and yields no write. A failed fetch is no
+// evidence: the row stays as register data rather than a guess.
 async function verifyEmployer(companyName, candidate) {
-  const searchText = [candidate.title, candidate.positionCompany].filter(Boolean).join(' | ');
-  if (companyEvidence(companyName, searchText)) {
+  const rowText = [candidate.title, candidate.positionCompany].filter(Boolean).join(' | ');
+  if (companyEvidence(companyName, rowText) && looksLikeTitle(candidate.title, companyName)) {
     return { evidence: true, title: candidate.title };
   }
   const identifier = candidate.providerId || candidate.publicIdentifier;
-  if (!identifier) return { evidence: false, title: candidate.title };
+  if (!identifier) return { evidence: false, title: null };
   let profile = null;
   try { profile = await getProfile(identifier); }
   catch (e) {
     if (e instanceof CapReached || e instanceof AccountUnhealthy) throw e;
-    return { evidence: false, title: candidate.title };
+    return { evidence: false, title: null };
   }
-  const positions = profilePositions(profile);
-  const evidenced = positions.filter(po => companyEvidence(companyName, po.company || ''));
-  if (evidenced.length) {
-    const current = evidenced.find(po => po.current) || evidenced[0];
-    return { evidence: true, title: current.title || profile?.headline || candidate.title };
-  }
-  const wholeProfile = [profile?.headline, ...positions.map(po => po.company)].filter(Boolean).join(' | ');
-  return { evidence: companyEvidence(companyName, wholeProfile), title: profile?.headline || candidate.title };
+  // A position at this company that also carries a real title, current first.
+  const atCompany = profilePositions(profile).filter(po => companyEvidence(companyName, po.company || ''));
+  const match = atCompany.find(po => po.current && looksLikeTitle(po.title, companyName))
+    || atCompany.find(po => looksLikeTitle(po.title, companyName));
+  return match ? { evidence: true, title: match.title } : { evidence: false, title: null };
 }
 
 async function searchPeople(keywords, limit, target) {
@@ -208,9 +219,12 @@ export async function findContacts(company, optsOrRoles = {}) {
   const out = { available: true, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0 };
   for (const c of found.slice(0, limit)) {
     if (!c.url) { out.skipped++; continue; }
-    const outcome = await upsertLinkedinContact(company.id, c);
+    // Drop a headline that is only the company name, so we never store it as a
+    // role; the row keeps whatever real title it already had.
+    const cleaned = { ...c, title: looksLikeTitle(c.title, company.name) ? c.title : null };
+    const outcome = await upsertLinkedinContact(company.id, cleaned);
     out[outcome]++;
-    out.contacts.push({ ...c, outcome, orbit: inOrbit(c.title) });
+    out.contacts.push({ ...cleaned, outcome, orbit: inOrbit(cleaned.title) });
   }
   return out;
 }

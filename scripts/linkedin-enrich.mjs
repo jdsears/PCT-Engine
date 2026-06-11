@@ -47,7 +47,7 @@ const orbitCount = async () => (await pool.query(
 const orbitBefore = await orbitCount();
 const report = {
   touched: 0, enriched: 0, leftBlank: 0, ambiguous: 0,
-  newContacts: 0, updated: 0, kept: 0, examples: [], stoppedEarly: null,
+  newContacts: 0, updated: 0, kept: 0, examples: [], found: [], stoppedEarly: null,
   emailsResolved: 0,
 };
 
@@ -62,19 +62,23 @@ for (const co of companies) {
      ORDER BY full_name`, [co.id]);
 
   if (!apply) {
-    console.log(`  would search ${pending.length} register director${pending.length === 1 ? '' : 's'} by name${pending.length ? ': ' + pending.map(p => p.full_name).join(', ') : ''}`);
-    console.log(`  would then run one people search: "${co.name}" with the orbit keywords (${ORBIT_TITLES.slice(0, 4).join(', ')}, ...), limit 5`);
+    console.log(`  would run one people search: "${co.name}" for the specifier roles (${ORBIT_TITLES.slice(0, 4).join(', ')}, ...), limit 5`);
+    console.log(`  would then enrich ${pending.length} register director${pending.length === 1 ? '' : 's'} by name${pending.length ? ': ' + pending.map(p => p.full_name).join(', ') : ''}`);
     continue;
   }
 
   try {
-    const d = await enrichDirectors(co);
+    // People search first: the decision-makers for flow instrumentation are
+    // the design and project engineers on the build, not the statutory
+    // directors. Directors are enriched second, opportunistically.
     const f = await findContacts(co, { limit: 5 });
+    const d = await enrichDirectors(co);
     report.touched++;
     report.enriched += d.enriched; report.leftBlank += d.left; report.ambiguous += d.ambiguous;
     report.examples.push(...d.examples);
     report.newContacts += f.created || 0; report.updated += f.updated || 0; report.kept += f.kept || 0;
-    console.log(`  directors: ${d.enriched} enriched, ${d.left} left as register data. People search: ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh.`);
+    report.found.push(...(f.contacts || []).filter(c => c.outcome === 'created'));
+    console.log(`  people search: ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh. Directors: ${d.enriched} enriched, ${d.left} left as register data.`);
 
     if (emailDiscovery && co.domain) {
       const { rows: orbit } = await pool.query(
@@ -105,8 +109,17 @@ if (apply) {
   console.log(`Directors enriched: ${report.enriched}   Left as register data: ${report.leftBlank}   Ambiguous, skipped: ${report.ambiguous}`);
   console.log(`People search contacts: ${report.newContacts} new, ${report.updated} updated, ${report.kept} kept fresh`);
   console.log(`Decision orbit: ${orbitBefore} before, ${orbitAfter} after`);
-  for (const ex of report.examples.slice(0, 5)) {
-    console.log(`  ${ex.name}: "${ex.oldRole || 'no title'}" -> "${ex.newTitle}" (orbit: ${ex.orbit === null ? 'unknown' : ex.orbit})`);
+  if (report.found.length) {
+    console.log('New contacts from the people search (the specifiers):');
+    for (const c of report.found.slice(0, 6)) {
+      console.log(`  ${c.name} - ${c.title || 'no title given'} (orbit: ${c.orbit === null ? 'unknown' : c.orbit})`);
+    }
+  }
+  if (report.examples.length) {
+    console.log('Directors enriched with a real title:');
+    for (const ex of report.examples.slice(0, 5)) {
+      console.log(`  ${ex.name}: "${ex.oldRole || 'no title'}" -> "${ex.newTitle}" (orbit: ${ex.orbit === null ? 'unknown' : ex.orbit})`);
+    }
   }
 }
 if (used != null) console.log(`Unipile calls used today: ${used} of ${dailyCap()} (UTC day)`);
