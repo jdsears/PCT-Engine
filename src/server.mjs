@@ -167,28 +167,95 @@ app.get('/api/insights/top-docs', async (req, res) => {
 const regionName = code => (code && REGIONS[code]?.name) || code || null;
 
 const STAGES = ['sourced', 'researched', 'outbound', 'replied', 'qualified', 'handed_off'];
+// Sort keys are whitelisted to SQL expressions; nothing from the query string
+// reaches the statement text except through this map.
+const LEAD_SORTS = {
+  score: 'l.score',
+  company: 'co.name',
+  region: 'COALESCE(l.region, co.region)',
+};
+const LEAD_LIMITS = [10, 20, 50, 100];
+
 app.get('/api/pipeline', async (req, res) => {
   try {
     const stage = STAGES.includes(req.query.stage) ? req.query.stage : 'researched';
+    const limit = LEAD_LIMITS.includes(parseInt(req.query.limit, 10)) ? parseInt(req.query.limit, 10) : 10;
+    const sort = LEAD_SORTS[req.query.sort] ? req.query.sort : 'score';
+    const dir = req.query.dir === 'asc' ? 'ASC' : 'DESC';
+    const q = String(req.query.q || '').trim();
+
     const counts = await pool.query(
       `SELECT stage, count(*)::int AS n FROM leads WHERE stage = ANY($1) GROUP BY stage`, [STAGES]);
     const byStage = Object.fromEntries(counts.rows.map(r => [r.stage, r.n]));
+
+    // The track keeps the unfiltered funnel counts; total is the match count for
+    // the list, so "Showing x of n" stays honest under a search.
+    const where = `l.stage = $1 AND ($2 = '' OR co.name ILIKE '%' || $2 || '%' OR ct.full_name ILIKE '%' || $2 || '%')`;
+    const total = await pool.query(
+      `SELECT count(*)::int AS n
+       FROM leads l JOIN companies co ON co.id = l.company_id
+       LEFT JOIN contacts ct ON ct.id = l.contact_id WHERE ${where}`, [stage, q]);
     const { rows } = await pool.query(
       `SELECT co.name AS company, l.score, COALESCE(l.region, co.region) AS region,
               ct.full_name, ct.role_title
        FROM leads l JOIN companies co ON co.id = l.company_id
        LEFT JOIN contacts ct ON ct.id = l.contact_id
-       WHERE l.stage = $1 ORDER BY l.score DESC NULLS LAST, co.name LIMIT 8`, [stage]);
+       WHERE ${where}
+       ORDER BY ${LEAD_SORTS[sort]} ${dir} NULLS LAST, co.name ASC LIMIT $3`, [stage, q, limit]);
     res.json({
-      stage,
+      stage, limit, sort, dir: dir.toLowerCase(), q,
       stages: STAGES.map(s => ({ stage: s, count: byStage[s] || 0 })),
-      total: byStage[stage] || 0,
+      total: total.rows[0].n,
       leads: rows.map(l => ({
         company: l.company,
         contact: l.full_name ? `${l.full_name}${l.role_title ? ', ' + l.role_title : ''}` : null,
         region: regionName(l.region),
         score: l.score == null ? null : Math.round(Number(l.score)),
       })),
+    });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Read-only analytics over the live funnel: regions, score spread, coverage and
+// signal momentum across the active stages.
+app.get('/api/pipeline/analytics', async (_req, res) => {
+  try {
+    const [regions, scores, coverage, momentum] = await Promise.all([
+      pool.query(
+        `SELECT COALESCE(l.region, co.region) AS region, count(*)::int AS n
+         FROM leads l JOIN companies co ON co.id = l.company_id
+         WHERE l.stage = ANY($1) GROUP BY 1 ORDER BY n DESC`, [STAGES]),
+      pool.query(
+        `SELECT count(*) FILTER (WHERE score >= 70)::int AS strong,
+                count(*) FILTER (WHERE score >= 40 AND score < 70)::int AS middle,
+                count(*) FILTER (WHERE score < 40)::int AS weak,
+                count(*) FILTER (WHERE score IS NULL)::int AS unscored,
+                round(percentile_cont(0.5) WITHIN GROUP (ORDER BY score))::int AS median,
+                count(*)::int AS total
+         FROM leads WHERE stage = ANY($1)`, [STAGES]),
+      pool.query(
+        `SELECT count(*)::int AS leads,
+                count(*) FILTER (WHERE EXISTS (
+                  SELECT 1 FROM contacts ct
+                  WHERE ct.company_id = l.company_id AND ct.source = 'ch_officers' AND NOT ct.suppressed
+                ))::int AS with_contact,
+                count(*) FILTER (WHERE co.domain IS NOT NULL)::int AS with_domain
+         FROM leads l JOIN companies co ON co.id = l.company_id
+         WHERE l.stage = ANY($1)`, [STAGES]),
+      pool.query(
+        `SELECT count(*)::int AS n FROM signals s
+         WHERE s.observed_at >= now() - interval '30 days'
+           AND s.company_id IN (SELECT company_id FROM leads WHERE stage = ANY($1))`, [STAGES]),
+    ]);
+    res.json({
+      regions: regions.rows.map(r => ({ region: regionName(r.region) || 'Unassigned', n: r.n })),
+      scores: scores.rows[0],
+      coverage: {
+        leads: coverage.rows[0].leads,
+        withContact: coverage.rows[0].with_contact,
+        withDomain: coverage.rows[0].with_domain,
+      },
+      signals30: momentum.rows[0].n,
     });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });

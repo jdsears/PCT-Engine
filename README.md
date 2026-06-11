@@ -243,7 +243,10 @@ bottom tab bar on mobile, and seven sections that each read live data.
   and answer-rate gauge, demand by line, knowledge gaps, most cited documents,
   and a young-log line while the log is small.
 - Pipeline shows the funnel stages with live counts and the leads at each
-  stage, with the qualification gate marked on the track.
+  stage, with the qualification gate marked on the track. The list searches
+  companies and contacts, sorts by score, company or region, and shows 10 to
+  100 rows. Analytics beneath cover the median score, register-contact and
+  domain coverage, signal momentum, leads by region, and the score spread.
 - Accounts lists the named accounts with ICP scores, domains and Companies
   House matches, amber-flagged where either is missing. The detail panel holds
   the explainable score breakdown, recent signals, and register directors.
@@ -256,7 +259,8 @@ bottom tab bar on mobile, and seven sections that each read live data.
 - The access gate is the shared-key sign in. It shows on a 401 and up front
   for an unauthed visitor, and the sidebar button opens it any time.
 
-Six read-only endpoints feed the research sections: `/api/pipeline`,
+Seven read-only endpoints feed the research sections: `/api/pipeline`,
+`/api/pipeline/analytics`,
 `/api/accounts`, `/api/accounts/:id`, `/api/signals`, `/api/outbound/status`
 and `/api/health/cards`. Like `/ask`, `/search` and the insights endpoints,
 they sit behind the access gate.
