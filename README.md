@@ -186,8 +186,9 @@ table for the outbound stage to draw from. Migration 003 adds `companies`,
 - `src/research/icp.mjs` scores companies against the Marwin DC campaign ICP.
   Thresholds and weights are drafts for James and Andy, and every score stores
   an explainable breakdown.
-- `src/research/linkedinResearch.mjs` is the socket for the Sales Navigator
-  lane via Unipile. It reports unavailable until the accounts are live.
+- `src/research/linkedinResearch.mjs` is the Sales Navigator lane via Unipile,
+  described in its own section below. The research run never calls it; the
+  lane has its own orchestrator and daily cap.
 
 Two commands, both needing `DATABASE_URL` plus the research keys:
 
@@ -209,6 +210,48 @@ secretaries and corporate officers and marking the decision orbit. Findymail
 is never called automatically; spending credits on email resolution is a
 decision for the outbound stage. `scripts/merge-duplicate-accounts.mjs` is the
 one-off cleanup for the duplicated first seed, dry run by default.
+
+## LinkedIn research lane
+
+Sales Navigator through Unipile, reading through James's account. Research
+only, permanently: the lane discovers and enriches contacts and writes to our
+own `contacts` table. It contains no messaging, no connection requests, no
+posting and no profile edits, and the client (`src/research/unipile.mjs`)
+exposes no write-capable route. The build environment cannot reach the Unipile
+docs site, so the routes are centralised in that client's `ROUTES` map and
+`scripts/unipile-check.mjs` verifies them against the live API first.
+
+Rate discipline is structural: calls are sequential with a randomised 4 to 9
+second pause, every call is logged to `unipile_calls` (migration 006), and the
+same ledger enforces `LINKEDIN_DAILY_CAP` per UTC day. Any account-health error
+from Unipile stops the run immediately, no retry.
+
+Setting up:
+
+1. Set `UNIPILE_DSN` and `UNIPILE_API_KEY`, then run
+   `node --env-file=.env scripts/unipile-check.mjs`. It diagnoses key versus
+   DSN, reports the LinkedIn account's health, prints the `account_id` to set
+   as `UNIPILE_ACCOUNT_ID`, and confirms Sales Navigator with one minimal
+   search.
+2. `node --env-file=.env scripts/linkedin-enrich.mjs` is a dry run: it prints
+   what it would search and write, calling nothing. `--apply` does the work,
+   `--company "Name"` scopes to one account, `--limit` sets companies per run
+   (default 5, deliberately small).
+
+Per company it enriches the register directors first (a write needs exactly
+one confident match: surname and first name agreement plus company evidence in
+the title, since a wrong title on a real register name is worse than a blank),
+then one people search keyed on the orbit titles in
+`src/research/orbitRules.mjs`, which is plain data for Andy to refine. Rows
+enriched in the last thirty days are never overwritten. Findymail email
+discovery inside the run requires `EMAIL_DISCOVERY=on` and stays off until
+Andy's curated pack is applied.
+
+The ICP contactability component is staged as a draft alongside this lane:
+`ICP_CONTACTABILITY=on` rebalances the weights (named account 20, type fit 20,
+signals 30, CH health 20, contactability 10) so reachable accounts score
+higher. It stays off until James and Andy approve; the curation pack prints
+the proposal.
 
 ## Usage logging and insights
 

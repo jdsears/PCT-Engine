@@ -304,9 +304,12 @@ app.get('/api/accounts/:id', async (req, res) => {
     res.json({
       id: c.id, name: c.name, type: c.company_type, region: regionName(c.region),
       domain: c.domain, chNumber: c.ch_number, score: c.score,
-      icp: ICP_ROWS.map(([key, label, max]) => ({
-        label, max, points: bd[key]?.points ?? null, reason: bd[key]?.reason ?? null,
-      })),
+      // Stored breakdowns carry their own max per component, so rows scored
+      // under the contactability draft display against the right caps.
+      icp: [...ICP_ROWS, ...(bd.contactability ? [['contactability', 'Contactability', 10]] : [])]
+        .map(([key, label, max]) => ({
+          label, max: bd[key]?.max ?? max, points: bd[key]?.points ?? null, reason: bd[key]?.reason ?? null,
+        })),
       recentSignals: sigs.rows.map(s => ({ title: s.title, type: s.signal_type, observedAt: s.observed_at })),
       directors: dirs.rows.map(d => ({ name: d.full_name, appointed: d.appointed })),
     });

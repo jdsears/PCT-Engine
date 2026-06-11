@@ -1,8 +1,7 @@
 import { pool } from '../src/db.mjs';
 import { pollCompaniesHouse } from '../src/research/companiesHouse.mjs';
 import { dcSignalSweep } from '../src/research/newsResearch.mjs';
-import { scoreCompany } from '../src/research/icp.mjs';
-import { findContacts } from '../src/research/linkedinResearch.mjs';
+import { scoreCompany, CONTACTABILITY_DRAFT } from '../src/research/icp.mjs';
 import { getCreditsSpent } from '../src/research/findymail.mjs';
 import { regionForPostcode } from '../src/research/region.mjs';
 import { resolveDomain } from '../src/research/domains.mjs';
@@ -34,7 +33,12 @@ const { rows: targets } = await pool.query(
 const report = { scored: 0, leadsCreated: 0, leadsUpdated: 0, domains: 0, officersAdded: 0, officersUpdated: 0, inOrbit: 0, skipped: [] };
 for (const co of targets) {
   const { rows: signals } = await pool.query(`SELECT * FROM signals WHERE company_id = $1`, [co.id]);
-  const { score, breakdown } = scoreCompany(co, signals);
+  // Contact rows feed the contactability draft; while the draft is off the
+  // scorer ignores them, so skip the query and keep the run identical.
+  const contacts = CONTACTABILITY_DRAFT.enabled()
+    ? (await pool.query(`SELECT in_decision_orbit, email_verified_at, suppressed FROM contacts WHERE company_id = $1`, [co.id])).rows
+    : null;
+  const { score, breakdown } = scoreCompany(co, signals, contacts);
 
   // The cached Companies House profile often carries the registered postcode
   // when the search snippet did not, so backfill before assigning a region.
@@ -66,8 +70,9 @@ for (const co of targets) {
     }
   }
 
-  // LinkedIn lane socket: a no-op until the Unipile accounts are live.
-  await findContacts(co, ['specifier', 'M&E lead', 'procurement']);
+  // The LinkedIn lane runs separately through scripts/linkedin-enrich.mjs,
+  // with its own daily cap and deliberately small batches. The research run
+  // never spends Unipile calls.
 
   if (score < LEAD_THRESHOLD) { report.skipped.push(`${co.name}: score ${score} below ${LEAD_THRESHOLD}`); continue; }
 

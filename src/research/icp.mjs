@@ -29,6 +29,27 @@ export const SIGNAL_RECENCY_TIERS = [
   { withinDays: Infinity, points: 8, label: 'older than 180 days' },
 ];
 
+// Draft contactability component, staged for James and Andy to approve. Off
+// until ICP_CONTACTABILITY=on. When on, named account and type fit each give
+// up five points to make room, and a company earns up to ten for being
+// reachable: a decision-orbit contact on file, more with a verified email.
+// Switching it on re-scores cleanly on the next research run.
+export const CONTACTABILITY_DRAFT = {
+  enabled: () => (process.env.ICP_CONTACTABILITY || 'off') === 'on',
+  weights: { namedAccount: 20, typeFit: 20, signals: 30, chHealth: 20, contactability: 10 },
+  points: { orbitContact: 5, verifiedEmail: 5 },
+};
+
+function contactabilityPoints(contacts) {
+  const orbit = (contacts || []).filter(c => c.in_decision_orbit && !c.suppressed);
+  if (!orbit.length) return { points: 0, reason: 'no decision-orbit contact on file' };
+  const verified = orbit.some(c => c.email_verified_at);
+  return {
+    points: CONTACTABILITY_DRAFT.points.orbitContact + (verified ? CONTACTABILITY_DRAFT.points.verifiedEmail : 0),
+    reason: verified ? 'decision-orbit contact with a verified email' : 'decision-orbit contact on file, no verified email yet',
+  };
+}
+
 const DC_SIGNAL_TYPES = new Set(['news_dc_build', 'news_contract', 'planning']);
 
 function signalPoints(signals) {
@@ -49,24 +70,31 @@ function chHealthPoints(company) {
 }
 
 // Returns { score: 0..100, breakdown }. Pure, so it is easy to test; the
-// orchestrator persists the result onto the companies row.
-export function scoreCompany(company, signals) {
+// orchestrator persists the result onto the companies row. Each component
+// stores the cap it was scored against, so the display can never misreport a
+// row scored under different weights. The optional contacts argument feeds
+// the contactability draft and is ignored while the draft is off.
+export function scoreCompany(company, signals, contacts = null) {
+  const draft = CONTACTABILITY_DRAFT.enabled();
+  const W = draft ? CONTACTABILITY_DRAFT.weights : WEIGHTS;
   const breakdown = {};
 
   breakdown.named_account = company.named_account
-    ? { points: WEIGHTS.namedAccount, reason: 'on the named account list' }
-    : { points: 0, reason: 'not a named account' };
+    ? { points: W.namedAccount, max: W.namedAccount, reason: 'on the named account list' }
+    : { points: 0, max: W.namedAccount, reason: 'not a named account' };
 
   breakdown.company_type = ICP_CONFIG.companyTypes.includes(company.company_type)
-    ? { points: WEIGHTS.typeFit, reason: `type ${company.company_type} fits the campaign` }
-    : { points: 0, reason: `type ${company.company_type || 'unknown'} outside the campaign types` };
+    ? { points: W.typeFit, max: W.typeFit, reason: `type ${company.company_type} fits the campaign` }
+    : { points: 0, max: W.typeFit, reason: `type ${company.company_type || 'unknown'} outside the campaign types` };
 
-  breakdown.signals = signalPoints(signals);
-  breakdown.ch_health = chHealthPoints(company);
+  breakdown.signals = { ...signalPoints(signals), max: W.signals };
+  breakdown.ch_health = { ...chHealthPoints(company), max: W.chHealth };
+  if (draft) breakdown.contactability = { ...contactabilityPoints(contacts), max: W.contactability };
 
   const score = Math.max(0, Math.min(100,
     breakdown.named_account.points + breakdown.company_type.points +
-    breakdown.signals.points + breakdown.ch_health.points));
+    breakdown.signals.points + breakdown.ch_health.points +
+    (draft ? breakdown.contactability.points : 0)));
 
   return { score, breakdown: { ...breakdown, total: score } };
 }

@@ -1,0 +1,96 @@
+import { pool } from '../src/db.mjs';
+import {
+  unipile, ROUTES, unipileConfigured, callsUsedToday, dailyCap,
+  linkedinAccounts, accountsList, accountStatus,
+} from '../src/research/unipile.mjs';
+
+// Connectivity diagnostic for the Unipile LinkedIn lane, in the style of
+// graph-check.mjs. Read-only: it lists accounts, reports health, and makes one
+// minimal Sales Navigator search. Two Unipile calls in total, both logged and
+// counted against the daily cap. Needs DATABASE_URL plus UNIPILE_DSN and
+// UNIPILE_API_KEY in the environment.
+
+let failed = false;
+const pass = (m) => console.log('PASS ', m);
+const fail = (m) => { failed = true; console.log('FAIL ', m); };
+
+// 1. Configuration present
+if (!unipileConfigured()) {
+  fail('UNIPILE_DSN and UNIPILE_API_KEY are not both set. Add them to .env (and Railway) and re-run.');
+  process.exit(1);
+}
+pass(`configuration present, DSN ${ (process.env.UNIPILE_DSN || '').replace(/^https?:\/\//, '').split(':')[0] }`);
+
+// 2. List connected accounts. Distinguishes a bad key from a bad DSN.
+let accounts = null;
+try {
+  accounts = await unipile(ROUTES.listAccounts, { target: 'check: list accounts' });
+  pass(`accounts listed: ${accountsList(accounts).length} connected`);
+} catch (e) {
+  const msg = String(e.message || e);
+  if (/unreachable|ENOTFOUND|ECONNREFUSED|certificate|fetch failed/i.test(msg)) {
+    fail(`cannot reach the DSN. Check UNIPILE_DSN, it should look like https://apiXX.unipile.com:13XXX. (${msg.slice(0, 140)})`);
+  } else if (/401/.test(msg)) {
+    fail('the DSN answered but rejected the key (401). Check UNIPILE_API_KEY.');
+  } else if (/403/.test(msg)) {
+    fail('the DSN answered but refused access (403). The key may belong to a different Unipile workspace than this DSN.');
+  } else if (/migrate/.test(msg)) {
+    fail(msg);
+  } else {
+    fail(`accounts call failed: ${msg.slice(0, 200)}`);
+  }
+  await pool.end();
+  process.exit(1);
+}
+
+// 3. Find the LinkedIn account and report its health.
+const linked = linkedinAccounts(accounts);
+if (linked.length === 0) {
+  fail('no LinkedIn account is connected to this Unipile workspace.');
+  console.log('\nSend James this ask, it is one click:');
+  console.log('  1. Open the Unipile dashboard and choose Connect an account, LinkedIn.');
+  console.log('  2. Sign in with the James account. LinkedIn may ask for a verification code.');
+  console.log('  3. Tell John when it shows as connected, then John re-runs this check.');
+  await pool.end();
+  process.exit(1);
+}
+let healthy = null;
+for (const a of linked) {
+  const status = accountStatus(a);
+  const line = `LinkedIn account "${a.name || a.id}": provider LINKEDIN, status ${status}, account_id ${a.id}`;
+  if (status === 'OK') { pass(line); healthy = healthy || a; }
+  else {
+    fail(line);
+    if (/CREDENTIALS/i.test(status)) console.log('   The saved sign-in has expired. James reconnects from the Unipile dashboard.');
+    else if (/CHECKPOINT/i.test(status)) console.log('   LinkedIn is asking for a verification step. James opens the Unipile dashboard and completes it.');
+    else if (/CONNECTING/i.test(status)) console.log('   Still connecting. Wait a minute and re-run this check.');
+    else console.log('   See the account page in the Unipile dashboard for the exact state.');
+  }
+}
+if (!healthy) { await pool.end(); process.exit(1); }
+
+console.log(`\nSet this in Railway and .env, then the lane is live:\n  UNIPILE_ACCOUNT_ID=${healthy.id}\n`);
+
+// 4. One minimal Sales Navigator search to confirm reachability, then stop.
+try {
+  const res = await unipile(ROUTES.search, {
+    query: { account_id: healthy.id, limit: '1' },
+    body: { api: 'sales_navigator', category: 'people', keywords: '"Ark Data Centres"' },
+    target: 'check: minimal sales navigator search',
+  });
+  const items = Array.isArray(res?.items) ? res.items : [];
+  pass(`sales navigator search reachable, ${items.length} result${items.length === 1 ? '' : 's'} returned`);
+} catch (e) {
+  const msg = String(e.message || e);
+  if (/sales.?nav|premium|subscription|upsell/i.test(msg)) {
+    fail('the search endpoint answered but Sales Navigator is not active on this account. The lane needs the Sales Navigator subscription on the James account.');
+  } else {
+    fail(`sales navigator search failed: ${msg.slice(0, 200)}`);
+  }
+}
+
+const used = await callsUsedToday();
+console.log(`\nUnipile calls used today: ${used} of ${dailyCap()} (UTC day). Every call is logged in unipile_calls.`);
+console.log(failed ? 'Resolve the failures above, then re-run.' : 'All Unipile read checks passed.');
+await pool.end();
+process.exit(failed ? 1 : 0);

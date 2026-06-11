@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { pool } from '../src/db.mjs';
 import { REGIONS, REGION_BY_POSTCODE_AREA } from '../src/research/region.mjs';
-import { ICP_CONFIG, WEIGHTS, SIGNAL_RECENCY_TIERS } from '../src/research/icp.mjs';
+import { ICP_CONFIG, WEIGHTS, SIGNAL_RECENCY_TIERS, CONTACTABILITY_DRAFT } from '../src/research/icp.mjs';
 
 // Exports the curation pack: everything awaiting human sign-off, gathered into
 // one markdown file to forward. Section 1 is the named-account list for Andy,
@@ -105,7 +105,16 @@ push(`## 3. ICP thresholds and weights, for James and Andy`, ``,
   `- 40 to 69: ${b.middle}`,
   `- under 40: ${b.weak}`,
   `- not yet scored: ${b.unscored}`, ``,
-  `Leads at stage researched right now: ${leads.rows[0].n}.`, ``);
+  `Leads at stage researched right now: ${leads.rows[0].n}.`, ``,
+  `### Draft awaiting your approval: contactability`, ``,
+  `The current weights mean a clean named account scores 70 with no recent`,
+  `data centre signals, so the list barely differentiates. The proposal makes`,
+  `reachability count: named account ${CONTACTABILITY_DRAFT.weights.namedAccount}, type fit ${CONTACTABILITY_DRAFT.weights.typeFit}, signals ${CONTACTABILITY_DRAFT.weights.signals},`,
+  `Companies House health ${CONTACTABILITY_DRAFT.weights.chHealth}, contactability ${CONTACTABILITY_DRAFT.weights.contactability} (${CONTACTABILITY_DRAFT.points.orbitContact} for a decision-orbit`,
+  `contact on file, ${CONTACTABILITY_DRAFT.points.verifiedEmail} more when one has a verified email).`, ``,
+  `It is ${CONTACTABILITY_DRAFT.enabled() ? 'ON' : 'off'} right now and stays off until you both approve; switching it`,
+  `on is one setting (ICP_CONTACTABILITY=on) and every account re-scores with`,
+  `an updated breakdown on the next research run.`, ``);
 
 const out = new URL('../CURATION_PACK.md', import.meta.url).pathname;
 await writeFile(out, lines.join('\n'));
