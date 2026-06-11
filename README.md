@@ -202,6 +202,14 @@ for Andy to curate. The second polls signals, refreshes ICP scores, and
 upserts leads at stage researched; it is idempotent and safe to repeat.
 Nothing in the research stage sends mail, and the kill switch stays on.
 
+`scripts/export-curation-pack.mjs` writes `CURATION_PACK.md`, the single brief
+that goes to Andy for sign-off: the named accounts with their scores and the
+count of likely decision-makers found, the region table, the decision-orbit
+job titles, and the ICP thresholds and contactability draft for him and James.
+It reads the live database and is grounded with the current score
+distribution. Read-only, safe to re-run, and the document is regenerated each
+time so it always reflects the latest data and rules.
+
 Contact discovery does not depend on LinkedIn. The research run resolves each
 named account's official web domain (`src/research/domains.mjs`, conservative,
 null rather than a guess) and pulls current directors from the public register
