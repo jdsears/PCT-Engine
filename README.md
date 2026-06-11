@@ -238,10 +238,14 @@ Setting up:
    `--company "Name"` scopes to one account, `--limit` sets companies per run
    (default 5, deliberately small).
 
-Per company it enriches the register directors first (a write needs exactly
-one confident match: surname and first name agreement plus company evidence in
-the title, since a wrong title on a real register name is worse than a blank),
-then one people search keyed on the orbit titles in
+Per company it enriches the register directors first. A write needs exactly
+one confident match: surname and first name agreement plus verified employer
+evidence, since a wrong title on a real register name is worse than a blank.
+Searches use first and last name and the core company name, not the register
+strings; when a name matches but the headline does not prove the employer,
+the lane spends one more call on the profile and checks the work experience,
+so a director costs at most two Unipile calls. Then one people search keyed
+on the orbit titles in
 `src/research/orbitRules.mjs`, which is plain data for Andy to refine. Rows
 enriched in the last thirty days are never overwritten. Findymail email
 discovery inside the run requires `EMAIL_DISCOVERY=on` and stays off until

@@ -6,7 +6,7 @@
 // Both capabilities respect the shared limiter in unipile.mjs: sequential
 // calls, randomised delays, and the LINKEDIN_DAILY_CAP per UTC day.
 import { pool } from '../db.mjs';
-import { unipile, ROUTES, unipileConfigured } from './unipile.mjs';
+import { unipile, ROUTES, unipileConfigured, CapReached, AccountUnhealthy } from './unipile.mjs';
 import { ORBIT_TITLES, inOrbit } from './orbitRules.mjs';
 
 const accountId = () => process.env.UNIPILE_ACCOUNT_ID || '';
@@ -15,14 +15,34 @@ export const laneReady = () => unipileConfigured() && Boolean(accountId());
 // ---- matching helpers, deliberately conservative ----
 
 const COMPANY_SUFFIXES = new Set([
-  'limited', 'ltd', 'plc', 'llp', 'uk', 'group', 'holdings', 'services',
-  'international', 'operations', 'sarl', 's.a.r.l', 'emea', 'company',
+  'limited', 'ltd', 'plc', 'llp', 'uk', 'group', 'holdings',
+  'international', 'operations', 'sarl', 'emea', 'company',
 ]);
-const coreTokens = name => String(name || '')
-  .toLowerCase()
-  .replace(/[^a-z0-9& ]+/g, ' ')
-  .split(/\s+/)
-  .filter(t => t && !COMPANY_SUFFIXES.has(t));
+// Core company tokens: strip legal and regional suffixes from the end only,
+// so "Amazon Web Services EMEA SARL" becomes "amazon web services" rather
+// than a gutted token soup. Dotted abbreviations collapse first, so
+// "S.À.R.L." reads as one strippable token. People's profiles say
+// "Ada Infrastructure", never the legal entity string.
+export const coreTokens = name => {
+  const toks = String(name || '')
+    .toLowerCase()
+    .normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/[.'’]/g, '')
+    .replace(/[^a-z0-9& ]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+  while (toks.length > 1 && COMPANY_SUFFIXES.has(toks[toks.length - 1])) toks.pop();
+  return toks;
+};
+export const corePhrase = name => coreTokens(name).join(' ');
+
+// First and last name only for searching: the register stores middle names
+// and titles ("Heidi Alexa Durrant", "Jonathan, Lord Evans") that LinkedIn
+// profiles rarely carry, and a quoted full register string finds nobody.
+export function searchName(fullName) {
+  const parts = String(fullName || '').split(/[\s,]+/).filter(Boolean);
+  return parts.length >= 2 ? `${parts[0]} ${parts[parts.length - 1]}` : String(fullName || '');
+}
 
 // True when the text carries real evidence of the company: the first core
 // token plus at least one more (or all of a very short name).
@@ -60,15 +80,64 @@ function mapResult(item) {
   const title = item.headline || item.title
     || item.current_positions?.[0]?.role || item.current_positions?.[0]?.title || null;
   const positionCompany = item.current_positions?.[0]?.company
-    || item.current_positions?.[0]?.company_name || item.current_company || null;
+    || item.current_positions?.[0]?.company_name || item.current_company
+    || item.company || item.company_name || null;
   const url = item.public_profile_url || item.profile_url
     || (item.public_identifier ? `https://www.linkedin.com/in/${item.public_identifier}` : null);
   return {
     name, title, url,
     location: item.location || null,
     providerId: item.id || item.provider_id || null,
+    publicIdentifier: item.public_identifier || null,
     positionCompany,
   };
+}
+
+// Profile retrieval, used only when a search result matches on name but shows
+// no employer evidence. Headlines often omit the company ("Legal Director");
+// the profile's work experience carries it, at the cost of one more call.
+function profilePositions(p) {
+  const arrays = [p?.work_experience, p?.experience, p?.positions, p?.current_positions]
+    .filter(Array.isArray);
+  return arrays.flat().map(x => ({
+    company: x?.company || x?.company_name || x?.companyName || null,
+    title: x?.position || x?.role || x?.title || null,
+    current: x?.current ?? (x?.end == null && x?.end_date == null),
+  }));
+}
+
+async function getProfile(identifier) {
+  return unipile(ROUTES.profile, {
+    pathSuffix: identifier,
+    query: { account_id: accountId() },
+    target: `profile: ${identifier}`,
+  });
+}
+
+// Returns { evidence, title } for a candidate, fetching the profile when the
+// search row alone cannot prove the employer. A failure to fetch is treated
+// as no evidence: the row stays untouched rather than guessed at.
+async function verifyEmployer(companyName, candidate) {
+  const searchText = [candidate.title, candidate.positionCompany].filter(Boolean).join(' | ');
+  if (companyEvidence(companyName, searchText)) {
+    return { evidence: true, title: candidate.title };
+  }
+  const identifier = candidate.providerId || candidate.publicIdentifier;
+  if (!identifier) return { evidence: false, title: candidate.title };
+  let profile = null;
+  try { profile = await getProfile(identifier); }
+  catch (e) {
+    if (e instanceof CapReached || e instanceof AccountUnhealthy) throw e;
+    return { evidence: false, title: candidate.title };
+  }
+  const positions = profilePositions(profile);
+  const evidenced = positions.filter(po => companyEvidence(companyName, po.company || ''));
+  if (evidenced.length) {
+    const current = evidenced.find(po => po.current) || evidenced[0];
+    return { evidence: true, title: current.title || profile?.headline || candidate.title };
+  }
+  const wholeProfile = [profile?.headline, ...positions.map(po => po.company)].filter(Boolean).join(' | ');
+  return { evidence: companyEvidence(companyName, wholeProfile), title: profile?.headline || candidate.title };
 }
 
 async function searchPeople(keywords, limit, target) {
@@ -133,7 +202,7 @@ export async function findContacts(company, optsOrRoles = {}) {
     return { available: false, contacts: [] };
   }
   const terms = [...new Set([...roles, ...ORBIT_TITLES.slice(0, 8)])].map(t => `"${t}"`).join(' OR ');
-  const keywords = `"${company.name}" (${terms})`;
+  const keywords = `"${corePhrase(company.name)}" (${terms})`;
   const found = await searchPeople(keywords, limit, `findContacts: ${company.name}`);
 
   const out = { available: true, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0 };
@@ -162,12 +231,19 @@ export async function enrichDirectors(company) {
   const core = coreTokens(company.name).slice(0, 3).join(' ');
 
   for (const d of directors) {
-    const results = await searchPeople(`"${d.full_name}" ${core}`, 3, `enrich: ${d.full_name} at ${company.name}`);
+    const results = await searchPeople(`"${searchName(d.full_name)}" ${core}`, 3, `enrich: ${d.full_name} at ${company.name}`);
     out.searched++;
-    const confident = results.filter(r =>
-      namesMatch(d.full_name, r.name) &&
-      companyEvidence(company.name, [r.title, r.positionCompany].filter(Boolean).join(' | ')) &&
-      r.title);
+
+    // Name agreement first; then employer verification, going to the profile
+    // when the search row alone cannot prove it. Exactly one verified person
+    // may be written; two is ambiguity and none is an honest blank.
+    const named = results.filter(r => namesMatch(d.full_name, r.name));
+    const confident = [];
+    for (const r of named) {
+      const v = await verifyEmployer(company.name, r);
+      if (v.evidence && v.title) confident.push({ ...r, title: v.title });
+      if (confident.length > 1) break;
+    }
     if (confident.length !== 1) {
       if (confident.length > 1) out.ambiguous++;
       out.left++;
