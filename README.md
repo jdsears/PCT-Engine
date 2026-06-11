@@ -249,23 +249,27 @@ Setting up:
    `--company "Name"` scopes to one account, `--limit` sets companies per run
    (default 5, deliberately small).
 
-Per company it runs the people search first. The decision-maker for flow
-instrumentation is the senior or lead design engineer, the M&E or building
-services engineer specifying plant on the build, not the statutory company
-director, so the search keys on those roles. The orbit titles in
-`src/research/orbitRules.mjs` are ordered with those specifiers first and are
-plain data for Andy to refine. The register directors are enriched second and
-opportunistically: a write needs exactly one confident match, surname and
-first name agreement plus a verified employer and a real job title (a headline
-that only names the company is not a title, so it yields no write). Searches
-use first and last name and the core company name, not the register strings;
-when a name matches but the row does not prove the employer, the lane spends
-one more call on the profile, so a director costs at most two Unipile calls.
-The people search is scoped to the UK (`LINKEDIN_COUNTRY`, default uk): it
-over-fetches, drops results that name another country, and keeps UK and
+Per company it runs the people search. The decision-makers for flow
+instrumentation are the design, mechanical, building services, controls and
+HVAC engineers, the project managers, and the water and cooling specialists on
+the build, not the statutory company director, so the search keys on those
+roles. The orbit titles in `src/research/orbitRules.mjs` lead with the
+chilled-water cooling roles PCT sells into and are plain data for Andy to
+refine. The people search is scoped to the UK (`LINKEDIN_COUNTRY`, default uk):
+it over-fetches, drops results that name another country, and keeps UK and
 unstated locations, so a hyperscaler's worldwide staff do not crowd the batch.
-Rows
-enriched in the last thirty days are never overwritten. Findymail email
+
+Register-director enrichment is opt-in, behind `--directors`. The statutory
+directors are not the specifiers, and across the first runs the enrichment
+wrote nothing while consuming the daily cap, so it is off by default. With the
+flag, a write needs exactly one confident match: surname and first name
+agreement plus a verified employer and a real job title (a headline that only
+names the company is not a title, so it yields no write). Those searches use
+first and last name and the core company name, not the register strings, and
+spend one more call on the profile when the row does not prove the employer, so
+a director costs at most two Unipile calls.
+
+Rows enriched in the last thirty days are never overwritten. Findymail email
 discovery inside the run requires `EMAIL_DISCOVERY=on` and stays off until
 Andy's curated pack is applied.
 

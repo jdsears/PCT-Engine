@@ -1,20 +1,23 @@
 // Titles that put a contact in the decision orbit for the Marwin DC campaign.
 // Plain data, editable without touching logic. For Andy's refinement over time.
 //
-// The decision-maker for flow instrumentation is not the statutory company
-// director: it is the senior or lead design engineer, the M&E or building
-// services engineer, the project engineer specifying and procuring plant on
-// the build. Those roles lead the list, the design and engineering leadership
-// follow, and procurement closes it. The list is ordered on purpose: the
-// people-search keys on the first several entries.
+// The decision-maker for flow instrumentation is the engineer who specifies and
+// procures plant on the build, and the project and commissioning people who run
+// it: the design, mechanical, building services, controls and HVAC engineers,
+// the project managers, the water and cooling specialists. Not the statutory
+// company director. The list is ordered on purpose: the people-search keys on
+// the first eight, which lead with the chilled-water cooling roles PCT sells
+// into. Bare "design" is deliberately omitted, since at a hyperscaler it pulls
+// in product and UX designers.
 export const ORBIT_TITLES = [
-  // Primary: the engineers who specify and procure plant on the build.
+  // Primary, also the people-search keywords (the first eight).
   'design engineer', 'building services', 'mechanical engineer', 'mep',
-  'commissioning engineer', 'project engineer', 'mechanical design', 'm&e',
-  // Design and engineering leadership on the project.
-  'design manager', 'design director', 'head of engineering', 'engineering manager',
-  'engineering director', 'technical director', 'projects director', 'construction director',
-  // Procurement.
+  'controls', 'hvac', 'project manager', 'commissioning engineer',
+  // Further cooling, water, project and engineering roles, for classification.
+  'cooling', 'chilled water', 'water', 'mechanical design', 'project engineer',
+  'programme manager', 'program manager', 'm&e', 'design manager', 'design director',
+  'head of engineering', 'engineering manager', 'engineering director',
+  'technical director', 'projects director', 'construction director',
   'specification', 'procurement', 'category manager',
 ];
 
