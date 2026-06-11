@@ -273,6 +273,12 @@ Rows enriched in the last thirty days are never overwritten. Findymail email
 discovery inside the run requires `EMAIL_DISCOVERY=on` and stays off until
 Andy's curated pack is applied.
 
+Because discovered rows are not re-touched for thirty days, a change to the
+orbit titles does not re-classify the contacts already on file. After editing
+`orbitRules.mjs`, run `node scripts/remark-orbit.mjs` to recompute the orbit
+flag from the stored titles, dry run by default and `--apply` to write it. It
+makes no external calls, so a tuning cycle costs nothing.
+
 The ICP contactability component is staged as a draft alongside this lane:
 `ICP_CONTACTABILITY=on` rebalances the weights (named account 20, type fit 20,
 signals 30, CH health 20, contactability 10) so reachable accounts score
