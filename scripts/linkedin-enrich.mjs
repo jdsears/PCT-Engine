@@ -48,7 +48,7 @@ const orbitBefore = await orbitCount();
 const report = {
   touched: 0, enriched: 0, leftBlank: 0, ambiguous: 0,
   newContacts: 0, updated: 0, kept: 0, examples: [], found: [], stoppedEarly: null,
-  emailsResolved: 0,
+  emailsResolved: 0, potentialEmails: 0,
 };
 
 console.log(`${apply ? 'Apply run' : 'Dry run'}: ${companies.length} compan${companies.length === 1 ? 'y' : 'ies'}, email discovery ${emailDiscovery ? 'on' : 'off'}.\n`);
@@ -64,6 +64,17 @@ for (const co of companies) {
   if (!apply) {
     console.log(`  would run one people search: "${co.name}" for the specifier roles (${ORBIT_TITLES.slice(0, 4).join(', ')}, ...), limit 5`);
     console.log(`  would then enrich ${pending.length} register director${pending.length === 1 ? '' : 's'} by name${pending.length ? ': ' + pending.map(p => p.full_name).join(', ') : ''}`);
+    if (emailDiscovery) {
+      if (co.domain) {
+        const { rows: [{ n }] } = await pool.query(
+          `SELECT count(*)::int AS n FROM contacts
+           WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed AND email_verified_at IS NULL`, [co.id]);
+        report.potentialEmails += n;
+        console.log(`  would look up ${n} email${n === 1 ? '' : 's'} via Findymail, ${n} credit${n === 1 ? '' : 's'}, on the in-orbit contacts here`);
+      } else {
+        console.log(`  no domain on file, Findymail would be skipped`);
+      }
+    }
     continue;
   }
 
@@ -124,7 +135,11 @@ if (apply) {
   }
 }
 if (used != null) console.log(`Unipile calls used today: ${used} of ${dailyCap()} (UTC day)`);
-console.log(`Email discovery: ${emailDiscovery ? `on, ${report.emailsResolved} resolved, ${getCreditsSpent()} credits spent` : 'off (EMAIL_DISCOVERY=off), no Findymail credits spent'}`);
+if (!apply && emailDiscovery) {
+  console.log(`Email discovery: on, a real run would look up about ${report.potentialEmails} email(s), ${report.potentialEmails} Findymail credit(s), on the in-orbit contacts shown`);
+} else {
+  console.log(`Email discovery: ${emailDiscovery ? `on, ${report.emailsResolved} resolved, ${getCreditsSpent()} credits spent` : 'off (EMAIL_DISCOVERY=off), no Findymail credits spent'}`);
+}
 if (report.stoppedEarly) console.log(`Stopped early: ${report.stoppedEarly}`);
 console.log('Done.');
 await pool.end();
