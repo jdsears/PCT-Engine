@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { apiFetch } from './api.js';
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -16,7 +17,7 @@ export default function Chat() {
     setMessages(m => [...m, { role: 'user', text: q }]);
     setBusy(true);
     try {
-      const res = await fetch('/ask', {
+      const res = await apiFetch('/ask', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ question: q, history }),
       });

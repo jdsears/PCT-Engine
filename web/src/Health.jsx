@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { lineLabel, fmtClockDay } from './labels.js';
+import { apiFetch } from './api.js';
 
 export default function Health() {
   const [data, setData] = useState(null);
   const [state, setState] = useState('loading');
   useEffect(() => {
     let live = true;
-    fetch('/api/health/cards').then(r => r.json())
+    apiFetch('/api/health/cards').then(r => r.json())
       .then(d => { if (live) { setData(d); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };

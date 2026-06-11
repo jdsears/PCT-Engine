@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { lineLabel, fmtDay } from './labels.js';
+import { apiFetch } from './api.js';
 
 // A grounded answer cites a source; a decline cites none. We never log who asked,
 // so the "when" on a gap is the only time we surface, and only ever relative.
@@ -52,9 +53,9 @@ export default function Insights() {
   useEffect(() => {
     let live = true;
     Promise.all([
-      fetch('/api/insights/summary?days=30').then(r => r.json()),
-      fetch('/api/insights/gaps?days=90').then(r => r.json()),
-      fetch('/api/insights/top-docs?days=90').then(r => r.json()),
+      apiFetch('/api/insights/summary?days=30').then(r => r.json()),
+      apiFetch('/api/insights/gaps?days=90').then(r => r.json()),
+      apiFetch('/api/insights/top-docs?days=90').then(r => r.json()),
     ])
       .then(([summary, gaps, docs]) => { if (live) { setData({ summary, gaps, docs }); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });

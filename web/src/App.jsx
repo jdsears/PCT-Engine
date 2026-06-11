@@ -8,6 +8,7 @@ import Outbound from './Outbound.jsx';
 import Health from './Health.jsx';
 import Gate from './Gate.jsx';
 import { ICONS, LockIcon, ChevronLeft, ChevronRight } from './icons.jsx';
+import { setUnauthorizedHandler } from './api.js';
 
 const META = {
   copilot: { title: 'Co-Pilot', sub: 'Ask the knowledge base. Answers cite their sources.', short: 'Co-Pilot' },
@@ -34,8 +35,19 @@ export default function App() {
   const [section, setSection] = useState('copilot');
   const [expanded, setExpanded] = useState(true);
   const [gateOpen, setGateOpen] = useState(false);
+  const [gateForced, setGateForced] = useState(false);
   const [focusCompanyId, setFocusCompanyId] = useState(null);
   const isMobile = useIsMobile();
+
+  // Send the UI to the gate on any 401, and check up front so an unauthed
+  // visitor meets the gate rather than an empty shell.
+  useEffect(() => {
+    setUnauthorizedHandler(() => { setGateForced(true); setGateOpen(true); });
+    fetch('/api/access/status')
+      .then(r => r.json())
+      .then(s => { if (s.required && !s.authed) { setGateForced(true); setGateOpen(true); } })
+      .catch(() => {});
+  }, []);
 
   const go = id => { setSection(id); setGateOpen(false); };
   const openCompany = id => { setFocusCompanyId(id); setSection('accounts'); };
@@ -59,7 +71,7 @@ export default function App() {
             {navButtons('side-item', id => expanded && <span>{META[id].title}</span>)}
           </div>
           <div className="side-spacer" />
-          <button className="side-foot" aria-label="View access gate" onClick={() => setGateOpen(true)}>
+          <button className="side-foot" aria-label="View access gate" onClick={() => { setGateForced(false); setGateOpen(true); }}>
             <LockIcon />
             {expanded && <span>Access gate</span>}
           </button>
@@ -108,7 +120,7 @@ export default function App() {
         )}
       </div>
 
-      {gateOpen && <Gate onClose={() => setGateOpen(false)} />}
+      {gateOpen && <Gate forced={gateForced} onClose={() => setGateOpen(false)} />}
     </div>
   );
 }

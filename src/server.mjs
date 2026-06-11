@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pool } from './db.mjs';
@@ -11,6 +12,39 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
+// ----- Access gate -----
+// A single shared key for the pilot. When APP_ACCESS_KEY is set the data routes
+// require a valid cookie; when it is not set the gate is open, so local runs and
+// the existing deploy keep working until the key is configured. The cookie holds
+// a hash of the key, never the key itself, and is compared in constant time.
+const ACCESS_KEY = process.env.APP_ACCESS_KEY || '';
+const GATE_ON = ACCESS_KEY.length > 0;
+const COOKIE = 'pct_access';
+const tokenFor = k => crypto.createHash('sha256').update(String(k)).digest('hex');
+const ACCESS_TOKEN = GATE_ON ? tokenFor(ACCESS_KEY) : '';
+if (!GATE_ON) {
+  console.warn('APP_ACCESS_KEY is not set: the access gate is open. Set it to protect /ask, /search and /api.');
+}
+
+function readCookie(req, name) {
+  const raw = req.headers.cookie;
+  if (!raw) return null;
+  for (const part of raw.split(';')) {
+    const i = part.indexOf('=');
+    if (i !== -1 && part.slice(0, i).trim() === name) return part.slice(i + 1).trim();
+  }
+  return null;
+}
+function constantTimeEqual(a, b) {
+  const ab = Buffer.from(String(a)), bb = Buffer.from(String(b));
+  return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
+}
+function hasAccess(req) {
+  if (!GATE_ON) return true;
+  const c = readCookie(req, COOKIE);
+  return !!c && constantTimeEqual(c, ACCESS_TOKEN);
+}
+
 app.get('/health', async (_req, res) => {
   try {
     const ext = await pool.query(`SELECT extversion FROM pg_extension WHERE extname = 'vector'`);
@@ -20,6 +54,34 @@ app.get('/health', async (_req, res) => {
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
   }
+});
+
+// These two stay public so the UI can check the gate and enter the key.
+app.get('/api/access/status', (req, res) => {
+  res.json({ required: GATE_ON, authed: hasAccess(req) });
+});
+
+app.post('/api/access', async (req, res) => {
+  if (!GATE_ON) return res.json({ ok: true });
+  const key = req.body && typeof req.body.key === 'string' ? req.body.key : '';
+  if (key && constantTimeEqual(tokenFor(key), ACCESS_TOKEN)) {
+    res.cookie(COOKIE, ACCESS_TOKEN, {
+      httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production',
+      path: '/', maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+    return res.json({ ok: true });
+  }
+  // A small delay so the key cannot be brute-forced cheaply.
+  await new Promise(r => setTimeout(r, 600));
+  res.status(401).json({ ok: false, error: 'unauthorized' });
+});
+
+// Guard the data: /ask, /search and everything under /api. The static app shell
+// served below stays public; the data behind these routes does not. The access
+// routes above are registered first, so they are reachable without a cookie.
+app.use(['/api', '/ask', '/search'], (req, res, next) => {
+  if (hasAccess(req)) return next();
+  res.status(401).json({ error: 'unauthorized' });
 });
 
 app.post('/search', async (req, res) => {
