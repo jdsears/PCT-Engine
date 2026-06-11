@@ -167,6 +167,11 @@ button, input { font: inherit; }
 
 .leads-card { overflow: hidden; }
 .leads-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.leads-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.tool-search { flex: 1 1 220px; min-width: 180px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; color: var(--navy); background: #FFFFFF; }
+.tool-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-pill.mono-pill { font-family: var(--mono); }
+.ins-card--stat { flex: 1 1 190px; display: flex; flex-direction: column; gap: 6px; }
 .leads-title { font-size: 16px; font-weight: 800; }
 .leads-meta { font-family: var(--mono); font-size: 12px; color: var(--ink2); white-space: nowrap; }
 .leads-list { display: flex; flex-direction: column; }
