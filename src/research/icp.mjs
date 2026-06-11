@@ -11,13 +11,23 @@ export const ICP_CONFIG = {
 };
 
 // Draft weights. Each component is capped and the breakdown is stored so every
-// score is explainable later.
-const WEIGHTS = {
+// score is explainable later. Exported so the curation pack reports the same
+// numbers the scorer uses.
+export const WEIGHTS = {
   namedAccount: 25,
   typeFit: 25,
   signals: 30,
   chHealth: 20,
 };
+
+// Signal recency tiers: up to each day bound, the points awarded. Data, so the
+// curation pack and the scorer cannot drift apart.
+export const SIGNAL_RECENCY_TIERS = [
+  { withinDays: 30, points: WEIGHTS.signals, label: 'within 30 days' },
+  { withinDays: 90, points: 22, label: 'within 90 days' },
+  { withinDays: 180, points: 15, label: 'within 180 days' },
+  { withinDays: Infinity, points: 8, label: 'older than 180 days' },
+];
 
 const DC_SIGNAL_TYPES = new Set(['news_dc_build', 'news_contract', 'planning']);
 
@@ -26,12 +36,8 @@ function signalPoints(signals) {
   if (dcSignals.length === 0) return { points: 0, reason: 'no data centre build or contract signals' };
   const newest = Math.max(...dcSignals.map(s => new Date(s.observed_at || 0).getTime()));
   const ageDays = (Date.now() - newest) / 86_400_000;
-  let points, recency;
-  if (ageDays <= 30) { points = WEIGHTS.signals; recency = 'within 30 days'; }
-  else if (ageDays <= 90) { points = 22; recency = 'within 90 days'; }
-  else if (ageDays <= 180) { points = 15; recency = 'within 180 days'; }
-  else { points = 8; recency = 'older than 180 days'; }
-  return { points, reason: `${dcSignals.length} signal(s), newest ${recency}` };
+  const tier = SIGNAL_RECENCY_TIERS.find(t => ageDays <= t.withinDays);
+  return { points: tier.points, reason: `${dcSignals.length} signal(s), newest ${tier.label}` };
 }
 
 function chHealthPoints(company) {
