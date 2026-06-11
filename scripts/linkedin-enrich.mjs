@@ -19,6 +19,10 @@ const flag = (name, def) => {
 const companyFilter = flag('--company', '');
 const companyLimit = Math.max(1, parseInt(flag('--limit', '5'), 10) || 5);
 const emailDiscovery = (process.env.EMAIL_DISCOVERY || 'off') === 'on';
+// Register-director enrichment is opt-in. Across the first runs it enriched
+// none and ate the daily cap, since statutory directors are not the specifiers,
+// so the people search keeps the cap by default. Pass --directors to include it.
+const doDirectors = args.includes('--directors');
 
 if (apply && !laneReady()) {
   console.log('The lane is not configured. Set UNIPILE_DSN, UNIPILE_API_KEY and UNIPILE_ACCOUNT_ID');
@@ -55,15 +59,17 @@ console.log(`${apply ? 'Apply run' : 'Dry run'}: ${companies.length} compan${com
 
 for (const co of companies) {
   console.log(`${co.name}`);
-  const { rows: pending } = await pool.query(
-    `SELECT full_name FROM contacts
-     WHERE company_id = $1 AND source = 'ch_officers' AND NOT suppressed
-       AND (enriched_at IS NULL OR enriched_at < now() - interval '30 days')
-     ORDER BY full_name`, [co.id]);
 
   if (!apply) {
     console.log(`  would run one people search: "${co.name}" for the specifier roles (${ORBIT_TITLES.slice(0, 4).join(', ')}, ...), limit 5`);
-    console.log(`  would then enrich ${pending.length} register director${pending.length === 1 ? '' : 's'} by name${pending.length ? ': ' + pending.map(p => p.full_name).join(', ') : ''}`);
+    if (doDirectors) {
+      const { rows: pending } = await pool.query(
+        `SELECT full_name FROM contacts
+         WHERE company_id = $1 AND source = 'ch_officers' AND NOT suppressed
+           AND (enriched_at IS NULL OR enriched_at < now() - interval '30 days')
+         ORDER BY full_name`, [co.id]);
+      console.log(`  would then enrich ${pending.length} register director${pending.length === 1 ? '' : 's'} by name${pending.length ? ': ' + pending.map(p => p.full_name).join(', ') : ''}`);
+    }
     if (emailDiscovery) {
       if (co.domain) {
         const { rows: [{ n }] } = await pool.query(
@@ -79,18 +85,21 @@ for (const co of companies) {
   }
 
   try {
-    // People search first: the decision-makers for flow instrumentation are
-    // the design and project engineers on the build, not the statutory
-    // directors. Directors are enriched second, opportunistically.
+    // The decision-makers for flow instrumentation are the design and project
+    // people on the build, found by the people search. Register directors are
+    // enriched only when asked for, since they are not the specifiers.
     const f = await findContacts(co, { limit: 5 });
-    const d = await enrichDirectors(co);
+    const d = doDirectors
+      ? await enrichDirectors(co)
+      : { enriched: 0, left: 0, ambiguous: 0, examples: [] };
     report.touched++;
     report.enriched += d.enriched; report.leftBlank += d.left; report.ambiguous += d.ambiguous;
     report.examples.push(...d.examples);
     report.newContacts += f.created || 0; report.updated += f.updated || 0; report.kept += f.kept || 0;
     report.found.push(...(f.contacts || []).filter(c => c.outcome === 'created'));
     const oa = f.filteredOutOfArea ? `, ${f.filteredOutOfArea} dropped as out of area` : '';
-    console.log(`  people search: ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh${oa}. Directors: ${d.enriched} enriched, ${d.left} left as register data.`);
+    const dir = doDirectors ? ` Directors: ${d.enriched} enriched, ${d.left} left as register data.` : '';
+    console.log(`  people search: ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh${oa}.${dir}`);
 
     if (emailDiscovery && co.domain) {
       const { rows: orbit } = await pool.query(
@@ -118,7 +127,11 @@ console.log('\n=== LinkedIn enrich report ===');
 console.log(`Mode: ${apply ? 'apply' : 'dry run, nothing called, nothing written'}`);
 console.log(`Companies touched: ${apply ? report.touched : companies.length}${companyFilter ? ` (filter "${companyFilter}")` : ''}`);
 if (apply) {
-  console.log(`Directors enriched: ${report.enriched}   Left as register data: ${report.leftBlank}   Ambiguous, skipped: ${report.ambiguous}`);
+  if (doDirectors) {
+    console.log(`Directors enriched: ${report.enriched}   Left as register data: ${report.leftBlank}   Ambiguous, skipped: ${report.ambiguous}`);
+  } else {
+    console.log(`Register directors: skipped (pass --directors to include them)`);
+  }
   console.log(`People search contacts: ${report.newContacts} new, ${report.updated} updated, ${report.kept} kept fresh`);
   console.log(`Decision orbit: ${orbitBefore} before, ${orbitAfter} after`);
   if (report.found.length) {
