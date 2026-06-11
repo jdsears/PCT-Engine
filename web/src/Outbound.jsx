@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiFetch } from './api.js';
 
 const STOPS = [
   { id: 'sourced', label: 'Sourced', left: '6%' },
@@ -13,7 +14,7 @@ export default function Outbound({ isMobile }) {
   const [status, setStatus] = useState(null);
   useEffect(() => {
     let live = true;
-    fetch('/api/outbound/status').then(r => r.json())
+    apiFetch('/api/outbound/status').then(r => r.json())
       .then(d => { if (live) setStatus(d); })
       .catch(() => { if (live) setStatus({ killSwitch: 'unknown' }); });
     return () => { live = false; };

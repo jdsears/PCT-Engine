@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SIGNAL_TYPE_LABELS, fmtClockDay } from './labels.js';
+import { apiFetch } from './api.js';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -17,7 +18,7 @@ export default function Signals({ onOpenCompany }) {
   useEffect(() => {
     let live = true;
     const q = filter === 'all' ? '' : `?type=${filter}`;
-    fetch(`/api/signals${q}`)
+    apiFetch(`/api/signals${q}`)
       .then(r => r.json())
       .then(d => { if (live) { setSignals(d.signals || []); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });

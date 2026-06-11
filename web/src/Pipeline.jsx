@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiFetch } from './api.js';
 
 const STAGE_DEFS = [
   { id: 'sourced', label: 'Sourced', left: '6%' },
@@ -20,7 +21,7 @@ export default function Pipeline({ isMobile }) {
 
   useEffect(() => {
     let live = true;
-    fetch(`/api/pipeline?stage=${stage}`)
+    apiFetch(`/api/pipeline?stage=${stage}`)
       .then(r => r.json())
       .then(d => { if (live) { setData(d); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });

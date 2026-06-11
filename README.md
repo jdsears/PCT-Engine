@@ -220,8 +220,8 @@ citations actually used with their titles, how many sources retrieval offered,
 and the latency. No user identity is logged, since there is none under the
 shared access gate.
 
-Three read-only endpoints summarise it. They are open, like the rest of the
-API; when an access gate arrives they sit behind it with the other routes.
+Three read-only endpoints summarise it. They sit behind the access gate with
+the other data routes.
 
 - `GET /api/insights/summary?days=30`: questions, decline count and rate, daily
   counts for a sparkline, top detected lines, and average latency.
@@ -253,13 +253,31 @@ bottom tab bar on mobile, and seven sections that each read live data.
   switch state from the API.
 - Health shows corpus size, documents by line, last ingestion, database state,
   Graph connectivity, and the kill switch.
-- The access gate screen is a visual preview; there is no server-side gate
-  yet, and the screen becomes its front door when one arrives.
+- The access gate is the shared-key sign in. It shows on a 401 and up front
+  for an unauthed visitor, and the sidebar button opens it any time.
 
 Six read-only endpoints feed the research sections: `/api/pipeline`,
 `/api/accounts`, `/api/accounts/:id`, `/api/signals`, `/api/outbound/status`
-and `/api/health/cards`. They are open like the rest of the API and sit
-behind the access gate with everything else when it arrives.
+and `/api/health/cards`. Like `/ask`, `/search` and the insights endpoints,
+they sit behind the access gate.
+
+## Access gate
+
+A single shared key guards the data for the pilot. Set `APP_ACCESS_KEY` to a
+strong value in the environment, for example `openssl rand -base64 32`.
+
+- When the key is set, `/ask`, `/search` and everything under `/api` require a
+  valid session. The static app shell stays public; the data does not. The
+  one exception is `/health`, kept open for the platform health check.
+- The gate screen posts the key to `POST /api/access`. On a match the server
+  sets an httpOnly cookie holding a hash of the key, never the key itself, and
+  compares it in constant time. `GET /api/access/status` reports whether the
+  gate is on and whether this request is authed, so the UI can show the gate
+  up front. A failed attempt waits a short moment so the key cannot be
+  brute-forced cheaply.
+- When `APP_ACCESS_KEY` is not set the gate is open and a warning is logged, so
+  local runs and the existing deploy keep working until the key is configured.
+  Set the key in Railway to turn the gate on.
 
 ## A note on this build
 

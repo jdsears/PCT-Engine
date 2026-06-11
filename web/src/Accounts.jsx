@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TYPE_LABELS, fmtClockDay, fmtMonthYear } from './labels.js';
 import { CloseIcon } from './icons.jsx';
+import { apiFetch } from './api.js';
 
 const typeLabel = t => TYPE_LABELS[t] || '—';
 
@@ -18,7 +19,7 @@ function DetailPanel({ id, isMobile, onClose }) {
   useEffect(() => {
     let live = true;
     setState('loading');
-    fetch(`/api/accounts/${id}`)
+    apiFetch(`/api/accounts/${id}`)
       .then(r => r.json())
       .then(d => { if (live) { setDetail(d); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
@@ -94,7 +95,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
 
   useEffect(() => {
     let live = true;
-    fetch('/api/accounts')
+    apiFetch('/api/accounts')
       .then(r => r.json())
       .then(d => { if (live) { setCompanies(d.companies || []); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
