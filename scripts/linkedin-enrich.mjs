@@ -78,7 +78,8 @@ for (const co of companies) {
     report.examples.push(...d.examples);
     report.newContacts += f.created || 0; report.updated += f.updated || 0; report.kept += f.kept || 0;
     report.found.push(...(f.contacts || []).filter(c => c.outcome === 'created'));
-    console.log(`  people search: ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh. Directors: ${d.enriched} enriched, ${d.left} left as register data.`);
+    const oa = f.filteredOutOfArea ? `, ${f.filteredOutOfArea} dropped as out of area` : '';
+    console.log(`  people search: ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh${oa}. Directors: ${d.enriched} enriched, ${d.left} left as register data.`);
 
     if (emailDiscovery && co.domain) {
       const { rows: orbit } = await pool.query(

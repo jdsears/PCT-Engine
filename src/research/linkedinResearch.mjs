@@ -12,6 +12,26 @@ import { ORBIT_TITLES, inOrbit } from './orbitRules.mjs';
 const accountId = () => process.env.UNIPILE_ACCOUNT_ID || '';
 export const laneReady = () => unipileConfigured() && Boolean(accountId());
 
+// The decision-makers we want are on UK builds, so a UK people search should
+// not surface a hyperscaler's worldwide engineers. LinkedIn location strings
+// are inconsistent (some name the country, some only a region like "Greater
+// London"), so the test is layered: keep anything that names the UK, drop
+// anything that names another country, and keep the rest. That cuts the clear
+// global noise without losing a UK metro that omits the country, and it never
+// mistakes Northern Ireland for the Republic. A blank location is kept, rather
+// than lose a profile that hides its city. Configurable via LINKEDIN_COUNTRY;
+// only UK is implemented, anything else passes everything through.
+const COUNTRY = (process.env.LINKEDIN_COUNTRY || 'uk').toLowerCase();
+const UK_LOCATION = /united kingdom|great britain|england|scotland|wales|northern ireland|\b(uk|u\.k\.)\b/i;
+const FOREIGN_LOCATION = /\b(united states|usa|u\.s\.a|america|canada|ireland|germany|france|netherlands|belgium|luxembourg|spain|italy|portugal|switzerland|austria|poland|czech|sweden|norway|denmark|finland|india|pakistan|australia|new zealand|singapore|malaysia|japan|china|hong kong|korea|brazil|mexico|argentina|united arab emirates|uae|saudi|qatar|israel|south africa|nigeria|kenya|egypt)\b/i;
+export function inTargetCountry(location) {
+  if (COUNTRY !== 'uk') return true;
+  if (!location) return true;
+  if (UK_LOCATION.test(location)) return true;     // names the UK or a home nation
+  if (FOREIGN_LOCATION.test(location)) return false; // names another country
+  return true;                                       // ambiguous, keep
+}
+
 // ---- matching helpers, deliberately conservative ----
 
 const COMPANY_SUFFIXES = new Set([
@@ -214,10 +234,14 @@ export async function findContacts(company, optsOrRoles = {}) {
   }
   const terms = [...new Set([...roles, ...ORBIT_TITLES.slice(0, 8)])].map(t => `"${t}"`).join(' OR ');
   const keywords = `"${corePhrase(company.name)}" (${terms})`;
-  const found = await searchPeople(keywords, limit, `findContacts: ${company.name}`);
+  // Over-fetch, then keep the UK ones, so the daily-capped single call still
+  // returns a full batch after the global noise is dropped.
+  const candidatePool = Math.min(Math.max(limit * 4, limit), 25);
+  const found = await searchPeople(keywords, candidatePool, `findContacts: ${company.name}`);
+  const uk = found.filter(c => inTargetCountry(c.location));
 
-  const out = { available: true, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0 };
-  for (const c of found.slice(0, limit)) {
+  const out = { available: true, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0, filteredOutOfArea: found.length - uk.length };
+  for (const c of uk.slice(0, limit)) {
     if (!c.url) { out.skipped++; continue; }
     // Drop a headline that is only the company name, so we never store it as a
     // role; the row keeps whatever real title it already had.

@@ -1,5 +1,6 @@
 import { pool } from '../db.mjs';
 import { companyOfficers } from './companiesHouse.mjs';
+import { inOrbit } from './orbitRules.mjs';
 
 // Contact discovery from the public register. Current directors of a named
 // account become contacts with provenance ch_officers, so the funnel can reach
@@ -8,13 +9,6 @@ import { companyOfficers } from './companiesHouse.mjs';
 
 // Officer roles treated as people worth holding. Plain data.
 export const PERSON_OFFICER_ROLES = ['director', 'llp-member', 'llp-designated-member', 'member'];
-
-// Occupation terms that place a director in the decision orbit for this
-// campaign, alongside plain directorship. Plain data, for Andy to tune.
-export const ORBIT_OCCUPATION_TERMS = [
-  'engineer', 'engineering', 'technical', 'operations', 'commercial',
-  'managing director', 'construction', 'project',
-];
 
 // Companies House gives names as "SURNAME, Forename Middle". Convert to a
 // natural "Forename Middle Surname" with best-effort capitalisation.
@@ -28,11 +22,15 @@ export function formatOfficerName(raw) {
   return titleCase(`${forenames} ${surname}`.replace(/\s+/g, ' ').trim());
 }
 
+// One definition of the decision orbit across the engine: the job title, via
+// orbitRules. A register occupation of "Director", "Company Director" or blank
+// says nothing about whether the person specifies flow plant, so a director
+// qualifies only when the occupation names a specifier role, the same test the
+// LinkedIn lane applies. This is why a board with no stated trades does not
+// count, which is the honest answer.
 export function inDecisionOrbit(officer) {
   if (!PERSON_OFFICER_ROLES.includes(officer.officer_role)) return false;
-  const occ = String(officer.occupation || '').toLowerCase();
-  if (!occ || occ === 'none' || occ === 'director' || occ === 'company director') return true;
-  return ORBIT_OCCUPATION_TERMS.some(t => occ.includes(t));
+  return inOrbit(officer.occupation) === true;
 }
 
 // Fetches current officers for one company and upserts them as contacts.
