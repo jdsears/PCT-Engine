@@ -7,5 +7,8 @@ npm-debug.log*
 # OCR scratch files produced during ingestion
 *.ocr.pdf
 
+# Built Teams app package, regenerated from the script with the real bot id
+pct-copilot-teams.zip
+
 # OS noise
 .DS_Store

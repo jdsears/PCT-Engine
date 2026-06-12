@@ -7,6 +7,7 @@ import { search } from './retrieve.mjs';
 import { ask } from './answer.mjs';
 import { REGIONS } from './research/region.mjs';
 import { graphToken } from './msgraph.mjs';
+import { handleTeamsMessage } from './teams.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -75,6 +76,12 @@ app.post('/api/access', async (req, res) => {
   await new Promise(r => setTimeout(r, 600));
   res.status(401).json({ ok: false, error: 'unauthorized' });
 });
+
+// The Teams bot endpoint. Registered before the gate so it is exempt from the
+// access-gate cookie check: its protection is Bot Framework token validation,
+// done inside handleTeamsMessage, not the shared key. This is the only path
+// under /api that the gate does not cover, and it is exempt by design.
+app.post('/api/teams/messages', (req, res) => handleTeamsMessage(req, res));
 
 // Guard the data: /ask, /search and everything under /api. The static app shell
 // served below stays public; the data behind these routes does not. The access

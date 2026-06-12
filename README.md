@@ -358,6 +358,41 @@ strong value in the environment, for example `openssl rand -base64 32`.
   local runs and the existing deploy keep working until the key is configured.
   Set the key in Railway to turn the gate on.
 
+## Co-Pilot in Teams
+
+The Co-Pilot also answers inside Microsoft Teams in personal, one to one chat,
+reusing the same `ask()` pipeline unchanged (`src/teams.mjs`). A Teams message
+gets a typing indicator, the answer, then one compact `Sources:` line from the
+cited documents, with nothing shown when the answer declines. Each message
+stands alone this pass, which matches `ask()`; multi-turn is a later item.
+
+- The endpoint is `POST /api/teams/messages`. It is the one path under `/api`
+  that the access gate does not cover, on purpose: its protection is Bot
+  Framework token validation inside the adapter, not the shared key. Until
+  `TEAMS_BOT_APP_ID` and `TEAMS_BOT_APP_PASSWORD` are set it reports not
+  configured and the rest of the service is unaffected.
+- Migration 007 adds a `channel` column to `copilot_queries`, defaulting to
+  `web`; Teams questions log as `teams`. No user identity is stored, not the
+  name, the directory id, nor the conversation id. Attribution stays a future
+  decision to take with PCT.
+- The bot is a separate, single-tenant app registration from the Graph app, so
+  its reach is its own. The brief's registration route is the Teams Developer
+  Portal bound to an Entra app, no Azure subscription needed. Confirm the
+  current portal steps and manifest version against the Microsoft docs when
+  registering; the manifest version lives in `teams/manifest.template.json` for
+  a one-line change.
+
+The app package is built reproducibly. The icons in `teams/icons` are committed
+PNGs from the brand logo, so building needs only Node and `zip`:
+
+```
+TEAMS_BOT_APP_ID=<the bot app id> node scripts/build-teams-package.mjs
+```
+
+That writes `pct-copilot-teams.zip` at the repo root for upload in the Teams
+admin centre. `JAMES_TEAMS_STEPS.md` is the plain-English runbook for PCT's
+admin to register the bot and allow the app.
+
 ## A note on this build
 
 The code in this repository was written and verified to load in a clean
