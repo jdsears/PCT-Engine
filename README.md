@@ -247,7 +247,9 @@ Setting up:
 2. `node --env-file=.env scripts/linkedin-enrich.mjs` is a dry run: it prints
    what it would search and write, calling nothing. `--apply` does the work,
    `--company "Name"` scopes to one account, `--limit` sets companies per run
-   (default 5, deliberately small).
+   (default 5, deliberately small), and `--new` advances coverage by skipping
+   accounts already people-searched in the last thirty days, so each run picks
+   up the next untouched accounts by score rather than redoing the done ones.
 
 Per company it runs the people search. The decision-makers for flow
 instrumentation are the design, mechanical, building services, controls and
