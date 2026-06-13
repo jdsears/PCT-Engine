@@ -253,11 +253,12 @@ Setting up:
 
 Per company it runs the people search. The decision-makers for flow
 instrumentation are the design, mechanical, building services, controls and
-HVAC engineers, the project managers, and the water and cooling specialists on
-the build, not the statutory company director, so the search keys on those
-roles. The orbit titles in `src/research/orbitRules.mjs` lead with the
-chilled-water cooling roles PCT sells into and are plain data for Andy to
-refine. The people search is scoped to the UK (`LINKEDIN_COUNTRY`, default uk):
+HVAC engineers, the project managers, the water and cooling specialists, and
+the estimators, contracts and preconstruction people who select and buy the
+kit at the M&E contractors, not the statutory company director, so the search
+keys on those roles. The orbit titles in `src/research/orbitRules.mjs` lead
+with the chilled-water cooling roles PCT sells into and are plain data for Andy
+to refine. The people search is scoped to the UK (`LINKEDIN_COUNTRY`, default uk):
 it over-fetches, drops results that name another country, and keeps UK and
 unstated locations, so a hyperscaler's worldwide staff do not crowd the batch.
 

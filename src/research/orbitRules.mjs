@@ -18,14 +18,18 @@ export const ORBIT_TITLES = [
   'programme manager', 'program manager', 'm&e', 'design manager', 'design director',
   'head of engineering', 'engineering manager', 'engineering director',
   'technical director', 'projects director', 'construction director',
+  // The people who select, price and buy the kit at the M&E contractors.
+  'estimator', 'contracts manager', 'preconstruction', 'pre-construction',
   'specification', 'procurement', 'category manager',
 ];
 
 // Functions and support roles that are never the specifier, even at a target
 // company. Recruiters and talent in particular crowd a people-search.
+// "project controls" is cost and schedule management, not building or BMS
+// controls, so it is excluded while plain "controls" stays in scope.
 export const EXCLUDE_TITLES = [
   'finance', 'hr', 'human resources', 'people', 'legal', 'marketing', 'sales',
-  'recruit', 'talent', 'account executive', 'business development',
+  'recruit', 'talent', 'account executive', 'business development', 'project controls',
 ];
 
 // Lowercase match against the includes, then the excludes. Excludes win unless
