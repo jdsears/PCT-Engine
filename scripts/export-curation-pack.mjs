@@ -65,20 +65,20 @@ accounts.dataValidations.add(`A2:A${accounts.rowCount}`, {
 });
 styleHeader(accounts);
 
-// Sheet 2: People
+// Sheet 2: People (the specifiers, the decision orbit only)
 const people = wb.addWorksheet('People');
 people.columns = [
   { header: 'Decision', key: 'decision', width: 12 },
   { header: 'Company', key: 'company', width: 38 },
   { header: 'Name', key: 'name', width: 30 },
-  { header: 'Role (from the register)', key: 'role', width: 24 },
+  { header: 'Role', key: 'role', width: 30 },
   { header: 'Your notes (right person? who instead?)', key: 'notes', width: 48 },
 ];
 
 const { rows: contacts } = await pool.query(`
   SELECT ct.full_name, ct.role_title, co.name AS company
   FROM contacts ct JOIN companies co ON co.id = ct.company_id
-  WHERE co.named_account AND NOT ct.suppressed
+  WHERE co.named_account AND NOT ct.suppressed AND ct.in_decision_orbit = true
   ORDER BY co.name, ct.full_name
 `);
 for (const p of contacts) {
@@ -89,6 +89,8 @@ people.dataValidations.add(`A2:A${people.rowCount}`, {
   showErrorMessage: true, error: 'Choose KEEP or STRIKE',
 });
 styleHeader(people);
+people.getCell('A1').note =
+  'The people we believe choose the kit, by job title. KEEP if right, STRIKE if not, and say who instead in your notes. Statutory directors are on the Directors sheet for reference.';
 
 // Sheet 3: Thresholds
 const thresholds = wb.addWorksheet('Thresholds');
@@ -111,10 +113,35 @@ thresholds.dataValidations.add(`C2:C${thresholds.rowCount}`, {
 });
 styleHeader(thresholds);
 
+// Sheet 4: Directors (reference). The statutory register directors, kept for
+// reference and out of Andy's main review, since they are rarely the specifier.
+// A register director only reaches the People sheet when the stated occupation
+// put them in the decision orbit, so they are excluded here to avoid overlap.
+const directors = wb.addWorksheet('Directors (reference)');
+directors.columns = [
+  { header: 'Company', key: 'company', width: 38 },
+  { header: 'Name', key: 'name', width: 30 },
+  { header: 'Role (from the register)', key: 'role', width: 28 },
+  { header: 'Your notes', key: 'notes', width: 40 },
+];
+const { rows: regDirectors } = await pool.query(`
+  SELECT ct.full_name, ct.role_title, co.name AS company
+  FROM contacts ct JOIN companies co ON co.id = ct.company_id
+  WHERE co.named_account AND NOT ct.suppressed
+    AND ct.source = 'ch_officers' AND COALESCE(ct.in_decision_orbit, false) = false
+  ORDER BY co.name, ct.full_name
+`);
+for (const d of regDirectors) {
+  directors.addRow({ company: d.company, name: d.full_name, role: d.role_title || 'Director', notes: '' });
+}
+styleHeader(directors);
+directors.getCell('A1').note =
+  'Statutory directors from Companies House, for reference. The people to vet are on the People sheet.';
+
 accounts.getCell('A1').note =
   'KEEP = on the list. STRIKE = remove. RE-POINT = right company, wrong register match, tell us in notes. Yellow cells are blanks we could not fill confidently.';
 
 await wb.xlsx.writeFile(OUT);
 console.log(`Written ${OUT}`);
-console.log(`Accounts: ${companies.length}  People: ${contacts.length}`);
+console.log(`Accounts: ${companies.length}  People (specifiers): ${contacts.length}  Directors (reference): ${regDirectors.length}`);
 await pool.end();
