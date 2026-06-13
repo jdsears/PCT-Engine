@@ -12,3 +12,6 @@ pct-copilot-teams.zip
 
 # OS noise
 .DS_Store
+
+# Curation pack workbook, generated from live data, not committed
+CURATION_PACK_*.xlsx

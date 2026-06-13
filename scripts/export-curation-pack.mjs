@@ -1,160 +1,120 @@
-import { writeFile } from 'node:fs/promises';
+// scripts/export-curation-pack.mjs
+// Builds the named-account curation pack for Andy as an Excel workbook,
+// straight from the live database so nothing is copied by hand.
+import ExcelJS from 'exceljs';
 import { pool } from '../src/db.mjs';
-import { REGIONS, REGION_BY_POSTCODE_AREA } from '../src/research/region.mjs';
-import { ICP_CONFIG, WEIGHTS, SIGNAL_RECENCY_TIERS, CONTACTABILITY_DRAFT } from '../src/research/icp.mjs';
-import { ORBIT_TITLES, EXCLUDE_TITLES } from '../src/research/orbitRules.mjs';
 
-// Exports the curation brief for Andy: everything awaiting his eye, in one
-// markdown file to forward. Sections 1 to 3 are his (named accounts, region
-// table, decision-orbit titles); section 4 is the ICP thresholds for James and
-// Andy together, grounded with the live score distribution. Read-only; it
-// changes nothing in the database. Needs DATABASE_URL.
+const today = new Date().toISOString().slice(0, 10);
+const OUT = `CURATION_PACK_${today}.xlsx`;
 
-const TYPE_LABELS = {
-  dc_developer: 'DC developer', me_contractor: 'M&E contractor',
-  end_client: 'End client', oem: 'OEM', other: 'Other',
-};
-const typeLabel = t => TYPE_LABELS[t] || t || 'unknown';
-const regionLabel = code => (code && REGIONS[code] ? `${REGIONS[code].name}` : 'unassigned');
-const gbp = n => '£' + Number(n).toLocaleString('en-GB');
+const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F386B' } };
+const HEADER_FONT = { color: { argb: 'FFFFFFFF' }, bold: true };
+const BLANK_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3B0' } };
 
-const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
-const accounts = await pool.query(
-  `SELECT c.name, c.company_type, c.region, c.postcode, c.domain, c.ch_number,
-          round(c.icp_score)::int AS score,
-          (SELECT count(*)::int FROM contacts ct
-           WHERE ct.company_id = c.id AND ct.in_decision_orbit AND NOT ct.suppressed) AS in_orbit,
-          (SELECT count(*)::int FROM signals s WHERE s.company_id = c.id) AS signals
-   FROM companies c WHERE c.named_account
-   ORDER BY c.icp_score DESC NULLS LAST, c.name`);
-
-const bands = await pool.query(
-  `SELECT count(*) FILTER (WHERE icp_score >= 70)::int AS strong,
-          count(*) FILTER (WHERE icp_score >= 40 AND icp_score < 70)::int AS middle,
-          count(*) FILTER (WHERE icp_score < 40)::int AS weak,
-          count(*) FILTER (WHERE icp_score IS NULL)::int AS unscored
-   FROM companies WHERE named_account`);
-
-const leads = await pool.query(
-  `SELECT count(*)::int AS n FROM leads WHERE stage = 'researched'`);
-
-const threshold = Number(process.env.RESEARCH_LEAD_THRESHOLD || 40);
-const withOrbit = accounts.rows.filter(a => a.in_orbit > 0).length;
-
-// Region code -> sorted postcode areas, for the table Andy checks.
-const areasByRegion = {};
-for (const [area, code] of Object.entries(REGION_BY_POSTCODE_AREA)) {
-  (areasByRegion[code] ||= []).push(area);
+function styleHeader(sheet) {
+  const row = sheet.getRow(1);
+  row.eachCell((c) => { c.fill = HEADER_FILL; c.font = HEADER_FONT; });
+  sheet.views = [{ state: 'frozen', ySplit: 1 }];
 }
-for (const list of Object.values(areasByRegion)) list.sort();
 
-const lines = [];
-const push = (...xs) => lines.push(...xs);
+const wb = new ExcelJS.Workbook();
+wb.creator = 'MoonBoots Consultancy';
 
-push(`# PCT Engine, account curation brief`, ``,
-  `For Andy. Generated ${today} from the live engine.`, ``,
-  `The engine has built a first draft of the Marwin data centre campaign: a`,
-  `named-account list, a UK region map, and a way of telling who at each account`,
-  `makes the call on flow instrumentation. None of it is settled until you have`,
-  `looked at it. Sections 1 to 3 are yours; section 4 is for you and James`,
-  `together.`, ``,
-  `Mark it up however suits, on this document or in a note back to John. Every`,
-  `correction is a small data change, not a rebuild, so it is cheap to iterate`,
-  `as often as you like. Nothing here contacts anyone: the engine is still only`,
-  `researching, and the send switch stays off.`, ``);
+// Sheet 1: Accounts
+const accounts = wb.addWorksheet('Accounts');
+accounts.columns = [
+  { header: 'Decision', key: 'decision', width: 12 },
+  { header: 'Company', key: 'name', width: 38 },
+  { header: 'Type', key: 'type', width: 16 },
+  { header: 'CH number', key: 'ch', width: 12 },
+  { header: 'Region', key: 'region', width: 10 },
+  { header: 'Domain (fill blanks if known)', key: 'domain', width: 28 },
+  { header: 'ICP score', key: 'score', width: 10 },
+  { header: 'Why included', key: 'why', width: 46 },
+  { header: 'Your notes', key: 'notes', width: 40 },
+];
 
-// ---- 1. Named accounts ----
-push(`## 1. Named accounts`, ``,
-  `${accounts.rows.length} accounts, sorted by our ICP score, which is the`,
-  `engine's read of fit for the Marwin DC campaign. ${withOrbit} of them have at`,
-  `least one likely decision-maker found so far; that count grows as the`,
-  `LinkedIn lane works through the list. Strike anyone who does not belong, add`,
-  `names we have missed, and correct a wrong type or region in place.`, ``,
-  `"In orbit" is how many people we have found whose job title marks them as a`,
-  `likely specifier, in the sense of section 3. "unmatched" or "none found" mean`,
-  `the engine could not match the company at Companies House or find an official`,
-  `website, worth a glance since it may be the wrong entity.`, ``,
-  `| Account | Type | Region | CH number | Domain | Score | In orbit | Signals |`,
-  `| --- | --- | --- | --- | --- | ---: | ---: | ---: |`);
-for (const a of accounts.rows) {
-  push(`| ${a.name} | ${typeLabel(a.company_type)} | ${regionLabel(a.region)} | ${a.ch_number || 'unmatched'} | ${a.domain || 'none found'} | ${a.score ?? '—'} | ${a.in_orbit} | ${a.signals} |`);
+const { rows: companies } = await pool.query(`
+  SELECT id, name, company_type, ch_number, region, domain, icp_score, icp_breakdown, source
+  FROM companies WHERE named_account ORDER BY company_type, name
+`);
+
+for (const c of companies) {
+  const isAtlasEdge = /^atlasedge/i.test(c.name || '');
+  const why = c.icp_breakdown?.reason
+    || c.icp_breakdown?.summary
+    || (c.source === 'seed_research' ? 'Seeded from DC market research' : c.source || '');
+  const row = accounts.addRow({
+    decision: isAtlasEdge ? 'RE-POINT' : 'KEEP',
+    name: c.name,
+    type: c.company_type || '',
+    ch: c.ch_number || 'unmatched',
+    region: c.region || '',
+    domain: c.domain || '',
+    score: c.icp_score == null ? '' : Number(c.icp_score),
+    why,
+    notes: isAtlasEdge ? 'Looks like the wrong company on the register (consulting ltd, single director), please point us at the right one' : '',
+  });
+  if (!c.domain) row.getCell('domain').fill = BLANK_FILL;
+  if (!c.ch_number) row.getCell('ch').fill = BLANK_FILL;
 }
-push(``);
 
-// ---- 2. Region table ----
-push(`## 2. Region table`, ``,
-  `The engine sorts each account into one of the six sales areas by postcode,`,
-  `using the table below. It is a best effort from public geography: the weakest`,
-  `guesses are the Midlands and Wales, which have no area of their own, so check`,
-  `those hardest. Moving a postcode area from one region to another is a`,
-  `one-line change.`, ``,
-  `| Region | Name | Active | Postcode areas |`,
-  `| --- | --- | --- | --- |`);
-for (const [code, def] of Object.entries(REGIONS)) {
-  push(`| ${code} | ${def.name} | ${def.active ? 'yes' : 'no'} | ${(areasByRegion[code] || []).join(', ') || '—'} |`);
+accounts.dataValidations.add(`A2:A${accounts.rowCount}`, {
+  type: 'list', allowBlank: false, formulae: ['"KEEP,STRIKE,RE-POINT"'],
+  showErrorMessage: true, error: 'Choose KEEP, STRIKE or RE-POINT',
+});
+styleHeader(accounts);
+
+// Sheet 2: People
+const people = wb.addWorksheet('People');
+people.columns = [
+  { header: 'Decision', key: 'decision', width: 12 },
+  { header: 'Company', key: 'company', width: 38 },
+  { header: 'Name', key: 'name', width: 30 },
+  { header: 'Role (from the register)', key: 'role', width: 24 },
+  { header: 'Your notes (right person? who instead?)', key: 'notes', width: 48 },
+];
+
+const { rows: contacts } = await pool.query(`
+  SELECT ct.full_name, ct.role_title, co.name AS company
+  FROM contacts ct JOIN companies co ON co.id = ct.company_id
+  WHERE co.named_account AND NOT ct.suppressed
+  ORDER BY co.name, ct.full_name
+`);
+for (const p of contacts) {
+  people.addRow({ decision: 'KEEP', company: p.company, name: p.full_name, role: p.role_title || 'Director', notes: '' });
 }
-push(``);
+people.dataValidations.add(`A2:A${people.rowCount}`, {
+  type: 'list', allowBlank: false, formulae: ['"KEEP,STRIKE"'],
+  showErrorMessage: true, error: 'Choose KEEP or STRIKE',
+});
+styleHeader(people);
 
-// ---- 3. Decision-orbit titles ----
-push(`## 3. Decision-orbit job titles`, ``,
-  `When the engine finds a person at a target company, it decides whether they`,
-  `are a likely decision-maker for flow instrumentation from their job title.`,
-  `The person we want is the engineer who specifies and procures plant on the`,
-  `build, the senior or lead design engineer, the M&E or building services`,
-  `engineer, not the statutory company director. These two lists are how it`,
-  `judges that, and they are the part most worth your eye, since you know the`,
-  `real job titles on these projects. Add one we should be catching, strike one`,
-  `that pulls in the wrong people.`, ``,
-  `A person counts as a likely decision-maker if their title contains any of:`, ``,
-  ORBIT_TITLES.map(t => `- ${t}`).join('\n'), ``,
-  `A person never counts, even at a target company, if their title contains any`,
-  `of these (they override the list above, unless the title also says`,
-  `procurement):`, ``,
-  EXCLUDE_TITLES.map(t => `- ${t}`).join('\n'), ``);
+// Sheet 3: Thresholds
+const thresholds = wb.addWorksheet('Thresholds');
+thresholds.columns = [
+  { header: 'Setting', key: 'setting', width: 40 },
+  { header: 'Current draft', key: 'value', width: 28 },
+  { header: 'Agree? (YES / change below)', key: 'agree', width: 26 },
+  { header: 'Change to', key: 'change', width: 28 },
+];
+const t = [
+  ['Smallest project worth chasing', '10 MW or larger'],
+  ['Build stages that trigger interest', 'Planning granted, construction, fit-out'],
+  ['Contract value floor for M&E signals', '£250,000'],
+  ['Geography', 'UK only'],
+  ['Company types in scope', 'DC developers, M&E contractors, end clients'],
+];
+for (const [setting, value] of t) thresholds.addRow({ setting, value, agree: '', change: '' });
+thresholds.dataValidations.add(`C2:C${thresholds.rowCount}`, {
+  type: 'list', allowBlank: true, formulae: ['"YES,CHANGE"'],
+});
+styleHeader(thresholds);
 
-// ---- 4. ICP thresholds and weights ----
-const b = bands.rows[0];
-push(`## 4. ICP thresholds and weights, for James and Andy`, ``,
-  `The score that ranks section 1. These are drafts the engine runs with today.`,
-  `Every stored score keeps its full breakdown, so a change here re-scores every`,
-  `account cleanly on the next research run.`, ``,
-  `Campaign filters:`, ``,
-  `- Minimum project size for a build signal: ${ICP_CONFIG.minProjectSizeMW} MW`,
-  `- Build stages counted: ${ICP_CONFIG.buildStages.join(', ')}`,
-  `- Minimum contract value for an M&E signal: ${gbp(ICP_CONFIG.minContractValueGBP)}`,
-  `- Company types in scope: ${ICP_CONFIG.companyTypes.map(typeLabel).join(', ')}`,
-  `- UK only: ${ICP_CONFIG.ukOnly ? 'yes' : 'no'}`, ``,
-  `Score weights, out of 100:`, ``,
-  `| Component | Weight |`,
-  `| --- | ---: |`,
-  `| Named account | ${WEIGHTS.namedAccount} |`,
-  `| Type fit | ${WEIGHTS.typeFit} |`,
-  `| Signals | ${WEIGHTS.signals} |`,
-  `| Companies House health | ${WEIGHTS.chHealth} |`, ``,
-  `Signal points decay with age: ${SIGNAL_RECENCY_TIERS.map(t => `${t.points} ${t.label}`).join(', ')}.`, ``,
-  `Lead threshold: a company becomes a lead at ${threshold} or above`,
-  `(default 40). Where the named accounts sit today:`, ``,
-  `- 70 and above: ${b.strong}`,
-  `- 40 to 69: ${b.middle}`,
-  `- under 40: ${b.weak}`,
-  `- not yet scored: ${b.unscored}`, ``,
-  `Leads at stage researched right now: ${leads.rows[0].n}.`, ``,
-  `### Draft awaiting your approval: contactability`, ``,
-  `A clean named account scores 70 today with no recent data centre signals, so`,
-  `the list barely separates, which is why so many sit at the same score. The`,
-  `proposal makes reachability count: named account ${CONTACTABILITY_DRAFT.weights.namedAccount}, type fit ${CONTACTABILITY_DRAFT.weights.typeFit},`,
-  `signals ${CONTACTABILITY_DRAFT.weights.signals}, Companies House health ${CONTACTABILITY_DRAFT.weights.chHealth}, and a new contactability`,
-  `component worth ${CONTACTABILITY_DRAFT.weights.contactability} (${CONTACTABILITY_DRAFT.points.orbitContact} for a decision-orbit contact on file, ${CONTACTABILITY_DRAFT.points.verifiedEmail} more once one`,
-  `has a verified email). It is ${CONTACTABILITY_DRAFT.enabled() ? 'on' : 'off'} now and stays off until you both approve;`,
-  `turning it on is one setting and every account re-scores on the next run.`, ``);
+accounts.getCell('A1').note =
+  'KEEP = on the list. STRIKE = remove. RE-POINT = right company, wrong register match, tell us in notes. Yellow cells are blanks we could not fill confidently.';
 
-const out = new URL('../CURATION_PACK.md', import.meta.url).pathname;
-await writeFile(out, lines.join('\n'));
-
-console.log(`Curation brief written to ${out}`);
-console.log(`  accounts: ${accounts.rows.length}, ${withOrbit} with an in-orbit contact (scores: ${b.strong} strong, ${b.middle} middle, ${b.weak} weak, ${b.unscored} unscored)`);
-console.log(`  regions: ${Object.keys(REGIONS).length}, postcode areas mapped: ${Object.keys(REGION_BY_POSTCODE_AREA).length}`);
-console.log(`  orbit titles: ${ORBIT_TITLES.length} in, ${EXCLUDE_TITLES.length} excluded`);
-console.log(`  leads at researched: ${leads.rows[0].n}`);
+await wb.xlsx.writeFile(OUT);
+console.log(`Written ${OUT}`);
+console.log(`Accounts: ${companies.length}  People: ${contacts.length}`);
 await pool.end();
