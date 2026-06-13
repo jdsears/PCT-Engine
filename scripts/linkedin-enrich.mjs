@@ -8,7 +8,7 @@ import { ORBIT_TITLES } from '../src/research/orbitRules.mjs';
 // would search and write, calling nothing. --apply does the work, within the
 // daily cap, stopping immediately on any account-health error.
 //
-//   node scripts/linkedin-enrich.mjs [--company "Name"] [--limit 10] [--apply]
+//   node scripts/linkedin-enrich.mjs [--company "Name"] [--limit 10] [--new] [--apply]
 
 const args = process.argv.slice(2);
 const apply = args.includes('--apply');
@@ -23,6 +23,11 @@ const emailDiscovery = (process.env.EMAIL_DISCOVERY || 'off') === 'on';
 // none and ate the daily cap, since statutory directors are not the specifiers,
 // so the people search keeps the cap by default. Pass --directors to include it.
 const doDirectors = args.includes('--directors');
+// --new advances coverage: skip companies already people-searched in the last
+// thirty days, so each run picks up the next highest-scoring untouched accounts
+// rather than re-searching the ones already done. Read from the call ledger, so
+// it counts a search even when it found nobody.
+const onlyNew = args.includes('--new');
 
 if (apply && !laneReady()) {
   console.log('The lane is not configured. Set UNIPILE_DSN, UNIPILE_API_KEY and UNIPILE_ACCOUNT_ID');
@@ -31,14 +36,24 @@ if (apply && !laneReady()) {
   process.exit(1);
 }
 
+// When advancing, exclude accounts with a findContacts call logged in the last
+// thirty days. The target string is exactly what findContacts records.
+const newClause = onlyNew ? `AND NOT EXISTS (
+       SELECT 1 FROM unipile_calls u
+       WHERE u.target = 'findContacts: ' || companies.name
+         AND u.called_at > now() - interval '30 days')` : '';
 const { rows: companies } = await pool.query(
   `SELECT id, name, domain, ch_number FROM companies
    WHERE named_account AND ($1 = '' OR name ILIKE '%' || $1 || '%')
+   ${newClause}
    ORDER BY icp_score DESC NULLS LAST, name LIMIT $2`,
   [companyFilter, companyLimit]);
 
 if (!companies.length) {
-  console.log(companyFilter ? `No named account matches "${companyFilter}".` : 'No named accounts found.');
+  const reason = onlyNew
+    ? 'No named accounts left to search. Every account has been searched in the last thirty days.'
+    : (companyFilter ? `No named account matches "${companyFilter}".` : 'No named accounts found.');
+  console.log(reason);
   await pool.end();
   process.exit(0);
 }
@@ -55,7 +70,7 @@ const report = {
   emailsResolved: 0, potentialEmails: 0,
 };
 
-console.log(`${apply ? 'Apply run' : 'Dry run'}: ${companies.length} compan${companies.length === 1 ? 'y' : 'ies'}, email discovery ${emailDiscovery ? 'on' : 'off'}.\n`);
+console.log(`${apply ? 'Apply run' : 'Dry run'}: ${companies.length} compan${companies.length === 1 ? 'y' : 'ies'}${onlyNew ? ' not yet searched' : ''}, email discovery ${emailDiscovery ? 'on' : 'off'}.\n`);
 
 for (const co of companies) {
   console.log(`${co.name}`);
