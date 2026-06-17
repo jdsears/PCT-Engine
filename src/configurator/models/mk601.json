@@ -1,0 +1,134 @@
+{
+  "model": "MK601",
+  "line": "jordan",
+  "displayName": "Jordan Mark 601/602 high flow pressure regulator",
+  "source": { "doc": "mk601.pdf", "page": 3, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic on page 3 (repeated on page 13). The 601/602 variant, size and body lead the code, then character positions 1 to 15. Constraints are read from the Cv and size table on page 1 and from the IFE/FE end-connection labels in the schematic. For John to confirm before the engine is built.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seat}{cv}{spring}{diaphragm}{actuator}{bolting}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "601", "label": "High Flow", "aliases": ["MK601", "Mark 601", "601", "high flow"] },
+        { "code": "602", "label": "Super High Flow", "aliases": ["MK602", "Mark 602", "602", "super high flow"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "1.5\"", "1 1/2 inch", "1.5 inch", "DN40", "40mm"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "2 inch", "two inch", "DN50", "50mm"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile", "ductile iron", "DI"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze", "BR"] },
+        { "code": "CS", "label": "Carbon steel", "aliases": ["carbon steel", "CS", "A216 WCB"] },
+        { "code": "S6", "label": "Stainless steel", "aliases": ["stainless", "stainless steel", "SST", "316 SST", "A351/CF8M"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["NPT"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["BSPT"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["BSPP"] },
+        { "code": "SW", "label": "FSW", "aliases": ["FSW", "socket weld"] },
+        { "code": "I5", "label": "150# IFE, CS or SST", "aliases": ["150# IFE"] },
+        { "code": "F5", "label": "150# FE, DI or BR", "aliases": ["150# FE", "150 flanged"] },
+        { "code": "I7", "label": "PN10 IFE, CS or SST", "aliases": ["PN10 IFE"] },
+        { "code": "F7", "label": "PN10 FE, DI or BR", "aliases": ["PN10 FE"] },
+        { "code": "I6", "label": "PN16 IFE, CS or SST", "aliases": ["PN16 IFE"] },
+        { "code": "F6", "label": "PN16 FE, DI or BR", "aliases": ["PN16 FE"] },
+        { "code": "I3", "label": "300# IFE, CS or SST", "aliases": ["300# IFE"] },
+        { "code": "F3", "label": "300# FE, DI or BR", "aliases": ["300# FE", "300 flanged"] },
+        { "code": "I8", "label": "PN25 IFE, CS or SST", "aliases": ["PN25 IFE"] },
+        { "code": "F8", "label": "PN25 FE, DI or BR", "aliases": ["PN25 FE"] },
+        { "code": "I4", "label": "PN40 IFE, CS or SST", "aliases": ["PN40 IFE"] },
+        { "code": "F4", "label": "PN40 FE, DI or BR", "aliases": ["PN40 FE"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303SS", "303 SST", "303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316SS", "316 SST", "316"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote", "jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (flow coefficient)", "position": 7, "required": true,
+      "options": [
+        { "code": "A", "label": "25 (Kv 22)", "aliases": ["25", "25Cv", "Cv 25"] },
+        { "code": "B", "label": "30 (Kv 26)", "aliases": ["30", "30Cv", "Cv 30"] },
+        { "code": "V", "label": "35 (Kv 30)", "aliases": ["35", "35Cv", "Cv 35"] },
+        { "code": "W", "label": "45 (Kv 39)", "aliases": ["45", "45Cv", "Cv 45"] },
+        { "code": "C", "label": "50 (Kv 43)", "aliases": ["50", "50Cv", "Cv 50"] },
+        { "code": "Y", "label": "65 (Kv 56)", "aliases": ["65", "65Cv", "Cv 65"] },
+        { "code": "E", "label": "70 (Kv 60)", "aliases": ["70", "70Cv", "Cv 70"] }
+      ]
+    },
+    {
+      "id": "spring", "label": "Spring range", "position": 8, "required": true,
+      "options": [
+        { "code": "53", "label": "20 to 45 PSI (1,4 to 3,0 Bar)", "aliases": ["20-45", "20 to 45", "20 - 45", "20 45"] },
+        { "code": "75", "label": "30 to 95 PSI (2,1 to 6,6 Bar)", "aliases": ["30-95", "30 to 95", "30 - 95", "30 95"] },
+        { "code": "97", "label": "60 to 160 PSI (4,1 to 11,0 Bar)", "aliases": ["60-160", "60 to 160", "60 - 160", "60 160"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm", "position": 9, "required": true,
+      "options": [
+        { "code": "S6", "label": "316SST", "aliases": ["316SST", "SST diaphragm", "stainless diaphragm", "316"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna", "buna-n", "buna n"] },
+        { "code": "JL", "label": "Jorlon", "aliases": ["jorlon"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator", "position": 10, "required": true,
+      "options": [
+        { "code": "MD", "label": "DI for metal diaphragm", "aliases": ["DI metal"] },
+        { "code": "ED", "label": "DI for elastomer diaphragm", "aliases": ["DI elastomer"] },
+        { "code": "SM", "label": "316 for metal diaphragm", "aliases": ["316 metal"] },
+        { "code": "SE", "label": "316 for elastomer diaphragm", "aliases": ["316 elastomer"] }
+      ]
+    },
+    {
+      "id": "bolting", "label": "Double bolting", "position": 11, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none", "no double bolting"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard double bolting"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none", "no accessories"] },
+        { "code": "6", "label": "316SS bolting", "aliases": ["316 bolting", "316SS bolting"] },
+        { "code": "7", "label": "Hi-temperature bolting", "aliases": ["hi-temp bolting", "high temperature bolting"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "model": "601" }, "forbid": { "cv": ["Y", "E"] }, "reason": "65 and 70 Cv are Mark 602 (Super High Flow) only, per the Cv table on page 1" },
+    { "when": { "model": "602" }, "forbid": { "cv": ["A", "B", "V", "W", "C"] }, "reason": "Mark 602 offers only 65 and 70 Cv; 25 to 50 are Mark 601, per the Cv table on page 1" },
+    { "when": { "size": "150" }, "forbid": { "cv": ["C", "E"] }, "reason": "50 Cv (601) and 70 Cv (602) are 2\" (DN50) only, per the Cv and size table on page 1" },
+    { "when": { "size": "200" }, "forbid": { "cv": ["W", "Y"] }, "reason": "45 Cv (601) and 65 Cv (602) are 1-1/2\" (DN40) only, per the Cv and size table on page 1" },
+    { "when": { "body": "DI" }, "forbid": { "ends": ["I5", "I7", "I6", "I3", "I8", "I4"] }, "reason": "IFE flange ends are for carbon steel or stainless bodies; ductile iron uses the FE flange codes, per the schematic labels" },
+    { "when": { "body": "BR" }, "forbid": { "ends": ["I5", "I7", "I6", "I3", "I8", "I4"] }, "reason": "IFE flange ends are for carbon steel or stainless bodies; bronze uses the FE flange codes, per the schematic labels" },
+    { "when": { "body": "CS" }, "forbid": { "ends": ["F5", "F7", "F6", "F3", "F8", "F4"] }, "reason": "FE flange ends are for ductile iron or bronze bodies; carbon steel uses the IFE flange codes, per the schematic labels" },
+    { "when": { "body": "S6" }, "forbid": { "ends": ["F5", "F7", "F6", "F3", "F8", "F4"] }, "reason": "FE flange ends are for ductile iron or bronze bodies; stainless uses the IFE flange codes, per the schematic labels" }
+  ]
+}
