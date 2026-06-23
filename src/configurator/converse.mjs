@@ -193,6 +193,20 @@ export function looksLikeBuild(message) {
 
 const YES = /\b(yes|yeah|yep|go on|please|ok|okay|sure|build it|walk me through|do it|continue)\b/i;
 
+// When a build ends, a terminal turn carries a log record: the model, whether a
+// code was assembled, how many required slots were filled, and the code itself.
+// No user identity, it describes a valve, not a person. A build dropped by
+// closing the tab is not observable here, so it is simply never logged.
+function buildLog(cs, turn) {
+  if (!turn.done) return null;
+  return {
+    model: cs.model,
+    completed: Boolean(turn.code),
+    slots: Object.keys(cs.state || {}).length,
+    code: turn.code || null,
+  };
+}
+
 // The router ask() calls. Continues a build, handles a reply to an offer, or
 // makes a conservative offer when a message looks like a build. Returns
 // { handled: false } to fall through to the normal co-pilot.
@@ -204,6 +218,7 @@ export async function route(question, configState) {
       configState: turn.done ? null : { active: true, model: configState.model, state: configState.state },
       options: turn.options || null,
       config: turn.code ? { code: turn.code, decode: turn.decode, citation: turn.citation } : null,
+      configLog: buildLog(configState, turn),
     };
   }
   if (configState && configState.offered) {
@@ -215,6 +230,7 @@ export async function route(question, configState) {
         configState: turn.done ? null : cs,
         options: turn.options || null,
         config: turn.code ? { code: turn.code, decode: turn.decode, citation: turn.citation } : null,
+        configLog: buildLog(cs, turn),
       };
     }
     return { handled: false, configState: null }; // declined, drop the offer

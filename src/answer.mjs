@@ -57,6 +57,7 @@ export async function ask(question, { history = [], k = 10, configState = null }
       configState: routed.configState ?? null,
       configurator: routed.config || null,
       configOptions: routed.options || null,
+      configLog: routed.configLog || null,
     };
   }
 
@@ -131,5 +132,6 @@ export async function ask(question, { history = [], k = 10, configState = null }
     configState: routed.configState ?? null,
     configurator: null,
     configOptions: null,
+    configLog: null,
   };
 }

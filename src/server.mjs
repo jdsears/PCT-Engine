@@ -109,10 +109,10 @@ app.post('/ask', async (req, res) => {
     });
     res.json(result);
     // Log usage after responding. Logging must never delay or fail the answer.
-    // A configurator turn is not a retrieval query, so it is not logged here; its
-    // own logging arrives with the configurator log work. The turn is a build when
-    // it carries config state, an options list, or a completed code.
-    const isConfigTurn = !!(result.configState || result.configOptions || result.configurator);
+    // A configurator turn is not a retrieval query, so it is not logged to
+    // copilot_queries. The turn is a build when it carries config state, an
+    // options list, a completed code, or a terminal build-log record.
+    const isConfigTurn = !!(result.configState || result.configOptions || result.configurator || result.configLog);
     if (!isConfigTurn) try {
       await pool.query(
         `INSERT INTO copilot_queries (question, detected_filters, declined, citations_used, sources_offered, latency_ms)
@@ -120,6 +120,16 @@ app.post('/ask', async (req, res) => {
         [question, JSON.stringify(result.filters || {}), !!result.declined,
          JSON.stringify(result.citationsUsed || []), result.sourcesOffered ?? null, result.latencyMs ?? null]);
     } catch (e) { console.error('query log insert failed:', e.message); }
+
+    // A build that ended this turn logs one row: the model, whether a code was
+    // assembled, how far it got, the code, and the turn latency. No user identity.
+    if (result.configLog) try {
+      const g = result.configLog;
+      await pool.query(
+        `INSERT INTO configurator_builds (model, completed, slot_count, code, latency_ms)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [g.model, !!g.completed, g.slots ?? 0, g.code ?? null, result.latencyMs ?? null]);
+    } catch (e) { console.error('configurator build log insert failed:', e.message); }
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
