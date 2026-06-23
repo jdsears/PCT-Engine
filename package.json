@@ -7,7 +7,8 @@
     "start": "node src/server.mjs",
     "migrate": "node src/migrate.mjs",
     "ingest": "node ingestion/run.mjs",
-    "build": "cd web && npm install && npm run build"
+    "build": "cd web && npm install && npm run build",
+    "test": "node src/configurator/configurator.test.mjs"
   },
   "dependencies": {
     "botbuilder": "^4.23.3",
