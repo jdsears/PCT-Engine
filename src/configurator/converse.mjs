@@ -150,10 +150,91 @@ export async function advance(convState, message) {
     return { reply: parts.join('\n\n'), done: false, state };
   }
 
-  const next = promptFor(config, state);
-  if (next) { parts.push(next); return { reply: parts.join('\n\n'), done: false, state }; }
+  const nextSlot = emptySlots(config, state)[0];
+  if (nextSlot) {
+    parts.push(promptFor(config, state));
+    return {
+      reply: parts.join('\n\n'), done: false, state,
+      options: { slot: nextSlot.id, label: nextSlot.label, choices: nextSlot.options.map(o => ({ code: o.code, label: o.label })) },
+    };
+  }
 
   const done = completionText(config, state);
   parts.push(done.text);
   return { reply: parts.join('\n\n'), done: true, code: done.code, decode: done.decode, citation: done.citation, state };
+}
+
+// ---- entry: conservative, offer rather than hijack ----
+
+// A cheap heuristic gate so a normal question never triggers a model call. A
+// message looks like a build when it mentions a part number or names a model we
+// hold a matrix for.
+const BUILD_HINT = /\b(part\s*number|part\s*no|order\s*code|build (a|the|me)|configure|ordering matrix)\b/i;
+const MODEL_CODE = /\b(?:mk|mark)\s*-?\s*(\d{2,4})\b/i;
+
+// Resolve a model mention to a held config id. The numeric code is the reliable
+// signal, and a config's model slot lists the variant codes it covers, so the one
+// 601/602 matrix resolves from "Mark 601", "MK602" or a bare "601" alike. Falls
+// back to a file named for the code for any future standalone model.
+export function extractModel(message) {
+  const m = String(message).match(MODEL_CODE);
+  if (!m) return null;
+  const num = m[1];
+  for (const { model } of listModels()) {
+    const cfg = loadConfig(model);
+    const modelSlot = cfg && cfg.slots.find(s => s.id === 'model');
+    if (modelSlot && modelSlot.options.some(o => o.code === num)) return cfg.model;
+  }
+  return loadConfig(`MK${num}`) ? `MK${num}` : null;
+}
+export function looksLikeBuild(message) {
+  return BUILD_HINT.test(message) || Boolean(extractModel(message));
+}
+
+const YES = /\b(yes|yeah|yep|go on|please|ok|okay|sure|build it|walk me through|do it|continue)\b/i;
+
+// The router ask() calls. Continues a build, handles a reply to an offer, or
+// makes a conservative offer when a message looks like a build. Returns
+// { handled: false } to fall through to the normal co-pilot.
+export async function route(question, configState) {
+  if (configState && configState.active) {
+    const turn = await advance(configState, question);
+    return {
+      handled: true, reply: turn.reply,
+      configState: turn.done ? null : { active: true, model: configState.model, state: configState.state },
+      options: turn.options || null,
+      config: turn.code ? { code: turn.code, decode: turn.decode, citation: turn.citation } : null,
+    };
+  }
+  if (configState && configState.offered) {
+    if (YES.test(question)) {
+      const cs = { active: true, model: configState.offeredModel, state: {} };
+      const turn = await advance(cs, configState.originalMessage || question);
+      return {
+        handled: true, reply: turn.reply,
+        configState: turn.done ? null : cs,
+        options: turn.options || null,
+        config: turn.code ? { code: turn.code, decode: turn.decode, citation: turn.citation } : null,
+      };
+    }
+    return { handled: false, configState: null }; // declined, drop the offer
+  }
+  if (looksLikeBuild(question)) {
+    const model = extractModel(question);
+    if (model) {
+      const cfg = loadConfig(model);
+      return {
+        handled: true,
+        reply: voiceGate(`It sounds like you want to build a ${cfg.displayName} part number. Shall I walk you through it?`),
+        configState: { offered: true, offeredModel: model, originalMessage: question },
+      };
+    }
+    const models = listModels().map(m => m.model).join(', ');
+    return {
+      handled: true,
+      reply: voiceGate(`I can build a part number for these models so far: ${models}. Which one?`),
+      configState: { offered: false },
+    };
+  }
+  return { handled: false };
 }
