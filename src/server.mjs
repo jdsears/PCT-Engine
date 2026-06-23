@@ -101,12 +101,19 @@ app.post('/search', async (req, res) => {
 
 app.post('/ask', async (req, res) => {
   try {
-    const { question, history } = req.body || {};
+    const { question, history, configState } = req.body || {};
     if (!question) return res.status(400).json({ error: 'question is required' });
-    const result = await ask(question, { history: Array.isArray(history) ? history : [] });
+    const result = await ask(question, {
+      history: Array.isArray(history) ? history : [],
+      configState: configState || null,
+    });
     res.json(result);
     // Log usage after responding. Logging must never delay or fail the answer.
-    try {
+    // A configurator turn is not a retrieval query, so it is not logged here; its
+    // own logging arrives with the configurator log work. The turn is a build when
+    // it carries config state, an options list, or a completed code.
+    const isConfigTurn = !!(result.configState || result.configOptions || result.configurator);
+    if (!isConfigTurn) try {
       await pool.query(
         `INSERT INTO copilot_queries (question, detected_filters, declined, citations_used, sources_offered, latency_ms)
          VALUES ($1, $2::jsonb, $3, $4::jsonb, $5, $6)`,

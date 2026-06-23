@@ -1,4 +1,5 @@
 import { search } from './retrieve.mjs';
+import { route } from './configurator/converse.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6'; // configurable; confirm against Anthropic docs if it errors
@@ -39,8 +40,26 @@ function buildContext(results) {
   ).join('\n\n');
 }
 
-export async function ask(question, { history = [], k = 10 } = {}) {
+export async function ask(question, { history = [], k = 10, configState = null } = {}) {
   const startedAt = Date.now();
+
+  // The part-number configurator runs ahead of retrieval. It either continues a
+  // guided build, answers a reply to an offer, or makes a conservative offer when
+  // a message looks like a build. When it handles the turn the normal answer path
+  // is skipped; otherwise it returns { handled: false } and we carry on, clearing
+  // any stale offer so a declined or unrelated message drops it.
+  const routed = await route(question, configState);
+  if (routed.handled) {
+    return {
+      answer: routed.reply,
+      filters: {}, citations: [], declined: false, citationsUsed: [],
+      sourcesOffered: 0, latencyMs: Date.now() - startedAt,
+      configState: routed.configState ?? null,
+      configurator: routed.config || null,
+      configOptions: routed.options || null,
+    };
+  }
+
   // Use the immediate prior turn so a follow-up such as "and the reduced-port
   // version?" still retrieves and scopes against what was being discussed.
   const lastUser = history.filter(m => m.role === 'user').slice(-1).map(m => m.text);
@@ -108,5 +127,9 @@ export async function ask(question, { history = [], k = 10 } = {}) {
     citationsUsed,
     sourcesOffered: results.length,
     latencyMs: Date.now() - startedAt,
+    // routed was not handled, so any prior offer is dropped by returning null.
+    configState: routed.configState ?? null,
+    configurator: null,
+    configOptions: null,
   };
 }

@@ -100,6 +100,32 @@ button, input { font: inherit; }
 .composer button { background: var(--navy); color: #FFFFFF; border: none; border-radius: 10px; padding: 11px 22px; font-size: 15px; font-weight: 700; cursor: pointer; min-height: 44px; }
 .composer button:disabled { opacity: 0.5; }
 
+/* ===== Configurator (part-number build) ===== */
+.build-banner { max-width: 860px; margin: 0 auto 10px; font-size: 12.5px; color: var(--ink2); display: flex; align-items: center; gap: 5px; }
+.link-btn { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--blue); cursor: pointer; }
+.link-btn:disabled { opacity: 0.5; cursor: default; }
+
+.optwrap { display: flex; flex-direction: column; gap: 8px; }
+.optcap { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
+.optlist { display: flex; flex-direction: column; gap: 6px; }
+.optrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px; background: #FFFFFF; cursor: pointer; text-align: left; color: var(--navy); width: 100%; }
+.optrow:hover { background: var(--paper); border-color: var(--blue); }
+.optrow:disabled { opacity: 0.5; cursor: default; }
+.optlabel { font-size: 14px; font-weight: 600; min-width: 0; }
+.optcode { font-family: var(--mono); font-size: 12.5px; color: var(--ink2); flex-shrink: 0; }
+
+.pncard { display: flex; flex-direction: column; gap: 12px; }
+.pncap { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
+.pncode { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--navy); letter-spacing: 0.01em; line-height: 1.25; overflow-wrap: anywhere; }
+.is-mobile .pncode { font-size: 18px; }
+.pndecode { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pndecode td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.pndecode tr:last-child td { border-bottom: none; }
+.pnpos { font-family: var(--mono); font-weight: 600; color: var(--navy); white-space: nowrap; width: 1%; }
+.pnname { color: var(--ink2); }
+.pnchoice { color: var(--navy); font-weight: 600; }
+.pnsource { font-size: 12.5px; color: var(--ink2); text-wrap: pretty; }
+
 /* ===== Insights ===== */
 .insights-col { max-width: 960px; display: flex; flex-direction: column; gap: 30px; }
 .ins-section { display: flex; flex-direction: column; gap: 10px; }
