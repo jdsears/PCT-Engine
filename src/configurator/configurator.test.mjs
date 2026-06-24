@@ -14,6 +14,7 @@ import { emptySlots, applyValue, checkConstraints, assemble, decode } from './en
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mk601 = JSON.parse(readFileSync(join(here, 'models', 'mk601.json'), 'utf8'));
+const cv3000 = JSON.parse(readFileSync(join(here, 'models', 'cv3000.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -126,6 +127,43 @@ check('decode parses a full code into the right slots', () => {
   assert.equal(back.state.cv, 'C');
   assert.equal(back.state.spring, '53');
   assert.equal(back.decode.length, 12);
+});
+
+console.log('\nMarwin CV3000 (the showpiece: round-trip and enforced couplings):');
+
+check('a reduced-port CV3000 build round-trips', () => {
+  // A 4" reduced-port valve with a spring-return actuator, a matching spring-return
+  // 2-IQ positioner, and a fail-closed position: every coupling satisfied.
+  const spec = {
+    model: 'CV3000R', size: '400', body: 'S6', ends: 'F3', insert: 'A1', seat: 'TF',
+    packing: 'TV', handle: 'HL', operation: 'S5', positioner: 'A5', fail: '002',
+  };
+  const state = buildState(cv3000, spec, {});
+  const built = assemble(cv3000, state);
+  assert.ok(built.ok, 'a valid, fully coupled CV3000 spec assembles');
+  assert.equal(built.code, 'CV3000R400S6F3A1TFTVHLS5A5002');
+  const back = decode(cv3000, built.code);
+  assert.ok(back.ok, `decode failed: ${back.error}`);
+  assert.deepEqual(back.state, state, 'decoded state must match the built state');
+});
+
+check('4 inch is blocked on a full-port CV3000', () => {
+  assert.ok(checkConstraints(cv3000, { model: 'CV3000F', size: '400' }).length > 0,
+    '4 inch is reduced port only');
+});
+
+check('a fail position needs a spring-return actuator', () => {
+  assert.ok(checkConstraints(cv3000, { operation: 'P6', fail: '001' }).length > 0,
+    'double-acting actuator with a fail-open position must clash');
+  assert.equal(checkConstraints(cv3000, { operation: 'S5', fail: '001' }).length, 0,
+    'a spring-return actuator with a fail-open position is valid');
+});
+
+check('the 2-IQ positioner must match the actuator', () => {
+  assert.ok(checkConstraints(cv3000, { positioner: 'A1', operation: 'S5' }).length > 0,
+    'a double-acting positioner with a spring-return actuator must clash');
+  assert.ok(checkConstraints(cv3000, { positioner: 'A5', operation: 'P6' }).length > 0,
+    'a spring-return positioner with a double-acting actuator must clash');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

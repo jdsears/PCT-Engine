@@ -1,0 +1,175 @@
+{
+  "model": "CV3000",
+  "line": "marwin",
+  "displayName": "Marwin CV3000 control ball valve",
+  "match": ["cv3000", "cv 3000", "cv-3000", "cv3000f", "cv3000r", "cv 3000f", "cv 3000r"],
+  "source": { "doc": "CV3000.pdf", "page": 5, "section": "How to Order" },
+  "note": "Extracted by hand from the How to Order schematic on pages 5 and 6. The code reads prefix CV, then model (full or reduced port), size, body, then the seventeen character positions grouped 1&2 ends, 3&4 insert/trim, 5&6 seat, 7&8 packing, 9&10 handle, 11&12 operation, 13&14 positioner, 15-17 fail position. The CV prefix is folded into the model code (CV3000F or CV3000R). Confirmed with John: (1) the insert position offers only the six codes the schematic prints (A1/A2/A3/S1/S3/R1); the size-specific slot inserts in the Cv vs travel tables are not offered here and would need Marwin sign-off; (2) Siemens is named on the positioners, since it is a third-party accessory openly listed in the public datasheet, not a PCT white-label valve OEM; (3) three constraints are enforced: 4 inch is reduced port only, a fail open or closed position needs a spring-return actuator, and the 2-IQ positioner's double-acting and spring-return variants must match the actuator.",
+  "assembly": "{model}{size}{body}{ends}{insert}{seat}{packing}{handle}{operation}{positioner}{fail}",
+  "slots": [
+    {
+      "id": "model", "label": "Model and port", "position": 1, "required": true,
+      "options": [
+        { "code": "CV3000F", "label": "Full port", "aliases": ["full port", "full bore", "3000F", "CV3000F"] },
+        { "code": "CV3000R", "label": "Reduced port", "aliases": ["reduced port", "reduced bore", "standard port", "3000R", "CV3000R"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\"", "aliases": ["1/2\"", "0.5\"", "half inch", "DN15"] },
+        { "code": "075", "label": "3/4\"", "aliases": ["3/4\"", "0.75\"", "DN20"] },
+        { "code": "100", "label": "1\"", "aliases": ["1\"", "one inch", "DN25"] },
+        { "code": "125", "label": "1-1/4\"", "aliases": ["1-1/4\"", "1.25\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\"", "1.5\"", "DN40"] },
+        { "code": "200", "label": "2\"", "aliases": ["2\"", "two inch", "DN50"] },
+        { "code": "300", "label": "3\"", "aliases": ["3\"", "three inch", "DN80"] },
+        { "code": "400", "label": "4\" (reduced port only)", "aliases": ["4\"", "four inch", "DN100"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel", "CS", "WCB", "A216 WCB"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless", "stainless steel", "SST", "316", "CF8M"] },
+        { "code": "ZZ", "label": "Other special alloy", "aliases": ["special alloy", "alloy", "other", "non-standard body"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "FNPT", "aliases": ["FNPT", "NPT", "female npt", "threaded"] },
+        { "code": "SW", "label": "FSW socket weld", "aliases": ["FSW", "socket weld"] },
+        { "code": "SE", "label": "FSW extended", "aliases": ["FSW extended", "extended socket weld"] },
+        { "code": "F1", "label": "150# FE flanged", "aliases": ["150# FE", "150 flange", "150 flanged", "class 150"] },
+        { "code": "F3", "label": "300# FE flanged", "aliases": ["300# FE", "300 flange", "300 flanged", "class 300"] },
+        { "code": "F6", "label": "600# FE flanged", "aliases": ["600# FE", "600 flange", "class 600"] },
+        { "code": "F9", "label": "900# FE flanged", "aliases": ["900# FE", "900 flange", "class 900"] },
+        { "code": "F5", "label": "1500# FE flanged", "aliases": ["1500# FE", "1500 flange", "class 1500"] },
+        { "code": "E4", "label": "XBWE extended, Sch 40", "aliases": ["XBWE sch 40", "butt weld extended sch 40", "schedule 40"] },
+        { "code": "E8", "label": "XBWE extended, Sch 80", "aliases": ["XBWE sch 80", "butt weld extended sch 80", "schedule 80"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "insert", "label": "Characterized insert and trim", "position": 5, "required": true,
+      "options": [
+        { "code": "A1", "label": "30 degree V, 316SS", "aliases": ["30 degree", "30 v", "30v", "a1"] },
+        { "code": "A2", "label": "60 degree V, 316SS", "aliases": ["60 degree", "60 v", "60v", "a2"] },
+        { "code": "A3", "label": "90 degree V, 316SS", "aliases": ["90 degree", "90 v", "90v", "a3"] },
+        { "code": "S1", "label": "1/16\" slot, 316SS", "aliases": ["1/16 slot", "1/16\" slot", "sixteenth slot"] },
+        { "code": "S3", "label": "1/8\" slot, 316SS", "aliases": ["1/8 slot", "1/8\" slot", "eighth slot"] },
+        { "code": "R1", "label": "Round port, 316SS", "aliases": ["round port", "round slot", "round"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat, body seals and thrust washer", "position": 6, "required": true,
+      "options": [
+        { "code": "TF", "label": "PTFE / PTFE / Viton", "aliases": ["PTFE", "ptfe seat", "teflon"] },
+        { "code": "RT", "label": "RPTFE / RPTFE / RPTFE", "aliases": ["RPTFE", "rptfe seat", "reinforced ptfe"] },
+        { "code": "PA", "label": "PFA / PFA / PFA", "aliases": ["PFA", "pfa seat"] },
+        { "code": "SF", "label": "C-RPTFE / RPTFE / C-RPTFE", "aliases": ["C-RPTFE", "carbon rptfe", "crptfe seat"] },
+        { "code": "DL", "label": "Delrin / Viton / RPTFE", "aliases": ["Delrin", "delrin seat", "acetal"] },
+        { "code": "CP", "label": "C-PEEK / Graphite / PEEK", "aliases": ["C-PEEK", "peek seat", "carbon peek"] },
+        { "code": "KF", "label": "Kel-F / PTFE / PTFE", "aliases": ["Kel-F", "kelf seat", "kel f"] },
+        { "code": "UM", "label": "UHMWPE / Viton / UHMWPE", "aliases": ["UHMWPE", "uhmwpe seat"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "packing", "label": "Packing and stem O-ring", "position": 7, "required": true,
+      "options": [
+        { "code": "TV", "label": "PTFE / Viton", "aliases": ["PTFE Viton", "ptfe packing", "tv"] },
+        { "code": "TE", "label": "PTFE / EPDM", "aliases": ["PTFE EPDM", "te"] },
+        { "code": "GV", "label": "Grafoil / Viton", "aliases": ["Grafoil Viton", "graphite viton", "gv"] },
+        { "code": "GE", "label": "Grafoil / EPDM", "aliases": ["Grafoil EPDM", "graphite epdm", "ge"] },
+        { "code": "UV", "label": "UHMWPE / Viton", "aliases": ["UHMWPE Viton", "uv"] },
+        { "code": "UE", "label": "UHMWPE / EPDM", "aliases": ["UHMWPE EPDM", "ue"] },
+        { "code": "TK", "label": "PTFE / Kalrez", "aliases": ["PTFE Kalrez", "kalrez", "tk"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard packing"] }
+      ]
+    },
+    {
+      "id": "handle", "label": "Handle and gear operator", "position": 8, "required": true,
+      "options": [
+        { "code": "NN", "label": "None", "aliases": ["none", "no handle", "no operator"] },
+        { "code": "HL", "label": "Handle lever", "aliases": ["handle", "lever", "hand lever"] },
+        { "code": "HD", "label": "Handle lever with locking device", "aliases": ["locking handle", "lockable lever", "handle with lock"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard handle"] }
+      ]
+    },
+    {
+      "id": "operation", "label": "Operation (actuator)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none", "no actuator", "manual"] },
+        { "code": "P1", "label": "UT-0A, double acting", "aliases": ["UT-0A-DA", "ut0a da"] },
+        { "code": "P2", "label": "UT-0, double acting", "aliases": ["UT-0-DA", "ut0 da"] },
+        { "code": "P3", "label": "UT-1, double acting", "aliases": ["UT-1-DA", "ut1 da"] },
+        { "code": "P4", "label": "UT-2, double acting", "aliases": ["UT-2-DA", "ut2 da"] },
+        { "code": "P5", "label": "UT-2.5, double acting", "aliases": ["UT-2.5-DA", "ut2.5 da"] },
+        { "code": "P6", "label": "UT-3, double acting", "aliases": ["UT-3-DA", "ut3 da"] },
+        { "code": "P7", "label": "UT-3.5, double acting", "aliases": ["UT-3.5-DA", "ut3.5 da"] },
+        { "code": "P8", "label": "UT-4, double acting", "aliases": ["UT-4-DA", "ut4 da"] },
+        { "code": "PF", "label": "UT-4.5, double acting", "aliases": ["UT-4.5-DA", "ut4.5 da"] },
+        { "code": "P9", "label": "UT-5, double acting", "aliases": ["UT-5-DA", "ut5 da"] },
+        { "code": "PA", "label": "UT-6, double acting", "aliases": ["UT-6-DA", "ut6 da"] },
+        { "code": "PB", "label": "UT-7, double acting", "aliases": ["UT-7-DA", "ut7 da"] },
+        { "code": "S1", "label": "UT-0, spring return", "aliases": ["UT-0-SR", "ut0 sr"] },
+        { "code": "S2", "label": "UT-1, spring return", "aliases": ["UT-1-SR", "ut1 sr"] },
+        { "code": "S3", "label": "UT-2, spring return", "aliases": ["UT-2-SR", "ut2 sr"] },
+        { "code": "S4", "label": "UT-2.5, spring return", "aliases": ["UT-2.5-SR", "ut2.5 sr"] },
+        { "code": "S5", "label": "UT-3, spring return", "aliases": ["UT-3-SR", "ut3 sr"] },
+        { "code": "S6", "label": "UT-3.5, spring return", "aliases": ["UT-3.5-SR", "ut3.5 sr"] },
+        { "code": "S7", "label": "UT-4, spring return", "aliases": ["UT-4-SR", "ut4 sr"] },
+        { "code": "SF", "label": "UT-4.5, spring return", "aliases": ["UT-4.5-SR", "ut4.5 sr"] },
+        { "code": "S8", "label": "UT-5, spring return", "aliases": ["UT-5-SR", "ut5 sr"] },
+        { "code": "S9", "label": "UT-6, spring return", "aliases": ["UT-6-SR", "ut6 sr"] },
+        { "code": "SA", "label": "UT-7, spring return", "aliases": ["UT-7-SR", "ut7 sr"] },
+        { "code": "SJ", "label": "UT-7.5, spring return", "aliases": ["UT-7.5-SR", "ut7.5 sr"] },
+        { "code": "M1", "label": "ER-1-2.5-4, electric 110 VAC", "aliases": ["ER-1-2.5-4", "electric er1"] },
+        { "code": "M2", "label": "ER-2-5-4, electric 110 VAC", "aliases": ["ER-2-5-4", "electric er2"] },
+        { "code": "M3", "label": "ER-3-5-4, electric 110 VAC", "aliases": ["ER-3-5-4", "electric er3"] },
+        { "code": "M8", "label": "ER-4-10-4, electric 110 VAC", "aliases": ["ER-4-10-4", "electric er4"] },
+        { "code": "M4", "label": "ER-6-15-4, electric 110 VAC", "aliases": ["ER-6-15-4", "electric er6"] },
+        { "code": "M5", "label": "ER-10-15-4, electric 110 VAC", "aliases": ["ER-10-15-4", "electric er10"] },
+        { "code": "M9", "label": "ER-15-30-4, electric 110 VAC", "aliases": ["ER-15-30-4", "electric er15"] },
+        { "code": "MA", "label": "ER-20-12-4, electric 110 VAC", "aliases": ["ER-20-12-4", "electric er20"] },
+        { "code": "M7", "label": "ER-38-14-4, electric 110 VAC", "aliases": ["ER-38-14-4", "electric er38"] },
+        { "code": "MC", "label": "ER-50-68-4, electric 110 VAC", "aliases": ["ER-50-68-4", "electric er50"] },
+        { "code": "MD", "label": "ER-70-68-4, electric 110 VAC", "aliases": ["ER-70-68-4", "electric er70"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard operation"] }
+      ]
+    },
+    {
+      "id": "positioner", "label": "Positioner", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none", "no positioner"] },
+        { "code": "P1", "label": "Siemens 760P pneumatic (3-15 psi), for UT-0 to 3", "aliases": ["760P UT-0/3", "pneumatic positioner small"] },
+        { "code": "P2", "label": "Siemens 760P pneumatic (3-15 psi), for UT-3.5 to 7", "aliases": ["760P UT-3.5/7", "pneumatic positioner large"] },
+        { "code": "P3", "label": "Siemens 760E (4-20 mA), for UT-0 to 3", "aliases": ["760E UT-0/3", "electronic positioner small"] },
+        { "code": "P4", "label": "Siemens 760E (4-20 mA), for UT-3.5 to 7", "aliases": ["760E UT-3.5/7", "electronic positioner large"] },
+        { "code": "A1", "label": "Siemens 2-IQ (4-20 mA), for UT-0 to 3 double acting", "aliases": ["2-IQ UT-0/3 DA", "digital positioner da small"] },
+        { "code": "A2", "label": "Siemens 2-IQ (4-20 mA), for UT-3.5 to 7 double acting", "aliases": ["2-IQ UT-3.5/7 DA", "digital positioner da large"] },
+        { "code": "A5", "label": "Siemens 2-IQ (4-20 mA), for UT-0 to 3 spring return", "aliases": ["2-IQ UT-0/3 SR", "digital positioner sr small"] },
+        { "code": "A6", "label": "Siemens 2-IQ (4-20 mA), for UT-3.5 to 7 spring return", "aliases": ["2-IQ UT-3.5/7 SR", "digital positioner sr large"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard positioner"] }
+      ]
+    },
+    {
+      "id": "fail", "label": "Fail position", "position": 11, "required": true,
+      "options": [
+        { "code": "000", "label": "None, no spring actuator", "aliases": ["none", "no fail", "double acting"] },
+        { "code": "001", "label": "Fail open, 80 psi supply", "aliases": ["fail open 80", "fo 80"] },
+        { "code": "002", "label": "Fail closed, 80 psi supply", "aliases": ["fail closed 80", "fc 80"] },
+        { "code": "003", "label": "Fail open, 60 psi supply", "aliases": ["fail open 60", "fo 60"] },
+        { "code": "004", "label": "Fail closed, 60 psi supply", "aliases": ["fail closed 60", "fc 60"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "model": "CV3000F" }, "forbid": { "size": ["400"] }, "reason": "4 inch is reduced port only, per the size list in the ordering schematic" },
+    { "when": { "operation": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9", "PA", "PB", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA", "M7", "MC", "MD", "00"] }, "forbid": { "fail": ["001", "002", "003", "004"] }, "reason": "a fail open or closed position needs a spring-return actuator; double-acting, electric and manual valves take the 000 no-spring fail position" },
+    { "when": { "positioner": ["A1", "A2"] }, "forbid": { "operation": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9", "SA", "SJ", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA", "M7", "MC", "MD", "00"] }, "reason": "the double-acting 2-IQ positioner needs a double-acting actuator" },
+    { "when": { "positioner": ["A5", "A6"] }, "forbid": { "operation": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9", "PA", "PB", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA", "M7", "MC", "MD", "00"] }, "reason": "the spring-return 2-IQ positioner needs a spring-return actuator" }
+  ]
+}

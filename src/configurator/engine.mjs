@@ -29,11 +29,14 @@ export function applyValue(config, state, slotId, rawValue) {
 }
 
 // Constraints whose "when" matches the state and whose "forbid" the state
-// violates. Each carries its matrix reason.
+// violates. Each carries its matrix reason. A "when" value may be a single code
+// or an array of codes; an array matches when the state's value is one of them,
+// so a rule can apply across a group, such as every double-acting actuator.
 export function checkConstraints(config, state) {
   const violated = [];
   for (const c of config.constraints || []) {
-    const whenMatches = Object.entries(c.when).every(([k, v]) => state[k] === v);
+    const whenMatches = Object.entries(c.when).every(([k, v]) =>
+      Array.isArray(v) ? v.includes(state[k]) : state[k] === v);
     if (!whenMatches) continue;
     for (const [k, forbiddenCodes] of Object.entries(c.forbid)) {
       if (forbiddenCodes.includes(state[k])) {
