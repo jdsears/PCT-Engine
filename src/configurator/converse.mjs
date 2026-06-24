@@ -172,20 +172,30 @@ export async function advance(convState, message) {
 const BUILD_HINT = /\b(part\s*number|part\s*no|order\s*code|build (a|the|me)|configure|ordering matrix)\b/i;
 const MODEL_CODE = /\b(?:mk|mark)\s*-?\s*(\d{2,4})\b/i;
 
-// Resolve a model mention to a held config id. The numeric code is the reliable
-// signal, and a config's model slot lists the variant codes it covers, so the one
-// 601/602 matrix resolves from "Mark 601", "MK602" or a bare "601" alike. Falls
-// back to a file named for the code for any future standalone model.
+// Resolve a model mention to a held config id, conservatively. A config can
+// declare a "match" list of the phrases that name it, e.g. "cv3000"; the first
+// held config whose phrase appears in the message wins. If none match, fall
+// back to the MK/Mark numeric form resolved against the model slot codes, so the
+// Jordan 601/602 matrix still resolves from "Mark 601", "MK602" or a bare "601"
+// without a match list.
 export function extractModel(message) {
-  const m = String(message).match(MODEL_CODE);
-  if (!m) return null;
-  const num = m[1];
+  const text = String(message).toLowerCase();
   for (const { model } of listModels()) {
     const cfg = loadConfig(model);
-    const modelSlot = cfg && cfg.slots.find(s => s.id === 'model');
-    if (modelSlot && modelSlot.options.some(o => o.code === num)) return cfg.model;
+    const phrases = (cfg && cfg.match) || [];
+    if (phrases.some(p => text.includes(String(p).toLowerCase()))) return cfg.model;
   }
-  return loadConfig(`MK${num}`) ? `MK${num}` : null;
+  const m = text.match(MODEL_CODE);
+  if (m) {
+    const num = m[1];
+    for (const { model } of listModels()) {
+      const cfg = loadConfig(model);
+      const modelSlot = cfg && cfg.slots.find(s => s.id === 'model');
+      if (modelSlot && modelSlot.options.some(o => o.code === num)) return cfg.model;
+    }
+    if (loadConfig(`MK${num}`)) return `MK${num}`;
+  }
+  return null;
 }
 export function looksLikeBuild(message) {
   return BUILD_HINT.test(message) || Boolean(extractModel(message));
