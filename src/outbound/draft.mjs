@@ -1,4 +1,5 @@
 import { voiceGate } from '../answer.mjs';
+import { isOpenerGrade } from './openerGrade.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -36,15 +37,25 @@ async function callClaude(system, user, { maxTokens = 700 } = {}) {
   return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 }
 
-// Render the grounding as the only facts the drafter is permitted to use.
-function renderGrounding(g) {
+// Render the grounding as the only facts the drafter is permitted to use. The
+// opener is chosen here: a real project event is given as the hook, while an
+// administrative filing is marked context-only and never the hook.
+export function renderGrounding(g) {
   const lines = [];
   lines.push(`Company: ${g.company?.name || 'unknown'}${g.company?.region ? ', region ' + g.company.region : ''}.`);
   lines.push(g.contact?.name
     ? `Contact: ${g.contact.name}${g.contact.role ? ', ' + g.contact.role : ', role not recorded'}.`
     : `Contact: not recorded. Address a specifier or buyer in neutral terms, do not assume a role.`);
-  lines.push(g.signal ? `Signal (the legitimate hook): ${g.signal.text}${g.signal.source ? ' [source: ' + g.signal.source + ']' : ''}.`
-    : `Signal: none on file. Do not invent a reason for contact.`);
+  // Grade decides the opening. Fall back to deriving it from the signal type so
+  // an older grounding without the flag still classifies correctly.
+  const openerGrade = g.openerGrade ?? isOpenerGrade(g.signal);
+  if (g.signal && openerGrade) {
+    lines.push(`Signal to open on, a real project event the recipient could have noticed: ${g.signal.text}${g.signal.source ? ' [source: ' + g.signal.source + ']' : ''}. Open on this.`);
+  } else {
+    if (g.signal) lines.push(`Context only, an administrative filing (${g.signal.type}). NEVER mention it to the recipient and never give it as a reason for contact; it only tells us the account is worth approaching.`);
+    else lines.push('No project signal on file. Do not invent a reason for contact.');
+    lines.push('Open on profile fit: lead with why Marwin control valves are relevant to data centre chilled-water cooling specification, and a light reason a person in the contact\'s role might care. Be specific to the work, do not say they fit a profile.');
+  }
   lines.push(g.icpReason ? `Why this account scored: ${g.icpReason}.` : `ICP reason: not recorded.`);
   if (g.product?.length) {
     lines.push('Product facts you may state (each with its citation), and nothing beyond these:');
@@ -58,8 +69,9 @@ function renderGrounding(g) {
 const DRAFT_SYSTEM =
   "You write the first-touch cold-open email for Premier Control Technologies (PCT), a UK distributor of flow control products, for the Marwin data centre cooling campaign. " +
   "HARD RULE: you may state only what the GROUNDING supports. Do not invent or embellish anything about the prospect, their projects, sites or people beyond the signal given. Do not make a product claim that is not in the grounding. Do not reference proof, case studies, named customers or results unless they are in the grounding. Do not invent a mutual connection, prior conversation, referral or deadline. Do not manufacture urgency. If the grounding is thin, write less. " +
+  "OPENER RULE: an administrative or routine register filing (a confirmation statement, annual accounts, an officer or registered-office change) is never given to the recipient as a reason for contact and is never mentioned, even though it is true; it may only tell us the account is worth approaching. Open on a real project event only when the grounding gives one to open on. " +
   "VOICE: plain technical British English, calm and restrained, one engineer flagging something relevant to a peer then getting out of the way. No opening pleasantries such as hoping the email finds them well, no hype, no superlatives, no closing pressure. No em dashes or en dashes, never the word genuinely, no exclamation marks. " +
-  "STRUCTURE, four or five sentences total: a specific hook grounded in the signal; one relevant grounded line on why Marwin suits the application; a single light specific ask (a short call, or whether they are specifying flow control on the project); a plain sign-off as the PCT sales team. " +
+  "STRUCTURE, four or five sentences total: an opening chosen by the grounding (if it gives a signal to open on, open on that event the way a person would; otherwise open on profile fit as the grounding directs, and do not mention any filing or signal); one relevant grounded line on why Marwin suits the application; a single light specific ask (a short call, or whether they are specifying flow control on the project); a plain sign-off as the PCT sales team. " +
   "Every factual sentence must trace to a grounding item. " +
   "Return strict JSON only, no preamble: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|product|contact\"}]}. The body is plain text, short paragraphs separated by a blank line, no Markdown.";
 

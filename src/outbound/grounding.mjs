@@ -1,5 +1,6 @@
 import { pool } from '../db.mjs';
 import { search } from '../retrieve.mjs';
+import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 
 // The highest-scoring component reason from the stored ICP breakdown, in the
 // engine's own recorded terms. Nothing inferred.
@@ -41,6 +42,10 @@ export async function gatherGrounding(leadId, { k = 4 } = {}) {
     `SELECT id, signal_type, title, url, observed_at FROM signals
      WHERE company_id = $1 AND title IS NOT NULL ORDER BY observed_at DESC LIMIT 1`, [lead.company_id]);
   const signal = sig ? { id: sig.id, type: sig.signal_type, text: sig.title, source: sig.url || null, observedAt: sig.observed_at } : null;
+  // A grounded signal can be true and still be unfit to open a cold email on. An
+  // administrative filing informs that the account is worth approaching; it is
+  // never the hook. The grade decides the opening; the note travels for review.
+  const openerGrade = isOpenerGrade(signal);
 
   // Grounded product facts, retrieved the same way a co-pilot answer is, so any
   // product claim carries a citation and the supplier-naming policy travels with it.
@@ -66,7 +71,8 @@ export async function gatherGrounding(leadId, { k = 4 } = {}) {
   return {
     leadId: lead.id, companyId: lead.company_id, contactId: contact?.id ?? null, campaign: lead.campaign,
     company: { name: lead.company, type: lead.company_type || null, region: lead.region || null },
-    contact, signal, icpReason: topReason(lead.score_breakdown),
+    contact, signal, openerGrade, openerNote: openerNote(signal, openerGrade),
+    icpReason: topReason(lead.score_breakdown),
     product, blockedSuppliers, missing,
   };
 }
