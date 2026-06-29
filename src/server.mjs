@@ -8,6 +8,7 @@ import { ask } from './answer.mjs';
 import { REGIONS } from './research/region.mjs';
 import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
+import { sendMailTest, isTestRecipient, textToHtml, testRecipientList } from './mail.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -364,8 +365,99 @@ app.get('/api/signals', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-app.get('/api/outbound/status', (_req, res) => {
-  res.json({ killSwitch: (process.env.MAIL_KILL_SWITCH || 'on') !== 'off' ? 'on' : 'off' });
+app.get('/api/outbound/status', async (_req, res) => {
+  try {
+    const counts = (await pool.query(
+      `SELECT status, count(*)::int AS n FROM outbound_drafts GROUP BY status`)).rows
+      .reduce((a, r) => { a[r.status] = r.n; return a; }, {});
+    res.json({
+      killSwitch: (process.env.MAIL_KILL_SWITCH || 'on') !== 'off' ? 'on' : 'off',
+      testSends: (process.env.OUTBOUND_TEST_SENDS || 'off') === 'on' ? 'on' : 'off',
+      testRecipients: testRecipientList(),
+      counts,
+    });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The review queue. Lists drafts with their lead, evidence and recipient so a
+// human can read, edit, approve, reject or test-send before anything goes out.
+app.get('/api/outbound/drafts', async (req, res) => {
+  try {
+    const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : null;
+    const { rows } = await pool.query(
+      `SELECT d.id, d.subject, d.body, d.status, d.rationale, d.created_at, d.sent_at,
+              c.name AS company, c.region, c.icp_score,
+              ct.full_name AS contact_name, ct.role_title, ct.email
+       FROM outbound_drafts d
+       JOIN companies c ON c.id = d.company_id
+       LEFT JOIN contacts ct ON ct.id = d.contact_id
+       ${status ? 'WHERE d.status = $1' : ''}
+       ORDER BY d.created_at DESC LIMIT 200`,
+      status ? [status] : []);
+    res.json({ drafts: rows.map(r => ({
+      id: r.id, subject: r.subject, body: r.body, status: r.status,
+      rationale: r.rationale, createdAt: r.created_at, sentAt: r.sent_at,
+      company: r.company, region: r.region, score: r.icp_score,
+      contact: r.contact_name ? { name: r.contact_name, role: r.role_title, email: r.email } : null,
+    })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Edit subject or body, allowed only while the draft is still open.
+app.patch('/api/outbound/drafts/:id', async (req, res) => {
+  try {
+    const { subject, body } = req.body || {};
+    if (subject == null && body == null) return res.status(400).json({ error: 'nothing to update' });
+    const { rows } = await pool.query(
+      `UPDATE outbound_drafts SET subject = COALESCE($2, subject), body = COALESCE($3, body), updated_at = now()
+       WHERE id = $1 AND status IN ('draft','approved') RETURNING status`,
+      [req.params.id, subject ?? null, body ?? null]);
+    if (!rows.length) return res.status(409).json({ error: 'draft is not editable' });
+    res.json({ ok: true, status: rows[0].status });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Approve moves a draft to approved; reject closes it from either open state and
+// frees the lead's slot for a future draft.
+async function setDraftStatus(id, to, from) {
+  const { rows } = await pool.query(
+    `UPDATE outbound_drafts SET status = $2, updated_at = now()
+     WHERE id = $1 AND status = ANY($3) RETURNING status`,
+    [id, to, from]);
+  return rows[0]?.status || null;
+}
+app.post('/api/outbound/drafts/:id/approve', async (req, res) => {
+  try {
+    const s = await setDraftStatus(req.params.id, 'approved', ['draft']);
+    if (!s) return res.status(409).json({ error: 'only a draft can be approved' });
+    res.json({ ok: true, status: s });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.post('/api/outbound/drafts/:id/reject', async (req, res) => {
+  try {
+    const s = await setDraftStatus(req.params.id, 'rejected', ['draft', 'approved']);
+    if (!s) return res.status(409).json({ error: 'draft is not open' });
+    res.json({ ok: true, status: s });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Internal test send. The recipient must be on the internal allowlist; mail.mjs
+// refuses anything else and refuses entirely unless test sends are enabled. Every
+// attempt is logged, and a test send never changes the draft status.
+app.post('/api/outbound/drafts/:id/send-test', async (req, res) => {
+  try {
+    const to = String((req.body || {}).to || '').trim();
+    if (!isTestRecipient(to)) return res.status(400).json({ error: 'recipient is not on the internal test allowlist' });
+    const { rows } = await pool.query(`SELECT id, subject, body FROM outbound_drafts WHERE id = $1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'draft not found' });
+    const d = rows[0];
+    const result = await sendMailTest({ to, subject: d.subject, html: textToHtml(d.body) });
+    await pool.query(
+      `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason)
+       VALUES ($1, $2, $3, true, $4, $5)`,
+      [d.id, to, d.subject, !!result.sent, result.reason || null]);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
 app.get('/api/health/cards', async (_req, res) => {
