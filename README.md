@@ -325,8 +325,27 @@ reaches a prospect in this phase, and two independent gates see to that.
     switch stays on, with no chance of reaching a prospect. Every attempt, test
     or real, sent or refused, is logged to `outbound_sends`.
 
-Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log. Apply it
-with `npm run migrate`.
+Once the testing window closes, a real prospect send is available behind the kill
+switch. The Outbound tab shows a send action only on an approved draft; it is
+allowed only when the recipient has a deliverable, non-suppressed email, and
+`sendMail` is the final gate, so while `MAIL_KILL_SWITCH` is on the send is
+refused and nothing changes. A real send is logged, marks the draft sent, and
+advances the lead to the outbound stage. The send is made in two steps, create
+then send, so the conversation id is captured for reply matching.
+
+`scripts/outbound-replies.mjs` polls the engine mailbox for prospect replies,
+matches each to the send it answers (by conversation first, then by address),
+records it and advances that lead to replied. Dry run by default, `--apply`
+writes; it dedupes on the Graph message id and keeps the last poll time in `kv`.
+
+```
+node --env-file=.env scripts/outbound-replies.mjs
+node --env-file=.env scripts/outbound-replies.mjs --apply
+```
+
+Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log; migration
+010 adds the reply-correlation columns and the `outbound_replies` table. Apply
+both with `npm run migrate`.
 
 ## Usage logging and insights
 
