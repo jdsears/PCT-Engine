@@ -6,6 +6,7 @@ import Accounts from './Accounts.jsx';
 import Signals from './Signals.jsx';
 import Outbound from './Outbound.jsx';
 import Health from './Health.jsx';
+import Watchlist from './Watchlist.jsx';
 import Gate from './Gate.jsx';
 import { ICONS, LockIcon, ChevronLeft, ChevronRight } from './icons.jsx';
 import { setUnauthorizedHandler } from './api.js';
@@ -16,10 +17,11 @@ const META = {
   pipeline: { title: 'Pipeline', sub: 'Leads moving toward the qualification gate', short: 'Pipeline' },
   accounts: { title: 'Accounts', sub: 'Named accounts with scores and signals', short: 'Accounts' },
   signals: { title: 'Signals', sub: 'What the engine has observed, newest first', short: 'Signals' },
+  watchlist: { title: 'Watchlist', sub: 'Data centre operators expanding, worth approaching before a UK project', short: 'Watch' },
   outbound: { title: 'Outbound', sub: 'Drafts will queue here for approval', short: 'Outbound' },
   health: { title: 'Health', sub: 'System state at a glance', short: 'Health' },
 };
-const ORDER = ['copilot', 'insights', 'pipeline', 'accounts', 'signals', 'outbound', 'health'];
+const ORDER = ['copilot', 'insights', 'pipeline', 'accounts', 'signals', 'watchlist', 'outbound', 'health'];
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 720);
@@ -109,6 +111,7 @@ export default function App() {
               onFocusConsumed={() => setFocusCompanyId(null)} />
           )}
           {section === 'signals' && <Signals onOpenCompany={openCompany} />}
+          {section === 'watchlist' && <Watchlist />}
           {section === 'outbound' && <Outbound isMobile={isMobile} />}
           {section === 'health' && <Health />}
         </div>
