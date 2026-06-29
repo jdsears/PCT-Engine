@@ -38,8 +38,28 @@ console.log('\nGeographic routing:');
 await check('a UK project, a foreign expansion, and a foreign-only build route correctly', async () => {
   const uk = await classifySignal({ title: 'Microsoft UK data centre approved' }, { callModel: fake({ dcRelevant: true, geoScope: 'uk_project', operator: 'Microsoft' }) });
   const watch = await classifySignal({ title: 'Oracle global data centre build-out' }, { callModel: fake({ dcRelevant: true, geoScope: 'expansion_watch', operator: 'Oracle' }) });
-  const foreign = await classifySignal({ title: 'SoftBank funds France-only data centre' }, { callModel: fake({ dcRelevant: true, geoScope: 'foreign_only', operator: 'SoftBank' }) });
+  const foreign = await classifySignal({ title: 'SoftBank funds France-only data centre' }, { callModel: fake({ dcRelevant: true, geoScope: 'foreign_only', operator: 'SoftBank', foreignLocation: 'France' }) });
   assert(uk.geoScope === 'uk_project' && watch.geoScope === 'expansion_watch' && foreign.geoScope === 'foreign_only', 'three scopes must land correctly');
+});
+
+console.log('\nGate and router tuning (regression for the two dry-run errors):');
+
+await check('a residential or generic construction win is rejected, not routed uk_project', async () => {
+  const resi = await classifySignal({ title: 'Resi job propels Keady to league summit' }, { callModel: fake({ dcRelevant: false }) });
+  assert(resi.dcRelevant === false && resi.geoScope === null, 'a resi job must be rejected, never uk_project');
+});
+
+await check('a real DC operator financing with no named location routes expansion_watch, not foreign_only', async () => {
+  // DDSP: a data centre financing event, geography unclear, no specific foreign place named.
+  const ddsp = await classifySignal({ title: 'DDSP secures green financing for data centre campus' }, { callModel: fake({ dcRelevant: true, geoScope: 'foreign_only', operator: 'DDSP' }) });
+  assert(ddsp.geoScope === 'expansion_watch', `unclear-geography DC operator must be expansion_watch, got ${ddsp.geoScope}`);
+  const atlas = await classifySignal({ title: 'AtlasEdge lands financing for European expansion' }, { callModel: fake({ dcRelevant: true, geoScope: 'expansion_watch', operator: 'AtlasEdge' }) });
+  assert(atlas.geoScope === 'expansion_watch', 'AtlasEdge, the same shape, must land identically');
+});
+
+await check('a clear named foreign location still routes foreign_only', async () => {
+  const jakarta = await classifySignal({ title: 'STT GDC opens data centre in Jakarta' }, { callModel: fake({ dcRelevant: true, geoScope: 'foreign_only', operator: 'STT GDC', foreignLocation: 'Jakarta' }) });
+  assert(jakarta.geoScope === 'foreign_only', 'a named foreign location stays foreign_only');
 });
 
 console.log('\nConservative operator matcher (pure):');

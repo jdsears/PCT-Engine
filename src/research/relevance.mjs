@@ -22,11 +22,11 @@ const SCOPES = new Set(['uk_project', 'expansion_watch', 'foreign_only']);
 
 const SYSTEM =
   "You classify a news result for a UK flow-control distributor that sells into data centre cooling, through the contractors and engineers building UK data centres. " +
-  "Decide three things and return strict JSON only: {\"dcRelevant\": true|false, \"geoScope\": \"uk_project\"|\"expansion_watch\"|\"foreign_only\"|null, \"operator\": \"<the data centre operator or contractor named, or null>\"}. " +
-  "dcRelevant is true ONLY if the result is genuinely about a data centre development, build, campus, capacity expansion, or a contract on one. A school, care home, office, hospital, fulfilment or distribution centre, leisure or residential scheme, a court case, or any non data centre story is dcRelevant false. The word in a search query does not count; judge the actual story. " +
-  "If dcRelevant is false, geoScope and operator are null. " +
-  "If dcRelevant is true, set geoScope by the UK dimension, not the operator's nationality: uk_project when a data centre is being built, financed or contracted in the UK whoever owns it; expansion_watch when a real data centre operator is expanding and a UK site is plausible though not named yet; foreign_only when the build is wholly in another country with no UK or expansion angle. " +
-  "When the UK angle is unclear but the named party is a real data centre operator that is expanding, choose expansion_watch, not uk_project and not foreign_only. When in doubt about dcRelevant at all, choose false.";
+  "Return strict JSON only: {\"dcRelevant\": true|false, \"geoScope\": \"uk_project\"|\"expansion_watch\"|\"foreign_only\"|null, \"operator\": \"<the data centre operator or contractor named, or null>\", \"foreignLocation\": \"<the specific non-UK place, or null>\"}. " +
+  "GATING QUESTION, decide this first: is the subject specifically a data centre? dcRelevant is true ONLY if the subject is a data centre, a data centre campus, a hyperscale or colocation facility, or a build, contract, financing or expansion event clearly attached to one. A construction win, contract award or financing counts ONLY if the thing being built, financed or contracted is a data centre. Residential, resi, homes, housing, schools, leisure, offices, hospitals, fulfilment or distribution centres, care homes, and generic construction or business wins are NOT data centres, and are rejected even when the headline sounds like a project win. The search query wording does not count, judge the actual subject, and on any doubt about the subject reject. " +
+  "If dcRelevant is false, geoScope, operator and foreignLocation are null. " +
+  "If dcRelevant is true, route by the UK dimension, not the operator's nationality: uk_project when a data centre is being built, financed or contracted in the UK, whoever owns it; foreign_only ONLY when the signal is clearly tied to a specific named non-UK location with no UK or expansion angle, and then you must name that place in foreignLocation (for example France, Jakarta, Maharashtra); expansion_watch for everything else that passed the gate, including a real data centre operator expanding or raising finance where the geography is unclear. " +
+  "foreign_only requires positive evidence of a specific foreign location. Absent that, a real operator's expansion or financing event is expansion_watch, never foreign_only. When in doubt between expansion_watch and foreign_only, choose expansion_watch.";
 
 // One classification per result: the DC-relevance gate, the geographic routing,
 // and the operator named, all in a single call. Conservative by construction:
@@ -40,7 +40,12 @@ export async function classifySignal(result, { callModel = callClaude } = {}) {
 
   const dcRelevant = parsed.dcRelevant === true;
   if (!dcRelevant) return { dcRelevant: false, geoScope: null, operator: null };
-  const geoScope = SCOPES.has(parsed.geoScope) ? parsed.geoScope : 'expansion_watch';
+  let geoScope = SCOPES.has(parsed.geoScope) ? parsed.geoScope : 'expansion_watch';
+  const foreignLocation = typeof parsed.foreignLocation === 'string' && parsed.foreignLocation.trim() ? parsed.foreignLocation.trim() : null;
+  // foreign_only needs positive evidence of a specific non-UK location. Without
+  // it, a real operator's ambiguous-geography event routes to expansion_watch,
+  // the safe home that surfaces for review rather than being discarded.
+  if (geoScope === 'foreign_only' && !foreignLocation) geoScope = 'expansion_watch';
   const operator = typeof parsed.operator === 'string' && parsed.operator.trim() ? parsed.operator.trim() : null;
   return { dcRelevant, geoScope, operator };
 }
