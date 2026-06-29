@@ -75,6 +75,7 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
 
       <div className="ob-evidence">
         <div className="eyebrow">Grounding</div>
+        {g?.openerNote && <div className={`ob-grade ob-grade-${g.openerNote.kind}`}>{g.openerNote.text}</div>}
         {g ? (
           <>
             {g.signal

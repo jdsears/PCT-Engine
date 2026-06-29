@@ -2,7 +2,8 @@
 // stand-in model is injected so the full draft -> check -> revise pipeline runs
 // without a network or a key. The case that matters most is the planted
 // fabrication being caught and surfaced, never stored as clean.
-import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean } from './draft.mjs';
+import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding } from './draft.mjs';
+import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -101,6 +102,53 @@ await check('composeDraft redacts a blocked supplier and flags the redaction', a
 await check('the outbound voice strips dashes, exclamation marks and "genuinely"', () => {
   const v = outboundVoice('Great news — this is genuinely useful! Really useful!');
   assert(voiceClean(v), `not clean: ${v}`);
+});
+
+console.log('\nOpener-grade signals (no cold email opens on a fact only a scraper would cite):');
+
+await check('real project-event types are opener-grade, register movements are not', () => {
+  for (const t of ['news_dc_build', 'news_contract', 'planning'])
+    assert(isOpenerGrade({ type: t }), `${t} should be opener-grade`);
+  for (const t of ['ch_filing', 'ch_director_change', 'ch_officers', 'ch_incorporation'])
+    assert(!isOpenerGrade({ type: t }), `${t} should not be opener-grade`);
+  assert(!isOpenerGrade(null), 'null is not opener-grade');
+  assert(isOpenerGrade({ signal_type: 'planning' }), 'accepts a raw row with signal_type');
+});
+
+await check('the review note reads correctly for an event and for a filing', () => {
+  const ev = openerNote({ type: 'planning' }, true);
+  assert(ev.kind === 'event' && /project event/.test(ev.text), ev.text);
+  const fit = openerNote({ type: 'ch_filing' }, false);
+  assert(fit.kind === 'fit' && /profile fit/.test(fit.text) && /routine filing/.test(fit.text), fit.text);
+});
+
+await check('renderGrounding opens on a project event but marks a filing never-mention', () => {
+  const base = { company: { name: 'Datum' }, contact: null, product: [], icpReason: null };
+  const event = renderGrounding({ ...base, signal: { type: 'planning', text: 'planning granted for a Slough data centre' }, openerGrade: true });
+  assert(/Signal to open on/.test(event) && /Open on this/.test(event), 'an event must be offered as the hook');
+
+  const filing = renderGrounding({ ...base, signal: { type: 'ch_filing', text: 'filed a confirmation statement with updates' }, openerGrade: false });
+  assert(/NEVER mention it/.test(filing), 'a filing must be marked never-mention');
+  assert(!/Signal to open on/.test(filing), 'a filing must not be offered as the hook');
+  assert(/profile fit/i.test(filing), 'a filing must instruct the profile-fit opening');
+});
+
+await check('a confirmation-statement lead drafts a filing-free opening', async () => {
+  const grounding = {
+    company: { name: 'Datum Datacentres', type: 'dc_developer', region: 'RA-5' },
+    contact: { name: 'Sam Lee', role: 'M&E Lead' },
+    signal: { type: 'ch_filing', text: 'Datum Datacentres filed a confirmation statement with updates' },
+    openerGrade: false, icpReason: 'type dc_developer fits the campaign',
+    product: [{ title: 'Marwin CV3000 datasheet', page: 3, snippet: 'characterized control ball valve for chilled water service' }],
+    blockedSuppliers: [],
+  };
+  const model = fakeModel({
+    draft: { subject: 'Flow control for your data centre cooling', body: 'Marwin control valves suit chilled water cooling specification on data centre projects. Worth a short call if you are specifying flow control.', claims: [] },
+    check: { claims: [] },
+  });
+  const out = await composeDraft(grounding, { callModel: model });
+  assert(!/confirmation statement|register|filing/i.test(out.body), `the opening must not cite the filing: ${out.body}`);
+  assert(out.flags.length === 0, 'a clean profile-fit draft has no flags');
 });
 
 console.log(`\n=== Outbound draft gate: ${pass} passed, ${fail} failed ===`);
