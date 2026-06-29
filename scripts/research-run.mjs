@@ -6,6 +6,7 @@ import { getCreditsSpent } from '../src/research/findymail.mjs';
 import { regionForPostcode } from '../src/research/region.mjs';
 import { resolveDomain } from '../src/research/domains.mjs';
 import { syncOfficerContacts } from '../src/research/officerContacts.mjs';
+import { matchOperator } from '../src/research/match.mjs';
 
 // Advances the front of the funnel. Idempotent and safe to run repeatedly:
 // signals dedupe on url hash, scores are recomputed in place, and leads upsert
@@ -23,6 +24,20 @@ console.log('2. Sweeping news signals ...');
 let newsCounts = { queries: 0, inserted: 0, seen: 0 };
 try { newsCounts = await dcSignalSweep(); }
 catch (e) { console.log(`   sweep failed: ${String(e.message).slice(0, 150)}`); }
+
+console.log('2b. Matching UK-project news signals to accounts ...');
+const { rows: matchCompanies } = await pool.query(`SELECT id, name FROM companies`);
+const { rows: unlinkedNews } = await pool.query(
+  `SELECT id, operator, title FROM signals
+   WHERE company_id IS NULL AND dc_relevant AND geo_scope = 'uk_project'`);
+let newsMatched = 0;
+for (const s of unlinkedNews) {
+  // Conservative: matchOperator returns null unless one account confidently fits,
+  // so an unsure signal stays unmatched rather than linking the wrong company.
+  const hit = matchOperator(s.operator || s.title, matchCompanies);
+  if (hit) { await pool.query(`UPDATE signals SET company_id = $1 WHERE id = $2`, [hit.id, s.id]); newsMatched++; }
+}
+console.log(`   matched ${newsMatched} of ${unlinkedNews.length} unlinked UK-project signal(s)`);
 
 console.log('3. Scoring companies and upserting leads ...');
 const { rows: targets } = await pool.query(
@@ -99,7 +114,8 @@ const { rows: unlinked } = await pool.query(
 
 console.log('\n=== Research run report ===');
 console.log(`Companies House: ${chCounts.companies} tracked, ${chCounts.ch_filing} filings, ${chCounts.ch_director_change} director changes inserted`);
-console.log(`News sweep: ${newsCounts.queries} queries, ${newsCounts.seen} results seen, ${newsCounts.inserted} new signals`);
+console.log(`News sweep: ${newsCounts.queries} queries, ${newsCounts.seen} seen, ${newsCounts.inserted} stored, ${newsCounts.rejected ?? 0} rejected (not DC), ${newsCounts.foreignOnly ?? 0} dropped (foreign only)`);
+console.log(`News signals matched to accounts: ${newsMatched}`);
 console.log(`Companies scored: ${report.scored}`);
 console.log(`Domains resolved: ${report.domains}`);
 console.log(`Officer contacts: ${report.officersAdded} added, ${report.officersUpdated} refreshed, ${report.inOrbit} in the decision orbit`);

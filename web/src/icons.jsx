@@ -18,6 +18,7 @@ export const ICONS = {
   signals: () => <Svg><path d="M3 12h4l2.5-6.5 4 13L16 12h5" /></Svg>,
   outbound: () => <Svg><path d="M3.5 11.5 20.5 4.5 13.5 21.5 11.5 13.5z" /><path d="M11.5 13.5 20.5 4.5" /></Svg>,
   health: () => <Svg><path d="M5 19a8 8 0 1 1 14 0" /><path d="M12 14l3.5-3.5" /><circle cx="12" cy="14" r="1" /></Svg>,
+  watchlist: () => <Svg><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" /><circle cx="12" cy="12" r="2.6" /></Svg>,
 };
 
 export const LockIcon = () => <Svg size={16}><rect x="6" y="11" width="12" height="9" rx="2" /><path d="M9 11V8a3 3 0 0 1 6 0v3" /></Svg>;

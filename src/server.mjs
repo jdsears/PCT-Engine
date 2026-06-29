@@ -352,16 +352,32 @@ app.get('/api/signals', async (req, res) => {
   try {
     const types = SIGNAL_FILTERS[req.query.type] || null;
     const { rows } = await pool.query(
-      `SELECT s.id, s.signal_type, s.title, s.url, s.observed_at,
+      `SELECT s.id, s.signal_type, s.title, s.url, s.observed_at, s.geo_scope,
               c.id AS company_id, c.name AS company
        FROM signals s LEFT JOIN companies c ON c.id = s.company_id
-       WHERE $1::text[] IS NULL OR s.signal_type = ANY($1)
+       WHERE s.dc_relevant IS NOT FALSE AND ($1::text[] IS NULL OR s.signal_type = ANY($1))
        ORDER BY s.observed_at DESC LIMIT 50`, [types]);
     const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return null; } };
     res.json({ signals: rows.map(s => ({
-      id: s.id, type: s.signal_type, title: s.title, observedAt: s.observed_at,
+      id: s.id, type: s.signal_type, title: s.title, observedAt: s.observed_at, geoScope: s.geo_scope,
       source: host(s.url) || (s.signal_type.startsWith('ch_') ? 'Companies House stream' : null),
       companyId: s.company_id, company: s.company,
+    })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The BD watchlist: data-centre operators the engine has spotted expanding, where
+// a UK move is plausible but not yet a project. Intelligence, not leads.
+app.get('/api/watchlist', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, signal_type, title, url, operator, observed_at FROM signals
+       WHERE dc_relevant AND geo_scope = 'expansion_watch'
+       ORDER BY observed_at DESC LIMIT 50`);
+    const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return null; } };
+    res.json({ watchlist: rows.map(s => ({
+      id: s.id, type: s.signal_type, title: s.title, operator: s.operator,
+      source: host(s.url), url: s.url, observedAt: s.observed_at,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
