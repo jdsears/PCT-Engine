@@ -68,6 +68,39 @@ button, input { font: inherit; }
 .is-mobile .chat-col { padding: 14px; }
 .chat-empty { color: var(--ink2); text-align: center; margin: 48px auto 0; max-width: 460px; line-height: 1.6; font-size: 14px; }
 
+/* ===== Co-Pilot shortcut landing (empty state) ===== */
+.cp-landing { max-width: 640px; width: 100%; margin: 36px auto 0; }
+.cp-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); margin: 0 2px 12px; }
+.cp-shortcuts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cp-card { display: flex; flex-direction: column; gap: 6px; text-align: left; background: #FFFFFF; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+.cp-card:hover { border-color: var(--blue); transform: translateY(-1px); }
+.cp-card-top { display: flex; align-items: center; justify-content: space-between; }
+.cp-card-icon { display: inline-flex; color: var(--navy); }
+.cp-card-arrow { display: inline-flex; color: var(--ink2); opacity: 0; transition: opacity 0.15s; }
+.cp-card:hover .cp-card-arrow, .cp-card:focus-visible .cp-card-arrow { opacity: 1; }
+.cp-card-head { font-size: 15px; font-weight: 600; color: var(--navy); }
+.cp-card-sub { font-size: 13px; line-height: 1.5; color: var(--ink2); }
+.cp-card.disabled { cursor: default; border-style: dashed; }
+.cp-card.disabled:hover { border-color: var(--line); transform: none; }
+.cp-card.disabled .cp-card-icon, .cp-card.disabled .cp-card-head { color: var(--ink2); }
+.cp-coming { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink2); }
+.cp-or { text-align: center; color: var(--ink2); font-size: 13px; margin-top: 18px; }
+/* Back to the shortcut landing from an active conversation. Sticky at the top of
+   the scroll so it stays reachable; spans the column by cancelling its padding. */
+.chat-top { position: sticky; top: 0; z-index: 2; margin: -24px -28px 0; padding: 10px 28px; background: var(--paper); }
+.is-mobile .chat-top { margin: -14px -14px 0; padding: 8px 14px; }
+.back-shortcuts { display: inline-flex; align-items: center; gap: 4px; background: none; border: none; padding: 8px 2px; color: var(--ink2); font-size: 13px; font-weight: 600; cursor: pointer; }
+.back-shortcuts:hover { color: var(--navy); }
+@media (max-width: 600px) {
+  .cp-shortcuts { grid-template-columns: 1fr; }
+  .cp-card { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-card, .cp-card-arrow { transition: none; }
+  .cp-card:hover { transform: none; }
+  .cp-card-arrow { opacity: 1; }
+}
+
 .row-user { display: flex; justify-content: flex-end; }
 .ububble { background: var(--navy); color: #FFFFFF; border-radius: 10px; padding: 11px 16px; font-size: 15px; line-height: 1.55; max-width: 78%; white-space: pre-wrap; }
 .row-copilot { display: flex; justify-content: flex-start; }
