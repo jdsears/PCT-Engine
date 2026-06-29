@@ -29,6 +29,8 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
   const open = draft.status === 'draft' || draft.status === 'approved';
   const dirty = subject !== draft.subject || body !== draft.body;
   const r = draft.rationale || {};
+  const g = draft.grounding || null;
+  const flags = draft.groundingFlags || [];
 
   const run = async (fn) => {
     setBusy(true); setMsg(null);
@@ -64,10 +66,32 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
           : <>No named contact resolved yet</>}
       </div>
 
+      {flags.length > 0 && (
+        <div className="ob-flags">
+          <div className="eyebrow">Unverified claims, review before approving</div>
+          {flags.map((f, i) => <div className="ob-flag-line" key={i}>{f}</div>)}
+        </div>
+      )}
+
       <div className="ob-evidence">
-        <div className="eyebrow">Why this lead</div>
-        {r.reason && <div className="ob-ev-line">{r.reason}</div>}
-        {r.topScoreReason && <div className="ob-ev-line muted">{r.topScoreReason}</div>}
+        <div className="eyebrow">Grounding</div>
+        {g ? (
+          <>
+            {g.signal
+              ? <div className="ob-ev-line"><span className="ob-ev-k">Signal</span> {g.signal.text}{g.signal.source && <> · <a className="ob-ev-src" href={g.signal.source} target="_blank" rel="noreferrer">source</a></>}</div>
+              : <div className="ob-ev-line muted">No signal on file</div>}
+            <div className="ob-ev-line"><span className="ob-ev-k">Contact</span> {draft.contact ? `${draft.contact.name}${draft.contact.role ? ', ' + draft.contact.role : ', role unknown'}` : 'role unknown'}</div>
+            {g.icpReason && <div className="ob-ev-line"><span className="ob-ev-k">ICP</span> {g.icpReason}</div>}
+            {g.product && g.product.length > 0
+              ? <div className="ob-ev-line"><span className="ob-ev-k">Product facts</span> {g.product.map((p, i) => <span className="ob-cite" key={i}>{p.title}{p.page ? ` p${p.page}` : ''}</span>)}</div>
+              : <div className="ob-ev-line muted">No product facts retrieved</div>}
+          </>
+        ) : (
+          <>
+            {r.reason && <div className="ob-ev-line">{r.reason}</div>}
+            {r.topScoreReason && <div className="ob-ev-line muted">{r.topScoreReason}</div>}
+          </>
+        )}
       </div>
 
       <label className="ob-field">

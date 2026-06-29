@@ -8,7 +8,7 @@
     "migrate": "node src/migrate.mjs",
     "ingest": "node ingestion/run.mjs",
     "build": "cd web && npm install && npm run build",
-    "test": "node src/configurator/configurator.test.mjs && node src/outbound/outbound.test.mjs"
+    "test": "node src/configurator/configurator.test.mjs && node src/outbound/outbound.test.mjs && node src/outbound/outbound-draft.test.mjs"
   },
   "dependencies": {
     "botbuilder": "^4.23.3",

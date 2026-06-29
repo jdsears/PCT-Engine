@@ -294,22 +294,34 @@ The outbound stage drafts a first-touch email per researched lead, queues it for
 a human to approve, and can send a test copy to internal mailboxes only. Nothing
 reaches a prospect in this phase, and two independent gates see to that.
 
-- `scripts/outbound-draft.mjs` generates the drafts. It reads researched leads
-  for the campaign, best score first, picks the best decision-orbit contact, and
-  builds an opener from a real signal or the campaign fit. Dry run by default,
-  printing the leads and openers it would use; `--apply` calls the model and
-  writes the drafts, `--limit` caps the batch (default 10), `--campaign` scopes
-  it. One open draft per lead, so re-running never piles up duplicates, and the
-  lead stays at the researched stage since nothing here sends.
+- `scripts/draft-coldopen.mjs` generates grounded cold-open (Email 1) drafts for
+  the highest-scoring researched leads and queues them as `draft` for approval.
+  `--lead <id>` scopes to one lead, `--limit N` caps the batch. One open draft per
+  lead, so re-running never duplicates, and the lead stays at the researched stage
+  since nothing here sends.
 
   ```
-  node --env-file=.env scripts/outbound-draft.mjs
-  node --env-file=.env scripts/outbound-draft.mjs --apply --limit 5
+  node --env-file=.env scripts/draft-coldopen.mjs
+  node --env-file=.env scripts/draft-coldopen.mjs --lead 42
   ```
 
-- Drafts are written in the house voice and pass a stricter gate than chat
-  answers: no em or en dashes, no "genuinely", and no exclamation marks. The
-  model opens from the one concrete reason it is given and invents nothing else.
+- A draft may state only what the lead's research supports, the outbound twin of
+  the configurator refusing to invent a code. `gatherGrounding` assembles the only
+  allowed inputs: the triggering signal, the ICP reason, the contact record (name
+  and role only if recorded), and Marwin product facts retrieved from the corpus
+  with citations. Thin grounding is handled by writing less, never by inventing.
+
+- `draftColdOpen` writes a short, plain, peer-to-peer email from that grounding,
+  then `checkGrounding`, a separate strict pass, lists any factual claim the
+  grounding does not support. If anything is unsupported it attempts one revision
+  and re-checks; whatever remains is stored in `grounding_flags` and shown
+  prominently in the review queue, so a draft is never silently stored as clean.
+  The text then passes the outbound voice gate (no em or en dashes, no "genuinely",
+  no exclamation marks) and the supplier guardrail before storage.
+
+- Each draft stores its `grounding` (the signal, ICP reason, product citations and
+  contact role) alongside its `grounding_flags`, so the reviewer sees exactly what
+  it drew on and what could not be traced.
 
 - The Outbound section of the web app is the review queue. Each draft shows its
   lead, the evidence behind it and the recipient, with the subject and body
@@ -344,8 +356,9 @@ node --env-file=.env scripts/outbound-replies.mjs --apply
 ```
 
 Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log; migration
-010 adds the reply-correlation columns and the `outbound_replies` table. Apply
-both with `npm run migrate`.
+010 adds the reply-correlation columns and the `outbound_replies` table; migration
+011 adds the `grounding` and `grounding_flags` columns. Apply them with
+`npm run migrate`.
 
 ## Usage logging and insights
 

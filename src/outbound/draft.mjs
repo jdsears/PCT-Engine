@@ -9,58 +9,129 @@ export function outboundVoice(text) {
   return voiceGate(String(text || '').replace(/!+/g, '.')).replace(/[ \t]+\./g, '.');
 }
 
-// True when the text is already clean of the banned marks. Used by the tests and
-// as a final assertion before a draft is stored.
+// True when the text is already clean of the banned marks.
 export function voiceClean(text) {
   return !/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text);
 }
 
-const SYSTEM =
-  "You write a short first-touch outreach email for Premier Control Technologies (PCT), a UK distributor of flow control products. " +
-  "The campaign offers Marwin characterized control ball valves and control valves for data centre chilled-water cooling, with application sizing and short lead times. " +
-  "Write to the named recipient in plain British English: warm, direct and brief, around 90 to 130 words. " +
-  "Open by turning the one concrete reason for contact you are given into a natural opener. Do not embellish that reason or invent any other fact about the recipient, their company or their projects, and do not say PCT has been tracking or monitoring them. " +
-  "Say briefly how PCT can help on data centre cooling, then close with a light, low-pressure ask for a short conversation. Sign off as the PCT sales team. " +
-  "Do not use em dashes or en dashes. Never use the word genuinely. Do not use exclamation marks. No marketing hyperbole, no superlatives, no pushy language. Do not promise prices, figures or specifications. " +
-  "Return strict JSON only, no preamble: {\"subject\": \"...\", \"body\": \"...\"}. The body is plain text with short paragraphs separated by a blank line and no Markdown.";
-
-// Pull the first balanced JSON object out of the model's reply, tolerant of any
-// stray text around it, and parse it.
-function parseDraft(raw) {
+// Pull the first balanced JSON object out of a model reply, tolerant of fences
+// or stray text around it.
+function parseJsonObject(raw) {
   const start = raw.indexOf('{');
   const end = raw.lastIndexOf('}');
-  if (start === -1 || end <= start) throw new Error('no JSON object in draft reply');
+  if (start === -1 || end <= start) throw new Error('no JSON object in model reply');
   return JSON.parse(raw.slice(start, end + 1));
 }
 
-// Generate one email from the assembled facts. The caller builds reasonLine from
-// real research (a signal, the score reason); this layer only writes and cleans.
-export async function draftForLead({ company, contact, reasonLine }) {
-  const recipient = contact?.full_name
-    ? `${contact.full_name}${contact.role_title ? ', ' + contact.role_title : ''} at ${company.name}`
-    : `the relevant engineer or buyer at ${company.name}`;
-  const user =
-    `Recipient: ${recipient}.\n` +
-    `The one concrete reason for contact (turn into a natural opener, do not embellish): ${reasonLine}.\n` +
-    `What PCT can offer them: Marwin characterized control ball valves and control valves for data centre chilled-water cooling, supplied with application sizing and short lead times.\n` +
-    `Write the email.`;
-
+// The real model call. Injected as `callModel` in the functions below so the
+// pipeline can be exercised offline with deterministic stand-ins.
+async function callClaude(system, user, { maxTokens = 700 } = {}) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
-    headers: {
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ model: MODEL, max_tokens: 600, system: SYSTEM, messages: [{ role: 'user', content: user }] }),
+    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
   });
-  if (!res.ok) throw new Error(`Claude draft failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`Claude failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
-  const raw = (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-  const parsed = parseDraft(raw);
+  return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+}
 
+// Render the grounding as the only facts the drafter is permitted to use.
+function renderGrounding(g) {
+  const lines = [];
+  lines.push(`Company: ${g.company?.name || 'unknown'}${g.company?.region ? ', region ' + g.company.region : ''}.`);
+  lines.push(g.contact?.name
+    ? `Contact: ${g.contact.name}${g.contact.role ? ', ' + g.contact.role : ', role not recorded'}.`
+    : `Contact: not recorded. Address a specifier or buyer in neutral terms, do not assume a role.`);
+  lines.push(g.signal ? `Signal (the legitimate hook): ${g.signal.text}${g.signal.source ? ' [source: ' + g.signal.source + ']' : ''}.`
+    : `Signal: none on file. Do not invent a reason for contact.`);
+  lines.push(g.icpReason ? `Why this account scored: ${g.icpReason}.` : `ICP reason: not recorded.`);
+  if (g.product?.length) {
+    lines.push('Product facts you may state (each with its citation), and nothing beyond these:');
+    g.product.forEach((p, i) => lines.push(`  [P${i + 1}] ${p.snippet} (source: ${p.title}${p.page ? ', p' + p.page : ''})`));
+  } else {
+    lines.push('Product facts: none retrieved. Do not make any specific product claim; keep to a general, honest offer of help.');
+  }
+  return lines.join('\n');
+}
+
+const DRAFT_SYSTEM =
+  "You write the first-touch cold-open email for Premier Control Technologies (PCT), a UK distributor of flow control products, for the Marwin data centre cooling campaign. " +
+  "HARD RULE: you may state only what the GROUNDING supports. Do not invent or embellish anything about the prospect, their projects, sites or people beyond the signal given. Do not make a product claim that is not in the grounding. Do not reference proof, case studies, named customers or results unless they are in the grounding. Do not invent a mutual connection, prior conversation, referral or deadline. Do not manufacture urgency. If the grounding is thin, write less. " +
+  "VOICE: plain technical British English, calm and restrained, one engineer flagging something relevant to a peer then getting out of the way. No opening pleasantries such as hoping the email finds them well, no hype, no superlatives, no closing pressure. No em dashes or en dashes, never the word genuinely, no exclamation marks. " +
+  "STRUCTURE, four or five sentences total: a specific hook grounded in the signal; one relevant grounded line on why Marwin suits the application; a single light specific ask (a short call, or whether they are specifying flow control on the project); a plain sign-off as the PCT sales team. " +
+  "Every factual sentence must trace to a grounding item. " +
+  "Return strict JSON only, no preamble: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|product|contact\"}]}. The body is plain text, short paragraphs separated by a blank line, no Markdown.";
+
+// Generate one grounded cold-open draft. Returns subject, body and the model's
+// own list of which grounding item supports each factual claim.
+export async function draftColdOpen(grounding, { callModel = callClaude } = {}) {
+  const raw = await callModel(DRAFT_SYSTEM, `GROUNDING (the only facts you may use):\n${renderGrounding(grounding)}\n\nWrite the cold-open email.`, { maxTokens: 700 });
+  const parsed = parseJsonObject(raw);
   const subject = outboundVoice(parsed.subject || '');
   const body = outboundVoice(parsed.body || '');
   if (!subject || !body) throw new Error('draft missing subject or body');
-  return { subject, body, model: MODEL };
+  return { subject, body, claims: Array.isArray(parsed.claims) ? parsed.claims : [], model: MODEL };
+}
+
+const CHECK_SYSTEM =
+  "You are a strict fact-checker for an outbound sales email. You are given the GROUNDING, the only facts the email is permitted to assert, and the EMAIL. " +
+  "List every factual claim the email makes about the prospect, their project or site, the product, any proof or result, or a relationship. For each, decide whether the GROUNDING directly supports it. " +
+  "Generic courtesy, a plain offer of help and the ask itself are not factual claims. Be strict: if a claim is not clearly supported by the grounding, mark it unsupported. A claim that names a specific project detail, a product capability, a proof point or a relationship not in the grounding is unsupported. " +
+  "Return strict JSON only: {\"claims\":[{\"text\":\"<claim, quoted from the email>\",\"supported\":true|false,\"by\":\"signal|icp|product|contact|null\"}]}.";
+
+// Pure: the claims the checker marked unsupported, quoted. Testable offline.
+export function findUnsupported(claims) {
+  return (claims || []).filter(c => c && c.supported === false).map(c => String(c.text || '').trim()).filter(Boolean);
+}
+
+// The safety pass. Re-derives the claims independently of the drafter and returns
+// any the grounding does not support.
+export async function checkGrounding(draft, grounding, { callModel = callClaude } = {}) {
+  const user = `GROUNDING:\n${renderGrounding(grounding)}\n\nEMAIL:\nSubject: ${draft.subject}\n\n${draft.body}`;
+  const parsed = parseJsonObject(await callModel(CHECK_SYSTEM, user, { maxTokens: 700 }));
+  const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
+  return { claims, unsupported: findUnsupported(claims) };
+}
+
+const REVISE_SYSTEM =
+  "Revise the cold-open email to remove or correct the listed unsupported claims, keeping only what the GROUNDING supports. Same voice and rules: plain British English, no em or en dashes, never genuinely, no exclamation marks, no hype, no invented facts. It is better to say less than to keep an unsupported claim. " +
+  "Return strict JSON only: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"...\",\"supportedBy\":\"signal|icp|product|contact\"}]}.";
+
+async function reviseDraft(draft, grounding, unsupported, { callModel = callClaude } = {}) {
+  const user = `GROUNDING:\n${renderGrounding(grounding)}\n\nCURRENT EMAIL:\nSubject: ${draft.subject}\n\n${draft.body}\n\nUNSUPPORTED CLAIMS TO REMOVE OR CORRECT:\n${unsupported.map(u => '- ' + u).join('\n')}`;
+  const parsed = parseJsonObject(await callModel(REVISE_SYSTEM, user, { maxTokens: 700 }));
+  return { subject: outboundVoice(parsed.subject || ''), body: outboundVoice(parsed.body || ''), claims: Array.isArray(parsed.claims) ? parsed.claims : [], model: MODEL };
+}
+
+function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// Supplier-naming guardrail on the final text: redact any blocked (non-nameable)
+// supplier name the grounding carried, the same policy the co-pilot applies.
+export function applySupplierGuardrail(text, blocked) {
+  let out = String(text || '');
+  const removed = [];
+  for (const name of blocked || []) {
+    if (!name) continue;
+    const re = new RegExp(`\\b${escapeRe(name)}\\b`, 'gi');
+    if (re.test(out)) { removed.push(name); out = out.replace(re, 'our supplier'); }
+  }
+  return { text: out, removed };
+}
+
+// The full pipeline: draft, check, one revision if needed, re-check, then the
+// supplier guardrail. Returns the final text plus the flags the reviewer must
+// see. A draft is never returned as clean while unsupported claims remain.
+export async function composeDraft(grounding, { callModel = callClaude } = {}) {
+  let draft = await draftColdOpen(grounding, { callModel });
+  let check = await checkGrounding(draft, grounding, { callModel });
+  if (check.unsupported.length) {
+    draft = await reviseDraft(draft, grounding, check.unsupported, { callModel });
+    check = await checkGrounding(draft, grounding, { callModel });
+  }
+  const s = applySupplierGuardrail(draft.subject, grounding.blockedSuppliers);
+  const b = applySupplierGuardrail(draft.body, grounding.blockedSuppliers);
+  const redacted = [...new Set([...s.removed, ...b.removed])];
+  const flags = [...check.unsupported, ...redacted.map(n => `supplier name redacted: ${n}`)];
+  return { subject: s.text, body: b.text, model: draft.model, claims: draft.claims, flags };
 }

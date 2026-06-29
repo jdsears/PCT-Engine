@@ -386,7 +386,8 @@ app.get('/api/outbound/drafts', async (req, res) => {
   try {
     const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : null;
     const { rows } = await pool.query(
-      `SELECT d.id, d.subject, d.body, d.status, d.rationale, d.created_at, d.sent_at,
+      `SELECT d.id, d.subject, d.body, d.status, d.rationale, d.grounding, d.grounding_flags,
+              d.email_type, d.created_at, d.sent_at,
               c.name AS company, c.region, c.icp_score,
               ct.full_name AS contact_name, ct.role_title, ct.email
        FROM outbound_drafts d
@@ -397,7 +398,8 @@ app.get('/api/outbound/drafts', async (req, res) => {
       status ? [status] : []);
     res.json({ drafts: rows.map(r => ({
       id: r.id, subject: r.subject, body: r.body, status: r.status,
-      rationale: r.rationale, createdAt: r.created_at, sentAt: r.sent_at,
+      rationale: r.rationale, grounding: r.grounding || null, groundingFlags: r.grounding_flags || [],
+      emailType: r.email_type, createdAt: r.created_at, sentAt: r.sent_at,
       company: r.company, region: r.region, score: r.icp_score,
       contact: r.contact_name ? { name: r.contact_name, role: r.role_title, email: r.email } : null,
     })) });

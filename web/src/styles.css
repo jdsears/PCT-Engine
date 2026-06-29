@@ -302,6 +302,16 @@ button, input { font: inherit; }
 .ob-evidence { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
 .ob-ev-line { font-size: 13px; line-height: 1.5; color: var(--navy); }
 .ob-ev-line.muted { color: var(--ink2); }
+.ob-ev-k { font-weight: 700; color: var(--ink2); margin-right: 4px; }
+.ob-ev-src { color: var(--blue); }
+.ob-cite { display: inline-block; background: #FFF; border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; margin: 0 4px 4px 0; font-size: 12px; color: var(--ink2); }
+.ob-flags { background: #FCEEE6; border: 1px solid var(--amber); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.ob-flags .eyebrow { color: var(--amber); }
+.ob-flag-line { font-size: 13px; line-height: 1.5; color: var(--navy); }
+@media (max-width: 480px) {
+  .outbound-queue .ob-btn, .outbound-queue .ob-tab, .outbound-queue .ob-select, .outbound-queue .ob-input { min-height: 44px; }
+  .ob-actions { flex-wrap: wrap; }
+}
 .ob-field { display: flex; flex-direction: column; gap: 5px; }
 .ob-input, .ob-body, .ob-select { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 14px; color: var(--navy); background: #FFF; width: 100%; box-sizing: border-box; }
 .ob-body { resize: vertical; line-height: 1.6; }
