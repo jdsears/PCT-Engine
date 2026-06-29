@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { apiFetch } from './api.js';
+import { ICONS, ChevronRight, ChevronLeft } from './icons.jsx';
 
 // The web chat. Most turns are ordinary co-pilot answers. When the part-number
 // configurator is running, a turn can also carry an options list (the next slot
@@ -13,6 +14,7 @@ export default function Chat() {
   const [busy, setBusy] = useState(false);
   const [configState, setConfigState] = useState(null);
   const endRef = useRef(null);
+  const inputRef = useRef(null);
   useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages, busy]);
 
   async function send(forced) {
@@ -38,14 +40,32 @@ export default function Chat() {
     } finally { setBusy(false); }
   }
 
+  // Return to the shortcut landing: clear the conversation and any build in
+  // progress so the empty-state cards come back.
+  function reset() {
+    setMessages([]);
+    setConfigState(null);
+    setInput('');
+  }
+
   const building = !!(configState && configState.active);
 
   return (
     <div className="copilot">
       <div className="chat-scroll">
         <div className="chat-col">
+          {messages.length > 0 && (
+            <div className="chat-top">
+              <button className="back-shortcuts" onClick={reset} aria-label="Back to shortcuts">
+                <ChevronLeft /> Back to shortcuts
+              </button>
+            </div>
+          )}
           {messages.length === 0 && (
-            <div className="chat-empty">Ask about a product line, a specification, a policy, or how PCT sells. For example, "what is the pressure rating of the Marwin CV3000?" or "build a Jordan Mark 601 part number".</div>
+            <Shortcuts
+              onConfigure={() => send('build a part number')}
+              onPrefill={t => { setInput(t); inputRef.current?.focus(); }}
+            />
           )}
           {messages.map((m, i) => (
             m.role === 'user' ? (
@@ -103,13 +123,61 @@ export default function Chat() {
           </div>
         )}
         <div className="composer">
-          <input type="text" value={input} onChange={e => setInput(e.target.value)}
+          <input ref={inputRef} type="text" value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && send()}
             placeholder={building ? 'Type or pick an option above' : 'Ask the co-pilot a question'}
             aria-label="Ask the co-pilot a question" />
           <button onClick={() => send()} disabled={busy}>{building ? 'Send' : 'Ask'}</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// The co-pilot's empty state: four shortcut cards so a first-time user sees what
+// the co-pilot can do, with the part-number builder promoted to the front door
+// rather than left to be discovered. Three live, one honestly disabled until the
+// price lists land. Built in the existing card grammar, no flow line borrowed.
+const SHORTCUTS = [
+  { id: 'build', icon: 'pipeline', heading: 'Build a part number',
+    sub: 'Turn process conditions into a valid part number, step by step.', kind: 'configure' },
+  { id: 'product', icon: 'copilot', heading: 'Product and spec questions',
+    sub: 'Ask about a product line, a datasheet, a rating or a material.',
+    kind: 'prefill', prompt: 'what is the pressure rating of the Marwin CV3000?' },
+  { id: 'sells', icon: 'accounts', heading: 'How PCT sells',
+    sub: "Process, qualification and policy, from PCT's own playbook.",
+    kind: 'prefill', prompt: 'how do we qualify an opportunity?' },
+  { id: 'price', icon: 'insights', heading: 'Look up a price',
+    sub: 'Sales pricing from PCT price lists. Available once the lists are loaded.', kind: 'disabled' },
+];
+
+function Shortcuts({ onConfigure, onPrefill }) {
+  return (
+    <div className="cp-landing">
+      <div className="cp-eyebrow">Start here</div>
+      <div className="cp-shortcuts">
+        {SHORTCUTS.map(s => s.kind === 'disabled' ? (
+          <div key={s.id} className="cp-card disabled" aria-disabled="true">
+            <div className="cp-card-top">
+              <span className="cp-card-icon">{ICONS[s.icon]()}</span>
+              <span className="cp-coming">Coming</span>
+            </div>
+            <div className="cp-card-head">{s.heading}</div>
+            <div className="cp-card-sub">{s.sub}</div>
+          </div>
+        ) : (
+          <button key={s.id} className="cp-card"
+            onClick={() => (s.kind === 'configure' ? onConfigure() : onPrefill(s.prompt))}>
+            <div className="cp-card-top">
+              <span className="cp-card-icon">{ICONS[s.icon]()}</span>
+              <span className="cp-card-arrow"><ChevronRight /></span>
+            </div>
+            <div className="cp-card-head">{s.heading}</div>
+            <div className="cp-card-sub">{s.sub}</div>
+          </button>
+        ))}
+      </div>
+      <div className="cp-or">Or just type your question below.</div>
     </div>
   );
 }
