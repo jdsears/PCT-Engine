@@ -38,14 +38,32 @@ async function deliver({ to, subject, html }) {
   });
 }
 
+// Create the message as a draft, read its identifiers, then send it. The two
+// step form is used for real sends so the conversation id is known and an inbound
+// reply can be matched back to the draft it answers.
+async function deliverTracked({ to, subject, html }) {
+  const mb = process.env.ENGINE_MAILBOX;
+  const created = await graphJson(`/users/${mb}/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      subject, body: { contentType: 'HTML', content: html },
+      toRecipients: [{ emailAddress: { address: to } }],
+    }),
+  });
+  await graphJson(`/users/${mb}/messages/${created.id}/send`, { method: 'POST' });
+  return { messageId: created.id, conversationId: created.conversationId, internetMessageId: created.internetMessageId };
+}
+
 // Real prospect send. Refuses unless the kill switch is explicitly off. This is
-// the production gate and stays on by default.
+// the production gate and stays on by default. On a send it returns the message
+// identifiers so the reply poller can correlate.
 export async function sendMail({ to, subject, html }) {
   if ((process.env.MAIL_KILL_SWITCH || 'on') !== 'off') {
     return { sent: false, reason: 'kill switch on' };
   }
-  await deliver({ to, subject, html });
-  return { sent: true };
+  const ids = await deliverTracked({ to, subject, html });
+  return { sent: true, ...ids };
 }
 
 // Internal test send. Refuses unless test sends are explicitly enabled and the

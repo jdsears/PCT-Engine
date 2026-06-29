@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from './api.js';
+import { fmtClockDay } from './labels.js';
 
 const FILTERS = [
   { id: 'draft', label: 'To review' },
   { id: 'approved', label: 'Approved' },
   { id: 'rejected', label: 'Rejected' },
+  { id: 'replies', label: 'Replies' },
 ];
 
 async function action(path, opts) {
@@ -39,6 +41,11 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
     const res = await action(`/api/outbound/drafts/${draft.id}/send-test`, jsonOpts('POST', { to }));
     setMsg(res.sent ? `Test sent to ${to}.` : `Not sent: ${res.reason}.`);
     setBusy(false);
+  });
+  const sendReal = () => run(async () => {
+    const res = await action(`/api/outbound/drafts/${draft.id}/send`, jsonOpts('POST'));
+    if (res.sent) { setMsg('Sent to the prospect.'); onChanged(); }
+    else { setMsg(`Not sent: ${res.reason}.`); setBusy(false); }
   });
 
   return (
@@ -79,7 +86,7 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
             <span className="ob-spacer" />
             <button className="ob-btn ghost" onClick={reject} disabled={busy}>Reject</button>
             {draft.status === 'draft' && <button className="ob-btn primary" onClick={approve} disabled={busy || dirty}>Approve</button>}
-            {draft.status === 'approved' && <span className="ob-approved">Approved</span>}
+            {draft.status === 'approved' && <button className="ob-btn danger" onClick={sendReal} disabled={busy}>Send to prospect</button>}
           </div>
           <div className="ob-test">
             <span className="eyebrow">Send a test</span>
@@ -96,10 +103,25 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
   );
 }
 
+function ReplyCard({ reply }) {
+  return (
+    <div className="card ob-card">
+      <div className="ob-head">
+        <div className="ob-co">{reply.company || reply.from || 'Reply'}</div>
+        {reply.receivedAt && <span className="pill">{fmtClockDay(reply.receivedAt)}</span>}
+      </div>
+      <div className="ob-to">From {reply.from || 'unknown sender'}</div>
+      {reply.subject && <div className="ob-ev-line"><strong>{reply.subject}</strong></div>}
+      {reply.snippet && <div className="ob-ev-line muted">{reply.snippet}</div>}
+    </div>
+  );
+}
+
 export default function Outbound() {
   const [status, setStatus] = useState(null);
   const [filter, setFilter] = useState('draft');
   const [drafts, setDrafts] = useState(null);
+  const [replies, setReplies] = useState([]);
   const [state, setState] = useState('loading');
 
   const loadStatus = useCallback(() => {
@@ -112,10 +134,17 @@ export default function Outbound() {
       .then(d => { setDrafts(d.drafts || []); setState('ready'); })
       .catch(() => setState('error'));
   }, []);
+  const loadReplies = useCallback(() => {
+    apiFetch('/api/outbound/replies').then(r => r.json())
+      .then(d => { setReplies(d.replies || []); setState('ready'); })
+      .catch(() => setState('error'));
+  }, []);
 
   useEffect(() => { loadStatus(); }, [loadStatus]);
-  useEffect(() => { loadDrafts(filter); }, [filter, loadDrafts]);
-  const refresh = () => { loadStatus(); loadDrafts(filter); };
+  useEffect(() => {
+    if (filter === 'replies') loadReplies(); else loadDrafts(filter);
+  }, [filter, loadDrafts, loadReplies]);
+  const refresh = () => { loadStatus(); if (filter === 'replies') loadReplies(); else loadDrafts(filter); };
 
   const killOn = status?.killSwitch !== 'off';
   const testOn = status?.testSends === 'on';
@@ -149,14 +178,19 @@ export default function Outbound() {
 
       {state === 'loading' && <p className="muted-note">Loading drafts.</p>}
       {state === 'error' && <p className="muted-note">Drafts are not available right now.</p>}
-      {state === 'ready' && drafts.length === 0 && (
+      {state === 'ready' && filter === 'replies' && (
+        replies.length === 0
+          ? <p className="muted-note">No replies captured yet. The reply poller records prospect replies and moves those leads to replied.</p>
+          : replies.map(r => <ReplyCard key={r.id} reply={r} />)
+      )}
+      {state === 'ready' && filter !== 'replies' && drafts && drafts.length === 0 && (
         <p className="muted-note">
           {filter === 'draft'
             ? 'No drafts to review yet. Run the drafter to generate first-touch emails for researched leads.'
             : `No ${filter} drafts yet.`}
         </p>
       )}
-      {state === 'ready' && drafts.map(d => (
+      {state === 'ready' && filter !== 'replies' && drafts && drafts.map(d => (
         <DraftCard key={d.id} draft={d} recipients={recipients} testOn={testOn} onChanged={refresh} />
       ))}
     </div>

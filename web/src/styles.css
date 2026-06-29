@@ -312,6 +312,7 @@ button, input { font: inherit; }
 .ob-btn:disabled { opacity: 0.45; cursor: default; }
 .ob-btn.primary { background: var(--navy); border-color: var(--navy); color: #FFF; }
 .ob-btn.ghost { color: var(--ink2); }
+.ob-btn.danger { background: var(--amber); border-color: var(--amber); color: #FFF; }
 .ob-approved { font-size: 13px; font-weight: 700; color: var(--teal); }
 .ob-test { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 12px; }
 .ob-test .eyebrow { margin-right: 2px; }

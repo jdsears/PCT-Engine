@@ -8,7 +8,8 @@ import { ask } from './answer.mjs';
 import { REGIONS } from './research/region.mjs';
 import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
-import { sendMailTest, isTestRecipient, textToHtml, testRecipientList } from './mail.mjs';
+import { sendMail, sendMailTest, isTestRecipient, textToHtml, testRecipientList } from './mail.mjs';
+import { canSendReal } from './outbound/sendDecision.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -457,6 +458,53 @@ app.post('/api/outbound/drafts/:id/send-test', async (req, res) => {
        VALUES ($1, $2, $3, true, $4, $5)`,
       [d.id, to, d.subject, !!result.sent, result.reason || null]);
     res.json(result);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Real prospect send. Allowed only for an approved draft with a deliverable,
+// non-suppressed recipient; the kill switch (in sendMail) is the final gate, so a
+// refused send returns 200 with the reason and changes nothing. A real send logs,
+// marks the draft sent, and advances the lead to the outbound stage.
+app.post('/api/outbound/drafts/:id/send', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT d.id, d.subject, d.body, d.status, d.lead_id, ct.email, ct.suppressed
+       FROM outbound_drafts d LEFT JOIN contacts ct ON ct.id = d.contact_id
+       WHERE d.id = $1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'draft not found' });
+    const d = rows[0];
+    const gate = canSendReal({ status: d.status, contactEmail: d.email, suppressed: d.suppressed });
+    if (!gate.ok) return res.status(409).json({ error: gate.reason });
+
+    const result = await sendMail({ to: d.email, subject: d.subject, html: textToHtml(d.body) });
+    await pool.query(
+      `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason, graph_message_id, conversation_id, internet_message_id)
+       VALUES ($1, $2, $3, false, $4, $5, $6, $7, $8)`,
+      [d.id, d.email, d.subject, !!result.sent, result.reason || null,
+       result.messageId || null, result.conversationId || null, result.internetMessageId || null]);
+
+    if (result.sent) {
+      await pool.query(`UPDATE outbound_drafts SET status = 'sent', sent_at = now(), updated_at = now() WHERE id = $1`, [d.id]);
+      if (d.lead_id) await pool.query(
+        `UPDATE leads SET stage = 'outbound', updated_at = now() WHERE id = $1 AND stage IN ('sourced','researched')`, [d.lead_id]);
+    }
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Captured prospect replies, newest first, for the review surface.
+app.get('/api/outbound/replies', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT r.id, r.from_email, r.subject, r.snippet, r.received_at, r.draft_id, c.name AS company
+       FROM outbound_replies r
+       LEFT JOIN outbound_drafts d ON d.id = r.draft_id
+       LEFT JOIN companies c ON c.id = d.company_id
+       ORDER BY r.received_at DESC NULLS LAST LIMIT 200`);
+    res.json({ replies: rows.map(r => ({
+      id: r.id, from: r.from_email, subject: r.subject, snippet: r.snippet,
+      receivedAt: r.received_at, draftId: r.draft_id, company: r.company,
+    })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
