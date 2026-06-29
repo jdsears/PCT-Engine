@@ -288,6 +288,46 @@ signals 30, CH health 20, contactability 10) so reachable accounts score
 higher. It stays off until James and Andy approve; the curation pack prints
 the proposal.
 
+## Outbound testing harness
+
+The outbound stage drafts a first-touch email per researched lead, queues it for
+a human to approve, and can send a test copy to internal mailboxes only. Nothing
+reaches a prospect in this phase, and two independent gates see to that.
+
+- `scripts/outbound-draft.mjs` generates the drafts. It reads researched leads
+  for the campaign, best score first, picks the best decision-orbit contact, and
+  builds an opener from a real signal or the campaign fit. Dry run by default,
+  printing the leads and openers it would use; `--apply` calls the model and
+  writes the drafts, `--limit` caps the batch (default 10), `--campaign` scopes
+  it. One open draft per lead, so re-running never piles up duplicates, and the
+  lead stays at the researched stage since nothing here sends.
+
+  ```
+  node --env-file=.env scripts/outbound-draft.mjs
+  node --env-file=.env scripts/outbound-draft.mjs --apply --limit 5
+  ```
+
+- Drafts are written in the house voice and pass a stricter gate than chat
+  answers: no em or en dashes, no "genuinely", and no exclamation marks. The
+  model opens from the one concrete reason it is given and invents nothing else.
+
+- The Outbound section of the web app is the review queue. Each draft shows its
+  lead, the evidence behind it and the recipient, with the subject and body
+  editable in place. A human approves, rejects or edits before anything sends.
+
+- Two gates, by design, both off by default:
+  - `MAIL_KILL_SWITCH` governs real prospect sends. While it is on, no email
+    goes to a prospect. This phase exposes no prospect-send action at all; the
+    path exists in `mail.mjs` for a later phase.
+  - `OUTBOUND_TEST_SENDS` plus `OUTBOUND_TEST_RECIPIENTS` govern internal test
+    sends. A test send is refused unless test sends are enabled and the recipient
+    is on the allowlist, so the send mechanism can be exercised while the kill
+    switch stays on, with no chance of reaching a prospect. Every attempt, test
+    or real, sent or refused, is logged to `outbound_sends`.
+
+Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log. Apply it
+with `npm run migrate`.
+
 ## Usage logging and insights
 
 Every co-pilot question is logged to `copilot_queries` (migration 005) after the

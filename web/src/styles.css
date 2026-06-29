@@ -281,7 +281,45 @@ button, input { font: inherit; }
 .signal-nocompany { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--amber); }
 .signal-source { font-size: 13px; color: var(--ink2); }
 
-/* ===== Outbound ===== */
+/* ===== Outbound review queue ===== */
+.outbound-queue { display: flex; flex-direction: column; gap: 14px; max-width: 760px; }
+.ob-banner { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+.ob-banner-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ob-banner-note { font-size: 13px; font-weight: 600; color: var(--ink2); }
+.ob-banner-sub { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink2); }
+.ob-tabs { display: flex; gap: 8px; }
+.ob-tab { border: 1px solid var(--line); background: #FFF; border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 700; color: var(--ink2); cursor: pointer; }
+.ob-tab.active { background: var(--navy); border-color: var(--navy); color: #FFF; }
+.ob-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.ob-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ob-co { font-size: 16px; font-weight: 800; color: var(--navy); }
+.ob-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.ob-stat { text-transform: capitalize; }
+.ob-stat-draft { color: var(--amber); border-color: var(--amber); }
+.ob-stat-approved { color: var(--teal); border-color: var(--teal); }
+.ob-stat-rejected { color: var(--ink2); }
+.ob-to { font-size: 13.5px; color: var(--ink2); }
+.ob-evidence { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.ob-ev-line { font-size: 13px; line-height: 1.5; color: var(--navy); }
+.ob-ev-line.muted { color: var(--ink2); }
+.ob-field { display: flex; flex-direction: column; gap: 5px; }
+.ob-input, .ob-body, .ob-select { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 14px; color: var(--navy); background: #FFF; width: 100%; box-sizing: border-box; }
+.ob-body { resize: vertical; line-height: 1.6; }
+.ob-input:disabled, .ob-body:disabled, .ob-select:disabled { background: var(--paper); color: var(--ink2); }
+.ob-actions { display: flex; align-items: center; gap: 8px; }
+.ob-spacer { flex: 1; }
+.ob-btn { border: 1px solid var(--line); background: #FFF; border-radius: 8px; padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 700; color: var(--navy); cursor: pointer; }
+.ob-btn:disabled { opacity: 0.45; cursor: default; }
+.ob-btn.primary { background: var(--navy); border-color: var(--navy); color: #FFF; }
+.ob-btn.ghost { color: var(--ink2); }
+.ob-approved { font-size: 13px; font-weight: 700; color: var(--teal); }
+.ob-test { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 12px; }
+.ob-test .eyebrow { margin-right: 2px; }
+.ob-test .ob-select { width: auto; min-width: 200px; }
+.ob-test-off { font-size: 12px; color: var(--ink2); }
+.ob-msg { font-size: 13px; font-weight: 600; color: var(--navy); background: var(--paper); border-radius: 8px; padding: 8px 10px; }
+
+/* ===== Outbound (legacy placeholder, kept for the stage track styles) ===== */
 .outbound { display: flex; flex-direction: column; align-items: center; }
 .outbound-col { max-width: 620px; width: 100%; display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
 .outbound-card { padding: 30px 28px; display: flex; flex-direction: column; gap: 18px; }
