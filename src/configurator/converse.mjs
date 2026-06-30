@@ -167,9 +167,10 @@ export async function advance(convState, message) {
 // ---- entry: conservative, offer rather than hijack ----
 
 // A cheap heuristic gate so a normal question never triggers a model call. A
-// message looks like a build when it mentions a part number or names a model we
-// hold a matrix for.
-const BUILD_HINT = /\b(part\s*number|part\s*no|order\s*code|build (a|the|me)|configure|ordering matrix)\b/i;
+// A message shows build intent when it asks to build, configure, spec or
+// generate a part number. Naming a configurable model is not, on its own, build
+// intent: a knowledge question about a model goes to the co-pilot, not the builder.
+const BUILD_HINT = /\b(part\s*number|part\s*no|order\s*code|ordering matrix|build\s+(a|an|the|me|out)|configure|spec\s+(out|me)|generate\s+(a|an|the|me)|make me a|put together a|select options)\b/i;
 const MODEL_CODE = /\b(?:mk|mark)\s*-?\s*(\d{2,4})\b/i;
 
 // Resolve a model mention to a held config id, conservatively. A config can
@@ -197,8 +198,15 @@ export function extractModel(message) {
   }
   return null;
 }
+// Build intent is keyed on a build verb or part-number phrasing, not on merely
+// naming a configurable product. A knowledge question that names a model, such as
+// "what is the pressure rating of the Marwin CV3000?", is not a build and falls
+// through to the grounded co-pilot. When intent is unclear we default to
+// knowledge, the recoverable path; entering the build is the high-commitment
+// action and needs positive build intent. extractModel still resolves which model
+// once build intent is established, in route().
 export function looksLikeBuild(message) {
-  return BUILD_HINT.test(message) || Boolean(extractModel(message));
+  return BUILD_HINT.test(message);
 }
 
 const YES = /\b(yes|yeah|yep|go on|please|ok|okay|sure|build it|walk me through|do it|continue)\b/i;

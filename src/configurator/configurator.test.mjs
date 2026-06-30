@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { emptySlots, applyValue, checkConstraints, assemble, decode } from './engine.mjs';
+import { looksLikeBuild } from './converse.mjs';
 
 // The acceptance gate. The PricingLevel exercises carry no worked answers, so
 // the test is round-trip: build a spec, assemble the code, decode it, and
@@ -164,6 +165,26 @@ check('the 2-IQ positioner must match the actuator', () => {
     'a double-acting positioner with a spring-return actuator must clash');
   assert.ok(checkConstraints(cv3000, { positioner: 'A5', operation: 'P6' }).length > 0,
     'a spring-return positioner with a double-acting actuator must clash');
+});
+
+console.log('\nIntent detection (a question about a product is not a build request):');
+
+check('knowledge questions that name a configurable product do not enter the configurator', () => {
+  for (const q of [
+    'what is the marwin cv3000 and what applications is it for?',
+    'What is the pressure rating of the Marwin CV3000?',
+    'What materials is the CV3000 available in?',
+    'Tell me about the Jordan Mark 708',
+  ]) assert.equal(looksLikeBuild(q), false, `must be answered as knowledge, not a build: "${q}"`);
+});
+
+check('explicit build requests still enter the configurator', () => {
+  for (const q of [
+    'Build a Marwin CV3000 part number',
+    'Configure a CV3000',
+    'I need a part number for the CV3000',
+    'Generate a code for a Jordan Mark 601',
+  ]) assert.ok(looksLikeBuild(q), `must enter the configurator: "${q}"`);
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
