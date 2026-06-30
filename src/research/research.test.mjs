@@ -110,5 +110,14 @@ await check('financing or expansion of a specific data centre is kept; commentar
   assert(resi.dcRelevant === false, 'a residential construction win must fail the subject gate');
 });
 
+console.log('\nSubject-gate default (a construction win needs a recognisable data centre subject):');
+
+await check('a residential or unrecognised-subject construction win defaults to reject', async () => {
+  const resi = await classifySignal({ title: 'Resi job propels Keady to league summit' }, { callModel: fake({ dcRelevant: false }) });
+  const opaque = await classifySignal({ title: 'Contractor wins major fit-out job at an unnamed site' }, { callModel: fake({ dcRelevant: false }) });
+  assert(resi.dcRelevant === false, 'a residential construction win must reject on subject');
+  assert(opaque.dcRelevant === false, 'an unrecognised-subject construction win must default to reject');
+});
+
 console.log(`\n=== Research gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);
