@@ -447,6 +447,13 @@ async function setDraftStatus(id, to, from) {
 }
 app.post('/api/outbound/drafts/:id/approve', async (req, res) => {
   try {
+    // A blocking flag (a named end customer) prevents clean approval; it must be
+    // rewritten first. Advisory flags do not block.
+    const fr = await pool.query(`SELECT grounding_flags FROM outbound_drafts WHERE id = $1`, [req.params.id]);
+    const flags = Array.isArray(fr.rows[0]?.grounding_flags) ? fr.rows[0].grounding_flags : [];
+    if (flags.some(f => /^blocking/i.test(String(f)))) {
+      return res.status(409).json({ error: 'this draft has a blocking flag (a named end customer) and cannot be approved until it is rewritten' });
+    }
     const s = await setDraftStatus(req.params.id, 'approved', ['draft']);
     if (!s) return res.status(409).json({ error: 'only a draft can be approved' });
     res.json({ ok: true, status: s });

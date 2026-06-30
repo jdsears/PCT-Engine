@@ -28,6 +28,13 @@ export function voiceGate(text) {
   return text
     .replace(/\s*[—–]\s*/g, ', ') // em and en dashes
     .replace(/\bgenuinely\b/gi, '')
+    // PCT is a supplier, not a distributor, in all client-facing copy. Rewrite the
+    // self-description, but leave technical "distribution" (flow distribution, a
+    // distribution header) alone, since that is not PCT's commercial role.
+    .replace(/\bdistributors\b/gi, m => (/^[A-Z]/.test(m) ? 'Suppliers' : 'suppliers'))
+    .replace(/\bdistributor\b/gi, m => (/^[A-Z]/.test(m) ? 'Supplier' : 'supplier'))
+    .replace(/\b(PCT|Premier Control Technologies|we)\s+(distribute|distributes|distributing|distributed)\b/gi,
+      (m, subj, verb) => `${subj} ${({ distribute: 'supply', distributes: 'supplies', distributing: 'supplying', distributed: 'supplied' })[verb.toLowerCase()]}`)
     .replace(/[ \t]{2,}/g, ' ')   // collapse runs of spaces but keep line breaks
     .replace(/[ \t]+([,.])/g, '$1')
     .replace(/\n{3,}/g, '\n\n')   // at most one blank line between paragraphs

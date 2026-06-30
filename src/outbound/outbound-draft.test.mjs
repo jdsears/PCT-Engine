@@ -2,8 +2,9 @@
 // stand-in model is injected so the full draft -> check -> revise pipeline runs
 // without a network or a key. The case that matters most is the planted
 // fabrication being caught and surfaced, never stored as clean.
-import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding } from './draft.mjs';
+import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers } from './draft.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
+import { voiceGate } from '../answer.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -149,6 +150,44 @@ await check('a confirmation-statement lead drafts a filing-free opening', async 
   const out = await composeDraft(grounding, { callModel: model });
   assert(!/confirmation statement|register|filing/i.test(out.body), `the opening must not cite the filing: ${out.body}`);
   assert(out.flags.length === 0, 'a clean profile-fit draft has no flags');
+});
+
+console.log('\nSupplier voice, range positioning, and end-customer confidentiality:');
+
+await check('the voice gate rewrites PCT as a supplier and leaves technical distribution alone', () => {
+  const a = voiceGate('PCT is a distributor of valves');
+  assert(/\bsupplier\b/.test(a) && !/distributor/i.test(a), `distributor must become supplier: ${a}`);
+  assert(/we supply/i.test(voiceGate('we distribute control valves')), 'we distribute must become we supply');
+  assert(/Suppliers/.test(voiceGate('Distributors add cost')), 'leading-cap Distributors must become Suppliers');
+  assert(/flow distribution header/.test(voiceGate('a flow distribution header')), 'technical distribution must be left alone');
+});
+
+await check('the cold-open grounding positions the range, not a single part specification', () => {
+  const text = renderGrounding({ company: { name: 'Aery' }, contact: null, signal: null, icpReason: null,
+    product: [{ title: 'CV3000 datasheet', page: 3, snippet: 'rated to 40 bar' }] });
+  assert(/Marwin and Steriflow/.test(text), 'must lead on the ranges');
+  assert(!/\[P1\]/.test(text) && !/40 bar/.test(text), 'must not present a per-part spec snippet');
+  assert(/never name or imply a specific data centre operator/.test(text), 'must carry the confidentiality limit');
+});
+
+await check('a named operator or implying phrase is flagged, the recipient name is not', () => {
+  assert(flagEndCustomers('used by Google on their builds', 'Aery').length > 0, 'Google must be flagged');
+  assert(flagEndCustomers('trusted by a major US hyperscaler', 'Aery').includes('a major us'), 'the implying phrase must be flagged');
+  assert(flagEndCustomers('valves for Oracle', 'Oracle Data Centres').length === 0, 'the recipient name is not an end-customer breach');
+  assert(flagEndCustomers('used across some of the largest data centre builds', 'Aery').length === 0, 'the safe general form is clean');
+});
+
+await check('composeDraft makes a named end customer a BLOCKING flag, and passes the general form', async () => {
+  const grounding = { company: { name: 'Aery Datacentres' }, contact: null, signal: null, icpReason: null, blockedSuppliers: [] };
+  const named = await composeDraft(grounding, { callModel: fakeModel({
+    draft: { subject: 'Cooling control valves', body: 'Marwin and Steriflow valves are used by Microsoft on major builds.', claims: [] },
+    check: { claims: [] } }) });
+  assert(named.flags.some(f => /^blocking/i.test(f)), 'a named operator must produce a blocking flag');
+
+  const clean = await composeDraft(grounding, { callModel: fakeModel({
+    draft: { subject: 'Cooling control valves', body: 'PCT supplies the Marwin and Steriflow ranges, already trusted across some of the largest data centre builds.', claims: [] },
+    check: { claims: [] } }) });
+  assert(!clean.flags.some(f => /^blocking/i.test(f)), 'the general track record must not be blocked');
 });
 
 console.log(`\n=== Outbound draft gate: ${pass} passed, ${fail} failed ===`);
