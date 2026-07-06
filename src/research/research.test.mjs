@@ -80,5 +80,44 @@ await check('an ambiguous or unknown operator stays unmatched, so no wrong accou
   assert(normalizeTokens('EQUINIX (UK) LIMITED').join(',') === 'equinix', 'corporate suffixes are stripped');
 });
 
+console.log('\nEvent gate (regression: mentioning a data centre is not a build event):');
+
+await check('an opposition meeting, a moratorium, and financing chatter are rejected though they name data centres', async () => {
+  const opp = await classifySignal({ title: 'New Hampshire data-center opponents planned to pack meeting' }, { callModel: fake({ dcRelevant: false }) });
+  const mora = await classifySignal({ title: 'Arkansas county approves data center moratorium' }, { callModel: fake({ dcRelevant: false }) });
+  const fin = await classifySignal({ title: 'Bitcoin Miner Kiln Infrastructure Raises $458M in Convertible Notes for Data Center Push' }, { callModel: fake({ dcRelevant: false }) });
+  assert(opp.dcRelevant === false && mora.dcRelevant === false && fin.dcRelevant === false, 'non-build events must be rejected');
+  assert(opp.geoScope === null && mora.geoScope === null && fin.geoScope === null, 'rejected signals carry no scope');
+});
+
+await check('a clear UK build and an operator expansion still pass and route correctly', async () => {
+  const brent = await classifySignal({ title: "Glencar lands final phase of Pure DC's Brent Cross data centre campus" }, { callModel: fake({ dcRelevant: true, geoScope: 'uk_project', operator: 'Pure DC' }) });
+  const oracle = await classifySignal({ title: 'Oracle to spend $70bn on data centre build-out' }, { callModel: fake({ dcRelevant: true, geoScope: 'expansion_watch', operator: 'Oracle' }) });
+  assert(brent.geoScope === 'uk_project', 'a clear UK build must stay uk_project');
+  assert(oracle.geoScope === 'expansion_watch', 'an operator build-out must stay expansion_watch');
+});
+
+console.log('\nThird-pass boundary (financing OF a data centre keeps, sector commentary rejects):');
+
+await check('financing or expansion of a specific data centre is kept; commentary not tied to a build is rejected', async () => {
+  const ddsp = await classifySignal({ title: 'DDSP secures green financing for data centre campus' }, { callModel: fake({ dcRelevant: true, geoScope: 'expansion_watch', operator: 'DDSP' }) });
+  const oracle = await classifySignal({ title: 'Oracle to spend $70bn on data centre build-out' }, { callModel: fake({ dcRelevant: true, geoScope: 'expansion_watch', operator: 'Oracle' }) });
+  assert(ddsp.dcRelevant && ddsp.geoScope === 'expansion_watch', 'financing of a data centre campus must be kept');
+  assert(oracle.dcRelevant && oracle.geoScope === 'expansion_watch', 'an operator build-out must be kept');
+  const commentary = await classifySignal({ title: 'Bitcoin Miner Raises $458M in Convertible Notes for Data Center Push' }, { callModel: fake({ dcRelevant: false }) });
+  assert(commentary.dcRelevant === false, 'sector financing commentary not tied to a specific build must be rejected');
+  const resi = await classifySignal({ title: 'Resi job propels Keady to league summit' }, { callModel: fake({ dcRelevant: false }) });
+  assert(resi.dcRelevant === false, 'a residential construction win must fail the subject gate');
+});
+
+console.log('\nSubject-gate default (a construction win needs a recognisable data centre subject):');
+
+await check('a residential or unrecognised-subject construction win defaults to reject', async () => {
+  const resi = await classifySignal({ title: 'Resi job propels Keady to league summit' }, { callModel: fake({ dcRelevant: false }) });
+  const opaque = await classifySignal({ title: 'Contractor wins major fit-out job at an unnamed site' }, { callModel: fake({ dcRelevant: false }) });
+  assert(resi.dcRelevant === false, 'a residential construction win must reject on subject');
+  assert(opaque.dcRelevant === false, 'an unrecognised-subject construction win must default to reject');
+});
+
 console.log(`\n=== Research gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);
