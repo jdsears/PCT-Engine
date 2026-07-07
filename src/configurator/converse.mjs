@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { emptySlots, applyValue, checkConstraints, assemble } from './engine.mjs';
+import { emptySlots, applyValue, checkConstraints, checkCautions, assemble } from './engine.mjs';
 import { voiceGate } from '../answer.mjs';
 
 // The conversational layer. This is the only place the model works, and it works
@@ -111,16 +111,22 @@ export function constraintText(config, state, violated) {
   }).join('\n');
 }
 
-// On completion: the assembled code, the decoded breakdown, and the citation.
+// On completion: the assembled code, the decoded breakdown, the citation, and
+// any datasheet cautions the chosen combination carries. A caution is permitted
+// by the matrix but stated plainly, never silently allowed and never a refusal.
 export function completionText(config, state) {
   const built = assemble(config, state);
   if (!built.ok) return null;
   const rows = built.decode.map(d => `  ${d.code.padEnd(4)} ${d.label}: ${d.choice}`).join('\n');
   const cite = `${config.source.doc}${config.source.page ? `, page ${config.source.page}` : ''}`;
+  const cautions = checkCautions(config, state);
+  const cautionText = cautions.length
+    ? `\n\nA caution from the datasheet: ${cautions.map(c => c.note).join(' ')}`
+    : '';
   const text = voiceGate(
     `That builds the part number ${built.code}.\n\n${rows}\n\n` +
-    `This is the part number per the ordering matrix in ${cite}. Pricing is a separate step, handled later.`);
-  return { code: built.code, decode: built.decode, citation: cite, text };
+    `This is the part number per the ordering matrix in ${cite}.${cautionText} Pricing is a separate step, handled later.`);
+  return { code: built.code, decode: built.decode, citation: cite, cautions: cautions.map(c => c.note), text };
 }
 
 const EXIT = /\b(start again|never mind|nevermind|cancel|forget it|stop)\b/i;
@@ -135,7 +141,8 @@ export async function advance(convState, message) {
   if (!config) return { reply: voiceGate('I do not have an ordering matrix for that model yet.'), done: true };
 
   const guesses = await parseSlots(config, message);
-  const { state, accepted, rejected } = applyParsed(config, convState.state || {}, guesses);
+  const prior = convState.state || {};
+  const { state, accepted, rejected } = applyParsed(config, prior, guesses);
   convState.state = state;
 
   const parts = [];
@@ -152,6 +159,11 @@ export async function advance(convState, message) {
 
   const nextSlot = emptySlots(config, state)[0];
   if (nextSlot) {
+    // A caution newly triggered by this turn's choices is said once, plainly,
+    // and the build carries on. The completed code restates every active one.
+    const beforeNotes = new Set(checkCautions(config, prior).map(c => c.note));
+    const fresh = checkCautions(config, state).filter(c => !beforeNotes.has(c.note));
+    if (fresh.length) parts.push(voiceGate(`Worth noting: ${fresh.map(c => c.note).join(' ')}`));
     parts.push(promptFor(config, state));
     return {
       reply: parts.join('\n\n'), done: false, state,

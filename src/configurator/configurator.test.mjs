@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { emptySlots, applyValue, checkConstraints, assemble, decode } from './engine.mjs';
-import { looksLikeBuild } from './converse.mjs';
+import { emptySlots, applyValue, checkConstraints, checkCautions, assemble, decode } from './engine.mjs';
+import { looksLikeBuild, extractModel, completionText } from './converse.mjs';
 
 // The acceptance gate. The PricingLevel exercises carry no worked answers, so
 // the test is round-trip: build a spec, assemble the code, decode it, and
@@ -16,6 +16,9 @@ import { looksLikeBuild } from './converse.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const mk601 = JSON.parse(readFileSync(join(here, 'models', 'mk601.json'), 'utf8'));
 const cv3000 = JSON.parse(readFileSync(join(here, 'models', 'cv3000.json'), 'utf8'));
+const cv4700 = JSON.parse(readFileSync(join(here, 'models', 'cv4700.json'), 'utf8'));
+const jr = JSON.parse(readFileSync(join(here, 'models', 'jr.json'), 'utf8'));
+const mark96 = JSON.parse(readFileSync(join(here, 'models', 'mark96.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -185,6 +188,166 @@ check('explicit build requests still enter the configurator', () => {
     'I need a part number for the CV3000',
     'Generate a code for a Jordan Mark 601',
   ]) assert.ok(looksLikeBuild(q), `must enter the configurator: "${q}"`);
+});
+
+// Direct-code builds for the three new models: set every slot by its matrix
+// code, assemble, and decode back. No worked examples exist in the corpus for
+// these, so the round-trip is the gate, exactly as it was for the CV3000.
+function buildByCodes(config, codes) {
+  let state = {};
+  for (const [slot, code] of Object.entries(codes)) {
+    const r = applyValue(config, state, slot, code);
+    assert.ok(r.accepted, `code "${code}" was not accepted for ${slot}`);
+    state = r.state;
+  }
+  return state;
+}
+function roundTrip(config, codes, expected) {
+  const state = buildByCodes(config, codes);
+  const built = assemble(config, state);
+  assert.ok(built.ok, `assembly failed: ${JSON.stringify(built)}`);
+  assert.equal(built.code, expected);
+  const back = decode(config, built.code);
+  assert.ok(back.ok, `decode failed: ${back.error}`);
+  assert.deepEqual(back.state, state, 'decoded state must match the built state');
+}
+
+console.log('\nMarwin CV4700 (round-trip and enforced couplings):');
+
+check('a lever CV4700 round-trips', () => {
+  roundTrip(cv4700, {
+    model: 'CV4730F', size: '05A', body: 'CS', packingSeatEnds: 'FA', operation: 'HL',
+    actuatorPressure: 'NN', solenoid: '00', limitSwitch: '00', fail: 'NN', positioner: '00',
+  }, 'CV4730F05ACSFAHLNN0000NN00');
+});
+
+check('a spring-return CV4700 with solenoid, limit switch, fail closed and SR positioner round-trips', () => {
+  roundTrip(cv4700, {
+    model: 'CV4760F', size: '20A', body: 'S6', packingSeatEnds: 'FB', operation: 'S5',
+    actuatorPressure: '60', solenoid: '3A', limitSwitch: 'AA', fail: '01', positioner: 'AQ',
+  }, 'CV4760F20AS6FBS5603AAA01AQ');
+});
+
+check('a double-acting CV4700 round-trips', () => {
+  roundTrip(cv4700, {
+    model: 'CV4730F', size: '10A', body: 'S6', packingSeatEnds: 'FA', operation: 'P6',
+    actuatorPressure: '80', solenoid: '4B', limitSwitch: 'AC', fail: 'NN', positioner: 'AE',
+  }, 'CV4730F10AS6FAP6804BACNNAE');
+});
+
+check('CV4700 couplings are enforced and unlisted options refused', () => {
+  for (const bad of [
+    { operation: 'P6', fail: '01' },
+    { operation: 'HL', fail: '02' },
+    { operation: 'S5', fail: 'NN' },
+    { solenoid: '3A', operation: 'P6' },
+    { solenoid: '4B', operation: 'S5' },
+    { operation: 'S5', actuatorPressure: 'NN' },
+    { operation: 'HL', actuatorPressure: '60' },
+    { positioner: 'AE', operation: 'S5' },
+    { positioner: 'AQ', operation: 'P6' },
+  ]) assert.ok(checkConstraints(cv4700, bad).length > 0, `must refuse ${JSON.stringify(bad)}`);
+  assert.equal(checkConstraints(cv4700, { operation: 'S5', fail: '01', actuatorPressure: '60' }).length, 0);
+  assert.equal(applyValue(cv4700, {}, 'operation', 'P9').accepted, false, 'P9 is not in the matrix');
+  assert.equal(applyValue(cv4700, {}, 'size', '25A').accepted, false, '25A is not in the matrix');
+});
+
+console.log('\nLowFlow JR Series (round-trip, couplings, and the gauge-span caution):');
+
+check('a minimal JR round-trips', () => {
+  roundTrip(jr, {
+    model: 'JR', size: '025', material: '6L', endConnection: 'A', portConfig: 'A',
+    trim: '1S', seat: 'T1', rangeSpring: 'E1', diaphragm: 'JL', actuator: 'SK',
+    inletGauge: 'AA', outletGauge: 'A', sep: '0', accessories: '0',
+  }, 'JR0256LAA1ST1E1JLSKAAA00');
+});
+
+check('a self-relieving JR round-trips', () => {
+  roundTrip(jr, {
+    model: 'JR', size: '050', material: '6L', endConnection: 'C', portConfig: 'R',
+    trim: '3R', seat: 'T3', rangeSpring: 'E3', diaphragm: 'JL', actuator: 'CV',
+    inletGauge: 'NN', outletGauge: 'N', sep: 'G', accessories: 'S',
+  }, 'JR0506LCR3RT3E3JLCVNNNGS');
+});
+
+check('JR couplings are enforced and unlisted options refused', () => {
+  assert.ok(checkConstraints(jr, { size: '025', endConnection: 'C' }).length > 0, 'the end connection must match the size');
+  assert.ok(checkConstraints(jr, { trim: '1R', seat: 'P1' }).length > 0, 'self-relieving trim needs a PTFE seat');
+  assert.ok(checkConstraints(jr, { trim: '1S', seat: 'T3' }).length > 0, 'the seat Cv must match the trim Cv');
+  assert.equal(checkConstraints(jr, { trim: '3R', seat: 'T3' }).length, 0, 'a matching PTFE seat is valid');
+  assert.equal(applyValue(jr, {}, 'seat', 'T5').accepted, false, 'T5 is not in the matrix');
+});
+
+check('the JR gauge-span liability note is a stated caution, never a refusal', () => {
+  assert.equal(checkCautions(jr, { rangeSpring: 'E3', outletGauge: 'A' }).length, 1, 'an under-spanned outlet gauge cautions');
+  assert.equal(checkCautions(jr, { rangeSpring: 'E3', outletGauge: 'D' }).length, 0, 'a covering outlet gauge is silent');
+  assert.equal(checkCautions(jr, { rangeSpring: 'E6', inletGauge: 'AA' }).length, 1, 'an under-spanned inlet gauge cautions');
+  const state = buildByCodes(jr, {
+    model: 'JR', size: '050', material: '6L', endConnection: 'C', portConfig: 'R',
+    trim: '3S', seat: 'T3', rangeSpring: 'E3', diaphragm: 'JL', actuator: 'SK',
+    inletGauge: 'NN', outletGauge: 'A', sep: '0', accessories: '0',
+  });
+  const built = assemble(jr, state);
+  assert.ok(built.ok, 'a cautioned combination still assembles, the matrix permits it');
+  const done = completionText(jr, state);
+  assert.equal(done.cautions.length, 1, 'the completion carries the caution');
+  assert.ok(/caution from the datasheet/i.test(done.text), 'the caution is stated plainly in the completion text');
+});
+
+console.log('\nSteriflow Mark 96 (round-trip and the restriction tables):');
+
+check('a 1 inch Mark 96 round-trips', () => {
+  roundTrip(mark96, {
+    model: '96', size: '100', material: '6L', bodyConfig: '', bodyFinish: 'A', bodyCv: 'H',
+    trimFinish: 'A', trim: 'K', oringDiaphragm: 'EP', adjustingScrewFinish: 'A',
+    range: 'H', diaphragm: 'JL', actuatorFinish: 'AA', ped: '00',
+  }, '961006LAHAKEPAHJLAA00');
+});
+
+check('a DIN Mark 96 with gauge port, aluminium housing and CE category 1 round-trips', () => {
+  roundTrip(mark96, {
+    model: '96D', size: '40', material: '6L', bodyConfig: '180', bodyFinish: 'A', bodyCv: 'M',
+    trimFinish: 'A', trim: 'R', oringDiaphragm: 'EE', adjustingScrewFinish: 'A',
+    range: 'E', diaphragm: 'JL', actuatorFinish: 'EA', ped: '0F',
+  }, '96D406L180AMAREEAEJLEA0F');
+});
+
+check('a 3-8 range Mark 96 with ultra-thin Jorlon round-trips', () => {
+  roundTrip(mark96, {
+    model: '96T', size: '075', material: '6L', bodyConfig: '', bodyFinish: 'B', bodyCv: 'A',
+    trimFinish: 'B', trim: '2', oringDiaphragm: 'EE', adjustingScrewFinish: 'A',
+    range: 'A', diaphragm: 'UJ', actuatorFinish: 'AA', ped: '0G',
+  }, '96T0756LBAB2EEAAUJAA0G');
+});
+
+check('Mark 96 restriction tables are enforced and unlisted options refused', () => {
+  for (const bad of [
+    { size: '100', trim: 'S' },
+    { range: 'A', diaphragm: 'JL' },
+    { range: 'A', diaphragm: '6L' },
+    { size: '15N', model: '96' },
+    { size: '20N', model: '96S' },
+    { actuatorFinish: 'EA', size: '075' },
+    { size: '15', trim: 'A' },
+    { bodyCv: 'K', trim: 'P' },
+    { oringDiaphragm: 'TS', size: '075' },
+    { trim: 'N', diaphragm: '6L' },
+    { ped: '0F', size: '075' },
+    { range: 'M', size: '200' },
+  ]) assert.ok(checkConstraints(mark96, bad).length > 0, `must refuse ${JSON.stringify(bad)}`);
+  assert.equal(checkConstraints(mark96, { range: 'A', diaphragm: 'UJ' }).length, 0, 'the documented pairing is valid');
+  assert.equal(checkConstraints(mark96, { size: '15N', model: '96D' }).length, 0, '15N on a 96D is valid');
+  assert.equal(applyValue(mark96, {}, 'trim', 'Z').accepted, false, 'Z is not a trim in the matrix');
+});
+
+console.log('\nIntent and routing for the new models:');
+
+check('new model names do not enter the build on a question, and resolve on build intent', () => {
+  for (const q of ['Tell me about the Mark 96', 'what is the JR series used for?', 'what sizes does the CV4700 come in?'])
+    assert.equal(looksLikeBuild(q), false, `must stay a knowledge question: "${q}"`);
+  assert.equal(extractModel('build a mark 96 part number'), 'MARK96');
+  assert.equal(extractModel('configure a cv4700'), 'CV4700');
+  assert.equal(extractModel('i need a part number for the jr series'), 'JR');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
