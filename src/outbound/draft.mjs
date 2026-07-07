@@ -57,23 +57,26 @@ export function renderGrounding(g) {
     lines.push('Open on profile fit: lead with why Marwin control valves are relevant to data centre chilled-water cooling specification, and a light reason a person in the contact\'s role might care. Be specific to the work, do not say they fit a profile.');
   }
   lines.push(g.icpReason ? `Why this account scored: ${g.icpReason}.` : `ICP reason: not recorded.`);
-  if (g.product?.length) {
-    lines.push('Product facts you may state (each with its citation), and nothing beyond these:');
-    g.product.forEach((p, i) => lines.push(`  [P${i + 1}] ${p.snippet} (source: ${p.title}${p.page ? ', p' + p.page : ''})`));
-  } else {
-    lines.push('Product facts: none retrieved. Do not make any specific product claim; keep to a general, honest offer of help.');
-  }
+  // Range positioning, the cold open leads on this, not on one valve or its specs.
+  // These are the standing, grounded facts the email may state.
+  lines.push('Range positioning, lead on this, not on a single part number or its specifications:');
+  lines.push('  PCT supplies the Marwin and Steriflow control valve ranges, suited to and trusted in data centre cooling.');
+  lines.push('  Track record, state in general form and with confidence: Marwin and Steriflow control valves are already used across some of the largest data centre builds.');
+  lines.push('  Hard limit: never name or imply a specific data centre operator or end customer. "Some of the largest data centre builds" is the ceiling of specificity.');
+  lines.push('  Do not make any part-specific spec claim (pressure rating, material, temperature) in the cold open.');
   return lines.join('\n');
 }
 
 const DRAFT_SYSTEM =
-  "You write the first-touch cold-open email for Premier Control Technologies (PCT), a UK distributor of flow control products, for the Marwin data centre cooling campaign. " +
+  "You write the first-touch cold-open email for Premier Control Technologies (PCT), a UK supplier of flow control products, for the data centre cooling campaign. PCT is a supplier, not a distributor. " +
   "HARD RULE: you may state only what the GROUNDING supports. Do not invent or embellish anything about the prospect, their projects, sites or people beyond the signal given. Do not make a product claim that is not in the grounding. Do not reference proof, case studies, named customers or results unless they are in the grounding. Do not invent a mutual connection, prior conversation, referral or deadline. Do not manufacture urgency. If the grounding is thin, write less. " +
   "OPENER RULE: an administrative or routine register filing (a confirmation statement, annual accounts, an officer or registered-office change) is never given to the recipient as a reason for contact and is never mentioned, even though it is true; it may only tell us the account is worth approaching. Open on a real project event only when the grounding gives one to open on. " +
+  "POSITIONING RULE: open a conversation about a trusted range, not a data sheet for one valve. Position the Marwin and Steriflow control valve ranges as suited to and trusted in the application. Do NOT lead on a single part number, and do NOT assert any part-specific specification in a cold open, no pressure rating, no material suitability, no temperature figure. Specifics belong in a live conversation, not a first approach. " +
+  "TRACK RECORD: you may state, confidently and in general form, that Marwin and Steriflow control valves are already used across some of the largest data centre builds. CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. No 'a major US hyperscaler', no 'a well-known search company', no named operator, nothing that points to a specific customer. " +
   "VOICE: plain technical British English, calm and restrained, one engineer flagging something relevant to a peer then getting out of the way. No opening pleasantries such as hoping the email finds them well, no hype, no superlatives, no closing pressure. No em dashes or en dashes, never the word genuinely, no exclamation marks. " +
-  "STRUCTURE, four or five sentences total: an opening chosen by the grounding (if it gives a signal to open on, open on that event the way a person would; otherwise open on profile fit as the grounding directs, and do not mention any filing or signal); one relevant grounded line on why Marwin suits the application; a single light specific ask (a short call, or whether they are specifying flow control on the project); a plain sign-off as the PCT sales team. " +
+  "STRUCTURE, four or five sentences total: an opening chosen by the grounding (if it gives a signal to open on, open on that event the way a person would; otherwise open on profile fit as the grounding directs, and do not mention any filing or signal); one line positioning the Marwin and Steriflow control valve ranges as trusted for data centre cooling, including the general track record across some of the largest data centre builds, with no named customer and no part-specific spec; a single light specific ask (a short call, or whether they are specifying flow control on the project); a plain sign-off as the PCT sales team. " +
   "Every factual sentence must trace to a grounding item. " +
-  "Return strict JSON only, no preamble: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|product|contact\"}]}. The body is plain text, short paragraphs separated by a blank line, no Markdown.";
+  "Return strict JSON only, no preamble: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|range|contact\"}]}. The body is plain text, short paragraphs separated by a blank line, no Markdown.";
 
 // Generate one grounded cold-open draft. Returns subject, body and the model's
 // own list of which grounding item supports each factual claim.
@@ -131,9 +134,33 @@ export function applySupplierGuardrail(text, blocked) {
   return { text: out, removed };
 }
 
+// End-customer confidentiality guardrail, alongside the supplier-naming one. The
+// data centre track record is sayable in general form, but the specific operators
+// are never named or implied. This flags a draft that names or points at a
+// specific end customer; the flag is blocking, such a draft cannot be approved.
+const END_CUSTOMER_NAMES = [
+  'google', 'alphabet', 'microsoft', 'azure', 'amazon', 'aws', 'meta', 'facebook',
+  'apple', 'oracle', 'openai', 'anthropic', 'tiktok', 'bytedance', 'tencent', 'alibaba', 'nvidia', 'hyperscaler',
+];
+const END_CUSTOMER_PHRASES = [
+  'a major us', 'well-known search', "world's biggest tech", "world's largest tech", 'major tech firm', 'major hyperscaler',
+];
+export function flagEndCustomers(text, recipientName) {
+  const hay = String(text || '').toLowerCase();
+  const recipient = String(recipientName || '').toLowerCase();
+  const hits = [];
+  for (const name of END_CUSTOMER_NAMES) {
+    if (recipient && recipient.includes(name)) continue; // the recipient's own name is the addressee, not an end customer
+    if (new RegExp(`\\b${escapeRe(name)}\\b`, 'i').test(hay)) hits.push(name);
+  }
+  for (const ph of END_CUSTOMER_PHRASES) if (hay.includes(ph)) hits.push(ph);
+  return [...new Set(hits)];
+}
+
 // The full pipeline: draft, check, one revision if needed, re-check, then the
-// supplier guardrail. Returns the final text plus the flags the reviewer must
-// see. A draft is never returned as clean while unsupported claims remain.
+// supplier and end-customer guardrails. Returns the final text plus the flags the
+// reviewer must see. A draft is never returned as clean while unsupported claims
+// or a named end customer remain.
 export async function composeDraft(grounding, { callModel = callClaude } = {}) {
   let draft = await draftColdOpen(grounding, { callModel });
   let check = await checkGrounding(draft, grounding, { callModel });
@@ -144,6 +171,13 @@ export async function composeDraft(grounding, { callModel = callClaude } = {}) {
   const s = applySupplierGuardrail(draft.subject, grounding.blockedSuppliers);
   const b = applySupplierGuardrail(draft.body, grounding.blockedSuppliers);
   const redacted = [...new Set([...s.removed, ...b.removed])];
-  const flags = [...check.unsupported, ...redacted.map(n => `supplier name redacted: ${n}`)];
+  // A named end customer is a blocking fault: the track record is general, the
+  // operator is never named. The "blocking" prefix makes the review refuse approval.
+  const named = [...new Set([...flagEndCustomers(b.text, grounding.company?.name), ...flagEndCustomers(s.text, grounding.company?.name)])];
+  const flags = [
+    ...check.unsupported,
+    ...redacted.map(n => `supplier name redacted: ${n}`),
+    ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
+  ];
   return { subject: s.text, body: b.text, model: draft.model, claims: draft.claims, flags };
 }
