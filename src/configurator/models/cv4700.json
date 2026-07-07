@@ -1,0 +1,147 @@
+{
+  "model": "CV4700",
+  "line": "marwin",
+  "displayName": "Marwin CV4700 V-port ball control valve",
+  "match": ["cv4700", "cv 4700", "cv-4700", "cv4730", "cv4760", "cv4730f", "cv4760f"],
+  "source": { "doc": "CV4700.pdf", "page": 4, "section": "Ordering schematic" },
+  "note": "Extracted by hand from the ordering schematic on page 4. The code reads model (30 or 60 degree V, full port), size, body material, then fourteen character positions grouped 1&2 packing-seat/end connections, 3&4 operation, 5&6 actuator pressure, 7&8 solenoid feature, 9&10 limit switch, 11&12 fail position, 13&14 positioner. Assembled without separators, the CV3000 precedent. Held for John/Marwin: (1) M9 and MA print the identical label ER-20-12-4 110 VAC in the extracted text, transcribed as printed, verify against the PDF; (2) the accessory codes print UT size-range pairings (for UT-0/3, UT-3.5/7 and the solenoid UT spans) that are not yet enforced as constraints, pending a confirmed UT-size mapping; (3) the positioner DA/SR coupling is enforced from the DA and SR markings printed on AE/AF/AQ/AR, the same style as the CV3000 rule. Siemens is named per the CV3000 decision: a third-party accessory openly listed in the public datasheet.",
+  "assembly": "{model}{size}{body}{packingSeatEnds}{operation}{actuatorPressure}{solenoid}{limitSwitch}{fail}{positioner}",
+  "slots": [
+    {
+      "id": "model", "label": "Model and V-port", "position": 1, "required": true,
+      "options": [
+        { "code": "CV4730F", "label": "30 degree V (full port)", "aliases": ["30 degree", "30 v", "30v", "4730", "cv4730f"] },
+        { "code": "CV4760F", "label": "60 degree V (full port)", "aliases": ["60 degree", "60 v", "60v", "4760", "cv4760f"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "05A", "label": "1/2\"", "aliases": ["1/2\"", "0.5\"", "half inch", "DN15"] },
+        { "code": "07A", "label": "3/4\"", "aliases": ["3/4\"", "0.75\"", "DN20"] },
+        { "code": "10A", "label": "1\"", "aliases": ["1\"", "one inch", "DN25"] },
+        { "code": "15A", "label": "1-1/2\"", "aliases": ["1-1/2\"", "1.5\"", "DN40"] },
+        { "code": "20A", "label": "2\"", "aliases": ["2\"", "two inch", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel", "aliases": ["carbon steel", "CS", "WCB"] },
+        { "code": "S6", "label": "Stainless steel", "aliases": ["stainless", "stainless steel", "SST", "316", "CF8M"] }
+      ]
+    },
+    {
+      "id": "packingSeatEnds", "label": "Packing-seat and end connections", "position": 4, "required": true,
+      "options": [
+        { "code": "FA", "label": "Grafoil - RPTFE / FNPT", "aliases": ["fnpt", "threaded", "npt", "grafoil rptfe fnpt"] },
+        { "code": "FB", "label": "Grafoil - RPTFE / FSW", "aliases": ["fsw", "socket weld", "weld ends", "grafoil rptfe fsw"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard packing", "non-standard ends"] }
+      ]
+    },
+    {
+      "id": "operation", "label": "Operation", "position": 5, "required": true,
+      "options": [
+        { "code": "HL", "label": "Lever", "aliases": ["lever", "manual", "locking lever", "handle"] },
+        { "code": "NN", "label": "None (bare valve)", "aliases": ["none", "no operator", "bare"] },
+        { "code": "P1", "label": "UT-0A-DA STD actuator", "aliases": ["ut-0a da", "ut0a"] },
+        { "code": "P2", "label": "UT-0-DA STD actuator", "aliases": ["ut-0 da"] },
+        { "code": "P3", "label": "UT-1-DA STD actuator", "aliases": ["ut-1 da"] },
+        { "code": "P4", "label": "UT-2-DA STD actuator", "aliases": ["ut-2 da"] },
+        { "code": "P5", "label": "UT-2.5-DA STD actuator", "aliases": ["ut-2.5 da"] },
+        { "code": "P6", "label": "UT-3-DA STD actuator", "aliases": ["ut-3 da", "double acting"] },
+        { "code": "P7", "label": "UT-3.5-DA STD actuator", "aliases": ["ut-3.5 da"] },
+        { "code": "P8", "label": "UT-4-DA STD actuator", "aliases": ["ut-4 da"] },
+        { "code": "S1", "label": "UT-0-SR STD actuator", "aliases": ["ut-0 sr"] },
+        { "code": "S2", "label": "UT-1-SR STD actuator", "aliases": ["ut-1 sr"] },
+        { "code": "S3", "label": "UT-2-SR STD actuator", "aliases": ["ut-2 sr"] },
+        { "code": "S4", "label": "UT-2.5-SR STD actuator", "aliases": ["ut-2.5 sr"] },
+        { "code": "S5", "label": "UT-3-SR STD actuator", "aliases": ["ut-3 sr", "spring return"] },
+        { "code": "S6", "label": "UT-3.5-SR STD actuator", "aliases": ["ut-3.5 sr"] },
+        { "code": "S7", "label": "UT-4-SR STD actuator", "aliases": ["ut-4 sr"] },
+        { "code": "SF", "label": "UT-4.5-SR STD actuator", "aliases": ["ut-4.5 sr"] },
+        { "code": "S8", "label": "UT-5-SR STD actuator", "aliases": ["ut-5 sr"] },
+        { "code": "S9", "label": "UT-6-SR STD actuator", "aliases": ["ut-6 sr"] },
+        { "code": "M1", "label": "ER-1-2.5-4 110 VAC motor", "aliases": ["er-1"] },
+        { "code": "M2", "label": "ER-2-5-4 110 VAC motor", "aliases": ["er-2"] },
+        { "code": "M3", "label": "ER-3-5-4 110 VAC motor", "aliases": ["er-3"] },
+        { "code": "M8", "label": "ER-4-10-4 110 VAC motor", "aliases": ["er-4"] },
+        { "code": "M4", "label": "ER-6-15-4 110 VAC motor", "aliases": ["er-6"] },
+        { "code": "M5", "label": "ER-10-15-4 110 VAC motor", "aliases": ["er-10"] },
+        { "code": "M9", "label": "ER-20-12-4 110 VAC motor", "aliases": ["er-20 m9"] },
+        { "code": "MA", "label": "ER-20-12-4 110 VAC motor (as printed; label matches M9, held for verification)", "aliases": ["er-20 ma"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard operation"] }
+      ]
+    },
+    {
+      "id": "actuatorPressure", "label": "Actuator pressure", "position": 6, "required": true,
+      "options": [
+        { "code": "60", "label": "60 psi", "aliases": ["60", "60 psi"] },
+        { "code": "80", "label": "80 psi", "aliases": ["80", "80 psi"] },
+        { "code": "NN", "label": "N/A (no pneumatic actuator)", "aliases": ["none", "n/a", "no pneumatic"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard pressure"] }
+      ]
+    },
+    {
+      "id": "solenoid", "label": "Solenoid feature", "position": 7, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none", "no solenoid"] },
+        { "code": "3A", "label": "3W 8551-120VAC N4 UT-0/5 (SR)", "aliases": ["8551 n4 sr"] },
+        { "code": "3C", "label": "3W EF8551-120VAC N7 UT-0/5 (SR)", "aliases": ["ef8551 n7 sr"] },
+        { "code": "3J", "label": "3W 8317G35-120VAC N4 UT-0/2.5 (SR)", "aliases": ["8317g35 n4"] },
+        { "code": "3M", "label": "3W 8321G1-120VAC N4 UT-3/5 (SR)", "aliases": ["8321g1 n4"] },
+        { "code": "3Q", "label": "3W EF8317G35-120VAC N7 UT-0/2.5 (SR)", "aliases": ["ef8317g35 n7"] },
+        { "code": "3R", "label": "3W EF8321G1-120VAC N7 UT-3/5 (SR)", "aliases": ["ef8321g1 n7"] },
+        { "code": "4A", "label": "4W 8551-120VAC N4 UT-0A (DA)", "aliases": ["8551 n4 da 0a"] },
+        { "code": "4B", "label": "4W 8551-120VAC N4 UT-0/5 (DA)", "aliases": ["8551 n4 da"] },
+        { "code": "4D", "label": "4W EF8551-120VAC N7 UT-0A (DA)", "aliases": ["ef8551 n7 da 0a"] },
+        { "code": "4E", "label": "4W EF8551-120VAC N7 UT-0/5 (DA)", "aliases": ["ef8551 n7 da"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard solenoid"] }
+      ]
+    },
+    {
+      "id": "limitSwitch", "label": "Limit switch", "position": 8, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none", "no limit switch"] },
+        { "code": "AA", "label": "LS FMYB-5120-N4 to UT-0/3", "aliases": ["fmyb n4 0/3"] },
+        { "code": "AB", "label": "LS FMYB-5120-N4 to UT-3.5/7", "aliases": ["fmyb n4 3.5/7"] },
+        { "code": "AC", "label": "LS AMYB-5120-N7 to UT-0/3", "aliases": ["amyb n7 0/3"] },
+        { "code": "AD", "label": "LS AMYB-5120-N7 to UT-3.5/7", "aliases": ["amyb n7 3.5/7"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard limit switch"] }
+      ]
+    },
+    {
+      "id": "fail", "label": "Fail position", "position": 9, "required": true,
+      "options": [
+        { "code": "NN", "label": "Fail position N/A (no SR actuator)", "aliases": ["n/a", "none", "no fail position"] },
+        { "code": "01", "label": "Fail closed", "aliases": ["fail closed", "closed", "ftc"] },
+        { "code": "02", "label": "Fail open", "aliases": ["fail open", "open", "fto"] }
+      ]
+    },
+    {
+      "id": "positioner", "label": "Positioner", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none", "no positioner"] },
+        { "code": "AA", "label": "Siemens 760P (3-15 psi), for UT-0/3", "aliases": ["760p 0/3"] },
+        { "code": "AB", "label": "Siemens 760P (3-15 psi), for UT-3.5/7", "aliases": ["760p 3.5/7"] },
+        { "code": "AC", "label": "Siemens 760E (4-20 mA), for UT-0/3", "aliases": ["760e 0/3"] },
+        { "code": "AD", "label": "Siemens 760E (4-20 mA), for UT-3.5/7", "aliases": ["760e 3.5/7"] },
+        { "code": "AE", "label": "Siemens 2-IQ (4-20 mA), for UT-0/3 DA", "aliases": ["2-iq da 0/3", "2iq da"] },
+        { "code": "AF", "label": "Siemens 2-IQ (4-20 mA), for UT-3.5/7 DA", "aliases": ["2-iq da 3.5/7"] },
+        { "code": "AQ", "label": "Siemens 2-IQ (4-20 mA), for UT-0/3 SR", "aliases": ["2-iq sr 0/3", "2iq sr"] },
+        { "code": "AR", "label": "Siemens 2-IQ (4-20 mA), for UT-3.5/7 SR", "aliases": ["2-iq sr 3.5/7"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard positioner"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA"] }, "forbid": { "fail": ["01", "02"] }, "reason": "a fail closed or fail open position needs a spring return (S) actuator; with a lever, motor, double-acting or unoperated valve the fail position is NN" },
+    { "when": { "operation": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9"] }, "forbid": { "fail": ["NN"] }, "reason": "a spring return actuator has a fail direction, so the fail position is 01 fail closed or 02 fail open, not NN, per the schematic's fail position note" },
+    { "when": { "solenoid": ["3A", "3C", "3J", "3M", "3Q", "3R"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA"] }, "reason": "the 3-way solenoid features are marked SR in the schematic and pair with a spring return actuator" },
+    { "when": { "solenoid": ["4A", "4B", "4D", "4E"] }, "forbid": { "operation": ["HL", "NN", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA"] }, "reason": "the 4-way solenoid features are marked DA in the schematic and pair with a double-acting actuator" },
+    { "when": { "operation": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9"] }, "forbid": { "actuatorPressure": ["NN"] }, "reason": "a pneumatic actuator needs a 60 or 80 psi supply; actuator pressure NN means no pneumatic actuator" },
+    { "when": { "operation": ["HL", "NN", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA"] }, "forbid": { "actuatorPressure": ["60", "80"] }, "reason": "actuator pressure NN applies when there is no pneumatic actuator, so a lever, motor or unoperated valve does not take a 60 or 80 psi supply" },
+    { "when": { "positioner": ["AE", "AF"] }, "forbid": { "operation": ["HL", "NN", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA"] }, "reason": "the 2-IQ positioners AE and AF are marked DA in the schematic and pair with a double-acting actuator" },
+    { "when": { "positioner": ["AQ", "AR"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "M1", "M2", "M3", "M8", "M4", "M5", "M9", "MA"] }, "reason": "the 2-IQ positioners AQ and AR are marked SR in the schematic and pair with a spring return actuator" }
+  ]
+}

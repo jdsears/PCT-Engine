@@ -1,0 +1,219 @@
+{
+  "model": "MARK96",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 96 sanitary pressure regulator",
+  "match": ["mark 96", "mark96", "mk96", "mk 96", "mk-96"],
+  "source": { "doc": "mark96.pdf", "page": "7 and 8", "section": "Ordering schematic" },
+  "note": "Extracted by hand from the ordering schematic on pages 7 and 8, with the size, Cv and range tables on pages 2 and 3. The code reads model (end connection family), size, material, an optional gauge-port body configuration (blank standard, or 90/180/270), then positions 1 body finish, 2 body Cv, 3 trim finish, 4 trim Cv and seat, 5&6 o-ring/diaphragm, 7 adjusting screw finish, 8 range, 9&10 diaphragm, 11&12 actuator finish/type, 13&14 PED compliance. Assembled without separators, the CV3000 precedent. The 1/2 inch size is the separate Mark 96C datasheet and is out of scope. Held for John/Steriflow: (1) trim and range restrictions for the DN20-DN80 sizes are applied from the printed size pairings on pages 2 and 3 (3/4 inch with DN20, 1 inch with DN25, 1-1/2 with DN40, 2 with DN50, 3 with DN80); (2) DN15 and 15N have no printed trim, Cv or range availability in this datasheet, so any trim selection on them is refused with a consult-the-factory reason rather than guessed; (3) 20N is treated as DN20 for restrictions, being a clamp-face variant of DN20; (4) the brief said TS and TY are 1 to 3 inch only, but the datasheet prints the restriction on TS only, so only TS is enforced and TY is held as a question; (5) the body Cv letter is constrained to match the trim Cv, inferred from the shared Cv chart, not printed as a rule; (6) no printed rule pairs the imperial sizes to the ASME models or the DN sizes to the DIN/ISO models, so no such constraint is encoded, held as a question.",
+  "assembly": "{model}{size}{material}{bodyConfig}{bodyFinish}{bodyCv}{trimFinish}{trim}{oringDiaphragm}{adjustingScrewFinish}{range}{diaphragm}{actuatorFinish}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model and end connections", "position": 1, "required": true,
+      "options": [
+        { "code": "96", "label": "ASME BPE Tri-Clamp connections", "aliases": ["tri-clamp", "tri clamp", "asme tri-clamp", "mark 96", "96"] },
+        { "code": "96T", "label": "ASME BPE tube weld ends", "aliases": ["tube weld", "asme tube weld", "96t"] },
+        { "code": "96D", "label": "DIN Tri-Clamp connections to DIN 32676 Row A", "aliases": ["din tri-clamp", "96d"] },
+        { "code": "96DT", "label": "DIN tube weld ends to DIN 11866 Row A", "aliases": ["din tube weld", "96dt"] },
+        { "code": "96S", "label": "ISO Tri-Clamp connections to DIN 32676 Row B", "aliases": ["iso tri-clamp", "96s"] },
+        { "code": "96ST", "label": "ISO tube weld ends to DIN 11866 Row B", "aliases": ["iso tube weld", "96st"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "075", "label": "3/4\"", "aliases": ["3/4\"", "0.75\""] },
+        { "code": "100", "label": "1\"", "aliases": ["1\"", "one inch"] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\"", "1.5\""] },
+        { "code": "200", "label": "2\"", "aliases": ["2\"", "two inch"] },
+        { "code": "300", "label": "3\"", "aliases": ["3\"", "three inch"] },
+        { "code": "15", "label": "DN15", "aliases": ["dn15"] },
+        { "code": "15N", "label": "DN15 non-standard clamp face (MK96D or MK96S only)", "aliases": ["dn15 non-standard", "15n"] },
+        { "code": "20", "label": "DN20", "aliases": ["dn20"] },
+        { "code": "20N", "label": "DN20 non-standard clamp face (MK96D only)", "aliases": ["dn20 non-standard", "20n"] },
+        { "code": "25", "label": "DN25", "aliases": ["dn25"] },
+        { "code": "40", "label": "DN40", "aliases": ["dn40"] },
+        { "code": "50", "label": "DN50", "aliases": ["dn50"] },
+        { "code": "80", "label": "DN80", "aliases": ["dn80"] }
+      ]
+    },
+    {
+      "id": "material", "label": "Material", "position": 3, "required": true,
+      "options": [
+        { "code": "6L", "label": "ASME SA479 316L (UNS 31603)", "aliases": ["316l", "stainless", "sa479"] },
+        { "code": "6E", "label": "EN 10272:2000 GR 1.4435", "aliases": ["1.4435", "en 10272"] }
+      ]
+    },
+    {
+      "id": "bodyConfig", "label": "Body configuration", "position": 4, "required": true,
+      "options": [
+        { "code": "", "label": "Standard, no gauge port", "aliases": ["standard", "no gauge port", "none"] },
+        { "code": "90", "label": "3/4\" ASME BPE Tri-Clamp gauge fitting at 90 degrees", "aliases": ["gauge port 90", "90 degrees"] },
+        { "code": "180", "label": "3/4\" ASME BPE Tri-Clamp gauge fitting at 180 degrees", "aliases": ["gauge port 180", "180 degrees"] },
+        { "code": "270", "label": "3/4\" ASME BPE Tri-Clamp gauge fitting at 270 degrees", "aliases": ["gauge port 270", "270 degrees"] }
+      ]
+    },
+    {
+      "id": "bodyFinish", "label": "Body finish", "position": 5, "required": true,
+      "options": [
+        { "code": "A", "label": "20Ra (SFV5) interior / 40Ra exterior (standard)", "aliases": ["standard finish", "20ra/40ra"] },
+        { "code": "B", "label": "20Ra (SFV5) interior / 20Ra exterior", "aliases": ["20ra/20ra"] },
+        { "code": "C", "label": "8Ra interior / 40Ra exterior", "aliases": ["8ra/40ra"] },
+        { "code": "D", "label": "20Ra (SFV5) interior / 8Ra exterior", "aliases": ["20ra/8ra"] },
+        { "code": "E", "label": "8Ra interior / 8Ra exterior", "aliases": ["8ra/8ra"] },
+        { "code": "F", "label": "8Ra interior / 20Ra exterior", "aliases": ["8ra/20ra"] }
+      ]
+    },
+    {
+      "id": "bodyCv", "label": "Body Cv", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "Cv 1.5 (Kv 1,3)", "aliases": ["body cv 1.5"] },
+        { "code": "D", "label": "Cv 2.5 (Kv 2,2)", "aliases": ["body cv 2.5"] },
+        { "code": "H", "label": "Cv 4.5 (Kv 3,9)", "aliases": ["body cv 4.5"] },
+        { "code": "K", "label": "Cv 5.5 and 6.1 (Kv 4,7 and 5,3)", "aliases": ["body cv 5.5", "body cv 6.1"] },
+        { "code": "M", "label": "Cv 10.0 (Kv 8,6)", "aliases": ["body cv 10"] },
+        { "code": "N", "label": "Cv 19.0 (Kv 16,3)", "aliases": ["body cv 19"] },
+        { "code": "P", "label": "Cv 23.0 (Kv 19,8)", "aliases": ["body cv 23"] }
+      ]
+    },
+    {
+      "id": "trimFinish", "label": "Trim finish", "position": 7, "required": true,
+      "options": [
+        { "code": "A", "label": "20Ra (standard)", "aliases": ["standard trim finish", "20ra trim"] },
+        { "code": "B", "label": "8Ra", "aliases": ["8ra trim"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim Cv and seat", "position": 8, "required": true,
+      "options": [
+        { "code": "A", "label": "Cv 1.5 hard seat (sizes 075-100)", "aliases": ["cv 1.5 hard"] },
+        { "code": "1", "label": "Cv 1.5 Teflon seat (sizes 075-100)", "aliases": ["cv 1.5 teflon"] },
+        { "code": "2", "label": "Cv 1.5 Jorlon seat (sizes 075-100)", "aliases": ["cv 1.5 jorlon"] },
+        { "code": "9", "label": "Cv 1.5 PEEK seat (sizes 075-100)", "aliases": ["cv 1.5 peek"] },
+        { "code": "B", "label": "Cv 2.5 hard seat (size 100)", "aliases": ["cv 2.5 hard"] },
+        { "code": "C", "label": "Cv 2.5 Teflon seat (size 100)", "aliases": ["cv 2.5 teflon"] },
+        { "code": "D", "label": "Cv 2.5 Jorlon seat (size 100)", "aliases": ["cv 2.5 jorlon"] },
+        { "code": "5", "label": "Cv 2.5 PEEK seat (size 100)", "aliases": ["cv 2.5 peek"] },
+        { "code": "H", "label": "Cv 4.5 hard seat (sizes 100-150)", "aliases": ["cv 4.5 hard"] },
+        { "code": "J", "label": "Cv 4.5 Teflon seat (sizes 100-150)", "aliases": ["cv 4.5 teflon"] },
+        { "code": "K", "label": "Cv 4.5 Jorlon seat (sizes 100-150)", "aliases": ["cv 4.5 jorlon"] },
+        { "code": "6", "label": "Cv 4.5 PEEK seat (sizes 100-150)", "aliases": ["cv 4.5 peek"] },
+        { "code": "L", "label": "Cv 5.5 hard seat (size 100)", "aliases": ["cv 5.5 hard"] },
+        { "code": "M", "label": "Cv 5.5 Teflon seat (size 100)", "aliases": ["cv 5.5 teflon"] },
+        { "code": "N", "label": "Cv 5.5 Jorlon seat (size 100)", "aliases": ["cv 5.5 jorlon"] },
+        { "code": "8", "label": "Cv 5.5 PEEK seat (size 100)", "aliases": ["cv 5.5 peek"] },
+        { "code": "7", "label": "Cv 6.1 hard seat (size 100)", "aliases": ["cv 6.1 hard"] },
+        { "code": "E", "label": "Cv 6.1 Teflon seat (size 100)", "aliases": ["cv 6.1 teflon"] },
+        { "code": "G", "label": "Cv 6.1 Jorlon seat (size 100)", "aliases": ["cv 6.1 jorlon"] },
+        { "code": "F", "label": "Cv 6.1 PEEK seat (size 100)", "aliases": ["cv 6.1 peek"] },
+        { "code": "P", "label": "Cv 10 hard seat (sizes 150-300)", "aliases": ["cv 10 hard"] },
+        { "code": "Q", "label": "Cv 10 Teflon seat (sizes 150-300)", "aliases": ["cv 10 teflon"] },
+        { "code": "R", "label": "Cv 10 Jorlon seat (sizes 150-300)", "aliases": ["cv 10 jorlon"] },
+        { "code": "3", "label": "Cv 10 PEEK seat (sizes 150-300)", "aliases": ["cv 10 peek"] },
+        { "code": "S", "label": "Cv 19 hard seat (size 200)", "aliases": ["cv 19 hard"] },
+        { "code": "T", "label": "Cv 19 Teflon seat (size 200)", "aliases": ["cv 19 teflon"] },
+        { "code": "U", "label": "Cv 19 Jorlon seat (size 200)", "aliases": ["cv 19 jorlon"] },
+        { "code": "4", "label": "Cv 19 PEEK seat (size 200)", "aliases": ["cv 19 peek"] },
+        { "code": "V", "label": "Cv 23 hard seat (size 300)", "aliases": ["cv 23 hard"] },
+        { "code": "W", "label": "Cv 23 Teflon seat (size 300)", "aliases": ["cv 23 teflon"] },
+        { "code": "X", "label": "Cv 23 Jorlon seat (size 300)", "aliases": ["cv 23 jorlon"] },
+        { "code": "Y", "label": "Cv 23 PEEK seat (size 300)", "aliases": ["cv 23 peek"] }
+      ]
+    },
+    {
+      "id": "oringDiaphragm", "label": "O-ring / diaphragm", "position": 9, "required": true,
+      "options": [
+        { "code": "BU", "label": "Buna-N / SST diaphragm", "aliases": ["buna-n", "buna"] },
+        { "code": "EE", "label": "EPDM / EPDM diaphragm", "aliases": ["epdm/epdm"] },
+        { "code": "EP", "label": "EPDM / SST diaphragm", "aliases": ["epdm/sst", "epdm"] },
+        { "code": "SL", "label": "Silicone / SST diaphragm", "aliases": ["silicone"] },
+        { "code": "TS", "label": "Teflon encapsulated silicone / SST diaphragm (1\"-3\" only)", "aliases": ["teflon silicone", "encapsulated silicone"] },
+        { "code": "TY", "label": "Teflon encapsulated Viton / Jorlon diaphragm", "aliases": ["teflon viton jorlon"] },
+        { "code": "TV", "label": "Teflon encapsulated Viton / SST diaphragm", "aliases": ["teflon viton"] },
+        { "code": "VT", "label": "Viton / SST diaphragm", "aliases": ["viton"] }
+      ]
+    },
+    {
+      "id": "adjustingScrewFinish", "label": "Adjusting screw finish", "position": 10, "required": true,
+      "options": [
+        { "code": "A", "label": "Electro-polished (standard)", "aliases": ["standard screw finish", "electro-polished"] },
+        { "code": "B", "label": "20Ra (SFV5)", "aliases": ["20ra screw"] },
+        { "code": "C", "label": "8Ra", "aliases": ["8ra screw"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range", "position": 11, "required": true,
+      "options": [
+        { "code": "A", "label": "3-8 psi (0,2-0,6 bar), sizes 075-100, EPDM or Ultra-thin Jorlon diaphragm only", "aliases": ["3-8", "3 to 8"] },
+        { "code": "C", "label": "5-25 psi (0,3-1,7 bar), sizes 075-100", "aliases": ["5-25", "5 to 25"] },
+        { "code": "E", "label": "10-25 psi (0,7-1,7 bar), sizes 150-200", "aliases": ["10-25", "10 to 25"] },
+        { "code": "P", "label": "15-25 psi (1,0-1,7 bar), size 300", "aliases": ["15-25", "15 to 25"] },
+        { "code": "H", "label": "15-50 psi (1,0-3,4 bar), sizes 075-150", "aliases": ["15-50", "15 to 50"] },
+        { "code": "J", "label": "15-60 psi (1,0-4,1 bar), sizes 200-300", "aliases": ["15-60", "15 to 60"] },
+        { "code": "M", "label": "35-100 psi (2,4-6,9 bar), size 150", "aliases": ["35-100", "35 to 100"] },
+        { "code": "R", "label": "40-90 psi (2,8-6,2 bar), sizes 075-100", "aliases": ["40-90", "40 to 90"] },
+        { "code": "T", "label": "75-135 psi (5,2-9,3 bar), sizes 075-100", "aliases": ["75-135", "75 to 135"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm", "position": 12, "required": true,
+      "options": [
+        { "code": "6L", "label": "SST (all exterior)", "aliases": ["sst diaphragm", "metal diaphragm", "316l diaphragm"] },
+        { "code": "EP", "label": "EPDM (all exterior)", "aliases": ["epdm diaphragm"] },
+        { "code": "JL", "label": "Jorlon (all exterior)", "aliases": ["jorlon", "jorlon diaphragm"] },
+        { "code": "UJ", "label": "Ultra-thin Jorlon (all exterior)", "aliases": ["ultra-thin jorlon", "ultra thin"] }
+      ]
+    },
+    {
+      "id": "actuatorFinish", "label": "Actuator finish / type", "position": 13, "required": true,
+      "options": [
+        { "code": "AA", "label": "Standard", "aliases": ["standard actuator"] },
+        { "code": "BA", "label": "20Ra (SFV5) exterior", "aliases": ["20ra actuator"] },
+        { "code": "CA", "label": "8Ra exterior", "aliases": ["8ra actuator"] },
+        { "code": "DA", "label": "Electro-polished, for 2\" and 3\"", "aliases": ["electro-polished actuator"] },
+        { "code": "EA", "label": "Aluminium lightweight spring housing (1-1/2\", 2\", 3\")", "aliases": ["aluminium", "aluminum", "lightweight"] },
+        { "code": "FA", "label": "Standard with lifting lugs (1-1/2\", 2\", 3\")", "aliases": ["lifting lugs", "lugs"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance", "position": 14, "required": true,
+      "options": [
+        { "code": "00", "label": "Not required", "aliases": ["not required", "none", "no ped"] },
+        { "code": "0G", "label": "SEP (3/4\"-1\")", "aliases": ["sep"] },
+        { "code": "0F", "label": "CE Category 1 (1-1/2\", 2\", 3\")", "aliases": ["ce category 1", "ce cat 1"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "trim": ["A", "1", "2", "9"] }, "forbid": { "size": ["150", "200", "300", "40", "50", "80"] }, "reason": "Cv 1.5 trim is available for 3/4 and 1 inch (DN20, DN25) only, per the trim table on page 7 and the size pairing on page 3" },
+    { "when": { "trim": ["B", "C", "D", "5"] }, "forbid": { "size": ["075", "150", "200", "300", "20", "20N", "40", "50", "80"] }, "reason": "Cv 2.5 trim is available for the 1 inch (DN25) size only, per the trim table on page 7 and the size pairing on page 3" },
+    { "when": { "trim": ["H", "J", "K", "6"] }, "forbid": { "size": ["075", "200", "300", "20", "20N", "50", "80"] }, "reason": "Cv 4.5 trim is available for 1 to 1-1/2 inch (DN25, DN40) only, per the trim table on page 7 and the size pairing on page 3" },
+    { "when": { "trim": ["L", "M", "N", "8"] }, "forbid": { "size": ["075", "150", "200", "300", "20", "20N", "40", "50", "80"] }, "reason": "Cv 5.5 trim is available for the 1 inch (DN25) size only, per the trim table on page 7 and the size pairing on page 3" },
+    { "when": { "trim": ["7", "E", "G", "F"] }, "forbid": { "size": ["075", "150", "200", "300", "20", "20N", "40", "50", "80"] }, "reason": "Cv 6.1 trim is available for the 1 inch (DN25) size only, per the trim table on page 7 and the size pairing on page 3" },
+    { "when": { "trim": ["P", "Q", "R", "3"] }, "forbid": { "size": ["075", "100", "20", "20N", "25"] }, "reason": "Cv 10 trim is available for 1-1/2 to 3 inch (DN40 to DN80) only, per the trim table on page 7 and the size pairing on page 3" },
+    { "when": { "trim": ["S", "T", "U", "4"] }, "forbid": { "size": ["075", "100", "150", "300", "20", "20N", "25", "40", "80"] }, "reason": "Cv 19 trim is available for the 2 inch (DN50) size only, per the trim table on page 7 and the size pairing on page 3" },
+    { "when": { "trim": ["V", "W", "X", "Y"] }, "forbid": { "size": ["075", "100", "150", "200", "20", "20N", "25", "40", "50"] }, "reason": "Cv 23 trim is available for the 3 inch (DN80) size only, per the trim table on page 7 and the size pairing on page 3" },
+    { "when": { "size": ["15", "15N"] }, "forbid": { "trim": ["A", "1", "2", "9", "B", "C", "D", "5", "H", "J", "K", "6", "L", "M", "N", "8", "7", "E", "G", "F", "P", "Q", "R", "3", "S", "T", "U", "4", "V", "W", "X", "Y"] }, "reason": "the datasheet does not state trim or Cv availability for DN15, its Cv table starts at 3/4 inch and DN20, so a DN15 build needs the factory" },
+    { "when": { "bodyCv": "A" }, "forbid": { "trim": ["B", "C", "D", "5", "H", "J", "K", "6", "L", "M", "N", "8", "7", "E", "G", "F", "P", "Q", "R", "3", "S", "T", "U", "4", "V", "W", "X", "Y"] }, "reason": "the body Cv letter and the trim Cv must be the same rating, body A is Cv 1.5, per the Cv chart on page 2 (held as an inferred coupling for John to confirm)" },
+    { "when": { "bodyCv": "D" }, "forbid": { "trim": ["A", "1", "2", "9", "H", "J", "K", "6", "L", "M", "N", "8", "7", "E", "G", "F", "P", "Q", "R", "3", "S", "T", "U", "4", "V", "W", "X", "Y"] }, "reason": "the body Cv letter and the trim Cv must be the same rating, body D is Cv 2.5, per the Cv chart on page 2 (held as an inferred coupling for John to confirm)" },
+    { "when": { "bodyCv": "H" }, "forbid": { "trim": ["A", "1", "2", "9", "B", "C", "D", "5", "L", "M", "N", "8", "7", "E", "G", "F", "P", "Q", "R", "3", "S", "T", "U", "4", "V", "W", "X", "Y"] }, "reason": "the body Cv letter and the trim Cv must be the same rating, body H is Cv 4.5, per the Cv chart on page 2 (held as an inferred coupling for John to confirm)" },
+    { "when": { "bodyCv": "K" }, "forbid": { "trim": ["A", "1", "2", "9", "B", "C", "D", "5", "H", "J", "K", "6", "P", "Q", "R", "3", "S", "T", "U", "4", "V", "W", "X", "Y"] }, "reason": "the body Cv letter and the trim Cv must be the same rating, body K is Cv 5.5 or 6.1, per the Cv chart on page 2 (held as an inferred coupling for John to confirm)" },
+    { "when": { "bodyCv": "M" }, "forbid": { "trim": ["A", "1", "2", "9", "B", "C", "D", "5", "H", "J", "K", "6", "L", "M", "N", "8", "7", "E", "G", "F", "S", "T", "U", "4", "V", "W", "X", "Y"] }, "reason": "the body Cv letter and the trim Cv must be the same rating, body M is Cv 10, per the Cv chart on page 2 (held as an inferred coupling for John to confirm)" },
+    { "when": { "bodyCv": "N" }, "forbid": { "trim": ["A", "1", "2", "9", "B", "C", "D", "5", "H", "J", "K", "6", "L", "M", "N", "8", "7", "E", "G", "F", "P", "Q", "R", "3", "V", "W", "X", "Y"] }, "reason": "the body Cv letter and the trim Cv must be the same rating, body N is Cv 19, per the Cv chart on page 2 (held as an inferred coupling for John to confirm)" },
+    { "when": { "bodyCv": "P" }, "forbid": { "trim": ["A", "1", "2", "9", "B", "C", "D", "5", "H", "J", "K", "6", "L", "M", "N", "8", "7", "E", "G", "F", "P", "Q", "R", "3", "S", "T", "U", "4"] }, "reason": "the body Cv letter and the trim Cv must be the same rating, body P is Cv 23, per the Cv chart on page 2 (held as an inferred coupling for John to confirm)" },
+    { "when": { "range": ["A", "C", "R", "T"] }, "forbid": { "size": ["150", "200", "300", "40", "50", "80"] }, "reason": "this range is available for 3/4 and 1 inch (DN20, DN25) only, per the range table on page 8 and the set point table on page 2" },
+    { "when": { "range": "E" }, "forbid": { "size": ["075", "100", "300", "20", "20N", "25"] }, "reason": "the 10-25 psi range is available for 1-1/2 and 2 inch (DN40, DN50) only, per the range table on page 8" },
+    { "when": { "range": "P" }, "forbid": { "size": ["075", "100", "150", "200", "20", "20N", "25", "40", "50"] }, "reason": "the 15-25 psi range is available for the 3 inch (DN80) size only, per the range table on page 8" },
+    { "when": { "range": "H" }, "forbid": { "size": ["200", "300", "50", "80"] }, "reason": "the 15-50 psi range is available for 3/4 to 1-1/2 inch (DN20 to DN40) only, per the range table on page 8" },
+    { "when": { "range": "J" }, "forbid": { "size": ["075", "100", "150", "20", "20N", "25", "40"] }, "reason": "the 15-60 psi range is available for 2 and 3 inch (DN50, DN80) only, per the range table on page 8" },
+    { "when": { "range": "M" }, "forbid": { "size": ["075", "100", "200", "300", "20", "20N", "25", "50", "80"] }, "reason": "the 35-100 psi range is available for the 1-1/2 inch (DN40) size only, per the range table on page 8" },
+    { "when": { "range": "A" }, "forbid": { "diaphragm": ["6L", "JL"] }, "reason": "the 3-8 psi range must use the EPDM or Ultra-thin Jorlon diaphragm, per the schematic footnote and the diaphragm list on page 2" },
+    { "when": { "trim": ["L", "M", "N", "8", "7", "E", "G", "F"] }, "forbid": { "diaphragm": ["6L"] }, "reason": "Cv 5.5 and 6.1 are not available with metal diaphragms, per the Cv table footnote on page 3" },
+    { "when": { "oringDiaphragm": "TS" }, "forbid": { "size": ["075", "20", "20N"] }, "reason": "Teflon encapsulated silicone is 1 to 3 inch only, per the o-ring list on pages 2 and 8" },
+    { "when": { "size": "15N" }, "forbid": { "model": ["96", "96T", "96DT", "96ST"] }, "reason": "the DN15 non-standard clamp face is MK96D or MK96S only, per the size list on page 7" },
+    { "when": { "size": "20N" }, "forbid": { "model": ["96", "96T", "96S", "96DT", "96ST"] }, "reason": "the DN20 non-standard clamp face is MK96D only, per the size list on page 7" },
+    { "when": { "actuatorFinish": "DA" }, "forbid": { "size": ["075", "100", "150", "20", "20N", "25", "40"] }, "reason": "the electro-polished actuator finish is for 2 and 3 inch (DN50, DN80), per its own label in the schematic" },
+    { "when": { "actuatorFinish": ["EA", "FA"] }, "forbid": { "size": ["075", "100", "20", "20N", "25"] }, "reason": "the aluminium lightweight spring housing and the lifting lug options are 1-1/2 to 3 inch (DN40 to DN80) only, per the schematic and page 6" },
+    { "when": { "ped": "0G" }, "forbid": { "size": ["150", "200", "300", "40", "50", "80"] }, "reason": "SEP compliance 0G is 3/4 to 1 inch (DN20, DN25), per the PED list on page 8" },
+    { "when": { "ped": "0F" }, "forbid": { "size": ["075", "100", "20", "20N", "25"] }, "reason": "CE Category 1 compliance 0F is 1-1/2 to 3 inch (DN40 to DN80), per the PED list on page 8" }
+  ]
+}

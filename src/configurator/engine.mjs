@@ -48,6 +48,21 @@ export function checkConstraints(config, state) {
   return violated;
 }
 
+// Cautions are the soft counterpart to constraints: combinations the matrix
+// permits but tells the customer to take responsibility for, such as a gauge
+// span that does not cover the selected range spring. Same "when" shape as
+// constraints (scalar or array), but a match is a note to state plainly, never
+// a refusal. Returns the notes for every caution the state currently matches.
+export function checkCautions(config, state) {
+  const notes = [];
+  for (const c of config.cautions || []) {
+    const whenMatches = Object.entries(c.when).every(([k, v]) =>
+      Array.isArray(v) ? v.includes(state[k]) : state[k] === v);
+    if (whenMatches) notes.push({ note: c.note, when: c.when });
+  }
+  return notes;
+}
+
 // Build the code only when every required slot is filled and no constraint is
 // violated. Returns the code plus a per-position decode for display and audit.
 export function assemble(config, state) {
