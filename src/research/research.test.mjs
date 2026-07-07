@@ -119,5 +119,19 @@ await check('a residential or unrecognised-subject construction win defaults to 
   assert(opaque.dcRelevant === false, 'an unrecognised-subject construction win must default to reject');
 });
 
+console.log('\nAnchor removal (the classifier never sees the search query):');
+
+await check('the search query is not shown to the classifier, so it cannot anchor a verdict', async () => {
+  let seenUser = null;
+  const capture = async (system, user) => { seenUser = user; return JSON.stringify({ dcRelevant: false }); };
+  await classifySignal(
+    { title: 'Resi job propels Keady to league summit', content: 'a residential build-to-rent development in Stockport', query: 'UK data centre construction contract awarded' },
+    { callModel: capture });
+  assert(seenUser !== null, 'the classifier must be called');
+  assert(!/search query/i.test(seenUser), 'the prompt must not mention the search query');
+  assert(!/UK data centre construction contract awarded/.test(seenUser), 'the query text must not appear in the prompt');
+  assert(/Resi job/.test(seenUser) && /Stockport/.test(seenUser), 'title and content are still shown');
+});
+
 console.log(`\n=== Research gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);
