@@ -25,7 +25,8 @@ const FILE = get('--file');
 const SHEET = get('--sheet');
 const ROWS = /^\d+$/.test(get('--rows') || '') ? Number(get('--rows')) : 5;
 
-const SPREADSHEET_EXT = /\.(xlsx|xlsm|xls)$/i;
+const SPREADSHEET_EXT = /\.(xlsx|xlsm|xlsb|xls|csv)$/i;
+const LOADABLE_EXT = /\.(xlsx|xlsm)$/i; // what the exceljs dive can open; others are listed and flagged
 
 const KEY_HINTS = /\b(part|model|code|item|sku|ref|product\s*(no|number|code)?|catalogue)\b/i;
 const PRICE_HINTS = /\b(price|list|sell|selling|retail|rrp|net\b|amount|each|unit|gbp|eur|usd)\b|£|€|\$/i;
@@ -33,10 +34,17 @@ const CURRENCY_HINTS = /\b(currency|curr|ccy)\b/i;
 const DATE_HINTS = /\b(date|valid|effective|from|until|expiry|review)\b/i;
 const COST_HINTS = /\b(cost|purchase|buy|nett?\s*buy|margin|markup|discount|disc\.?%?|supplier\s*price|transfer)\b/i;
 
-async function resolveDrive() {
+// Every document library on the site, not just the default one the corpus
+// ingestion reads: an upload can land in another library entirely.
+async function resolveDrives() {
   const site = await graphJson(`/sites/${process.env.SP_HOSTNAME}:${process.env.SP_SITE_PATH}`);
-  const drive = await graphJson(`/sites/${site.id}/drive`);
-  return { siteName: site.displayName || site.name, driveId: drive.id };
+  const drives = await graphJson(`/sites/${site.id}/drives`);
+  let subsites = [];
+  try {
+    const subs = await graphJson(`/sites/${site.id}/sites`);
+    subsites = (subs.value || []).map(s => s.displayName || s.name);
+  } catch { /* subsite listing is best-effort */ }
+  return { siteName: site.displayName || site.name, drives: drives.value || [], subsites };
 }
 
 async function* pageItems(url) {
@@ -81,30 +89,43 @@ function classifyHeader(h) {
   return kinds;
 }
 
-const { siteName, driveId } = await resolveDrive();
-console.log(`Site: ${siteName}\n`);
+const { siteName, drives, subsites } = await resolveDrives();
+console.log(`Site: ${siteName}  (${drives.length} document librar${drives.length === 1 ? 'y' : 'ies'})`);
+if (subsites.length) console.log(`Subsites (not searched by this script): ${subsites.join(', ')}`);
 
-// Pass 1: find every spreadsheet in the library.
+// Pass 1: walk every library, list every spreadsheet, and tally what else is
+// there so an empty result still says what the walk actually saw.
 const sheetsFound = [];
-for await (const top of pageItems(`/drives/${driveId}/root/children?$top=200`)) {
-  const entries = top.folder
-    ? walkItems(driveId, top.id, top.name)
-    : (async function* () { yield { item: top, rel: top.name }; })();
-  for await (const { item, rel } of entries) {
-    if (SPREADSHEET_EXT.test(item.name)) {
-      sheetsFound.push({ id: item.id, rel, size: item.size, modified: item.lastModifiedDateTime, by: item.lastModifiedBy?.user?.displayName || '' });
+for (const d of drives) {
+  const extTally = new Map();
+  let fileCount = 0;
+  for await (const top of pageItems(`/drives/${d.id}/root/children?$top=200`)) {
+    const entries = top.folder
+      ? walkItems(d.id, top.id, top.name)
+      : (async function* () { yield { item: top, rel: top.name }; })();
+    for await (const { item, rel } of entries) {
+      fileCount++;
+      const ext = (item.name.match(/\.[A-Za-z0-9]+$/) || ['(none)'])[0].toLowerCase();
+      extTally.set(ext, (extTally.get(ext) || 0) + 1);
+      if (SPREADSHEET_EXT.test(item.name)) {
+        sheetsFound.push({ id: item.id, driveId: d.id, library: d.name, rel, size: item.size, modified: item.lastModifiedDateTime, by: item.lastModifiedBy?.user?.displayName || '' });
+      }
     }
   }
+  const tally = [...extTally.entries()].sort((a, b) => b[1] - a[1]).map(([e, n]) => `${e} ${n}`).join(', ');
+  console.log(`\nLibrary "${d.name}": ${fileCount} file(s)${tally ? '  [' + tally + ']' : ''}`);
 }
 
 if (!sheetsFound.length) {
-  console.log('No spreadsheet files (.xlsx, .xlsm, .xls) found in the document library.');
+  console.log('\nNo spreadsheet files (.xlsx, .xlsm, .xlsb, .xls, .csv) found in any library on this site.');
+  console.log('If the pricing file was uploaded to a subsite listed above, or a different site, say which and the script can be pointed at it.');
   process.exit(0);
 }
 
-console.log(`Spreadsheets in the library: ${sheetsFound.length}`);
+console.log(`\nSpreadsheets found: ${sheetsFound.length}`);
 for (const f of sheetsFound) {
-  console.log(`  - ${f.rel}  [${Math.round((f.size || 0) / 1024)} KB, modified ${String(f.modified).slice(0, 10)}${f.by ? ' by ' + f.by : ''}]`);
+  const loadable = LOADABLE_EXT.test(f.rel) ? '' : '  (listed only; save as .xlsx for the dive)';
+  console.log(`  - [${f.library}] ${f.rel}  [${Math.round((f.size || 0) / 1024)} KB, modified ${String(f.modified).slice(0, 10)}${f.by ? ' by ' + f.by : ''}]${loadable}`);
 }
 
 if (!FILE) {
@@ -116,8 +137,12 @@ const matches = sheetsFound.filter(f => f.rel.toLowerCase().includes(FILE.toLowe
 if (!matches.length) { console.log(`\nNo spreadsheet matches "${FILE}".`); process.exit(1); }
 
 for (const f of matches) {
-  console.log(`\n===== ${f.rel} =====`);
-  const res = await graph(`/drives/${driveId}/items/${f.id}/content`);
+  console.log(`\n===== [${f.library}] ${f.rel} =====`);
+  if (!LOADABLE_EXT.test(f.rel)) {
+    console.log('  this format cannot be opened by the dive (.xlsb, .xls and .csv are listed only); save it as .xlsx in SharePoint and re-run');
+    continue;
+  }
+  const res = await graph(`/drives/${f.driveId}/items/${f.id}/content`);
   if (!res.ok) { console.log(`  download failed: ${res.status}`); continue; }
   const buf = Buffer.from(await res.arrayBuffer());
   console.log(`  downloaded ${Math.round(buf.length / 1024)} KB`);
