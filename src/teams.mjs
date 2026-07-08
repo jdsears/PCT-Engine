@@ -1,9 +1,14 @@
 import { CloudAdapter, ConfigurationBotFrameworkAuthentication, ActivityHandler } from 'botbuilder';
 import { ask } from './answer.mjs';
 import { pool } from './db.mjs';
+import { createConversationStore } from './teamsState.mjs';
 
 // The Knowledge Co-Pilot inside Microsoft Teams, personal chat only. It reuses
-// the existing ask() pipeline unchanged: a Teams message is just another way in.
+// the existing ask() pipeline, and carries short-term conversation state in
+// memory (see teamsState.mjs) so follow-up questions keep their thread and a
+// part-number build works across turns, exactly as in the web chat. Nothing is
+// persisted: the conversation id is an in-memory routing key only, never
+// written to the database or the logs.
 //
 // IMPORTANT: the /api/teams/messages route in server.mjs is exempt from the
 // access-gate cookie check on purpose. Its protection is Bot Framework token
@@ -58,17 +63,28 @@ export function composeReply(result) {
 // Teams expects a timely reply, so the answer is bounded. A slow model run
 // reports back rather than leaving the chat waiting.
 const ASK_TIMEOUT_MS = 25000;
+const MAX_QUESTION_CHARS = 2000;
+
+const conversations = createConversationStore();
 
 const bot = new ActivityHandler();
 bot.onMessage(async (context, next) => {
   const question = (context.activity.text || '').replace(/<at>.*?<\/at>/g, '').trim();
   if (question) {
+    if (question.length > MAX_QUESTION_CHARS) {
+      await context.sendActivity('That message is too long for the co-pilot. Please ask it in a shorter form.');
+      await next();
+      return;
+    }
     await context.sendActivity({ type: 'typing' });
+    const convId = context.activity.conversation?.id || null;
+    const { history, configState } = conversations.get(convId);
     try {
       const result = await Promise.race([
-        ask(question),
+        ask(question, { history, configState }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('ask-timeout')), ASK_TIMEOUT_MS)),
       ]);
+      conversations.remember(convId, question, result);
       await context.sendActivity(composeReply(result));
       logTeamsQuery(question, result).catch(e => console.error('teams query log failed:', e.message));
     } catch (e) {
