@@ -38,7 +38,8 @@ part-number configurator, the research funnel, and the outbound stage.
 
 ## Verification gate
 
-- `npm test` runs the configurator and outbound gates (29 checks at present).
+- `npm test` runs the configurator, outbound, research and Teams-state gates,
+  seventy-plus checks.
 - `npm run build` in `web/` must stay clean; `npm run migrate` applies pending
   migrations in order.
 - Secrets live in `.env` and Railway only, never in the repo. `.env` is ignored.

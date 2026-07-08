@@ -105,23 +105,29 @@ app.post('/ask', async (req, res) => {
   try {
     const { question, history, configState } = req.body || {};
     if (!question) return res.status(400).json({ error: 'question is required' });
+    if (String(question).length > 2000) {
+      return res.status(400).json({ error: 'the question is too long; please ask it in a shorter form' });
+    }
     const result = await ask(question, {
       history: Array.isArray(history) ? history : [],
       configState: configState || null,
     });
-    res.json(result);
-    // Log usage after responding. Logging must never delay or fail the answer.
-    // A configurator turn is not a retrieval query, so it is not logged to
-    // copilot_queries. The turn is a build when it carries config state, an
-    // options list, a completed code, or a terminal build-log record.
+    // Log before replying, so the reply can carry the row id and the answer's
+    // feedback chips have something to attach to. The insert is a few
+    // milliseconds on the internal network; a logging failure still never fails
+    // the answer, the id is simply null and the chips do not show. A
+    // configurator turn is not a retrieval query, so it is not logged here.
     const isConfigTurn = !!(result.configState || result.configOptions || result.configurator || result.configLog);
+    let queryLogId = null;
     if (!isConfigTurn) try {
-      await pool.query(
+      const ins = await pool.query(
         `INSERT INTO copilot_queries (question, detected_filters, declined, citations_used, sources_offered, latency_ms)
-         VALUES ($1, $2::jsonb, $3, $4::jsonb, $5, $6)`,
+         VALUES ($1, $2::jsonb, $3, $4::jsonb, $5, $6) RETURNING id`,
         [question, JSON.stringify(result.filters || {}), !!result.declined,
          JSON.stringify(result.citationsUsed || []), result.sourcesOffered ?? null, result.latencyMs ?? null]);
+      queryLogId = ins.rows[0]?.id ?? null;
     } catch (e) { console.error('query log insert failed:', e.message); }
+    res.json({ ...result, queryLogId });
 
     // A build that ended this turn logs one row: the model, whether a code was
     // assembled, how far it got, the code, and the turn latency. No user identity.
@@ -135,6 +141,21 @@ app.post('/ask', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// A thumb up or down against a logged answer. No identity, only the verdict.
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { queryLogId, verdict } = req.body || {};
+    if (!Number.isInteger(queryLogId) || !['up', 'down'].includes(verdict)) {
+      return res.status(400).json({ error: 'queryLogId and a verdict of up or down are required' });
+    }
+    const { rowCount } = await pool.query(
+      `UPDATE copilot_queries SET feedback = $2, feedback_at = now() WHERE id = $1`,
+      [queryLogId, verdict]);
+    if (!rowCount) return res.status(404).json({ error: 'no logged answer with that id' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 // Read-only usage insights over the query log. Open like the rest of the API;
 // when an access gate arrives, these sit behind it with the other routes.
 const clampDays = (v, def) => { const n = parseInt(v, 10); return Number.isFinite(n) && n > 0 ? Math.min(n, 365) : def; };
@@ -145,8 +166,14 @@ app.get('/api/insights/summary', async (req, res) => {
     const totals = await pool.query(
       `SELECT count(*)::int AS questions,
               count(*) FILTER (WHERE declined)::int AS declined,
+              count(*) FILTER (WHERE feedback = 'up')::int AS fb_up,
+              count(*) FILTER (WHERE feedback = 'down')::int AS fb_down,
               round(avg(latency_ms))::int AS avg_latency_ms
        FROM copilot_queries WHERE created_at >= now() - make_interval(days => $1)`, [days]);
+    const channels = await pool.query(
+      `SELECT COALESCE(channel, 'web') AS channel, count(*)::int AS n
+       FROM copilot_queries WHERE created_at >= now() - make_interval(days => $1)
+       GROUP BY 1 ORDER BY n DESC`, [days]);
     const daily = await pool.query(
       `SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day, count(*)::int AS n
        FROM copilot_queries WHERE created_at >= now() - make_interval(days => $1)
@@ -160,6 +187,8 @@ app.get('/api/insights/summary', async (req, res) => {
       days, questions: t.questions, declined: t.declined,
       declinedRate: t.questions ? Number((t.declined / t.questions).toFixed(3)) : 0,
       avgLatencyMs: t.avg_latency_ms, daily: daily.rows, lines: lines.rows,
+      feedback: { up: t.fb_up, down: t.fb_down },
+      byChannel: channels.rows,
     });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
