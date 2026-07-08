@@ -99,6 +99,13 @@ button, input { font: inherit; }
 .fb-btn:disabled { cursor: default; }
 .fb-btn:disabled:not(.on) { opacity: 0.35; }
 .fb-thanks { font-size: 12px; color: var(--ink2); }
+/* Signal engine card on Health */
+.engine-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.engine-btn { border: 1px solid var(--line); background: #FFF; border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 700; color: var(--navy); cursor: pointer; }
+.engine-btn.primary { background: var(--navy); border-color: var(--navy); color: #FFF; }
+.engine-btn:disabled { opacity: 0.45; cursor: default; }
+.engine-warn { font-size: 12.5px; line-height: 1.5; color: var(--amber); }
+@media (max-width: 480px) { .engine-btn { min-height: 44px; } }
 @media (max-width: 480px) {
   .fb-btn { min-width: 44px; min-height: 38px; }
 }

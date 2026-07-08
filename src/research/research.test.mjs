@@ -4,6 +4,7 @@
 // deploy by reprocessing the real signals.
 import { matchOperator, normalizeTokens } from './match.mjs';
 import { classifySignal } from './relevance.mjs';
+import { shouldRun } from './schedule.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -144,6 +145,18 @@ await check('a residential-headline roundup that mentions a real DC campus in it
     content: 'Keady claimed the top spot thanks to a single residential job in Stockport. ... The £100m job to develop the final phase of Pure DC’s £1bn Brent Cross data centre campus was enough for the contractor to secure a place in the top 10.',
   }, { callModel: fake({ dcRelevant: false }) });
   assert(roundup.dcRelevant === false && roundup.geoScope === null, 'the roundup must reject on its primary subject');
+});
+
+console.log('\nEngine scheduler (the pure run decision):');
+
+await check('the engine runs only when on, idle, and due', () => {
+  const hour = 3600_000, now = 10 * hour;
+  assert(shouldRun({ enabled: true, running: false, lastRunAt: null, intervalMs: 6 * hour, now }), 'first run happens as soon as the engine is on');
+  assert(!shouldRun({ enabled: false, running: false, lastRunAt: null, intervalMs: 6 * hour, now }), 'off means no run');
+  assert(!shouldRun({ enabled: true, running: true, lastRunAt: null, intervalMs: 6 * hour, now }), 'a run in flight blocks another');
+  assert(!shouldRun({ enabled: true, running: false, lastRunAt: new Date(now - 2 * hour).toISOString(), intervalMs: 6 * hour, now }), 'not yet due');
+  assert(shouldRun({ enabled: true, running: false, lastRunAt: new Date(now - 7 * hour).toISOString(), intervalMs: 6 * hour, now }), 'due after the interval');
+  assert(shouldRun({ enabled: true, running: false, lastRunAt: 'not a date', intervalMs: 6 * hour, now }), 'an unreadable last-run time does not wedge the engine');
 });
 
 console.log(`\n=== Research gate: ${pass} passed, ${fail} failed ===`);

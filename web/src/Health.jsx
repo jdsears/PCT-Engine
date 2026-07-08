@@ -1,6 +1,92 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { lineLabel, fmtClockDay } from './labels.js';
 import { apiFetch } from './api.js';
+
+// The signal engine card: the switch that turns automatic signal finding and
+// lead pulling on or off, with the last run's numbers and the key checks. The
+// state lives on the server (kv), so the toggle needs no redeploy and survives
+// restarts. Nothing here touches sending: the mail kill switch is its own card.
+function EngineCard() {
+  const [engine, setEngine] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(null);
+
+  const load = useCallback(() => {
+    apiFetch('/api/engine/status').then(r => r.json())
+      .then(setEngine).catch(() => setEngine(null));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const toggle = async () => {
+    if (!engine || busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/toggle', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !engine.enabled }),
+      });
+      setEngine(await res.json());
+    } catch { setNote('The engine switch is not available right now.'); }
+    setBusy(false);
+  };
+
+  const runNow = async () => {
+    if (busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/run-now', { method: 'POST' });
+      const d = await res.json();
+      setNote(d.started ? 'Run started. The numbers refresh when it finishes.' : `Not started: ${d.reason}.`);
+      setTimeout(load, 4000);
+    } catch { setNote('The run could not be started right now.'); }
+    setBusy(false);
+  };
+
+  if (!engine) {
+    return (
+      <div className="card health-card">
+        <div className="eyebrow">Signal engine</div>
+        <div className="muted-small">Engine status is not available right now.</div>
+      </div>
+    );
+  }
+
+  const missing = Object.entries(engine.keys || {}).filter(([, ok]) => !ok).map(([k]) =>
+    ({ companiesHouse: 'Companies House', tavily: 'Tavily', anthropic: 'Anthropic' }[k] || k));
+  const lr = engine.lastRun;
+
+  return (
+    <div className="card health-card gap-10">
+      <div className="eyebrow">Signal engine</div>
+      <div className="engine-row">
+        <div className="status-big">
+          <span className="status-dot" style={{ background: engine.running ? 'var(--blue)' : engine.enabled ? 'var(--teal)' : 'var(--stop-muted)' }} />
+          {engine.running ? 'Running now' : engine.enabled ? 'On' : 'Off'}
+        </div>
+        <button className="engine-btn primary" onClick={toggle} disabled={busy}>
+          {engine.enabled ? 'Turn off' : 'Turn on'}
+        </button>
+        <button className="engine-btn" onClick={runNow} disabled={busy || engine.running}>Run now</button>
+      </div>
+      <div className="health-sub">
+        {engine.enabled
+          ? `Finding signals and pulling leads every ${engine.intervalHours} hours.`
+          : 'Automatic signal finding and lead pulling is off. Manual runs still work.'}
+      </div>
+      {missing.length > 0 && (
+        <div className="engine-warn">Missing keys on this service: {missing.join(', ')}. Runs will find nothing from those sources until they are set.</div>
+      )}
+      {lr && (
+        <div className="muted-small">
+          Last run {fmtClockDay(lr.at)}{lr.trigger ? ` (${lr.trigger})` : ''}: {lr.ok
+            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed.`
+            : `failed, ${lr.error}`}
+        </div>
+      )}
+      {note && <div className="muted-small">{note}</div>}
+    </div>
+  );
+}
 
 export default function Health() {
   const [data, setData] = useState(null);
@@ -24,6 +110,8 @@ export default function Health() {
   return (
     <div className="content-pad">
       <div className="health-grid">
+        <EngineCard />
+
         <div className="card health-card">
           <div className="eyebrow">Corpus</div>
           <div className="health-hero">{(corpus.chunks ?? 0).toLocaleString('en-GB')}</div>
