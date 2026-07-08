@@ -17,12 +17,15 @@ export async function fetchInboxSince(sinceIso) {
 
 // Poll the engine mailbox, match each inbound message to a real send, record new
 // replies and advance the matched lead to replied. apply=false makes no writes.
-export async function pollReplies(pool, { apply = false } = {}) {
+export async function pollReplies(pool, { apply = false, includeTestSends = (process.env.REPLY_CAPTURE_TEST_SENDS || 'off') === 'on' } = {}) {
   const stored = (await pool.query(`SELECT value FROM kv WHERE key = 'outbound_replies_last_poll'`)).rows[0]?.value || null;
   const sinceIso = typeof stored === 'string' ? stored : null;
   const messages = await fetchInboxSince(sinceIso);
+  // Real sends only by default. During the internal testing window the flag
+  // widens matching to test sends too, so a reply from a teammate's mailbox can
+  // demonstrate the replied stage without any prospect being involved.
   const sent = (await pool.query(
-    `SELECT draft_id, to_email, conversation_id FROM outbound_sends WHERE NOT test_mode AND sent`)).rows;
+    `SELECT draft_id, to_email, conversation_id FROM outbound_sends WHERE sent${includeTestSends ? '' : ' AND NOT test_mode'}`)).rows;
 
   const report = { scanned: messages.length, matched: 0, recorded: 0 };
   let maxReceived = sinceIso;

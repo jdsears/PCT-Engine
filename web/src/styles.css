@@ -91,6 +91,17 @@ button, input { font: inherit; }
 .is-mobile .chat-top { margin: -14px -14px 0; padding: 8px 14px; }
 .back-shortcuts { display: inline-flex; align-items: center; gap: 4px; background: none; border: none; padding: 8px 2px; color: var(--ink2); font-size: 13px; font-weight: 600; cursor: pointer; }
 .back-shortcuts:hover { color: var(--navy); }
+/* Feedback chips on an answer: quiet, one verdict, then locked. */
+.fb-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.fb-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: 1px solid var(--line); border-radius: 8px; padding: 4px 9px; color: var(--ink2); cursor: pointer; }
+.fb-btn:hover:not(:disabled) { color: var(--navy); border-color: var(--navy); }
+.fb-btn.on { color: var(--teal); border-color: var(--teal); opacity: 1; }
+.fb-btn:disabled { cursor: default; }
+.fb-btn:disabled:not(.on) { opacity: 0.35; }
+.fb-thanks { font-size: 12px; color: var(--ink2); }
+@media (max-width: 480px) {
+  .fb-btn { min-width: 44px; min-height: 38px; }
+}
 
 /* ===== BD watchlist ===== */
 .watchlist { display: flex; flex-direction: column; gap: 14px; max-width: 760px; }

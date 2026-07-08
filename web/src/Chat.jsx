@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { apiFetch } from './api.js';
-import { ICONS, ChevronRight, ChevronLeft } from './icons.jsx';
+import { ICONS, ChevronRight, ChevronLeft, ThumbUpIcon, ThumbDownIcon } from './icons.jsx';
 
 // The web chat. Most turns are ordinary co-pilot answers. When the part-number
 // configurator is running, a turn can also carry an options list (the next slot
@@ -34,6 +34,7 @@ export default function Chat() {
       setMessages(m => [...m, {
         role: 'copilot', text: data.answer, citations: data.citations || [],
         options: data.configOptions || null, config: data.configurator || null,
+        logId: data.queryLogId ?? null,
       }]);
     } catch {
       setMessages(m => [...m, { role: 'copilot', text: 'Sorry, something went wrong reaching the co-pilot.', citations: [] }]);
@@ -95,6 +96,7 @@ export default function Chat() {
                       </div>
                     </div>
                   )}
+                  {m.logId != null && <FeedbackChips id={m.logId} />}
                 </div>
               </div>
             )
@@ -178,6 +180,29 @@ function Shortcuts({ onConfigure, onPrefill }) {
         ))}
       </div>
       <div className="cp-or">Or just type your question below.</div>
+    </div>
+  );
+}
+
+// A quiet thumbs up or down against the logged answer, one verdict per answer.
+// Configurator turns carry no log id, so they show no chips.
+function FeedbackChips({ id }) {
+  const [given, setGiven] = useState(null);
+  const give = (verdict) => {
+    if (given) return;
+    setGiven(verdict);
+    apiFetch('/api/feedback', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ queryLogId: id, verdict }),
+    }).catch(() => {});
+  };
+  return (
+    <div className="fb-row">
+      <button className={`fb-btn${given === 'up' ? ' on' : ''}`} aria-label="Mark this answer as helpful"
+        disabled={!!given} onClick={() => give('up')}><ThumbUpIcon /></button>
+      <button className={`fb-btn${given === 'down' ? ' on' : ''}`} aria-label="Mark this answer as not helpful"
+        disabled={!!given} onClick={() => give('down')}><ThumbDownIcon /></button>
+      {given && <span className="fb-thanks">Noted, thank you.</span>}
     </div>
   );
 }

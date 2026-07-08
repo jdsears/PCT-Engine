@@ -80,6 +80,8 @@ export default function Insights() {
   const typical = summary.avgLatencyMs == null ? '—' : `${(summary.avgLatencyMs / 1000).toFixed(1)}s`;
 
   const spark = buildSpark(summary.daily);
+  const fb = summary.feedback || { up: 0, down: 0 };
+  const channels = (summary.byChannel || []).filter(c => c.n > 0);
 
   const demand = (summary.lines || [])
     .filter(l => l.n > 0)
@@ -137,6 +139,12 @@ export default function Insights() {
               <div className="eyebrow">Typical reply</div>
             </div>
           </div>
+          {(fb.up + fb.down > 0 || channels.length > 0) && (
+            <p className="ins-caption">
+              {fb.up + fb.down > 0 ? `Feedback: ${fb.up} helpful, ${fb.down} not helpful. ` : ''}
+              {channels.length > 0 ? 'Asked from ' + channels.map(c => `${c.channel === 'teams' ? 'Teams' : 'the web app'} ${c.n}`).join(', ') + '.' : ''}
+            </p>
+          )}
         </div>
 
         {/* Demand by line */}

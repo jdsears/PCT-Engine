@@ -222,6 +222,31 @@ is never called automatically; spending credits on email resolution is a
 decision for the outbound stage. `scripts/merge-duplicate-accounts.mjs` is the
 one-off cleanup for the duplicated first seed, dry run by default.
 
+## Signal relevance, routing and the BD watchlist
+
+News results only become signals through a relevance gate
+(`src/research/relevance.mjs`): a result must be about a data centre
+specifically, and about that data centre being built, contracted, financed for
+a build or expanded. The classifier judges the story's primary subject from the
+title and content, never sees the search query that found the result, judges a
+clear title on its own when the content is paywall boilerplate, and rejects on
+any doubt. A confirmed signal is routed by its UK dimension, not the operator's
+nationality: `uk_project` is lead fuel, `expansion_watch` is business
+development intelligence, and a build wholly abroad is dropped as context.
+`foreign_only` requires a specific named foreign location.
+
+UK-project signals are matched to named accounts by a conservative matcher
+(`src/research/match.mjs`, tolerant brand-to-registered-entity tokens, a unique
+confident candidate links, anything ambiguous stays unmatched), run as a step in
+`research-run.mjs`. Matched project events drive leads and event-led openers
+through the opener-grade rules in `src/outbound/openerGrade.mjs`: only a real
+project event opens a cold email, an administrative filing never does.
+
+`scripts/reprocess-signals.mjs` re-judges stored signals through the gate, dry
+run by default and reversible with `--apply`. The Watchlist section of the web
+app lists `expansion_watch` operators, the engine feeding targets back to the
+team, distinct from the lead pipeline.
+
 ## LinkedIn research lane
 
 Sales Navigator through Unipile, reading through James's account. Research
@@ -355,6 +380,10 @@ node --env-file=.env scripts/outbound-replies.mjs
 node --env-file=.env scripts/outbound-replies.mjs --apply
 ```
 
+During the internal testing window, `REPLY_CAPTURE_TEST_SENDS=on` widens the
+poller to match replies to internal test sends too, so the replied stage can be
+demonstrated end to end without a prospect. Leave it off in normal running.
+
 Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log; migration
 010 adds the reply-correlation columns and the `outbound_replies` table; migration
 011 adds the `grounding` and `grounding_flags` columns. Apply them with
@@ -362,13 +391,20 @@ Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log; migrati
 
 ## Usage logging and insights
 
-Every co-pilot question is logged to `copilot_queries` (migration 005) after the
-answer is sent, so logging never delays or fails a reply. Each row records the
-question, the line or application filter the answer layer chose, whether the
-answer declined (cited no sources, an honest proxy for a knowledge gap), the
-citations actually used with their titles, how many sources retrieval offered,
-and the latency. No user identity is logged, since there is none under the
-shared access gate.
+Every co-pilot question is logged to `copilot_queries` (migration 005). Each row
+records the question, the line or application filter the answer layer chose,
+whether the answer declined (cited no sources, an honest proxy for a knowledge
+gap), the citations actually used with their titles, how many sources retrieval
+offered, the latency, and the channel (web or teams). No user identity is
+logged, since there is none under the shared access gate. The insert happens
+just before the reply so the answer can carry its row id; a logging failure
+still never fails the answer.
+
+Each web answer carries quiet thumbs up and down chips (migration 013). A
+verdict posts to `POST /api/feedback` against the logged row, one verdict per
+answer, no identity. The insights summary reports the feedback counts and the
+web versus Teams split, so a testing week produces structured data rather than
+anecdotes.
 
 Three read-only endpoints summarise it. They sit behind the access gate with
 the other data routes.
@@ -387,8 +423,12 @@ only live data; there are no sample values in the build.
 The web app is the approved design's full shell: a navy sidebar on desktop, a
 bottom tab bar on mobile, and seven sections that each read live data.
 
-- Co-Pilot is the chat. Answers arrive as cards with their sources as chips,
-  and the thinking state shows the brand wave.
+- Co-Pilot is the chat. Its empty state is four shortcut cards (build a part
+  number, product and spec questions, how PCT sells, and a price card held as
+  Coming until pricing loads), so a first-time user sees what it can do.
+  Answers arrive as cards with their sources as chips and quiet feedback
+  thumbs, the thinking state shows the brand wave, and a guided part-number
+  build runs in the same conversation.
 - Insights renders the usage log: reading cards with a thirty-day sparkline
   and answer-rate gauge, demand by line, knowledge gaps, most cited documents,
   and a young-log line while the log is small.
@@ -401,7 +441,9 @@ bottom tab bar on mobile, and seven sections that each read live data.
   House matches, amber-flagged where either is missing. The detail panel holds
   the explainable score breakdown, recent signals, and register directors.
 - Signals is the observation feed, filterable by kind, each linking to its
-  account.
+  account. Gate-rejected news never shows.
+- Watchlist is the business development list: data centre operators the engine
+  has spotted expanding, where a UK move is plausible but not yet a project.
 - Outbound is the designed placeholder for the next stage and reads the kill
   switch state from the API.
 - Health shows corpus size, documents by line, last ingestion, database state,
@@ -436,10 +478,13 @@ strong value in the environment, for example `openssl rand -base64 32`.
 ## Co-Pilot in Teams
 
 The Co-Pilot also answers inside Microsoft Teams in personal, one to one chat,
-reusing the same `ask()` pipeline unchanged (`src/teams.mjs`). A Teams message
-gets a typing indicator, the answer, then one compact `Sources:` line from the
-cited documents, with nothing shown when the answer declines. Each message
-stands alone this pass, which matches `ask()`; multi-turn is a later item.
+reusing the same `ask()` pipeline (`src/teams.mjs`). A Teams message gets a
+typing indicator, the answer, then one compact `Sources:` line from the cited
+documents, with nothing shown when the answer declines. Short-term conversation
+state is held in memory per Teams conversation (`src/teamsState.mjs`), so
+follow-up questions keep their thread and a guided part-number build works
+across turns; nothing is persisted, the conversation id is an in-memory routing
+key only, and state expires after thirty minutes.
 
 - The endpoint is `POST /api/teams/messages`. It is the one path under `/api`
   that the access gate does not cover, on purpose: its protection is Bot
