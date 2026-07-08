@@ -202,6 +202,16 @@ for Andy to curate. The second polls signals, refreshes ICP scores, and
 upserts leads at stage researched; it is idempotent and safe to repeat.
 Nothing in the research stage sends mail, and the kill switch stays on.
 
+The same run also lives in the service as the signal engine
+(`src/research/runResearch.mjs`), switched on and off from the Health page.
+When on, the service runs it every `ENGINE_RUN_INTERVAL_HOURS` hours (default
+six), with a Run now button for an immediate pass. The switch and the last
+run's summary live in the `kv` store, so toggling needs no redeploy and
+survives restarts, and the card shows which research keys are missing on the
+service. The engine only finds signals and pulls leads: drafting and sending
+stay manual and gated, and the LinkedIn lane keeps its own capped orchestrator,
+untouched by the engine.
+
 `scripts/export-curation-pack.mjs` writes `CURATION_PACK.md`, the single brief
 that goes to Andy for sign-off: the named accounts with their scores and the
 count of likely decision-makers found, the region table, the decision-orbit

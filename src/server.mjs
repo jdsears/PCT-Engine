@@ -10,6 +10,8 @@ import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
 import { sendMail, sendMailTest, isTestRecipient, textToHtml, testRecipientList } from './mail.mjs';
 import { canSendReal } from './outbound/sendDecision.mjs';
+import { runResearch } from './research/runResearch.mjs';
+import { shouldRun } from './research/schedule.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -408,6 +410,90 @@ app.get('/api/watchlist', async (_req, res) => {
       id: s.id, type: s.signal_type, title: s.title, operator: s.operator,
       source: host(s.url), url: s.url, observedAt: s.observed_at,
     })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// ----- The signal engine -----
+// Finding signals and pulling leads runs in the service on a cycle, switched
+// from the UI. The on/off lives in the kv store so a toggle needs no redeploy,
+// and the last run's summary is kept there for the Health card. The research
+// run sends nothing and never touches the LinkedIn lane or the mail kill
+// switch; drafting and sending stay manual and gated as before.
+const ENGINE_INTERVAL_MS = Math.max(1, Number(process.env.ENGINE_RUN_INTERVAL_HOURS || 6)) * 3600_000;
+let engineRunning = false;
+
+const kvGet = async (key) => (await pool.query(`SELECT value FROM kv WHERE key = $1`, [key])).rows[0]?.value ?? null;
+const kvSet = (key, value) => pool.query(
+  `INSERT INTO kv (key, value, updated_at) VALUES ($1, $2::jsonb, now())
+   ON CONFLICT (key) DO UPDATE SET value = $2::jsonb, updated_at = now()`,
+  [key, JSON.stringify(value)]);
+
+async function engineStatus() {
+  const enabled = (await kvGet('engine_enabled')) === 'on';
+  const lastRun = await kvGet('engine_last_run');
+  return {
+    enabled, running: engineRunning,
+    intervalHours: ENGINE_INTERVAL_MS / 3600_000,
+    lastRun,
+    keys: {
+      companiesHouse: !!process.env.COMPANIES_HOUSE_API_KEY,
+      tavily: !!process.env.TAVILY_API_KEY,
+      anthropic: !!process.env.ANTHROPIC_API_KEY,
+    },
+  };
+}
+
+async function runEngineOnce(trigger) {
+  if (engineRunning) return false;
+  engineRunning = true;
+  const startedAt = new Date().toISOString();
+  try {
+    const r = await runResearch({ log: m => console.log('[engine]', m) });
+    await kvSet('engine_last_run', {
+      ok: true, at: startedAt, trigger,
+      signalsStored: r.newsCounts.inserted ?? 0, signalsRejected: r.newsCounts.rejected ?? 0,
+      filings: (r.chCounts.ch_filing ?? 0) + (r.chCounts.ch_director_change ?? 0),
+      matched: r.newsMatched, scored: r.scored,
+      leadsCreated: r.leadsCreated, leadsUpdated: r.leadsUpdated,
+      awaitingMatch: r.awaitingMatch,
+    });
+  } catch (e) {
+    console.error('[engine] run failed:', e.message);
+    try { await kvSet('engine_last_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* reported on the next status read */ }
+  } finally { engineRunning = false; }
+  return true;
+}
+
+// The tick is cheap: read the switch and the last run, decide, maybe run. Any
+// error is logged and the next tick tries again.
+setInterval(async () => {
+  try {
+    const enabled = (await kvGet('engine_enabled')) === 'on';
+    const lastRun = await kvGet('engine_last_run');
+    if (shouldRun({ enabled, running: engineRunning, lastRunAt: lastRun?.at ?? null, intervalMs: ENGINE_INTERVAL_MS })) {
+      await runEngineOnce('schedule');
+    }
+  } catch (e) { console.error('[engine] tick failed:', e.message); }
+}, 5 * 60_000).unref();
+
+app.get('/api/engine/status', async (_req, res) => {
+  try { res.json(await engineStatus()); }
+  catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.post('/api/engine/toggle', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('engine_enabled', enabled ? 'on' : 'off');
+    res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.post('/api/engine/run-now', async (_req, res) => {
+  try {
+    if (engineRunning) return res.json({ started: false, reason: 'a run is already in flight' });
+    runEngineOnce('manual'); // deliberately not awaited: the run takes minutes
+    res.json({ started: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
