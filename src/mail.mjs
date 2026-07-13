@@ -6,10 +6,20 @@ import { graphJson } from './msgraph.mjs';
 // the send mechanism can be exercised end to end during the testing window with
 // no chance of reaching a prospect.
 
+const emailList = (v) => String(v || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+// One team list for everything internal. TEAM_EMAILS is the default for the
+// digest recipients, the intel senders and the outbound test recipients; each
+// specific variable still overrides it when set, and every path keeps its own
+// gate (the digest allowlist, the intel sender check, the test-sends switch).
+export function teamEmails() {
+  return emailList(process.env.TEAM_EMAILS);
+}
+
 // The internal test-recipient allowlist, lower-cased for comparison.
 function testRecipients() {
-  return (process.env.OUTBOUND_TEST_RECIPIENTS || '')
-    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const specific = emailList(process.env.OUTBOUND_TEST_RECIPIENTS);
+  return specific.length ? specific : teamEmails();
 }
 export function testRecipientList() {
   return testRecipients();
@@ -82,8 +92,8 @@ export async function sendMailTest({ to, subject, html }) {
 
 // The digest list: the internal people who receive the engine's weekly summary.
 export function digestRecipients() {
-  return (process.env.DIGEST_RECIPIENTS || '')
-    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const specific = emailList(process.env.DIGEST_RECIPIENTS);
+  return specific.length ? specific : teamEmails();
 }
 
 // Internal operational mail, the weekly digest. Its own allowlist and
