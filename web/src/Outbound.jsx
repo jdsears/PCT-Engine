@@ -175,6 +175,35 @@ export default function Outbound() {
   const testOn = status?.testSends === 'on';
   const recipients = status?.testRecipients || [];
   const counts = status?.counts || {};
+  const drafting = status?.drafting || {};
+
+  const [genNote, setGenNote] = useState(null);
+  const [genBusy, setGenBusy] = useState(false);
+  const generate = async () => {
+    if (genBusy) return;
+    setGenBusy(true); setGenNote(null);
+    try {
+      const r = await apiFetch('/api/outbound/generate', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ limit: 5 }),
+      });
+      const d = await r.json();
+      if (d.started) {
+        setGenNote('Drafting started. New drafts appear in To review as the run finishes, usually within a minute or two.');
+        setTimeout(refresh, 20000);
+        setTimeout(refresh, 75000);
+      } else setGenNote(`Not started: ${d.reason}.`);
+    } catch { setGenNote('Drafting could not be started right now.'); }
+    setGenBusy(false);
+  };
+  const toggleAutoDraft = async () => {
+    try {
+      await apiFetch('/api/outbound/autodraft', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !drafting.autoDraft }),
+      });
+      loadStatus();
+    } catch { setGenNote('The auto-draft switch is not available right now.'); }
+  };
 
   return (
     <div className="content-pad outbound-queue">
@@ -191,6 +220,22 @@ export default function Outbound() {
           </div>
         </div>
         <p className="ob-banner-sub">Drafts queue here for approval. Nothing reaches a prospect: the kill switch governs real sends, and tests go to internal mailboxes only.</p>
+        <div className="ob-banner-controls">
+          <button className="ob-btn primary" onClick={generate} disabled={genBusy || drafting.running}>
+            {drafting.running ? 'Drafting now' : 'Generate drafts'}
+          </button>
+          <button className="ob-btn" onClick={toggleAutoDraft}>
+            {drafting.autoDraft ? 'Auto-draft: on' : 'Auto-draft: off'}
+          </button>
+          {drafting.lastRun && (
+            <span className="ob-banner-note">
+              Last drafting run {fmtClockDay(drafting.lastRun.at)}{drafting.lastRun.trigger ? ` (${drafting.lastRun.trigger})` : ''}: {drafting.lastRun.ok
+                ? `${drafting.lastRun.drafted ?? 0} drafted, ${drafting.lastRun.flagged ?? 0} flagged, ${drafting.lastRun.failed ?? 0} failed.`
+                : `failed, ${drafting.lastRun.error}`}
+            </span>
+          )}
+        </div>
+        {genNote && <p className="ob-banner-sub">{genNote}</p>}
       </div>
 
       <div className="ob-tabs">
