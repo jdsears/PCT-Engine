@@ -7,6 +7,7 @@ import Signals from './Signals.jsx';
 import Outbound from './Outbound.jsx';
 import Health from './Health.jsx';
 import Watchlist from './Watchlist.jsx';
+import Studio from './Studio.jsx';
 import Gate from './Gate.jsx';
 import { ICONS, LockIcon, ChevronLeft, ChevronRight } from './icons.jsx';
 import { setUnauthorizedHandler } from './api.js';
@@ -18,10 +19,11 @@ const META = {
   accounts: { title: 'Accounts', sub: 'Named accounts with scores and signals', short: 'Accounts' },
   signals: { title: 'Signals', sub: 'What the engine has observed, newest first', short: 'Signals' },
   watchlist: { title: 'Watchlist', sub: 'Data centre operators expanding, worth approaching before a UK project', short: 'Watch' },
+  studio: { title: 'Studio', sub: 'LinkedIn posts and connections, prepared for you to send', short: 'Studio' },
   outbound: { title: 'Outbound', sub: 'Drafts will queue here for approval', short: 'Outbound' },
   health: { title: 'Health', sub: 'System state at a glance', short: 'Health' },
 };
-const ORDER = ['copilot', 'insights', 'pipeline', 'accounts', 'signals', 'watchlist', 'outbound', 'health'];
+const ORDER = ['copilot', 'insights', 'pipeline', 'accounts', 'signals', 'watchlist', 'studio', 'outbound', 'health'];
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 720);
@@ -112,6 +114,7 @@ export default function App() {
           )}
           {section === 'signals' && <Signals onOpenCompany={openCompany} />}
           {section === 'watchlist' && <Watchlist />}
+          {section === 'studio' && <Studio />}
           {section === 'outbound' && <Outbound isMobile={isMobile} />}
           {section === 'health' && <Health />}
         </div>

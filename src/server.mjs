@@ -13,6 +13,7 @@ import { canSendReal } from './outbound/sendDecision.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
+import { generateLiPosts, connectNote } from './studio/liPosts.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -528,6 +529,92 @@ app.post('/api/engine/run-now', async (_req, res) => {
     if (engineRunning) return res.json({ started: false, reason: 'a run is already in flight' });
     runEngineOnce('manual'); // deliberately not awaited: the run takes minutes
     res.json({ started: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// ----- The LinkedIn studio -----
+// Post drafts from the engine's gated signals, and the connect queue over the
+// decision-orbit contacts. Nothing here posts to LinkedIn or sends an invite:
+// the human copies and acts from their own account, then marks it done, and the
+// engine keeps the books. The lane's read-only rule stands untouched.
+app.get('/api/studio/posts', async (req, res) => {
+  try {
+    const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : 'draft';
+    const { rows } = await pool.query(
+      `SELECT id, topic, body, grounding, status, created_at, posted_at FROM li_posts
+       WHERE status = $1 ORDER BY created_at DESC LIMIT 50`, [status]);
+    res.json({ posts: rows.map(p => ({
+      id: p.id, topic: p.topic, body: p.body, status: p.status,
+      source: p.grounding?.signal?.source ?? null, flags: p.grounding?.flags ?? [],
+      createdAt: p.created_at, postedAt: p.posted_at,
+    })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.post('/api/studio/posts/generate', async (req, res) => {
+  try {
+    const limit = Number.isInteger((req.body || {}).limit) ? (req.body || {}).limit : 3;
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'ANTHROPIC_API_KEY is not set on this service' });
+    res.json(await generateLiPosts({ limit }));
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.patch('/api/studio/posts/:id', async (req, res) => {
+  try {
+    const body = String((req.body || {}).body || '').trim();
+    if (!body) return res.status(400).json({ error: 'a post body is required' });
+    const { rowCount } = await pool.query(
+      `UPDATE li_posts SET body = $2, updated_at = now() WHERE id = $1 AND status = 'draft'`, [req.params.id, body]);
+    if (!rowCount) return res.status(409).json({ error: 'only a draft post can be edited' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Marked by the human after they have posted it from their own account.
+app.post('/api/studio/posts/:id/posted', async (req, res) => {
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now() WHERE id = $1 AND status = 'draft'`, [req.params.id]);
+    if (!rowCount) return res.status(409).json({ error: 'only a draft post can be marked posted' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.post('/api/studio/posts/:id/reject', async (req, res) => {
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE li_posts SET status = 'rejected', updated_at = now() WHERE id = $1 AND status = 'draft'`, [req.params.id]);
+    if (!rowCount) return res.status(409).json({ error: 'only a draft post can be rejected' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The connect queue: decision-orbit people with a LinkedIn profile who have not
+// been invited, best accounts first, each with a suggested note to copy.
+app.get('/api/studio/connects', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT ct.id, ct.full_name, ct.role_title, ct.linkedin_url, c.name AS company, round(c.icp_score)::int AS score
+       FROM contacts ct JOIN companies c ON c.id = ct.company_id
+       WHERE ct.in_decision_orbit AND NOT ct.suppressed AND ct.linkedin_url IS NOT NULL AND ct.li_invited_at IS NULL
+       ORDER BY c.icp_score DESC NULLS LAST, ct.full_name LIMIT 50`);
+    res.json({ connects: rows.map(ct => ({
+      id: ct.id, name: ct.full_name, role: ct.role_title, linkedin: ct.linkedin_url,
+      company: ct.company, score: ct.score,
+      note: connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company),
+    })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Marked by the human after they have sent the invite from their own account,
+// so the queue never suggests the same person twice.
+app.post('/api/studio/connects/:id/invited', async (req, res) => {
+  try {
+    const note = String((req.body || {}).note || '').slice(0, 300) || null;
+    const { rowCount } = await pool.query(
+      `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2 WHERE id = $1 AND li_invited_at IS NULL`, [req.params.id, note]);
+    if (!rowCount) return res.status(409).json({ error: 'already marked invited' });
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
