@@ -15,6 +15,7 @@ import { runResearch } from './research/runResearch.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
+import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { generateLiPosts, connectNote } from './studio/liPosts.mjs';
 
 const app = express();
@@ -159,6 +160,26 @@ app.post('/api/feedback', async (req, res) => {
       [queryLogId, verdict]);
     if (!rowCount) return res.status(404).json({ error: 'no logged answer with that id' });
     res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The intel inbox, on demand: see what is waiting, or process it now. The tick
+// polls by itself every five minutes when INTEL_SENDERS is set.
+app.get('/api/intel/status', async (_req, res) => {
+  try {
+    res.json({
+      senders: intelSenders().length, running: intelRunning,
+      pending: (await pendingIntelEmails()).map(e => ({ subject: e.subject, from: e.from, receivedAt: e.receivedAt })),
+      lastRun: await kvGet('intel_last_run'),
+    });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.post('/api/intel/poll', async (_req, res) => {
+  try {
+    if (intelRunning) return res.json({ started: false, reason: 'an intel run is already in flight' });
+    if (!intelSenders().length) return res.json({ started: false, reason: 'INTEL_SENDERS is not set' });
+    pollIntelOnce('manual'); // deliberately not awaited: splitting and gating takes a minute
+    res.json({ started: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
@@ -539,6 +560,26 @@ async function sendDigestOnce(trigger) {
   return { sent, of: recipients.length };
 }
 
+// The intel inbox: forwarded newsletters split and routed through the same
+// relevance gate as the sweep. Polled on the tick when INTEL_SENDERS is set;
+// one run at a time, and its outcome lands in kv for the status read.
+let intelRunning = false;
+async function pollIntelOnce(trigger) {
+  if (intelRunning) return false;
+  intelRunning = true;
+  const startedAt = new Date().toISOString();
+  try {
+    const r = await processIntelInbox({ log: m => console.log('[intel]', m) });
+    if (r.emails > 0) {
+      try { await kvSet('intel_last_run', { ok: true, at: startedAt, trigger, ...r }); } catch { /* next read */ }
+    }
+  } catch (e) {
+    console.error('[intel] poll failed:', e.message);
+    try { await kvSet('intel_last_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* next read */ }
+  } finally { intelRunning = false; }
+  return true;
+}
+
 // The tick is cheap: read the switch and the last run, decide, maybe run. Any
 // error is logged and the next tick tries again.
 setInterval(async () => {
@@ -548,6 +589,7 @@ setInterval(async () => {
     if (shouldRun({ enabled, running: engineRunning, lastRunAt: lastRun?.at ?? null, intervalMs: ENGINE_INTERVAL_MS })) {
       await runEngineOnce('schedule');
     }
+    if (intelSenders().length) await pollIntelOnce('schedule');
     if (digestRecipients().length) {
       const lastDigest = await kvGet('digest_last_sent');
       if (digestDue({ lastSentAt: lastDigest?.at ?? null })) await sendDigestOnce('schedule');

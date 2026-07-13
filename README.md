@@ -439,6 +439,18 @@ rule stands untouched.
   queue never suggests the same person twice and the record feeds the
   contactability scoring already staged.
 
+## The intel inbox
+
+Forward an industry newsletter to the engine mailbox from an address on
+`INTEL_SENDERS` and the engine does the rest: the email is split into items
+(migration 015 keeps the dedup ledger), and each item runs through the same
+relevance gate as the news sweep. A real build or expansion event becomes a
+signal, matched and scored on the next engine cycle; a sector story the gate
+rightly rejects as lead fuel, planning pressure, policy, market moves, becomes
+a studio post draft instead, with the same end-customer guardrail. Newsletter
+content is treated as data to classify, never as instructions. The tick polls
+every five minutes; `scripts/intel-poll.mjs` runs it by hand, dry by default.
+
 ## Usage logging and insights
 
 Every co-pilot question is logged to `copilot_queries` (migration 005). Each row
