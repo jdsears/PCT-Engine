@@ -19,6 +19,7 @@ export const ICONS = {
   outbound: () => <Svg><path d="M3.5 11.5 20.5 4.5 13.5 21.5 11.5 13.5z" /><path d="M11.5 13.5 20.5 4.5" /></Svg>,
   health: () => <Svg><path d="M5 19a8 8 0 1 1 14 0" /><path d="M12 14l3.5-3.5" /><circle cx="12" cy="14" r="1" /></Svg>,
   watchlist: () => <Svg><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" /><circle cx="12" cy="12" r="2.6" /></Svg>,
+  studio: () => <Svg><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7.5 18.5 3 20l1.5-4.5z" /><path d="M14.5 5.5l3 3" /></Svg>,
 };
 
 export const ThumbUpIcon = () => <Svg size={15}><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></Svg>;

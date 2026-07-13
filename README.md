@@ -405,6 +405,25 @@ Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log; migrati
 011 adds the `grounding` and `grounding_flags` columns. Apply them with
 `npm run migrate`.
 
+## The LinkedIn studio
+
+The studio prepares LinkedIn activity; a human performs it. Nothing in the
+engine posts to LinkedIn or sends an invite, and the research lane's read-only
+rule stands untouched.
+
+- Post drafts: the engine turns its gated signals (real data centre builds and
+  expansions) into short practitioner posts in the house voice, generated on
+  demand from the Studio page. The story's subject may be discussed as news but
+  never as a client reference; the end-customer guardrail flags any wording
+  that implies a customer relationship, and a flagged post cannot be marked
+  posted until edited. Copy the text, post it from your own account, mark it
+  posted. Migration 014 adds the li_posts table.
+- Connect queue: the decision-orbit contacts with LinkedIn profiles, best
+  accounts first, each with a suggested sub-300-character note built without a
+  model call. Copy the note, send the invite yourself, mark it invited; the
+  queue never suggests the same person twice and the record feeds the
+  contactability scoring already staged.
+
 ## Usage logging and insights
 
 Every co-pilot question is logged to `copilot_queries` (migration 005). Each row
