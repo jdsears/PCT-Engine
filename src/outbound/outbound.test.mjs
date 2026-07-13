@@ -1,7 +1,7 @@
 // Guards that matter most: a draft must never reach a prospect by accident. These
 // exercise only the refusal paths, which return before any network call, so the
 // gate runs offline. The actual delivery path is not tested here, by design.
-import { sendMail, sendMailTest, sendInternal, isTestRecipient, textToHtml } from '../mail.mjs';
+import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients, textToHtml } from '../mail.mjs';
 import { renderDigest, digestDue } from '../digest.mjs';
 import { outboundVoice, voiceClean } from './draft.mjs';
 import { canSendReal, matchReply } from './sendDecision.mjs';
@@ -68,8 +68,21 @@ await check('plain text renders to escaped, paragraphed HTML', () => {
 
 console.log('\nThe weekly digest (internal mail only, provable schedule):');
 
+await check('TEAM_EMAILS is the shared default and the specific lists override it', () => {
+  delete process.env.DIGEST_RECIPIENTS;
+  delete process.env.OUTBOUND_TEST_RECIPIENTS;
+  process.env.TEAM_EMAILS = 'Team@Example.com';
+  assert(digestRecipients().includes('team@example.com'), 'the digest falls back to the team list');
+  assert(isTestRecipient('team@example.com'), 'test recipients fall back to the team list');
+  process.env.DIGEST_RECIPIENTS = 'only@example.com';
+  assert(digestRecipients().length === 1 && digestRecipients()[0] === 'only@example.com', 'a specific list overrides the team list');
+  delete process.env.DIGEST_RECIPIENTS;
+  delete process.env.TEAM_EMAILS;
+});
+
 await check('internal digest mail refuses anyone off the digest list', async () => {
   delete process.env.DIGEST_RECIPIENTS;
+  delete process.env.TEAM_EMAILS;
   const none = await sendInternal({ to: 'alice@example.com', subject: 's', html: '<p>h</p>' });
   assert(none.sent === false, 'an empty digest list refuses everyone');
   process.env.DIGEST_RECIPIENTS = 'alice@example.com';

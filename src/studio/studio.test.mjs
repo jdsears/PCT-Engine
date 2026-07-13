@@ -55,11 +55,16 @@ await (async () => {
     assert(stray.flags.length > 0, 'another operator must flag');
   });
 
-  await checkAsync('an empty INTEL_SENDERS list turns the inbox off', async () => {
+  await checkAsync('the intel senders default to TEAM_EMAILS and an empty pair turns the inbox off', async () => {
     delete process.env.INTEL_SENDERS;
-    assert(intelSenders().length === 0, 'no senders means off');
-    process.env.INTEL_SENDERS = 'James@PCTflow.com, john@pctflow.com';
-    assert(intelSenders().includes('james@pctflow.com'), 'senders are lower-cased');
+    delete process.env.TEAM_EMAILS;
+    assert(intelSenders().length === 0, 'no lists at all means off');
+    process.env.TEAM_EMAILS = 'Team@Example.com';
+    assert(intelSenders().includes('team@example.com'), 'the team list is the default');
+    process.env.INTEL_SENDERS = 'James@PCTflow.com';
+    assert(intelSenders().length === 1 && intelSenders()[0] === 'james@pctflow.com', 'a specific list overrides, lower-cased');
+    delete process.env.INTEL_SENDERS;
+    delete process.env.TEAM_EMAILS;
   });
 })();
 

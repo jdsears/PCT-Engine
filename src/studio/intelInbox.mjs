@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { pool } from '../db.mjs';
 import { graphJson } from '../msgraph.mjs';
+import { teamEmails } from '../mail.mjs';
 import { classifySignal } from '../research/relevance.mjs';
 import { writePost } from './liPosts.mjs';
 
@@ -29,10 +30,12 @@ async function callClaude(system, user, { maxTokens = 900 } = {}) {
 
 // Who may feed the intel inbox. Internal addresses only; an empty list turns
 // the feature off entirely, and mail from anyone else is simply ignored, so
-// the reply poller and ordinary mailbox traffic are untouched.
+// the reply poller and ordinary mailbox traffic are untouched. Defaults to the
+// shared TEAM_EMAILS list; INTEL_SENDERS overrides it when set.
 export function intelSenders() {
-  return (process.env.INTEL_SENDERS || '')
+  const specific = (process.env.INTEL_SENDERS || '')
     .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  return specific.length ? specific : teamEmails();
 }
 
 // Newsletters are heavy HTML. Strip to readable text: styles and scripts go,
