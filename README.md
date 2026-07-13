@@ -212,6 +212,12 @@ service. The engine only finds signals and pulls leads: drafting and sending
 stay manual and gated, and the LinkedIn lane keeps its own capped orchestrator,
 untouched by the engine.
 
+Every Monday morning the engine emails its week to `DIGEST_RECIPIENTS`: signals
+kept, leads pulled, drafts waiting, co-pilot questions and feedback. Internal
+mail to that list only, independent of the outbound kill switch because it is
+the engine reporting to its own team, never outreach. Preview or send on demand
+with `GET /api/digest/preview` and `POST /api/digest/send`.
+
 `scripts/export-curation-pack.mjs` writes `CURATION_PACK.md`, the single brief
 that goes to Andy for sign-off: the named accounts with their scores and the
 count of likely decision-makers found, the region table, the decision-orbit

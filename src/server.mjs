@@ -8,7 +8,8 @@ import { ask } from './answer.mjs';
 import { REGIONS } from './research/region.mjs';
 import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
-import { sendMail, sendMailTest, isTestRecipient, textToHtml, testRecipientList } from './mail.mjs';
+import { sendMail, sendMailTest, sendInternal, digestRecipients, isTestRecipient, textToHtml, testRecipientList } from './mail.mjs';
+import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
 import { canSendReal } from './outbound/sendDecision.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { shouldRun } from './research/schedule.mjs';
@@ -157,6 +158,17 @@ app.post('/api/feedback', async (req, res) => {
     if (!rowCount) return res.status(404).json({ error: 'no logged answer with that id' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The weekly digest, on demand: preview the wording, or send it now to the
+// digest list. The Monday schedule runs by itself when DIGEST_RECIPIENTS is set.
+app.get('/api/digest/preview', async (_req, res) => {
+  try { res.json(renderDigest(await gatherDigestData())); }
+  catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.post('/api/digest/send', async (_req, res) => {
+  try { res.json(await sendDigestOnce('manual')); }
+  catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
 // Read-only usage insights over the query log. Open like the rest of the API;
@@ -498,6 +510,21 @@ async function runDraftsOnce(trigger, limit = 5) {
   return true;
 }
 
+// The weekly digest: the engine reporting its week to the internal digest list
+// every Monday morning. Internal mail only, its own allowlist, no prospects.
+async function sendDigestOnce(trigger) {
+  const recipients = digestRecipients();
+  if (!recipients.length) return { sent: 0, reason: 'DIGEST_RECIPIENTS is not set' };
+  const { subject, text } = renderDigest(await gatherDigestData());
+  let sent = 0;
+  for (const to of recipients) {
+    try { const r = await sendInternal({ to, subject, html: textToHtml(text) }); if (r.sent) sent++; }
+    catch (e) { console.error('[digest] send failed:', e.message); }
+  }
+  try { await kvSet('digest_last_sent', { at: new Date().toISOString(), trigger, sent, of: recipients.length }); } catch { /* next tick retries */ }
+  return { sent, of: recipients.length };
+}
+
 // The tick is cheap: read the switch and the last run, decide, maybe run. Any
 // error is logged and the next tick tries again.
 setInterval(async () => {
@@ -506,6 +533,10 @@ setInterval(async () => {
     const lastRun = await kvGet('engine_last_run');
     if (shouldRun({ enabled, running: engineRunning, lastRunAt: lastRun?.at ?? null, intervalMs: ENGINE_INTERVAL_MS })) {
       await runEngineOnce('schedule');
+    }
+    if (digestRecipients().length) {
+      const lastDigest = await kvGet('digest_last_sent');
+      if (digestDue({ lastSentAt: lastDigest?.at ?? null })) await sendDigestOnce('schedule');
     }
   } catch (e) { console.error('[engine] tick failed:', e.message); }
 }, 5 * 60_000).unref();
