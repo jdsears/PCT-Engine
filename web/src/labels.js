@@ -39,3 +39,12 @@ export function fmtMonthYear(iso) {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? '' : `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
+
+// Registered names are upper case in the register; for display, title-case the
+// all-caps ones. Tokens with digits or up to three letters (UK, DC01) keep
+// their casing, and mixed-case names pass through untouched.
+export function companyLabel(name) {
+  const n = String(name || '').trim();
+  if (!n || n !== n.toUpperCase()) return n;
+  return n.split(/\s+/).map(t => (/^[A-Z]{4,}$/.test(t) ? t.charAt(0) + t.slice(1).toLowerCase() : t)).join(' ');
+}

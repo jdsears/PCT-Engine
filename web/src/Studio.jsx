@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from './api.js';
+import { companyLabel } from './labels.js';
 
 // The LinkedIn studio. The engine drafts posts from its gated signals and
 // queues the decision-orbit people worth connecting with; a human copies and
@@ -85,7 +86,7 @@ function ConnectCard({ person, onChanged }) {
         <div className="ob-co">{person.name}</div>
         <div className="ob-pills">
           {person.score != null && <span className="pill">ICP {person.score}</span>}
-          <span className="pill">{person.company}</span>
+          <span className="pill">{companyLabel(person.company)}</span>
         </div>
       </div>
       <div className="ob-to">{person.role || 'Role not recorded'}</div>
