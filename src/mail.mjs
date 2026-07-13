@@ -79,3 +79,21 @@ export async function sendMailTest({ to, subject, html }) {
   await deliver({ to, subject, html });
   return { sent: true };
 }
+
+// The digest list: the internal people who receive the engine's weekly summary.
+export function digestRecipients() {
+  return (process.env.DIGEST_RECIPIENTS || '')
+    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+}
+
+// Internal operational mail, the weekly digest. Its own allowlist and
+// deliberately independent of the outbound kill switch: this is the engine
+// reporting to its own team, never outreach, and an address off the digest
+// list is refused outright.
+export async function sendInternal({ to, subject, html }) {
+  if (!digestRecipients().includes(String(to || '').trim().toLowerCase())) {
+    return { sent: false, reason: 'recipient not on the digest list' };
+  }
+  await deliver({ to, subject, html });
+  return { sent: true };
+}

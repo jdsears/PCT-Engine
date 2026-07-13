@@ -1,7 +1,8 @@
 // Guards that matter most: a draft must never reach a prospect by accident. These
 // exercise only the refusal paths, which return before any network call, so the
 // gate runs offline. The actual delivery path is not tested here, by design.
-import { sendMail, sendMailTest, isTestRecipient, textToHtml } from '../mail.mjs';
+import { sendMail, sendMailTest, sendInternal, isTestRecipient, textToHtml } from '../mail.mjs';
+import { renderDigest, digestDue } from '../digest.mjs';
 import { outboundVoice, voiceClean } from './draft.mjs';
 import { canSendReal, matchReply } from './sendDecision.mjs';
 
@@ -63,6 +64,41 @@ await check('plain text renders to escaped, paragraphed HTML', () => {
   const h = textToHtml('A <b>tag</b>\n\nB line one\nline two');
   assert(h.includes('&lt;b&gt;') && !h.includes('<b>'), 'must escape angle brackets');
   assert(h.includes('<p>') && h.includes('<br>'), 'must wrap paragraphs and keep line breaks');
+});
+
+console.log('\nThe weekly digest (internal mail only, provable schedule):');
+
+await check('internal digest mail refuses anyone off the digest list', async () => {
+  delete process.env.DIGEST_RECIPIENTS;
+  const none = await sendInternal({ to: 'alice@example.com', subject: 's', html: '<p>h</p>' });
+  assert(none.sent === false, 'an empty digest list refuses everyone');
+  process.env.DIGEST_RECIPIENTS = 'alice@example.com';
+  const off = await sendInternal({ to: 'stranger@else.example', subject: 's', html: '<p>h</p>' });
+  assert(off.sent === false && /digest list/.test(off.reason), JSON.stringify(off));
+});
+
+await check('the digest is due Monday morning and only once', () => {
+  const mon8 = Date.UTC(2026, 6, 13, 8);   // Monday 08:00 UTC
+  const mon6 = Date.UTC(2026, 6, 13, 6);   // Monday, too early
+  const tue = Date.UTC(2026, 6, 14, 9);    // Tuesday
+  assert(digestDue({ lastSentAt: null, now: mon8 }), 'first ever digest sends on Monday morning');
+  assert(!digestDue({ lastSentAt: null, now: mon6 }), 'not before seven');
+  assert(!digestDue({ lastSentAt: null, now: tue }), 'not on other days');
+  assert(!digestDue({ lastSentAt: new Date(mon8).toISOString(), now: mon8 + 3600_000 }), 'never twice in a morning');
+  assert(digestDue({ lastSentAt: new Date(mon8 - 7 * 86400_000).toISOString(), now: mon8 }), 'due again the following Monday');
+});
+
+await check('the digest reads in the house voice and carries the numbers', () => {
+  const d = renderDigest({
+    questions: { questions: 12, declined: 2, fb_up: 5, fb_down: 1, teams: 4 },
+    signals: { news: 6, uk: 2, watch: 3, filings: 9 },
+    leads: { created: 3, refreshed: 7 },
+    drafts: { waiting: 4, approved: 1, drafted_this_week: 5 },
+    posts: { waiting: 2, posted: 1 },
+  }, { weekEnding: '2026-07-13' });
+  assert(/6 signals, 3 new leads, 4 drafts waiting/.test(d.subject), d.subject);
+  assert(/Nothing sends without a person/.test(d.text), 'the safety line is stated');
+  assert(!/[—–!]/.test(d.text) && !/genuinely/i.test(d.text), 'house voice holds');
 });
 
 console.log('\nReal send gate and reply matching:');
