@@ -14,6 +14,7 @@ import { canSendReal } from './outbound/sendDecision.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
+import { discoverEmails } from './research/emailDiscovery.mjs';
 import { generateLiPosts, connectNote } from './studio/liPosts.mjs';
 
 const app = express();
@@ -457,12 +458,14 @@ async function engineStatus() {
   const lastRun = await kvGet('engine_last_run');
   return {
     enabled, running: engineRunning,
+    autoDiscover: (await kvGet('autodiscover_enabled')) === 'on',
     intervalHours: ENGINE_INTERVAL_MS / 3600_000,
     lastRun,
     keys: {
       companiesHouse: !!process.env.COMPANIES_HOUSE_API_KEY,
       tavily: !!process.env.TAVILY_API_KEY,
       anthropic: !!process.env.ANTHROPIC_API_KEY,
+      findymail: !!(process.env.FINDYMAIL_API_KEY || '').trim(),
     },
   };
 }
@@ -473,6 +476,14 @@ async function runEngineOnce(trigger) {
   const startedAt = new Date().toISOString();
   try {
     const r = await runResearch({ log: m => console.log('[engine]', m) });
+    // With auto email discovery on, decision makers found this cycle (and any
+    // backlog) get their emails resolved before drafting, capped per cycle so
+    // the Findymail spend stays bounded. A verified email is never re-bought.
+    let discovery = null;
+    if ((await kvGet('autodiscover_enabled')) === 'on') {
+      const cap = Math.max(1, Number(process.env.ENGINE_EMAIL_DISCOVERY_LIMIT || 10));
+      discovery = await discoverEmails({ limit: cap, log: m => console.log('[emails]', m) });
+    }
     await kvSet('engine_last_run', {
       ok: true, at: startedAt, trigger,
       signalsStored: r.newsCounts.inserted ?? 0, signalsRejected: r.newsCounts.rejected ?? 0,
@@ -480,6 +491,8 @@ async function runEngineOnce(trigger) {
       matched: r.newsMatched, scored: r.scored,
       leadsCreated: r.leadsCreated, leadsUpdated: r.leadsUpdated,
       awaitingMatch: r.awaitingMatch,
+      emailsResolved: discovery ? discovery.resolved : undefined,
+      emailCredits: discovery ? discovery.credits : undefined,
     });
     // With auto-draft on, freshly researched leads get a grounded draft into
     // the review queue at the end of the cycle. Review, approval and sending
@@ -551,6 +564,16 @@ app.post('/api/engine/toggle', async (req, res) => {
   try {
     const enabled = (req.body || {}).enabled === true;
     await kvSet('engine_enabled', enabled ? 'on' : 'off');
+    res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The auto email discovery switch: when on, each engine cycle resolves emails
+// for decision makers without a verified one, capped per cycle. Lives in kv.
+app.post('/api/engine/autodiscover', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('autodiscover_enabled', enabled ? 'on' : 'off');
     res.json(await engineStatus());
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });

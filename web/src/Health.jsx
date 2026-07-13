@@ -42,6 +42,19 @@ function EngineCard() {
     setBusy(false);
   };
 
+  const toggleDiscover = async () => {
+    if (!engine || busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/autodiscover', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !engine.autoDiscover }),
+      });
+      setEngine(await res.json());
+    } catch { setNote('The email discovery switch is not available right now.'); }
+    setBusy(false);
+  };
+
   if (!engine) {
     return (
       <div className="card health-card">
@@ -52,7 +65,7 @@ function EngineCard() {
   }
 
   const missing = Object.entries(engine.keys || {}).filter(([, ok]) => !ok).map(([k]) =>
-    ({ companiesHouse: 'Companies House', tavily: 'Tavily', anthropic: 'Anthropic' }[k] || k));
+    ({ companiesHouse: 'Companies House', tavily: 'Tavily', anthropic: 'Anthropic', findymail: 'Findymail' }[k] || k));
   const lr = engine.lastRun;
 
   return (
@@ -67,6 +80,9 @@ function EngineCard() {
           {engine.enabled ? 'Turn off' : 'Turn on'}
         </button>
         <button className="engine-btn" onClick={runNow} disabled={busy || engine.running}>Run now</button>
+        <button className="engine-btn" onClick={toggleDiscover} disabled={busy}>
+          {engine.autoDiscover ? 'Email discovery: on' : 'Email discovery: off'}
+        </button>
       </div>
       <div className="health-sub">
         {engine.enabled
@@ -79,7 +95,7 @@ function EngineCard() {
       {lr && (
         <div className="muted-small">
           Last run {fmtClockDay(lr.at)}{lr.trigger ? ` (${lr.trigger})` : ''}: {lr.ok
-            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed.`
+            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed${lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}.`
             : `failed, ${lr.error}`}
         </div>
       )}
