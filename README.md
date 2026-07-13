@@ -235,7 +235,12 @@ orbit only when the stated occupation names a specifier role, the same title
 test (`src/research/orbitRules.mjs`) the LinkedIn lane uses, so a board with no
 stated trades does not inflate the count. Findymail
 is never called automatically; spending credits on email resolution is a
-decision for the outbound stage. `scripts/merge-duplicate-accounts.mjs` is the
+decision for the outbound stage. That deliberate step is
+`scripts/discover-emails.mjs`: dry run by default, listing which decision makers
+would be looked up and by which route (LinkedIn profile, or name and company
+domain), and `--apply --limit N` spends the credits for the best accounts
+first. A verified contact is never looked up again, and resolved emails feed
+the outbound drafts and the staged contactability scoring. `scripts/merge-duplicate-accounts.mjs` is the
 one-off cleanup for the duplicated first seed, dry run by default.
 
 ## Signal relevance, routing and the BD watchlist
