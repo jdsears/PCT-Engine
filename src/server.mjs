@@ -322,12 +322,14 @@ app.get('/api/accounts', async (_req, res) => {
     const { rows } = await pool.query(
       `SELECT c.id, c.name, c.company_type, c.region, c.domain, c.ch_number,
               round(c.icp_score)::int AS score,
-              (SELECT count(*)::int FROM signals s WHERE s.company_id = c.id) AS signals
+              (SELECT count(*)::int FROM signals s WHERE s.company_id = c.id) AS signals,
+              (SELECT count(*)::int FROM contacts ct
+                WHERE ct.company_id = c.id AND ct.in_decision_orbit AND NOT ct.suppressed) AS people
        FROM companies c WHERE c.named_account
        ORDER BY c.icp_score DESC NULLS LAST, c.name LIMIT 200`);
     res.json({ companies: rows.map(c => ({
       id: c.id, name: c.name, type: c.company_type, region: regionName(c.region),
-      domain: c.domain, chNumber: c.ch_number, score: c.score, signals: c.signals,
+      domain: c.domain, chNumber: c.ch_number, score: c.score, signals: c.signals, people: c.people,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -357,6 +359,13 @@ app.get('/api/accounts/:id', async (req, res) => {
       `SELECT full_name, payload->>'appointed_on' AS appointed FROM contacts
        WHERE company_id = $1 AND source = 'ch_officers' AND NOT suppressed
        ORDER BY in_decision_orbit DESC NULLS LAST, full_name LIMIT 8`, [id]);
+    // The people the research actually identified to contact: decision-orbit
+    // contacts from any source, verified emails first. These are the build-spec
+    // specifiers and buyers, distinct from the statutory directors below.
+    const people = await pool.query(
+      `SELECT full_name, role_title, email, linkedin_url FROM contacts
+       WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed
+       ORDER BY email_verified_at IS NULL, email_confidence DESC NULLS LAST, full_name LIMIT 12`, [id]);
     const bd = c.icp_breakdown || {};
     res.json({
       id: c.id, name: c.name, type: c.company_type, region: regionName(c.region),
@@ -368,6 +377,7 @@ app.get('/api/accounts/:id', async (req, res) => {
           label, max: bd[key]?.max ?? max, points: bd[key]?.points ?? null, reason: bd[key]?.reason ?? null,
         })),
       recentSignals: sigs.rows.map(s => ({ title: s.title, type: s.signal_type, observedAt: s.observed_at })),
+      people: people.rows.map(p => ({ name: p.full_name, role: p.role_title, email: p.email, linkedin: p.linkedin_url })),
       directors: dirs.rows.map(d => ({ name: d.full_name, appointed: d.appointed })),
     });
   } catch (e) { res.status(500).json({ error: String(e) }); }
