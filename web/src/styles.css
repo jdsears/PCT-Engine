@@ -354,6 +354,7 @@ button, input { font: inherit; }
 .ob-banner-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .ob-banner-note { font-size: 13px; font-weight: 600; color: var(--ink2); }
 .ob-banner-sub { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink2); }
+.ob-banner-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ob-tabs { display: flex; gap: 8px; }
 .ob-tab { border: 1px solid var(--line); background: #FFF; border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 700; color: var(--ink2); cursor: pointer; }
 .ob-tab.active { background: var(--navy); border-color: var(--navy); color: #FFF; }

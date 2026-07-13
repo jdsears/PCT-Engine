@@ -12,6 +12,7 @@ import { sendMail, sendMailTest, isTestRecipient, textToHtml, testRecipientList 
 import { canSendReal } from './outbound/sendDecision.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { shouldRun } from './research/schedule.mjs';
+import { generateDrafts } from './outbound/generateDrafts.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -457,10 +458,33 @@ async function runEngineOnce(trigger) {
       leadsCreated: r.leadsCreated, leadsUpdated: r.leadsUpdated,
       awaitingMatch: r.awaitingMatch,
     });
+    // With auto-draft on, freshly researched leads get a grounded draft into
+    // the review queue at the end of the cycle. Review, approval and sending
+    // are untouched: a generated draft is still only a draft.
+    if ((await kvGet('autodraft_enabled')) === 'on') await runDraftsOnce('engine');
   } catch (e) {
     console.error('[engine] run failed:', e.message);
     try { await kvSet('engine_last_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* reported on the next status read */ }
   } finally { engineRunning = false; }
+  return true;
+}
+
+// Draft generation, shared by the Outbound page's generate button, the manual
+// script, and the engine's auto-draft step. One run at a time; every attempt's
+// outcome lands in kv for the Outbound banner. No send path is involved.
+let draftingRunning = false;
+async function runDraftsOnce(trigger, limit = 5) {
+  if (draftingRunning) return false;
+  draftingRunning = true;
+  const startedAt = new Date().toISOString();
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set on this service');
+    const r = await generateDrafts({ limit, log: m => console.log('[drafts]', m) });
+    await kvSet('outbound_last_draft_run', { ok: true, at: startedAt, trigger, ...r });
+  } catch (e) {
+    console.error('[drafts] run failed:', e.message);
+    try { await kvSet('outbound_last_draft_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* reported on the next read */ }
+  } finally { draftingRunning = false; }
   return true;
 }
 
@@ -507,7 +531,33 @@ app.get('/api/outbound/status', async (_req, res) => {
       testSends: (process.env.OUTBOUND_TEST_SENDS || 'off') === 'on' ? 'on' : 'off',
       testRecipients: testRecipientList(),
       counts,
+      drafting: {
+        running: draftingRunning,
+        autoDraft: (await kvGet('autodraft_enabled')) === 'on',
+        lastRun: await kvGet('outbound_last_draft_run'),
+      },
     });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Generate a batch of drafts now, from the Outbound page. Kicks off in the
+// background since a batch takes a minute or two of model calls.
+app.post('/api/outbound/generate', async (req, res) => {
+  try {
+    if (draftingRunning) return res.json({ started: false, reason: 'a drafting run is already in flight' });
+    const limit = Number.isInteger((req.body || {}).limit) ? (req.body || {}).limit : 5;
+    runDraftsOnce('manual', limit); // deliberately not awaited
+    res.json({ started: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The auto-draft switch: when on, the signal engine drafts for newly researched
+// leads at the end of each cycle. Lives in kv, so no redeploy to flip it.
+app.post('/api/outbound/autodraft', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('autodraft_enabled', enabled ? 'on' : 'off');
+    res.json({ autoDraft: enabled });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

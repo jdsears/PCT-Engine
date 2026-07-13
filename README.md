@@ -340,6 +340,12 @@ reaches a prospect in this phase, and two independent gates see to that.
   node --env-file=.env scripts/draft-coldopen.mjs --lead 42
   ```
 
+  The same generation runs from the Outbound page's Generate drafts button,
+  and, when the auto-draft switch on that page is on, at the end of each signal
+  engine cycle for newly researched leads. A generated draft always lands as
+  draft for human review; approval and sending are unchanged, and the banner
+  shows the last drafting run's numbers.
+
 - A draft may state only what the lead's research supports, the outbound twin of
   the configurator refusing to invent a code. `gatherGrounding` assembles the only
   allowed inputs: the triggering signal, the ICP reason, the contact record (name
