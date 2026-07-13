@@ -274,18 +274,23 @@ team, distinct from the lead pipeline.
 
 ## LinkedIn research lane
 
-Sales Navigator through Unipile, reading through James's account. Research
-only, permanently: the lane discovers and enriches contacts and writes to our
-own `contacts` table. It contains no messaging, no connection requests, no
-posting and no profile edits, and the client (`src/research/unipile.mjs`)
-exposes no write-capable route. The build environment cannot reach the Unipile
-docs site, so the routes are centralised in that client's `ROUTES` map and
-`scripts/unipile-check.mjs` verifies them against the live API first.
+Sales Navigator through Unipile, reading through James's account. The research
+lane itself is read-only: it discovers and enriches contacts and writes to our
+own `contacts` table, with no messaging, no posting and no profile edits. The
+client (`src/research/unipile.mjs`) carries exactly one write route, `invite`,
+added in July 2026 on John's direction with James's consent. It belongs to the
+studio's connect queue and nothing else: a connection request sends only when a
+person clicks Send invite on one named contact, never in a batch, and the
+research and enrichment code never calls it. The build environment cannot
+reach the Unipile docs site, so the routes are centralised in that client's
+`ROUTES` map; `scripts/unipile-check.mjs` verifies the read routes against the
+live API, and the invite route is verified by its first supervised live use.
 
 Rate discipline is structural: calls are sequential with a randomised 4 to 9
 second pause, every call is logged to `unipile_calls` (migration 006), and the
-same ledger enforces `LINKEDIN_DAILY_CAP` per UTC day. Any account-health error
-from Unipile stops the run immediately, no retry.
+same ledger enforces `LINKEDIN_DAILY_CAP` per UTC day. Invites sit under a
+second, stricter cap from the same ledger, `LINKEDIN_INVITE_DAILY_CAP` (default
+10). Any account-health error from Unipile stops the run immediately, no retry.
 
 Setting up:
 
@@ -422,9 +427,9 @@ Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log; migrati
 
 ## The LinkedIn studio
 
-The studio prepares LinkedIn activity; a human performs it. Nothing in the
-engine posts to LinkedIn or sends an invite, and the research lane's read-only
-rule stands untouched.
+The studio prepares LinkedIn activity; a human approves every piece of it.
+Posts are never published on James's behalf, and an invite sends only when a
+person clicks Send invite on one named contact.
 
 - Post drafts: the engine turns its gated signals (real data centre builds and
   expansions) into short practitioner posts in the house voice, generated on
@@ -435,9 +440,13 @@ rule stands untouched.
   posted. Migration 014 adds the li_posts table.
 - Connect queue: the decision-orbit contacts with LinkedIn profiles, best
   accounts first, each with a suggested sub-300-character note built without a
-  model call. Copy the note, send the invite yourself, mark it invited; the
-  queue never suggests the same person twice and the record feeds the
-  contactability scoring already staged.
+  model call. Edit the note, then either send the invite yourself and Mark
+  done, or click Send invite to send it through the connected account
+  (`src/studio/liInvite.mjs`): one invite per click, the edited note attached,
+  capped per UTC day by `LINKEDIN_INVITE_DAILY_CAP` on top of the shared call
+  ledger, and any account-health error stops everything. There is no batch
+  send anywhere. The queue never suggests the same person twice and the record
+  feeds the contactability scoring already staged.
 
 ## The intel inbox
 

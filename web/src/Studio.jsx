@@ -3,9 +3,11 @@ import { apiFetch } from './api.js';
 import { companyLabel } from './labels.js';
 
 // The LinkedIn studio. The engine drafts posts from its gated signals and
-// queues the decision-orbit people worth connecting with; a human copies and
-// acts from their own LinkedIn account, then marks it done. Nothing here posts
-// or sends an invite, by design: the lane stays read-only.
+// queues the decision-orbit people worth connecting with. Posts are never
+// published on James's behalf: he copies and posts himself. Invites can send
+// through the connected account, but only one at a time, only when a person
+// clicks Send invite on a named contact, and only within the daily cap; the
+// note is editable first and Mark done still records invites sent by hand.
 
 const TABS = [
   { id: 'draft', label: 'Post drafts' },
@@ -72,12 +74,19 @@ function PostCard({ post, onChanged }) {
   );
 }
 
-function ConnectCard({ person, onChanged }) {
+function ConnectCard({ person, inviteInfo, onChanged }) {
+  const [note, setNote] = useState(person.note);
   const [busy, setBusy] = useState(false);
-  const invited = async () => {
-    setBusy(true);
-    try { await action(`/api/studio/connects/${person.id}/invited`, jsonOpts('POST', { note: person.note })); onChanged(); }
-    catch { /* refresh shows truth */ }
+  const [msg, setMsg] = useState(null);
+  const act = async (path) => {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await action(`/api/studio/connects/${person.id}/${path}`, jsonOpts('POST', { note }));
+      if (path === 'send-invite') {
+        if (r.sent) { setMsg('Invite sent.'); onChanged(); }
+        else setMsg(`Not sent: ${r.reason}.`);
+      } else onChanged();
+    } catch (e) { setMsg(String(e.message || e)); }
     setBusy(false);
   };
   return (
@@ -90,16 +99,21 @@ function ConnectCard({ person, onChanged }) {
         </div>
       </div>
       <div className="ob-to">{person.role || 'Role not recorded'}</div>
-      <div className="ob-evidence">
-        <div className="eyebrow">Suggested note (edit as you like when sending)</div>
-        <div className="ob-ev-line">{person.note}</div>
-      </div>
+      <label className="ob-field">
+        <span className="eyebrow">Invite note (sent with the invite, edit first)</span>
+        <textarea className="ob-body" rows={3} maxLength={300} value={note} disabled={busy} onChange={e => setNote(e.target.value)} />
+      </label>
       <div className="ob-actions">
-        <CopyButton text={person.note} label="Copy note" />
+        <CopyButton text={note} label="Copy note" />
         <a className="ob-btn" href={person.linkedin} target="_blank" rel="noreferrer">Open profile</a>
         <span className="ob-spacer" />
-        <button className="ob-btn primary" onClick={invited} disabled={busy}>Mark invited</button>
+        <button className="ob-btn ghost" onClick={() => act('invited')} disabled={busy}>Mark done</button>
+        <button className="ob-btn primary" onClick={() => act('send-invite')} disabled={busy || !inviteInfo?.ready}
+          title={!inviteInfo?.ready ? 'Unipile is not configured on this service' : undefined}>
+          Send invite
+        </button>
       </div>
+      {msg && <div className="ob-msg">{msg}</div>}
     </div>
   );
 }
@@ -108,13 +122,17 @@ export default function Studio() {
   const [tab, setTab] = useState('draft');
   const [posts, setPosts] = useState([]);
   const [connects, setConnects] = useState([]);
+  const [inviteInfo, setInviteInfo] = useState(null);
   const [state, setState] = useState('loading');
   const [note, setNote] = useState(null);
   const [genBusy, setGenBusy] = useState(false);
 
   const load = useCallback((t) => {
     const req = t === 'connects'
-      ? apiFetch('/api/studio/connects').then(r => r.json()).then(d => setConnects(d.connects || []))
+      ? apiFetch('/api/studio/connects').then(r => r.json()).then(d => {
+          setConnects(d.connects || []);
+          setInviteInfo({ ready: !!d.inviteReady, today: d.invitesToday ?? 0, cap: d.inviteCap ?? 0 });
+        })
       : apiFetch(`/api/studio/posts?status=${t}`).then(r => r.json()).then(d => setPosts(d.posts || []));
     req.then(() => setState('ready')).catch(() => setState('error'));
   }, []);
@@ -134,7 +152,7 @@ export default function Studio() {
   return (
     <div className="content-pad outbound-queue">
       <div className="card ob-banner">
-        <p className="ob-banner-sub">The engine drafts the posts and queues the people; you post and connect from your own LinkedIn account, then mark each done here. Nothing is ever posted or sent on your behalf.</p>
+        <p className="ob-banner-sub">The engine drafts the posts and queues the people. Posts you copy and publish yourself, nothing posts on your behalf. Invites send through the connected account only when you click Send invite on a person, one at a time, capped per day, with the note editable first.</p>
         <div className="ob-banner-controls">
           <button className="ob-btn primary" onClick={generate} disabled={genBusy}>{genBusy ? 'Drafting now' : 'Draft posts from this week'}</button>
         </div>
@@ -153,10 +171,17 @@ export default function Studio() {
         <p className="muted-note">{tab === 'draft' ? 'No post drafts yet. Draft posts from this week to get started.' : 'Nothing marked posted yet.'}</p>
       )}
       {state === 'ready' && tab !== 'connects' && posts.map(p => <PostCard key={p.id} post={p} onChanged={refresh} />)}
+      {state === 'ready' && tab === 'connects' && inviteInfo && (
+        <p className="muted-note">
+          {inviteInfo.ready
+            ? `Invites send from James's own account, one per click, with your approval on each. ${inviteInfo.today} of ${inviteInfo.cap} used today.`
+            : 'Sending is off until Unipile is configured on the service; Copy note and Mark done record invites sent by hand.'}
+        </p>
+      )}
       {state === 'ready' && tab === 'connects' && connects.length === 0 && (
         <p className="muted-note">No one waiting in the connect queue. People appear here as the research identifies decision makers with LinkedIn profiles.</p>
       )}
-      {state === 'ready' && tab === 'connects' && connects.map(p => <ConnectCard key={p.id} person={p} onChanged={refresh} />)}
+      {state === 'ready' && tab === 'connects' && connects.map(p => <ConnectCard key={p.id} person={p} inviteInfo={inviteInfo} onChanged={refresh} />)}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 // are provable here.
 import { connectNote, cleanRole, companyDisplay, writePost } from './liPosts.mjs';
 import { htmlToText, splitNewsletter, intelSenders } from './intelInbox.mjs';
+import { linkedinSlug, canInvite, inviteDailyCap } from './liInvite.mjs';
 
 let pass = 0, fail = 0;
 function check(name, fn) {
@@ -84,6 +85,24 @@ await (async () => {
     delete process.env.TEAM_EMAILS;
   });
 })();
+
+console.log('\nThe sanctioned invite (eligibility and the profile slug, pure):');
+
+check('only an eligible decision maker can be invited, once', () => {
+  const base = { suppressed: false, li_invited_at: null, linkedin_url: 'https://www.linkedin.com/in/darryn-power-123/' };
+  assert(canInvite(base).ok, 'a clean contact is eligible');
+  assert(!canInvite({ ...base, suppressed: true }).ok, 'suppressed never invites');
+  assert(!canInvite({ ...base, li_invited_at: '2026-07-13' }).ok, 'never twice');
+  assert(!canInvite({ ...base, linkedin_url: 'https://example.com/nope' }).ok, 'needs a real profile URL');
+  assert(!canInvite(null).ok, 'a missing contact refuses');
+});
+
+check('the profile slug parses from the usual URL shapes', () => {
+  assert(linkedinSlug('https://www.linkedin.com/in/darryn-power-123/') === 'darryn-power-123');
+  assert(linkedinSlug('http://linkedin.com/in/lee%20neville?trk=x') === 'lee neville');
+  assert(linkedinSlug('https://www.linkedin.com/company/pct/') === null, 'company pages are not people');
+  assert(inviteDailyCap() >= 1, 'the invite cap is always at least one');
+});
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);

@@ -1,25 +1,30 @@
-// Unipile client for the LinkedIn research lane. Read-only by construction:
-// ROUTES below is every endpoint this lane may call, and none of them message,
-// connect, post, or edit anything on LinkedIn. Auth is an X-API-KEY header
-// against the account's DSN base URL.
+// Unipile client. The research lane remains read-only: discovery and
+// enrichment never message, post, or edit anything on LinkedIn. One write
+// route now exists, invite, added in July 2026 on John's direction with
+// James's consent for the studio's connect queue: a connection request sends
+// only when a person clicks Send invite on one named contact, never in a
+// batch, capped per day, and any account-health error stops everything with no
+// retry. Auth is an X-API-KEY header against the account's DSN base URL.
 //
 // Route provenance: the build environment cannot reach developer.unipile.com
 // (egress allowlist), so these routes follow the Unipile API as documented in
 // early 2026. They are centralised here so a correction is a one-line edit,
-// and scripts/unipile-check.mjs verifies them against the live API before the
-// lane does any real work.
+// and scripts/unipile-check.mjs verifies the read routes against the live API;
+// the invite route is verified by its first supervised live use.
 import { pool } from '../db.mjs';
 
 const DSN = (process.env.UNIPILE_DSN || '').replace(/\/+$/, '');
 const KEY = process.env.UNIPILE_API_KEY || '';
 const CAP = Math.max(1, parseInt(process.env.LINKEDIN_DAILY_CAP || '40', 10));
 
-// Read-only routes only. Adding a write-capable route here is out of bounds
-// for this lane, permanently.
+// The research lane uses only the read routes. The single write route, invite,
+// belongs to the studio's human-approved connect queue and nothing else; the
+// enrichment and research code never calls it.
 export const ROUTES = {
   listAccounts: { method: 'GET', path: '/api/v1/accounts' },
   search: { method: 'POST', path: '/api/v1/linkedin/search' }, // ?account_id=&limit=
   profile: { method: 'GET', path: '/api/v1/users' },           // /{identifier}?account_id=
+  invite: { method: 'POST', path: '/api/v1/users/invite' },    // { account_id, provider_id, message }
 };
 
 export const unipileConfigured = () => Boolean(DSN && KEY);
