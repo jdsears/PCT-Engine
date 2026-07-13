@@ -210,7 +210,11 @@ run's summary live in the `kv` store, so toggling needs no redeploy and
 survives restarts, and the card shows which research keys are missing on the
 service. The engine only finds signals and pulls leads: drafting and sending
 stay manual and gated, and the LinkedIn lane keeps its own capped orchestrator,
-untouched by the engine.
+untouched by the engine. With the email discovery switch on
+(Health page), each cycle also resolves emails for decision makers without a
+verified one, capped per cycle by `ENGINE_EMAIL_DISCOVERY_LIMIT`, so a new
+prospect gets a deliverable address within the same cycle and the manual
+backfill script becomes a burst tool rather than a routine.
 
 Every Monday morning the engine emails its week to `DIGEST_RECIPIENTS`: signals
 kept, leads pulled, drafts waiting, co-pilot questions and feedback. Internal

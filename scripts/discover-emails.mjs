@@ -1,5 +1,5 @@
 import { pool } from '../src/db.mjs';
-import { ensureContactEmail, getCreditsSpent } from '../src/research/findymail.mjs';
+import { discoverEmails } from '../src/research/emailDiscovery.mjs';
 
 // Backfill emails for the decision makers already on file. Findymail credits
 // cost money and the standing decision keeps automatic discovery off until the
@@ -43,28 +43,10 @@ if (!APPLY) {
   process.exit(0);
 }
 
-if (!(process.env.FINDYMAIL_API_KEY || '').trim()) {
-  console.log('\nFINDYMAIL_API_KEY is not set, so nothing can be looked up.');
-  await pool.end();
-  process.exit(1);
-}
-
-const report = { resolved: 0, notFound: 0, skipped: 0, failed: 0 };
-for (const ct of candidates) {
-  if (!route(ct)) { report.skipped++; continue; }
-  try {
-    const r = await ensureContactEmail(ct, ct.domain);
-    if (r.email) { report.resolved++; console.log(`  resolved: ${ct.full_name} -> ${r.email}`); }
-    else if (r.skipped === 'already verified') report.skipped++;
-    else { report.notFound++; console.log(`  not found: ${ct.full_name}`); }
-  } catch (e) {
-    report.failed++;
-    console.log(`  FAILED ${ct.full_name}: ${String(e.message).slice(0, 120)}`);
-  }
-}
+const report = await discoverEmails({ limit: LIMIT, log: m => console.log(`  ${m}`) });
 
 console.log('\n=== Email discovery run ===');
-console.log(`Resolved: ${report.resolved}   Not found: ${report.notFound}   Skipped: ${report.skipped}   Failed: ${report.failed}`);
-console.log(`Findymail credits spent this run: ${getCreditsSpent()}`);
+console.log(`Candidates: ${report.candidates}   Resolved: ${report.resolved}   Not found: ${report.notFound}   Failed: ${report.failed}`);
+console.log(`Findymail credits spent this run: ${report.credits}`);
 console.log('Resolved emails feed the outbound drafts and the contactability scoring; re-running never re-spends on a verified contact.');
 await pool.end();
