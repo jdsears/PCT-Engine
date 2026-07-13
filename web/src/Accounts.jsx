@@ -61,6 +61,24 @@ function DetailPanel({ id, isMobile, onClose }) {
                 <div className="panel-foot-note">Every score is explainable. These rows are the audit trail.</div>
               </div>
               <div className="panel-block">
+                <div className="eyebrow">Decision makers</div>
+                {(detail.people || []).length === 0 && (
+                  <div className="muted-small">None found for this account yet. The LinkedIn lane fills these in small, capped batches, and a register director only counts when the stated role is a specifier one.</div>
+                )}
+                {(detail.people || []).map((p, i) => (
+                  <div className="person-row" key={i}>
+                    <span className="person-name">{p.name}</span>
+                    <span className="person-meta">
+                      {p.role && <span>{p.role}</span>}
+                      {p.email
+                        ? <a className="person-link" href={`mailto:${p.email}`}>{p.email}</a>
+                        : <span>no email on file</span>}
+                      {p.linkedin && <a className="person-link" href={p.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="panel-block">
                 <div className="eyebrow">Recent signals</div>
                 {detail.recentSignals.length === 0 && <div className="muted-small">No signals for this account yet.</div>}
                 {detail.recentSignals.map((s, i) => (
@@ -121,6 +139,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
             <div className="eyebrow">Domain</div>
             <div className="eyebrow">CH number</div>
             <div className="eyebrow">ICP score</div>
+            <div className="eyebrow right">People</div>
             <div className="eyebrow right">Signals</div>
           </div>
           {companies.map(c => (
@@ -140,6 +159,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
                 <ScoreBar score={c.score} />
                 <span className="acc-score-num">{c.score ?? '—'}</span>
               </div>
+              <div className="acc-signals">{c.people ?? 0}</div>
               <div className="acc-signals">{c.signals}</div>
             </button>
           ))}
@@ -156,7 +176,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
               <div className="acc-card-meta">
                 <span className="pill">{typeLabel(c.type)}</span>
                 {c.region && <span className="pill">{c.region}</span>}
-                <span className="acc-card-signals">{c.signals} signals</span>
+                <span className="acc-card-signals">{c.people ?? 0} people · {c.signals} signals</span>
                 {(!c.domain || !c.chNumber) && (
                   <span className="acc-card-flag"><span className="flag-dot" />{!c.domain ? 'No domain' : 'CH unmatched'}</span>
                 )}
