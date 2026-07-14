@@ -425,6 +425,90 @@ Migration 009 adds `outbound_drafts` and the `outbound_sends` audit log; migrati
 011 adds the `grounding` and `grounding_flags` columns. Apply them with
 `npm run migrate`.
 
+## The conversation stage
+
+The first email is the start of the job, not the end of it. The conversation
+stage (migration 016) runs everything between that send and the handoff, with
+the same spine throughout: every outgoing word is a draft a human approves, and
+every automatic action is conservative by construction.
+
+- Follow-ups (`src/outbound/followups.mjs`). A thread with no reply gets a next
+  touch drafted on the `FOLLOWUP_DAYS` cadence (default 4,7, so three touches
+  in all), into the same review queue with the same grounding check and
+  guardrails. A follow-up may restate what the previous email said and nothing
+  more; it never writes "just bumping" and never manufactures urgency. Any real
+  reply ends the machine's initiative on the thread. Bounced addresses,
+  suppressed contacts, snoozed leads and handed-off conversations are never
+  followed up.
+
+- Reply triage (`src/outbound/triage.mjs`). With reply capture on (a kv switch
+  on the Outbound page), the tick polls the mailbox, classifies each new reply
+  (interested, question, not interested, out of office, wrong person, bounce,
+  unclear) and acts within minutes: the team is notified by internal mail, an
+  interested reply or a question gets a grounded response drafted, a
+  high-confidence clear no suppresses the contact and closes the lead, an
+  away reply snoozes the sequence, and a bounce marks the address dead so it
+  is never sent to again. Anything ambiguous is left for a human, deliberately.
+  Reply content is data to classify, never instructions.
+
+- Responses (`src/outbound/respond.mjs`). The objection-handling drafter
+  answers only from the thread, the reply itself and corpus extracts retrieved
+  the same way a co-pilot answer is. A question the documents cannot answer is
+  deferred to engineering in plain words, never improvised, and no price is
+  ever invented. Every response works towards one goal, a short meeting, video
+  or face to face, using `MEETING_LINK` when configured. An approved response
+  sends as a true threaded reply to the prospect's own message.
+
+- Meetings and handoff. Meeting booked (kind and time) moves the lead to
+  qualified and tells the team; Hand off moves it to handed_off and emails the
+  pack (`src/outbound/handoff.mjs`): the contact, the meeting, the originating
+  signal, the whole thread with verdicts, and any note. From there a person
+  owns the conversation and the engine stops writing on it. The Conversations
+  tab on the Outbound page shows every live thread with its stage and actions.
+
+- Sender identity. Real and test sends carry a footer built from
+  `SENDER_NAME`, `SENDER_TITLE` (or `SENDER_SIGNATURE` whole) plus a plain
+  opt-out line. An opt-out reply is honoured automatically by triage.
+
+- Deliverability. `node scripts/check-mail-dns.mjs` checks SPF, DKIM and DMARC
+  for the sending domain with plain DNS lookups, no keys needed. Run it before
+  the first real send. The engine's own volume discipline (approval per send,
+  small batches, caps) is the rest of deliverability at this scale.
+
+The weekly digest gains the outcome line: prospect sends, replies and reply
+rate, live conversations, clear nos, meetings booked and handoffs. No open
+rates; tracking pixels are unreliable and hurt deliverability, and replies are
+the measure that matters.
+
+## The rehearsal lane
+
+The whole journey can be tested with a teammate playing the prospect, without
+touching the real pipeline. Start a rehearsal from the Outbound banner: it
+clones the latest clean cold-open draft (or a chosen one) onto a rehearsal
+lead whose stand-in contact is an internal allowlisted address, tagged
+`campaign 'rehearsal'` end to end (migration 017 adds the contact marker). The
+original draft, its lead and its contact are never touched.
+
+From there the production path runs unmodified: approve, send (a real tracked
+send), reply from the teammate's inbox like a client, watch triage classify
+and notify, approve the drafted response, let a thread go quiet and see the
+follow-up arrive, book the meeting, hand off. Follow-ups on a rehearsal thread
+run the same `FOLLOWUP_DAYS` cadence in minutes instead of days, so three
+touches fit in an afternoon. Rehearsal notifications are labelled, rehearsal
+rows are excluded from the digest, and rehearsal cards carry a pill in the
+app.
+
+The kill switch invariant that makes this safe: with `MAIL_KILL_SWITCH` on,
+mail can only ever reach the internal test allowlist, and only while
+`OUTBOUND_TEST_SENDS` is on. Prospects stay unreachable throughout a
+rehearsal. End rehearsal and wipe deletes every tagged row, so going live
+starts exactly where it would have anyway.
+
+One legacy flag changed with this: a reply matched to a plain internal test
+send is recorded for visibility but never advances a lead and never reaches
+triage, so `REPLY_CAPTURE_TEST_SENDS` cannot drive real pipeline state. The
+rehearsal is the full-journey test path.
+
 ## The LinkedIn studio
 
 The studio prepares LinkedIn activity; a human approves every piece of it.

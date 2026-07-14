@@ -19,15 +19,36 @@ export async function gatherDigestData() {
             count(*) FILTER (WHERE geo_scope = 'expansion_watch')::int AS watch,
             count(*) FILTER (WHERE signal_type LIKE 'ch\\_%')::int AS filings
      FROM signals WHERE observed_at >= ${week}`)).rows[0];
+  // Rehearsal rows are excluded everywhere: the digest reports the real
+  // pipeline, and a test afternoon must not read as a good week.
   const l = (await pool.query(
     `SELECT count(*) FILTER (WHERE created_at >= ${week})::int AS created,
             count(*) FILTER (WHERE updated_at >= ${week} AND created_at < ${week})::int AS refreshed
-     FROM leads`)).rows[0];
+     FROM leads WHERE campaign <> 'rehearsal'`)).rows[0];
   const d = (await pool.query(
     `SELECT count(*) FILTER (WHERE status = 'draft')::int AS waiting,
             count(*) FILTER (WHERE status = 'approved')::int AS approved,
             count(*) FILTER (WHERE created_at >= ${week})::int AS drafted_this_week
-     FROM outbound_drafts`)).rows[0];
+     FROM outbound_drafts WHERE campaign <> 'rehearsal'`)).rows[0];
+  // The conversation stage: the outcomes that matter, not open rates. Guarded
+  // like the studio block so the digest survives a not-yet-migrated database.
+  let convo = null;
+  try {
+    const sends = (await pool.query(
+      `SELECT count(*)::int AS sent FROM outbound_sends s JOIN outbound_drafts d ON d.id = s.draft_id
+       WHERE s.sent AND NOT s.test_mode AND d.campaign <> 'rehearsal' AND s.created_at >= ${week}`)).rows[0];
+    const reps = (await pool.query(
+      `SELECT count(*)::int AS replies,
+              count(*) FILTER (WHERE r.category IN ('interested','question'))::int AS live,
+              count(*) FILTER (WHERE r.category = 'not_interested')::int AS closed
+       FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
+       WHERE d.campaign <> 'rehearsal' AND r.created_at >= ${week}`)).rows[0];
+    const goals = (await pool.query(
+      `SELECT count(*) FILTER (WHERE meeting_booked_at >= ${week})::int AS meetings,
+              count(*) FILTER (WHERE handed_off_at >= ${week})::int AS handoffs
+       FROM leads WHERE campaign <> 'rehearsal'`)).rows[0];
+    convo = { ...sends, ...reps, ...goals };
+  } catch { convo = null; }
   // The studio ships separately, so its table may not exist yet; the digest
   // simply says nothing about posts until it does.
   let posts = null;
@@ -38,13 +59,13 @@ export async function gatherDigestData() {
               count(*) FILTER (WHERE status = 'posted' AND posted_at >= ${week})::int AS posted
        FROM li_posts`)).rows[0];
   } catch { posts = null; }
-  return { questions: q, signals: s, leads: l, drafts: d, posts };
+  return { questions: q, signals: s, leads: l, drafts: d, posts, convo };
 }
 
 // Plain text in the house voice. The subject carries the three numbers that
 // matter; the body stays short enough to read on a phone.
 export function renderDigest(data, { weekEnding = new Date().toISOString().slice(0, 10) } = {}) {
-  const { questions: q, signals: s, leads: l, drafts: d, posts } = data;
+  const { questions: q, signals: s, leads: l, drafts: d, posts, convo } = data;
   const lines = [
     `The engine's week to ${weekEnding}.`,
     '',
@@ -53,6 +74,10 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
     `Outbound: ${d.waiting} draft${d.waiting === 1 ? '' : 's'} awaiting review, ${d.approved} approved, ${d.drafted_this_week} drafted this week. Nothing sends without a person.`,
     `Co-pilot: ${q.questions} question${q.questions === 1 ? '' : 's'} (${q.teams} from Teams), ${q.declined} it could not answer, feedback ${q.fb_up} helpful and ${q.fb_down} not.`,
   ];
+  if (convo) {
+    const rate = convo.sent > 0 ? `, a reply rate of ${Math.round((convo.replies / convo.sent) * 100)} percent` : '';
+    lines.push(`Conversations: ${convo.sent} prospect send${convo.sent === 1 ? '' : 's'}, ${convo.replies} repl${convo.replies === 1 ? 'y' : 'ies'}${rate}, ${convo.live} live (interested or asking), ${convo.closed} clear no. Meetings booked: ${convo.meetings}. Handed off: ${convo.handoffs}.`);
+  }
   if (posts) lines.push(`Studio: ${posts.waiting} post draft${posts.waiting === 1 ? '' : 's'} waiting, ${posts.posted} posted this week.`);
   lines.push('', 'The detail is in the app: pipeline, watchlist, drafts and gaps. This is an internal summary, sent to the digest list only.');
   return {

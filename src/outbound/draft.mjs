@@ -101,20 +101,23 @@ export function findUnsupported(claims) {
 }
 
 // The safety pass. Re-derives the claims independently of the drafter and returns
-// any the grounding does not support.
-export async function checkGrounding(draft, grounding, { callModel = callClaude } = {}) {
-  const user = `GROUNDING:\n${renderGrounding(grounding)}\n\nEMAIL:\nSubject: ${draft.subject}\n\n${draft.body}`;
+// any the grounding does not support. groundingText widens the permitted facts
+// for the later email types (a follow-up may restate what we already sent; a
+// response may draw on the reply and the corpus extracts) without touching the
+// cold-open path.
+export async function checkGrounding(draft, grounding, { callModel = callClaude, groundingText = null } = {}) {
+  const user = `GROUNDING:\n${groundingText || renderGrounding(grounding)}\n\nEMAIL:\nSubject: ${draft.subject}\n\n${draft.body}`;
   const parsed = parseJsonObject(await callModel(CHECK_SYSTEM, user, { maxTokens: 700 }));
   const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
   return { claims, unsupported: findUnsupported(claims) };
 }
 
 const REVISE_SYSTEM =
-  "Revise the cold-open email to remove or correct the listed unsupported claims, keeping only what the GROUNDING supports. Same voice and rules: plain British English, no em or en dashes, never genuinely, no exclamation marks, no hype, no invented facts. It is better to say less than to keep an unsupported claim. " +
+  "Revise the outbound email to remove or correct the listed unsupported claims, keeping only what the GROUNDING supports. Same voice and rules: plain British English, no em or en dashes, never genuinely, no exclamation marks, no hype, no invented facts. It is better to say less than to keep an unsupported claim. " +
   "Return strict JSON only: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"...\",\"supportedBy\":\"signal|icp|product|contact\"}]}.";
 
-async function reviseDraft(draft, grounding, unsupported, { callModel = callClaude } = {}) {
-  const user = `GROUNDING:\n${renderGrounding(grounding)}\n\nCURRENT EMAIL:\nSubject: ${draft.subject}\n\n${draft.body}\n\nUNSUPPORTED CLAIMS TO REMOVE OR CORRECT:\n${unsupported.map(u => '- ' + u).join('\n')}`;
+async function reviseDraft(draft, grounding, unsupported, { callModel = callClaude, groundingText = null } = {}) {
+  const user = `GROUNDING:\n${groundingText || renderGrounding(grounding)}\n\nCURRENT EMAIL:\nSubject: ${draft.subject}\n\n${draft.body}\n\nUNSUPPORTED CLAIMS TO REMOVE OR CORRECT:\n${unsupported.map(u => '- ' + u).join('\n')}`;
   const parsed = parseJsonObject(await callModel(REVISE_SYSTEM, user, { maxTokens: 700 }));
   return { subject: outboundVoice(parsed.subject || ''), body: outboundVoice(parsed.body || ''), claims: Array.isArray(parsed.claims) ? parsed.claims : [], model: MODEL };
 }
@@ -157,16 +160,15 @@ export function flagEndCustomers(text, recipientName) {
   return [...new Set(hits)];
 }
 
-// The full pipeline: draft, check, one revision if needed, re-check, then the
-// supplier and end-customer guardrails. Returns the final text plus the flags the
-// reviewer must see. A draft is never returned as clean while unsupported claims
-// or a named end customer remain.
-export async function composeDraft(grounding, { callModel = callClaude } = {}) {
-  let draft = await draftColdOpen(grounding, { callModel });
-  let check = await checkGrounding(draft, grounding, { callModel });
+// The shared finishing pipeline for every outbound email type: check, one
+// revision if needed, re-check, then the supplier and end-customer guardrails.
+// Returns the final text plus the flags the reviewer must see. A draft is never
+// returned as clean while unsupported claims or a named end customer remain.
+export async function finaliseDraft(draft, grounding, { callModel = callClaude, groundingText = null } = {}) {
+  let check = await checkGrounding(draft, grounding, { callModel, groundingText });
   if (check.unsupported.length) {
-    draft = await reviseDraft(draft, grounding, check.unsupported, { callModel });
-    check = await checkGrounding(draft, grounding, { callModel });
+    draft = await reviseDraft(draft, grounding, check.unsupported, { callModel, groundingText });
+    check = await checkGrounding(draft, grounding, { callModel, groundingText });
   }
   const s = applySupplierGuardrail(draft.subject, grounding.blockedSuppliers);
   const b = applySupplierGuardrail(draft.body, grounding.blockedSuppliers);
@@ -180,4 +182,10 @@ export async function composeDraft(grounding, { callModel = callClaude } = {}) {
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
   ];
   return { subject: s.text, body: b.text, model: draft.model, claims: draft.claims, flags };
+}
+
+// The cold-open pipeline: draft, then the shared finishing pass.
+export async function composeDraft(grounding, { callModel = callClaude } = {}) {
+  const draft = await draftColdOpen(grounding, { callModel });
+  return finaliseDraft(draft, grounding, { callModel });
 }

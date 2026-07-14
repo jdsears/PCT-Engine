@@ -1,7 +1,7 @@
 // Guards that matter most: a draft must never reach a prospect by accident. These
 // exercise only the refusal paths, which return before any network call, so the
 // gate runs offline. The actual delivery path is not tested here, by design.
-import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients, textToHtml } from '../mail.mjs';
+import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients, textToHtml, blockedByKillSwitch } from '../mail.mjs';
 import { renderDigest, digestDue } from '../digest.mjs';
 import { outboundVoice, voiceClean } from './draft.mjs';
 import { canSendReal, matchReply } from './sendDecision.mjs';
@@ -42,14 +42,19 @@ await check('the allowlist matches case-insensitively and rejects strangers', ()
   assert(!isTestRecipient(''), 'empty rejected');
 });
 
-await check('the two gates are independent: a real send never bypasses the kill switch', async () => {
-  // Test sends are enabled and this address is on the allowlist, yet a real
-  // prospect send to it is still refused by the kill switch.
+await check('the kill switch invariant: on means no prospect is reachable, ever', async () => {
+  // With the kill switch on, the real send path can reach only the internal
+  // allowlist, and only while test sends are on (the rehearsal lane). A
+  // prospect address is refused whatever the other switches say.
   process.env.OUTBOUND_TEST_SENDS = 'on';
   process.env.OUTBOUND_TEST_RECIPIENTS = 'alice@example.com';
   process.env.MAIL_KILL_SWITCH = 'on';
-  const r = await sendMail({ to: 'alice@example.com', subject: 's', html: '<p>h</p>' });
+  const r = await sendMail({ to: 'buyer@prospect.example', subject: 's', html: '<p>h</p>' });
   assert(r.sent === false && r.reason === 'kill switch on', JSON.stringify(r));
+  assert(!blockedByKillSwitch('alice@example.com'), 'an allowlisted teammate stays reachable for rehearsals');
+  process.env.OUTBOUND_TEST_SENDS = 'off';
+  const r2 = await sendMail({ to: 'alice@example.com', subject: 's', html: '<p>h</p>' });
+  assert(r2.sent === false && r2.reason === 'kill switch on', 'test sends off restores the total block');
 });
 
 console.log('\nOutbound voice and rendering:');
