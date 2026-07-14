@@ -28,6 +28,29 @@ export function isTestRecipient(addr) {
   return testRecipients().includes(String(addr || '').trim().toLowerCase());
 }
 
+// The sender identity on prospect mail. A cold email from a bare system address
+// converts poorly and reads automated; a named person with a plain signature is
+// both politer and clearer under PECR. SENDER_SIGNATURE overrides the whole
+// block when set; otherwise it is built from the parts. The opt-out line is
+// always appended to prospect mail: an opt-out we invite is an opt-out we can
+// honour, and the triage path suppresses the contact when one arrives.
+export function signatureBlock() {
+  const custom = String(process.env.SENDER_SIGNATURE || '').trim();
+  if (custom) return custom;
+  const name = String(process.env.SENDER_NAME || '').trim();
+  const title = String(process.env.SENDER_TITLE || '').trim();
+  const lines = [];
+  if (name) lines.push(name);
+  if (title) lines.push(title);
+  lines.push('Premier Control Technologies');
+  return lines.join('\n');
+}
+
+export function withFooter(text) {
+  const optOut = 'If this is not relevant to you, reply no thanks and I will not write again.';
+  return `${String(text || '').trim()}\n\n${signatureBlock()}\n\n${optOut}`;
+}
+
 // Plain text to a simple, safe HTML body: escape, keep blank-line paragraphs and
 // single line breaks. The drafts are plain text, so this is all the markup needed.
 export function textToHtml(text) {
@@ -76,6 +99,23 @@ export async function sendMail({ to, subject, html }) {
   return { sent: true, ...ids };
 }
 
+// Threaded reply to an inbound prospect message, for the response drafts. Graph
+// places our text above the quoted thread and sends in the same conversation,
+// exactly as a human reply would look. Gated by the same kill switch as any
+// other prospect send. Returns no message ids (Graph's reply endpoint sends
+// immediately); the conversation id on the inbound message already correlates.
+export async function sendMailReply({ inboundMessageId, html }) {
+  if ((process.env.MAIL_KILL_SWITCH || 'on') !== 'off') {
+    return { sent: false, reason: 'kill switch on' };
+  }
+  await graphJson(`/users/${process.env.ENGINE_MAILBOX}/messages/${inboundMessageId}/reply`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ comment: html }),
+  });
+  return { sent: true };
+}
+
 // Internal test send. Refuses unless test sends are explicitly enabled and the
 // recipient is on the internal allowlist, so it can never reach a prospect even
 // when the production kill switch is off.
@@ -106,4 +146,16 @@ export async function sendInternal({ to, subject, html }) {
   }
   await deliver({ to, subject, html });
   return { sent: true };
+}
+
+// One plain-text note to the whole internal list, the shape every immediate
+// notification uses: a reply triaged, a meeting booked, a handoff pack. A
+// failure to one address never stops the others.
+export async function sendTeamNote(subject, text) {
+  let sent = 0;
+  for (const to of digestRecipients()) {
+    try { const r = await sendInternal({ to, subject, html: textToHtml(text) }); if (r.sent) sent++; }
+    catch { /* the app still shows the state; mail is a convenience */ }
+  }
+  return sent;
 }

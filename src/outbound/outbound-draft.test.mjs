@@ -18,7 +18,7 @@ const assert = (c, m) => { if (!c) throw new Error(m || 'assertion failed'); };
 function fakeModel(responses) {
   const n = { draft: 0, check: 0, revise: 0 };
   return async (system) => {
-    const phase = /fact-checker/.test(system) ? 'check' : /^Revise the cold-open/.test(system) ? 'revise' : 'draft';
+    const phase = /fact-checker/.test(system) ? 'check' : /^Revise the outbound/.test(system) ? 'revise' : 'draft';
     const r = responses[phase];
     const val = Array.isArray(r) ? r[Math.min(n[phase], r.length - 1)] : r;
     n[phase]++;

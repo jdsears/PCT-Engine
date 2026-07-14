@@ -8,12 +8,17 @@ import { ask } from './answer.mjs';
 import { REGIONS } from './research/region.mjs';
 import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
-import { sendMail, sendMailTest, sendInternal, digestRecipients, isTestRecipient, textToHtml, testRecipientList } from './mail.mjs';
+import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, withFooter, signatureBlock } from './mail.mjs';
 import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
 import { canSendReal } from './outbound/sendDecision.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
+import { pollReplies } from './outbound/replies.mjs';
+import { triageReplies } from './outbound/triage.mjs';
+import { sweepFollowups } from './outbound/followups.mjs';
+import { draftResponse } from './outbound/respond.mjs';
+import { gatherHandoffData, renderHandoffPack } from './outbound/handoff.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
@@ -562,6 +567,51 @@ async function sendDigestOnce(trigger) {
   return { sent, of: recipients.length };
 }
 
+// Reply capture and triage: poll the mailbox for replies to our sends, then
+// read, classify and act on each new one, notify the team within minutes, and
+// draft the grounded response where the reply earns one. Behind its own kv
+// switch; one run at a time.
+let repliesRunning = false;
+async function pollAndTriageOnce(trigger) {
+  if (repliesRunning) return false;
+  repliesRunning = true;
+  const startedAt = new Date().toISOString();
+  try {
+    const polled = await pollReplies(pool, { apply: true });
+    let triage = null;
+    if (process.env.ANTHROPIC_API_KEY) {
+      triage = await triageReplies({ log: m => console.log('[replies]', m) });
+    }
+    if (polled.recorded > 0 || (triage && (triage.triaged > 0 || triage.failed > 0))) {
+      await kvSet('replies_last_run', { ok: true, at: startedAt, trigger, ...polled, triage });
+    }
+  } catch (e) {
+    console.error('[replies] poll failed:', e.message);
+    try { await kvSet('replies_last_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* next read */ }
+  } finally { repliesRunning = false; }
+  return true;
+}
+
+// The follow-up sweep: draft the next touch for threads that have gone quiet,
+// into the review queue. Behind its own kv switch; one run at a time.
+let followupsRunning = false;
+async function sweepFollowupsOnce(trigger) {
+  if (followupsRunning) return false;
+  followupsRunning = true;
+  const startedAt = new Date().toISOString();
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set on this service');
+    const r = await sweepFollowups({ log: m => console.log('[followups]', m) });
+    if (r.due > 0 || r.failed > 0) {
+      await kvSet('followups_last_run', { ok: true, at: startedAt, trigger, ...r });
+    }
+  } catch (e) {
+    console.error('[followups] sweep failed:', e.message);
+    try { await kvSet('followups_last_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* next read */ }
+  } finally { followupsRunning = false; }
+  return true;
+}
+
 // The intel inbox: forwarded newsletters split and routed through the same
 // relevance gate as the sweep. Polled on the tick when INTEL_SENDERS is set;
 // one run at a time, and its outcome lands in kv for the status read.
@@ -592,6 +642,8 @@ setInterval(async () => {
       await runEngineOnce('schedule');
     }
     if (intelSenders().length) await pollIntelOnce('schedule');
+    if ((await kvGet('replycapture_enabled')) === 'on') await pollAndTriageOnce('schedule');
+    if ((await kvGet('followups_enabled')) === 'on') await sweepFollowupsOnce('schedule');
     if (digestRecipients().length) {
       const lastDigest = await kvGet('digest_last_sent');
       if (digestDue({ lastSentAt: lastDigest?.at ?? null })) await sendDigestOnce('schedule');
@@ -766,7 +818,33 @@ app.get('/api/outbound/status', async (_req, res) => {
         autoDraft: (await kvGet('autodraft_enabled')) === 'on',
         lastRun: await kvGet('outbound_last_draft_run'),
       },
+      conversation: {
+        replyCapture: (await kvGet('replycapture_enabled')) === 'on',
+        followups: (await kvGet('followups_enabled')) === 'on',
+        followupDays: process.env.FOLLOWUP_DAYS || '4,7',
+        sender: signatureBlock().split('\n')[0],
+        meetingLink: Boolean((process.env.MEETING_LINK || '').trim()),
+        lastReplies: await kvGet('replies_last_run'),
+        lastFollowups: await kvGet('followups_last_run'),
+      },
     });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The conversation-stage switches, kv-backed like the others: reply capture
+// with triage, and the follow-up sweep. No redeploy to flip either.
+app.post('/api/outbound/replycapture', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('replycapture_enabled', enabled ? 'on' : 'off');
+    res.json({ replyCapture: enabled });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.post('/api/outbound/followups', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('followups_enabled', enabled ? 'on' : 'off');
+    res.json({ followups: enabled });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
@@ -872,7 +950,9 @@ app.post('/api/outbound/drafts/:id/send-test', async (req, res) => {
     const { rows } = await pool.query(`SELECT id, subject, body FROM outbound_drafts WHERE id = $1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'draft not found' });
     const d = rows[0];
-    const result = await sendMailTest({ to, subject: d.subject, html: textToHtml(d.body) });
+    // The test send mirrors the real one exactly, footer included, so what the
+    // team reviews in their inbox is what a prospect would receive.
+    const result = await sendMailTest({ to, subject: d.subject, html: textToHtml(withFooter(d.body)) });
     await pool.query(
       `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason)
        VALUES ($1, $2, $3, true, $4, $5)`,
@@ -888,15 +968,25 @@ app.post('/api/outbound/drafts/:id/send-test', async (req, res) => {
 app.post('/api/outbound/drafts/:id/send', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT d.id, d.subject, d.body, d.status, d.lead_id, ct.email, ct.suppressed
-       FROM outbound_drafts d LEFT JOIN contacts ct ON ct.id = d.contact_id
+      `SELECT d.id, d.subject, d.body, d.status, d.lead_id, d.email_type, d.reply_id,
+              ct.email, ct.suppressed, ct.email_bounced_at,
+              r.graph_message_id AS inbound_message_id
+       FROM outbound_drafts d
+       LEFT JOIN contacts ct ON ct.id = d.contact_id
+       LEFT JOIN outbound_replies r ON r.id = d.reply_id
        WHERE d.id = $1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'draft not found' });
     const d = rows[0];
     const gate = canSendReal({ status: d.status, contactEmail: d.email, suppressed: d.suppressed });
     if (!gate.ok) return res.status(409).json({ error: gate.reason });
+    if (d.email_bounced_at) return res.status(409).json({ error: 'the address on file has bounced; find a fresh one before sending' });
 
-    const result = await sendMail({ to: d.email, subject: d.subject, html: textToHtml(d.body) });
+    // A response threads as a true reply to the prospect's own message; a cold
+    // open or follow-up sends as a tracked message. Same footer, same kill switch.
+    const html = textToHtml(withFooter(d.body));
+    const result = d.email_type === 'response' && d.inbound_message_id
+      ? await sendMailReply({ inboundMessageId: d.inbound_message_id, html })
+      : await sendMail({ to: d.email, subject: d.subject, html });
     await pool.query(
       `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason, graph_message_id, conversation_id, internet_message_id)
        VALUES ($1, $2, $3, false, $4, $5, $6, $7, $8)`,
@@ -912,11 +1002,12 @@ app.post('/api/outbound/drafts/:id/send', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-// Captured prospect replies, newest first, for the review surface.
+// Captured prospect replies, newest first, with their triage verdicts.
 app.get('/api/outbound/replies', async (_req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT r.id, r.from_email, r.subject, r.snippet, r.received_at, r.draft_id, c.name AS company
+      `SELECT r.id, r.from_email, r.subject, r.snippet, r.received_at, r.draft_id,
+              r.category, r.confidence, r.triaged_at, c.name AS company
        FROM outbound_replies r
        LEFT JOIN outbound_drafts d ON d.id = r.draft_id
        LEFT JOIN companies c ON c.id = d.company_id
@@ -924,7 +1015,136 @@ app.get('/api/outbound/replies', async (_req, res) => {
     res.json({ replies: rows.map(r => ({
       id: r.id, from: r.from_email, subject: r.subject, snippet: r.snippet,
       receivedAt: r.received_at, draftId: r.draft_id, company: r.company,
+      category: r.category, confidence: r.confidence, triagedAt: r.triaged_at,
     })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The conversations: every lead with a sent thread, latest activity first,
+// with enough on the card to act without opening the detail.
+app.get('/api/outbound/conversations', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT l.id, l.stage, l.snoozed_until, l.meeting_booked_at, l.meeting_kind, l.meeting_at, l.handed_off_at,
+              c.name AS company, c.icp_score,
+              d.contact_id, ct.full_name AS contact_name, ct.role_title, ct.email, ct.suppressed, ct.email_bounced_at, ct.li_invited_at,
+              (SELECT count(*)::int FROM outbound_drafts x WHERE x.lead_id = l.id AND x.status = 'sent') AS sent_count,
+              (SELECT max(sent_at) FROM outbound_drafts x WHERE x.lead_id = l.id AND x.status = 'sent') AS last_sent_at,
+              (SELECT count(*)::int FROM outbound_replies r JOIN outbound_drafts x ON x.id = r.draft_id WHERE x.lead_id = l.id) AS reply_count,
+              (SELECT r.category FROM outbound_replies r JOIN outbound_drafts x ON x.id = r.draft_id
+               WHERE x.lead_id = l.id ORDER BY r.received_at DESC NULLS LAST LIMIT 1) AS last_category,
+              (SELECT max(r.received_at) FROM outbound_replies r JOIN outbound_drafts x ON x.id = r.draft_id WHERE x.lead_id = l.id) AS last_reply_at,
+              EXISTS(SELECT 1 FROM outbound_drafts x WHERE x.lead_id = l.id AND x.status IN ('draft','approved')) AS open_draft
+       FROM leads l
+       JOIN companies c ON c.id = l.company_id
+       JOIN LATERAL (
+         SELECT contact_id FROM outbound_drafts WHERE lead_id = l.id AND status = 'sent'
+         ORDER BY sequence_step DESC, sent_at DESC LIMIT 1
+       ) d ON true
+       LEFT JOIN contacts ct ON ct.id = d.contact_id
+       ORDER BY GREATEST(COALESCE((SELECT max(sent_at) FROM outbound_drafts x WHERE x.lead_id = l.id AND x.status = 'sent'), 'epoch'),
+                         COALESCE((SELECT max(r.received_at) FROM outbound_replies r JOIN outbound_drafts x ON x.id = r.draft_id WHERE x.lead_id = l.id), 'epoch')) DESC
+       LIMIT 100`);
+    res.json({ conversations: rows.map(r => ({
+      leadId: r.id, stage: r.stage, company: r.company, score: r.icp_score,
+      contact: r.contact_name ? { name: r.contact_name, role: r.role_title, email: r.email, suppressed: r.suppressed, bounced: !!r.email_bounced_at, liInvited: !!r.li_invited_at } : null,
+      sent: r.sent_count, replies: r.reply_count, lastCategory: r.last_category,
+      lastSentAt: r.last_sent_at, lastReplyAt: r.last_reply_at, openDraft: r.open_draft,
+      snoozedUntil: r.snoozed_until, meeting: r.meeting_booked_at ? { bookedAt: r.meeting_booked_at, kind: r.meeting_kind, at: r.meeting_at } : null,
+      handedOffAt: r.handed_off_at,
+    })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// One conversation's full thread: sent emails, replies with verdicts, and any
+// open draft, merged newest last, for the timeline view.
+app.get('/api/outbound/conversations/:leadId', async (req, res) => {
+  try {
+    const drafts = (await pool.query(
+      `SELECT id, email_type, sequence_step, subject, body, status, grounding_flags, sent_at, created_at
+       FROM outbound_drafts WHERE lead_id = $1 AND status IN ('sent','draft','approved')
+       ORDER BY created_at ASC`, [req.params.leadId])).rows;
+    const replies = (await pool.query(
+      `SELECT r.id, r.from_email, r.subject, COALESCE(r.body, r.snippet) AS text, r.category, r.confidence,
+              r.triage, r.received_at
+       FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
+       WHERE d.lead_id = $1 ORDER BY r.received_at ASC`, [req.params.leadId])).rows;
+    const items = [
+      ...drafts.map(d => ({
+        kind: d.status === 'sent' ? 'sent' : 'open_draft', id: d.id, emailType: d.email_type, step: d.sequence_step,
+        subject: d.subject, body: d.body, status: d.status, flags: d.grounding_flags || [],
+        at: d.sent_at || d.created_at,
+      })),
+      ...replies.map(r => ({
+        kind: 'reply', id: r.id, from: r.from_email, subject: r.subject, body: r.text,
+        category: r.category, confidence: r.confidence, reason: r.triage?.reason || null, at: r.received_at,
+      })),
+    ].sort((a, b) => new Date(a.at || 0) - new Date(b.at || 0));
+    res.json({ items });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Draft a grounded response to a specific reply on demand, for the cases triage
+// leaves to a human: a wrong-person pointer, an unclear message they still want
+// to answer. Runs in the foreground; one reply's draft is a short wait.
+app.post('/api/outbound/replies/:id/respond', async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'ANTHROPIC_API_KEY is not set on this service' });
+    const r = await draftResponse(req.params.id);
+    if (!r.drafted) return res.status(409).json({ error: r.reason });
+    res.json({ ok: true, subject: r.subject, flags: r.flags });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Meeting booked: the engine's goal for the thread. Records kind and time,
+// moves the lead to qualified, and tells the team.
+app.post('/api/outbound/leads/:id/meeting', async (req, res) => {
+  try {
+    const kind = (req.body || {}).kind === 'f2f' ? 'f2f' : 'video';
+    const atRaw = (req.body || {}).at ? new Date((req.body || {}).at) : null;
+    const at = atRaw && !Number.isNaN(atRaw.getTime()) ? atRaw.toISOString() : null;
+    const { rows } = await pool.query(
+      `UPDATE leads SET stage = 'qualified', meeting_booked_at = now(), meeting_kind = $2, meeting_at = $3, updated_at = now()
+       WHERE id = $1 AND stage NOT IN ('handed_off') RETURNING id`, [req.params.id, kind, at]);
+    if (!rows.length) return res.status(409).json({ error: 'lead not found or already handed off' });
+    const who = (await pool.query(
+      `SELECT c.name AS company, ct.full_name FROM leads l JOIN companies c ON c.id = l.company_id
+       LEFT JOIN contacts ct ON ct.id = l.contact_id WHERE l.id = $1`, [req.params.id])).rows[0] || {};
+    await sendTeamNote(`Meeting booked: ${who.company || 'lead ' + req.params.id}`,
+      `A ${kind === 'f2f' ? 'face to face' : 'video'} meeting is booked${who.full_name ? ' with ' + who.full_name : ''}${who.company ? ' at ' + who.company : ''}${at ? ', ' + at.slice(0, 16).replace('T', ' ') + ' UTC' : ''}.\n\nHand the thread off from the app when someone owns it.`);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Handoff: a person now owns the conversation. The pack email carries the whole
+// grounded story; the engine stops writing on the thread from here.
+app.post('/api/outbound/leads/:id/handoff', async (req, res) => {
+  try {
+    const note = String((req.body || {}).note || '').slice(0, 500) || null;
+    const data = await gatherHandoffData(req.params.id);
+    if (!data) return res.status(404).json({ error: 'lead not found' });
+    const { rows } = await pool.query(
+      `UPDATE leads SET stage = 'handed_off', handed_off_at = now(), handoff_note = $2, updated_at = now()
+       WHERE id = $1 AND stage NOT IN ('handed_off') RETURNING id`, [req.params.id, note]);
+    if (!rows.length) return res.status(409).json({ error: 'already handed off' });
+    const pack = renderHandoffPack(data, { note });
+    const sent = await sendTeamNote(pack.subject, pack.text);
+    res.json({ ok: true, packSentTo: sent });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The human stop: suppress the contact and close the lead, whatever triage
+// thought. An opt-out honoured by hand is still an opt-out.
+app.post('/api/outbound/leads/:id/suppress', async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE contacts SET suppressed = true
+       WHERE id IN (SELECT contact_id FROM outbound_drafts WHERE lead_id = $1 AND contact_id IS NOT NULL
+                    UNION SELECT contact_id FROM leads WHERE id = $1 AND contact_id IS NOT NULL)`, [req.params.id]);
+    const { rows } = await pool.query(
+      `UPDATE leads SET stage = 'closed', updated_at = now() WHERE id = $1 RETURNING id`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'lead not found' });
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
