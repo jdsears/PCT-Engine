@@ -5,6 +5,7 @@
 // by construction, not by hope.
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
+import { quotedLine } from './quotedLines.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -99,6 +100,31 @@ await check('formula cells yield their computed result', async () => {
   assert(cellValue(ws.getCell('A1')) === 42, 'formula result');
   assert(cellValue(ws.getCell('A2')) === 'SEM203', 'rich text collapses');
   assert(TAB_SPECS.length === 3, 'three specs in phase 1');
+});
+
+console.log('\nQuoted lines route to process, never to a guessed number:');
+
+await check('the configurator models route to their lines', async () => {
+  assert(quotedLine('cv3000')?.line === 'Marwin', 'CV3000 is Marwin');
+  assert(quotedLine('CV4700')?.line === 'Marwin', 'CV4700 is Marwin');
+  assert(quotedLine('marwin cv3861')?.line === 'Marwin', 'a brand word routes too');
+  assert(quotedLine('mark 96')?.line === 'Steriflow', 'Mark 96 is Steriflow');
+  assert(quotedLine('MK96AA')?.line === 'Steriflow', 'MK96AA is Steriflow');
+  assert(quotedLine('equilibar bpr')?.line === 'Equilibar', 'Equilibar routes to its own note');
+});
+
+await check('the notes carry the enquiry route and never a margin', async () => {
+  const m = quotedLine('cv3000');
+  assert(/thessel@richardsind\.com/.test(m.note), 'the Richards enquiry address travels');
+  assert(!/\d+\s*%/.test(m.note), 'no percentage appears in any note');
+  assert(!/[—–!]/.test(m.note) && !/\bgenuinely\b/i.test(m.note), 'voice rules hold');
+});
+
+await check('real parts and unknown queries never route to a quoted line', async () => {
+  assert(quotedLine('SEM203/P') === null, 'a stored instrument part is not shadowed');
+  assert(quotedLine('7100') === null, 'a King series is not shadowed');
+  assert(quotedLine('random words') === null, 'nonsense stays an honest nothing');
+  assert(quotedLine('') === null, 'empty stays empty');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);

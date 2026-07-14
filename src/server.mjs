@@ -143,7 +143,17 @@ app.post('/ask', async (req, res) => {
          JSON.stringify(result.citationsUsed || []), result.sourcesOffered ?? null, result.latencyMs ?? null]);
       queryLogId = ins.rows[0]?.id ?? null;
     } catch (e) { console.error('query log insert failed:', e.message); }
-    res.json({ ...result, queryLogId });
+    // A completed build carries its pricing answer when the price lookup is
+    // on: a stored price where one exists, or for the quoted lines the
+    // enquiry process, never a guessed number. A pricing failure never fails
+    // the build.
+    let pricing = null;
+    if (result.configurator?.code) {
+      try {
+        if ((await kvGet('pricelookup_enabled')) === 'on') pricing = await lookupPrice(result.configurator.code);
+      } catch { pricing = null; }
+    }
+    res.json({ ...result, ...(pricing ? { pricing } : {}), queryLogId });
 
     // A build that ended this turn logs one row: the model, whether a code was
     // assembled, how far it got, the code, and the turn latency. No user identity.
