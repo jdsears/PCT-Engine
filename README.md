@@ -544,6 +544,33 @@ a studio post draft instead, with the same end-customer guardrail. Newsletter
 content is treated as data to classify, never as instructions. The tick polls
 every five minutes; `scripts/intel-poll.mjs` runs it by hand, dry by default.
 
+## Price lookup, phase 1
+
+Sales pricing is deterministic end to end: prices never go through the
+embedding pipeline, and no model sits between a part number and its price.
+Migration 018 adds the `prices` table, holding customer sell prices only.
+
+- `src/pricing/parseMega.mjs` parses the Mega Price List's explicit sell tabs
+  (Status, EGE, King). Each tab's spec names the cost, purchase and supplier
+  list columns precisely so the parser provably skips them: excluded and
+  reported, never ingested, the standing rule. The calculator tabs are not
+  lists and are out of scope; the hidden Master Formulas tab is never read.
+- `scripts/ingest-prices.mjs --file "<Mega_Price_List.xlsx>"` is a dry run
+  showing per-tab counts, samples and the excluded columns; `--apply` replaces
+  each tab's rows wholesale, so re-running is safe and vanished parts vanish.
+  Runs on a machine with `.env`.
+- The lookup (`src/pricing/lookup.mjs`) is a plain indexed query: exact match
+  on the normalised part number, else a prefix match offering candidates, and
+  an honest nothing otherwise. Served at `GET /api/price?q=`.
+- The co-pilot's "Look up a price" card arms only when the lists are loaded
+  AND the switch on the Health page is on. The switch stays off until James
+  has verified a sample of stored prices against what he would quote.
+
+Phase 2, agreed and not yet built: the valve lines (Marwin, Steriflow and the
+other Richards lists), where the customer price is computed at ingest from
+the supplier list and the markup rules, storing only the finished sell price,
+model by model, each verified before it arms.
+
 ## Usage logging and insights
 
 Every co-pilot question is logged to `copilot_queries` (migration 005). Each row

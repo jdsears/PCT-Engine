@@ -104,6 +104,52 @@ function EngineCard() {
   );
 }
 
+// The price lookup switch: the lists load from the ingest script, and the
+// co-pilot's price card appears only when this is on. It stays off until a
+// sample of stored prices has been checked against what would be quoted.
+function PriceCard() {
+  const [status, setStatus] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(() => {
+    apiFetch('/api/price/status').then(r => r.json()).then(setStatus).catch(() => setStatus(null));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  const toggle = async () => {
+    if (!status || busy) return;
+    setBusy(true);
+    try {
+      await apiFetch('/api/price/toggle', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !status.enabled }),
+      });
+      load();
+    } catch { /* the reload shows truth */ }
+    setBusy(false);
+  };
+  if (!status) return null;
+  const lines = Object.entries(status.lines || {}).map(([l, n]) => `${l} ${n}`).join(', ');
+  return (
+    <div className="card health-card gap-10">
+      <div className="eyebrow">Price lookup</div>
+      <div className="muted-small">
+        {status.migrationPending
+          ? 'The prices table is not created yet; run npm run migrate.'
+          : status.parts > 0
+            ? `${status.parts} part numbers loaded (${lines}), sell prices only, cost columns never ingested.`
+            : 'No prices loaded yet. Load them with scripts/ingest-prices.mjs from a machine with .env.'}
+      </div>
+      <div>
+        <button className="ob-btn" onClick={toggle} disabled={busy || status.parts === 0}>
+          {status.enabled ? 'Co-pilot price card: on' : 'Co-pilot price card: off'}
+        </button>
+      </div>
+      {status.parts > 0 && !status.enabled && (
+        <div className="muted-small">Flip it on once James has checked a sample of loaded prices against what he would quote.</div>
+      )}
+    </div>
+  );
+}
+
 export default function Health() {
   const [data, setData] = useState(null);
   const [state, setState] = useState('loading');
@@ -127,6 +173,7 @@ export default function Health() {
     <div className="content-pad">
       <div className="health-grid">
         <EngineCard />
+        <PriceCard />
 
         <div className="card health-card">
           <div className="eyebrow">Corpus</div>
