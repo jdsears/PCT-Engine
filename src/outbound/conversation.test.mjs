@@ -4,6 +4,7 @@
 // so the cautious defaults are provable without a database or a key.
 import { followupDelays, followupDueAt, maxSequenceSteps, reSubject, followupGroundingText, draftFollowup } from './followups.mjs';
 import { looksLikeBounce, decideAction, classifyReply } from './triage.mjs';
+import { pollFloor, effectiveSince } from './replies.mjs';
 import { responseGroundingText } from './respond.mjs';
 import { renderHandoffPack } from './handoff.mjs';
 import { withFooter, signatureBlock, blockedByKillSwitch } from '../mail.mjs';
@@ -69,6 +70,15 @@ await check('the kill switch invariant: on means internal allowlist only, and on
   for (const [k, v] of [['MAIL_KILL_SWITCH', olds.k], ['OUTBOUND_TEST_SENDS', olds.t], ['OUTBOUND_TEST_RECIPIENTS', olds.r], ['TEAM_EMAILS', olds.e]]) {
     if (v === undefined) delete process.env[k]; else process.env[k] = v;
   }
+});
+
+await check('the reply poller never looks further back than the floor', async () => {
+  const now = Date.parse('2026-07-14T20:00:00Z');
+  const floor = pollFloor(now);
+  assert(floor === '2026-07-07T20:00:00.000Z', 'the floor is seven days back');
+  assert(effectiveSince(null, floor) === floor, 'a first poll starts at the floor, never the beginning of the mailbox');
+  assert(effectiveSince('2024-03-01T00:00:00Z', floor) === floor, 'a stale cursor from an archive crawl is clamped to the floor');
+  assert(effectiveSince('2026-07-14T19:00:00Z', floor) === '2026-07-14T19:00:00Z', 'a fresh cursor is respected');
 });
 
 console.log('\nReply triage decisions (pure, cautious by construction):');

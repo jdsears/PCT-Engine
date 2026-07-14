@@ -583,9 +583,9 @@ async function pollAndTriageOnce(trigger) {
     if (process.env.ANTHROPIC_API_KEY) {
       triage = await triageReplies({ log: m => console.log('[replies]', m) });
     }
-    if (polled.recorded > 0 || (triage && (triage.triaged > 0 || triage.failed > 0))) {
-      await kvSet('replies_last_run', { ok: true, at: startedAt, trigger, ...polled, triage });
-    }
+    // Always recorded, quiet runs included: the banner shows the heartbeat, so
+    // a silent poller is visible rather than indistinguishable from a broken one.
+    await kvSet('replies_last_run', { ok: true, at: startedAt, trigger, ...polled, triage });
   } catch (e) {
     console.error('[replies] poll failed:', e.message);
     try { await kvSet('replies_last_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* next read */ }
