@@ -398,6 +398,15 @@ export default function Outbound() {
             </span>
           )}
         </div>
+        {convoCfg.replyCapture && (
+          <p className="ob-banner-sub">
+            {convoCfg.lastReplies
+              ? `Reply capture last ran ${fmtClockDay(convoCfg.lastReplies.at)}: ${convoCfg.lastReplies.ok
+                  ? `${convoCfg.lastReplies.scanned ?? 0} scanned, ${convoCfg.lastReplies.matched ?? 0} matched, ${convoCfg.lastReplies.recorded ?? 0} new${convoCfg.lastReplies.triage ? `, ${convoCfg.lastReplies.triage.triaged ?? 0} triaged` : ''}.`
+                  : `failed, ${convoCfg.lastReplies.error}`}`
+              : 'Reply capture has not run yet; the next five-minute tick is the first.'}
+          </p>
+        )}
         {genNote && <p className="ob-banner-sub">{genNote}</p>}
         <div className="ob-banner-controls">
           <span className="eyebrow">Rehearsal</span>
