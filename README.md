@@ -8,6 +8,10 @@ of scope here and come in a later brief.
 The sales-engine components are expected to join this same repository in later
 phases.
 
+The steps from the current testing shape to live operation, and the handover
+to the team, live in [GOING-LIVE.md](GOING-LIVE.md), a versioned checklist to
+tick off in place.
+
 ## What is here
 
 - `src/server.mjs` is a small Express service with a single `/health` route.
