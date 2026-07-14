@@ -480,6 +480,35 @@ rate, live conversations, clear nos, meetings booked and handoffs. No open
 rates; tracking pixels are unreliable and hurt deliverability, and replies are
 the measure that matters.
 
+## The rehearsal lane
+
+The whole journey can be tested with a teammate playing the prospect, without
+touching the real pipeline. Start a rehearsal from the Outbound banner: it
+clones the latest clean cold-open draft (or a chosen one) onto a rehearsal
+lead whose stand-in contact is an internal allowlisted address, tagged
+`campaign 'rehearsal'` end to end (migration 017 adds the contact marker). The
+original draft, its lead and its contact are never touched.
+
+From there the production path runs unmodified: approve, send (a real tracked
+send), reply from the teammate's inbox like a client, watch triage classify
+and notify, approve the drafted response, let a thread go quiet and see the
+follow-up arrive, book the meeting, hand off. Follow-ups on a rehearsal thread
+run the same `FOLLOWUP_DAYS` cadence in minutes instead of days, so three
+touches fit in an afternoon. Rehearsal notifications are labelled, rehearsal
+rows are excluded from the digest, and rehearsal cards carry a pill in the
+app.
+
+The kill switch invariant that makes this safe: with `MAIL_KILL_SWITCH` on,
+mail can only ever reach the internal test allowlist, and only while
+`OUTBOUND_TEST_SENDS` is on. Prospects stay unreachable throughout a
+rehearsal. End rehearsal and wipe deletes every tagged row, so going live
+starts exactly where it would have anyway.
+
+One legacy flag changed with this: a reply matched to a plain internal test
+send is recorded for visibility but never advances a lead and never reaches
+triage, so `REPLY_CAPTURE_TEST_SENDS` cannot drive real pipeline state. The
+rehearsal is the full-journey test path.
+
 ## The LinkedIn studio
 
 The studio prepares LinkedIn activity; a human approves every piece of it.

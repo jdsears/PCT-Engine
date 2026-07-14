@@ -19,6 +19,7 @@ import { triageReplies } from './outbound/triage.mjs';
 import { sweepFollowups } from './outbound/followups.mjs';
 import { draftResponse } from './outbound/respond.mjs';
 import { gatherHandoffData, renderHandoffPack } from './outbound/handoff.mjs';
+import { startRehearsal, rehearsalStatus, endRehearsal } from './outbound/rehearsal.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
@@ -876,7 +877,7 @@ app.get('/api/outbound/drafts', async (req, res) => {
     const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : null;
     const { rows } = await pool.query(
       `SELECT d.id, d.subject, d.body, d.status, d.rationale, d.grounding, d.grounding_flags,
-              d.email_type, d.created_at, d.sent_at,
+              d.email_type, d.campaign, d.created_at, d.sent_at,
               c.name AS company, c.region, c.icp_score,
               ct.full_name AS contact_name, ct.role_title, ct.email
        FROM outbound_drafts d
@@ -888,7 +889,7 @@ app.get('/api/outbound/drafts', async (req, res) => {
     res.json({ drafts: rows.map(r => ({
       id: r.id, subject: r.subject, body: r.body, status: r.status,
       rationale: r.rationale, grounding: r.grounding || null, groundingFlags: r.grounding_flags || [],
-      emailType: r.email_type, createdAt: r.created_at, sentAt: r.sent_at,
+      emailType: r.email_type, rehearsal: r.campaign === 'rehearsal', createdAt: r.created_at, sentAt: r.sent_at,
       company: r.company, region: r.region, score: r.icp_score,
       contact: r.contact_name ? { name: r.contact_name, role: r.role_title, email: r.email } : null,
     })) });
@@ -985,7 +986,7 @@ app.post('/api/outbound/drafts/:id/send', async (req, res) => {
     // open or follow-up sends as a tracked message. Same footer, same kill switch.
     const html = textToHtml(withFooter(d.body));
     const result = d.email_type === 'response' && d.inbound_message_id
-      ? await sendMailReply({ inboundMessageId: d.inbound_message_id, html })
+      ? await sendMailReply({ inboundMessageId: d.inbound_message_id, html, to: d.email })
       : await sendMail({ to: d.email, subject: d.subject, html });
     await pool.query(
       `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason, graph_message_id, conversation_id, internet_message_id)
@@ -1025,7 +1026,7 @@ app.get('/api/outbound/replies', async (_req, res) => {
 app.get('/api/outbound/conversations', async (_req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT l.id, l.stage, l.snoozed_until, l.meeting_booked_at, l.meeting_kind, l.meeting_at, l.handed_off_at,
+      `SELECT l.id, l.stage, l.campaign, l.snoozed_until, l.meeting_booked_at, l.meeting_kind, l.meeting_at, l.handed_off_at,
               c.name AS company, c.icp_score,
               d.contact_id, ct.full_name AS contact_name, ct.role_title, ct.email, ct.suppressed, ct.email_bounced_at, ct.li_invited_at,
               (SELECT count(*)::int FROM outbound_drafts x WHERE x.lead_id = l.id AND x.status = 'sent') AS sent_count,
@@ -1046,7 +1047,7 @@ app.get('/api/outbound/conversations', async (_req, res) => {
                          COALESCE((SELECT max(r.received_at) FROM outbound_replies r JOIN outbound_drafts x ON x.id = r.draft_id WHERE x.lead_id = l.id), 'epoch')) DESC
        LIMIT 100`);
     res.json({ conversations: rows.map(r => ({
-      leadId: r.id, stage: r.stage, company: r.company, score: r.icp_score,
+      leadId: r.id, stage: r.stage, rehearsal: r.campaign === 'rehearsal', company: r.company, score: r.icp_score,
       contact: r.contact_name ? { name: r.contact_name, role: r.role_title, email: r.email, suppressed: r.suppressed, bounced: !!r.email_bounced_at, liInvited: !!r.li_invited_at } : null,
       sent: r.sent_count, replies: r.reply_count, lastCategory: r.last_category,
       lastSentAt: r.last_sent_at, lastReplyAt: r.last_reply_at, openDraft: r.open_draft,
@@ -1105,12 +1106,13 @@ app.post('/api/outbound/leads/:id/meeting', async (req, res) => {
     const at = atRaw && !Number.isNaN(atRaw.getTime()) ? atRaw.toISOString() : null;
     const { rows } = await pool.query(
       `UPDATE leads SET stage = 'qualified', meeting_booked_at = now(), meeting_kind = $2, meeting_at = $3, updated_at = now()
-       WHERE id = $1 AND stage NOT IN ('handed_off') RETURNING id`, [req.params.id, kind, at]);
+       WHERE id = $1 AND stage NOT IN ('handed_off') RETURNING campaign`, [req.params.id, kind, at]);
     if (!rows.length) return res.status(409).json({ error: 'lead not found or already handed off' });
+    const tag = rows[0].campaign === 'rehearsal' ? 'Rehearsal, ' : '';
     const who = (await pool.query(
       `SELECT c.name AS company, ct.full_name FROM leads l JOIN companies c ON c.id = l.company_id
        LEFT JOIN contacts ct ON ct.id = l.contact_id WHERE l.id = $1`, [req.params.id])).rows[0] || {};
-    await sendTeamNote(`Meeting booked: ${who.company || 'lead ' + req.params.id}`,
+    await sendTeamNote(`${tag}meeting booked: ${who.company || 'lead ' + req.params.id}`,
       `A ${kind === 'f2f' ? 'face to face' : 'video'} meeting is booked${who.full_name ? ' with ' + who.full_name : ''}${who.company ? ' at ' + who.company : ''}${at ? ', ' + at.slice(0, 16).replace('T', ' ') + ' UTC' : ''}.\n\nHand the thread off from the app when someone owns it.`);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -1128,9 +1130,28 @@ app.post('/api/outbound/leads/:id/handoff', async (req, res) => {
        WHERE id = $1 AND stage NOT IN ('handed_off') RETURNING id`, [req.params.id, note]);
     if (!rows.length) return res.status(409).json({ error: 'already handed off' });
     const pack = renderHandoffPack(data, { note });
-    const sent = await sendTeamNote(pack.subject, pack.text);
+    const isRehearsal = (await pool.query(`SELECT campaign FROM leads WHERE id = $1`, [req.params.id])).rows[0]?.campaign === 'rehearsal';
+    const sent = await sendTeamNote(isRehearsal ? `Rehearsal, ${pack.subject.charAt(0).toLowerCase()}${pack.subject.slice(1)}` : pack.subject, pack.text);
     res.json({ ok: true, packSentTo: sent });
   } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The rehearsal lane: clone a real draft onto a tagged lead addressed to a
+// teammate, run the whole journey through the production path, then wipe.
+app.get('/api/outbound/rehearsal', async (_req, res) => {
+  try { res.json(await rehearsalStatus()); }
+  catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.post('/api/outbound/rehearsal/start', async (req, res) => {
+  try {
+    const r = await startRehearsal({ draftId: (req.body || {}).draftId || null, to: (req.body || {}).to });
+    if (!r.started) return res.status(409).json({ error: r.reason });
+    res.json(r);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.post('/api/outbound/rehearsal/end', async (req, res) => {
+  try { res.json(await endRehearsal()); }
+  catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
 // The human stop: suppress the contact and close the lead, whatever triage

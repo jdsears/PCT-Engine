@@ -148,8 +148,9 @@ export async function triageOne(r, { callModel = callClaude, log = () => {} } = 
     }
   }
   if (action.notify) {
+    const tag = r.campaign === 'rehearsal' ? 'Rehearsal, ' : '';
     const who = r.company ? `${r.from_email} at ${r.company}` : r.from_email;
-    const subject = `Reply from ${r.company || r.from_email}: ${LABELS[verdict.category]}`;
+    const subject = `${tag}reply from ${r.company || r.from_email}: ${LABELS[verdict.category]}`;
     const lines = [
       `${who} replied to the outbound thread.`,
       `Verdict: ${LABELS[verdict.category]}${verdict.confidence === 'low' ? ' (low confidence, read it yourself)' : ''}. ${verdict.reason}`,
@@ -175,7 +176,7 @@ export async function triageOne(r, { callModel = callClaude, log = () => {} } = 
 export async function triageReplies({ limit = 10, callModel = callClaude, log = () => {} } = {}) {
   const { rows } = await pool.query(
     `SELECT r.id, r.graph_message_id, r.from_email, r.subject, r.snippet, r.body, r.draft_id,
-            d.lead_id, d.contact_id, c.name AS company
+            d.lead_id, d.contact_id, d.campaign, c.name AS company
      FROM outbound_replies r
      LEFT JOIN outbound_drafts d ON d.id = r.draft_id
      LEFT JOIN companies c ON c.id = d.company_id

@@ -65,6 +65,7 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
       <div className="ob-head">
         <div className="ob-co">{companyLabel(draft.company)}</div>
         <div className="ob-pills">
+          {draft.rehearsal && <span className="pill">rehearsal</span>}
           {draft.emailType === 'followup' && <span className="pill">follow-up</span>}
           {draft.emailType === 'response' && <span className="pill">response</span>}
           {draft.score != null && <span className="pill">ICP {draft.score}</span>}
@@ -208,6 +209,7 @@ function ConversationCard({ convo, onChanged }) {
       <div className="ob-head">
         <div className="ob-co">{companyLabel(convo.company)}</div>
         <div className="ob-pills">
+          {convo.rehearsal && <span className="pill">rehearsal</span>}
           {convo.score != null && <span className="pill">ICP {convo.score}</span>}
           {convo.lastCategory && <span className="pill">{CATEGORY_LABELS[convo.lastCategory] || convo.lastCategory}</span>}
           <span className={`pill ob-stat ob-stat-${convo.stage}`}>{STAGE_LABELS[convo.stage] || convo.stage}</span>
@@ -266,8 +268,10 @@ export default function Outbound() {
   const [convos, setConvos] = useState([]);
   const [state, setState] = useState('loading');
 
+  const [reh, setReh] = useState(null);
   const loadStatus = useCallback(() => {
     apiFetch('/api/outbound/status').then(r => r.json()).then(setStatus).catch(() => setStatus({ killSwitch: 'unknown' }));
+    apiFetch('/api/outbound/rehearsal').then(r => r.json()).then(setReh).catch(() => setReh(null));
   }, []);
   // setState only inside the async callbacks, never synchronously in the effect:
   // the previous list stays until the new one arrives, matching the other views.
@@ -335,6 +339,29 @@ export default function Outbound() {
     } catch { setGenNote(`The ${key} switch is not available right now.`); }
   };
 
+  const [rehTo, setRehTo] = useState('');
+  const [rehBusy, setRehBusy] = useState(false);
+  const [rehNote, setRehNote] = useState(null);
+  const startReh = async () => {
+    setRehBusy(true); setRehNote(null);
+    try {
+      const r = await action('/api/outbound/rehearsal/start', jsonOpts('POST', { to: rehTo || recipients[0] }));
+      setRehNote(`Rehearsal started: a cloned draft is in To review, addressed to ${r.to}. The original draft is untouched. Approve it, send it, and reply from that inbox like a prospect.`);
+      refresh();
+    } catch (e) { setRehNote(String(e.message || e)); }
+    setRehBusy(false);
+  };
+  const endReh = async () => {
+    setRehBusy(true); setRehNote(null);
+    try {
+      const r = await action('/api/outbound/rehearsal/end', jsonOpts('POST'));
+      const w = r.wiped || {};
+      setRehNote(`Rehearsal wiped: ${w.drafts ?? 0} drafts, ${w.sends ?? 0} sends, ${w.replies ?? 0} replies, ${w.leads ?? 0} leads, ${w.contacts ?? 0} stand-ins removed. The real pipeline was never part of it.`);
+      refresh();
+    } catch (e) { setRehNote(String(e.message || e)); }
+    setRehBusy(false);
+  };
+
   return (
     <div className="content-pad outbound-queue">
       <div className="card ob-banner">
@@ -372,6 +399,28 @@ export default function Outbound() {
           )}
         </div>
         {genNote && <p className="ob-banner-sub">{genNote}</p>}
+        <div className="ob-banner-controls">
+          <span className="eyebrow">Rehearsal</span>
+          {reh?.active ? (
+            <>
+              <span className="ob-banner-note">
+                Live: {reh.drafts ?? 0} draft{(reh.drafts ?? 0) === 1 ? '' : 's'}, {reh.sends ?? 0} send{(reh.sends ?? 0) === 1 ? '' : 's'}, {reh.replies ?? 0} repl{(reh.replies ?? 0) === 1 ? 'y' : 'ies'} on the rehearsal lane, tagged and excluded from the digest.
+              </span>
+              <button className="ob-btn ghost" onClick={endReh} disabled={rehBusy}>End rehearsal and wipe</button>
+            </>
+          ) : (
+            <>
+              <select className="ob-select" value={rehTo || recipients[0] || ''} disabled={rehBusy || !recipients.length} onChange={e => setRehTo(e.target.value)}>
+                {recipients.length ? recipients.map(a => <option key={a} value={a}>{a}</option>) : <option value="">no internal recipients set</option>}
+              </select>
+              <button className="ob-btn" onClick={startReh} disabled={rehBusy || !recipients.length}
+                title="Clones the latest clean draft onto a rehearsal lead addressed to the chosen teammate. The full journey then runs for real, follow-ups on a minutes clock, and everything wipes afterwards.">
+                Start a rehearsal
+              </button>
+            </>
+          )}
+        </div>
+        {rehNote && <p className="ob-banner-sub">{rehNote}</p>}
       </div>
 
       <div className="ob-tabs">

@@ -88,11 +88,23 @@ async function deliverTracked({ to, subject, html }) {
   return { messageId: created.id, conversationId: created.conversationId, internetMessageId: created.internetMessageId };
 }
 
-// Real prospect send. Refuses unless the kill switch is explicitly off. This is
-// the production gate and stays on by default. On a send it returns the message
-// identifiers so the reply poller can correlate.
+// Whether the kill switch blocks a send to this address. The invariant: with
+// the kill switch on, mail can only ever reach the internal allowlist, and
+// only while test sends are enabled. That lets a rehearsal run the real
+// tracked send path to a teammate while every prospect stays unreachable.
+// Pure over the environment, so the invariant is testable.
+export function blockedByKillSwitch(to) {
+  if ((process.env.MAIL_KILL_SWITCH || 'on') === 'off') return false;
+  const internalOk = (process.env.OUTBOUND_TEST_SENDS || 'off') === 'on' && isTestRecipient(to);
+  return !internalOk;
+}
+
+// Real prospect send. Refuses unless the kill switch allows this recipient
+// (explicitly off, or an internal allowlisted address during the testing
+// window). This is the production gate and stays on by default. On a send it
+// returns the message identifiers so the reply poller can correlate.
 export async function sendMail({ to, subject, html }) {
-  if ((process.env.MAIL_KILL_SWITCH || 'on') !== 'off') {
+  if (blockedByKillSwitch(to)) {
     return { sent: false, reason: 'kill switch on' };
   }
   const ids = await deliverTracked({ to, subject, html });
@@ -101,11 +113,13 @@ export async function sendMail({ to, subject, html }) {
 
 // Threaded reply to an inbound prospect message, for the response drafts. Graph
 // places our text above the quoted thread and sends in the same conversation,
-// exactly as a human reply would look. Gated by the same kill switch as any
-// other prospect send. Returns no message ids (Graph's reply endpoint sends
-// immediately); the conversation id on the inbound message already correlates.
-export async function sendMailReply({ inboundMessageId, html }) {
-  if ((process.env.MAIL_KILL_SWITCH || 'on') !== 'off') {
+// exactly as a human reply would look. Gated by the same kill switch rule as
+// any other prospect send; `to` is the recipient on record, used only for that
+// gate since Graph derives the actual recipient from the thread. Returns no
+// message ids (Graph's reply endpoint sends immediately); the conversation id
+// on the inbound message already correlates.
+export async function sendMailReply({ inboundMessageId, html, to }) {
+  if (blockedByKillSwitch(to)) {
     return { sent: false, reason: 'kill switch on' };
   }
   await graphJson(`/users/${process.env.ENGINE_MAILBOX}/messages/${inboundMessageId}/reply`, {

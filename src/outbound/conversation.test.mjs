@@ -6,7 +6,7 @@ import { followupDelays, followupDueAt, maxSequenceSteps, reSubject, followupGro
 import { looksLikeBounce, decideAction, classifyReply } from './triage.mjs';
 import { responseGroundingText } from './respond.mjs';
 import { renderHandoffPack } from './handoff.mjs';
-import { withFooter, signatureBlock } from '../mail.mjs';
+import { withFooter, signatureBlock, blockedByKillSwitch } from '../mail.mjs';
 import { renderDigest } from '../digest.mjs';
 
 let pass = 0, fail = 0;
@@ -45,6 +45,30 @@ await check('Re: prefixes once and only once', async () => {
   assert(reSubject('Flow control for the Slough scheme') === 'Re: Flow control for the Slough scheme');
   assert(reSubject('Re: Flow control') === 'Re: Flow control', 'no Re: Re:');
   assert(reSubject('RE: shouting') === 'RE: shouting', 'case-insensitive');
+});
+
+await check('a rehearsal thread runs the same cadence in minutes', async () => {
+  const delays = [4, 7];
+  const sent = '2026-07-01T09:00:00Z';
+  const due = followupDueAt(sent, 1, delays, { unit: 'minutes' });
+  assert(due.toISOString() === '2026-07-01T09:04:00.000Z', 'four minutes, not four days');
+  assert(followupDueAt(sent, 3, delays, { unit: 'minutes' }) === null, 'the sequence still ends');
+});
+
+await check('the kill switch invariant: on means internal allowlist only, and only while test sends are on', async () => {
+  const olds = { k: process.env.MAIL_KILL_SWITCH, t: process.env.OUTBOUND_TEST_SENDS, r: process.env.OUTBOUND_TEST_RECIPIENTS, e: process.env.TEAM_EMAILS };
+  process.env.MAIL_KILL_SWITCH = 'on';
+  process.env.OUTBOUND_TEST_SENDS = 'on';
+  process.env.OUTBOUND_TEST_RECIPIENTS = 'js@moonboots.example, james@pct.example';
+  assert(!blockedByKillSwitch('js@moonboots.example'), 'an allowlisted teammate is reachable for the rehearsal');
+  assert(blockedByKillSwitch('prospect@dc.example'), 'a prospect is blocked, always');
+  process.env.OUTBOUND_TEST_SENDS = 'off';
+  assert(blockedByKillSwitch('js@moonboots.example'), 'test sends off means nothing sends at all');
+  process.env.MAIL_KILL_SWITCH = 'off';
+  assert(!blockedByKillSwitch('prospect@dc.example'), 'kill switch off is the live state');
+  for (const [k, v] of [['MAIL_KILL_SWITCH', olds.k], ['OUTBOUND_TEST_SENDS', olds.t], ['OUTBOUND_TEST_RECIPIENTS', olds.r], ['TEAM_EMAILS', olds.e]]) {
+    if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
 });
 
 console.log('\nReply triage decisions (pure, cautious by construction):');

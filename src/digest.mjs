@@ -19,30 +19,34 @@ export async function gatherDigestData() {
             count(*) FILTER (WHERE geo_scope = 'expansion_watch')::int AS watch,
             count(*) FILTER (WHERE signal_type LIKE 'ch\\_%')::int AS filings
      FROM signals WHERE observed_at >= ${week}`)).rows[0];
+  // Rehearsal rows are excluded everywhere: the digest reports the real
+  // pipeline, and a test afternoon must not read as a good week.
   const l = (await pool.query(
     `SELECT count(*) FILTER (WHERE created_at >= ${week})::int AS created,
             count(*) FILTER (WHERE updated_at >= ${week} AND created_at < ${week})::int AS refreshed
-     FROM leads`)).rows[0];
+     FROM leads WHERE campaign <> 'rehearsal'`)).rows[0];
   const d = (await pool.query(
     `SELECT count(*) FILTER (WHERE status = 'draft')::int AS waiting,
             count(*) FILTER (WHERE status = 'approved')::int AS approved,
             count(*) FILTER (WHERE created_at >= ${week})::int AS drafted_this_week
-     FROM outbound_drafts`)).rows[0];
+     FROM outbound_drafts WHERE campaign <> 'rehearsal'`)).rows[0];
   // The conversation stage: the outcomes that matter, not open rates. Guarded
   // like the studio block so the digest survives a not-yet-migrated database.
   let convo = null;
   try {
     const sends = (await pool.query(
-      `SELECT count(*)::int AS sent FROM outbound_sends WHERE sent AND NOT test_mode AND created_at >= ${week}`)).rows[0];
+      `SELECT count(*)::int AS sent FROM outbound_sends s JOIN outbound_drafts d ON d.id = s.draft_id
+       WHERE s.sent AND NOT s.test_mode AND d.campaign <> 'rehearsal' AND s.created_at >= ${week}`)).rows[0];
     const reps = (await pool.query(
       `SELECT count(*)::int AS replies,
-              count(*) FILTER (WHERE category IN ('interested','question'))::int AS live,
-              count(*) FILTER (WHERE category = 'not_interested')::int AS closed
-       FROM outbound_replies WHERE created_at >= ${week}`)).rows[0];
+              count(*) FILTER (WHERE r.category IN ('interested','question'))::int AS live,
+              count(*) FILTER (WHERE r.category = 'not_interested')::int AS closed
+       FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
+       WHERE d.campaign <> 'rehearsal' AND r.created_at >= ${week}`)).rows[0];
     const goals = (await pool.query(
       `SELECT count(*) FILTER (WHERE meeting_booked_at >= ${week})::int AS meetings,
               count(*) FILTER (WHERE handed_off_at >= ${week})::int AS handoffs
-       FROM leads`)).rows[0];
+       FROM leads WHERE campaign <> 'rehearsal'`)).rows[0];
     convo = { ...sends, ...reps, ...goals };
   } catch { convo = null; }
   // The studio ships separately, so its table may not exist yet; the digest

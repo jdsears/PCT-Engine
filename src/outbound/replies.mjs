@@ -24,8 +24,12 @@ export async function pollReplies(pool, { apply = false, includeTestSends = (pro
   // Real sends only by default. During the internal testing window the flag
   // widens matching to test sends too, so a reply from a teammate's mailbox can
   // demonstrate the replied stage without any prospect being involved.
+  // Real sends first, newest first, so the address fallback in matchReply
+  // lands on a live thread before a stale test send.
   const sent = (await pool.query(
-    `SELECT draft_id, to_email, conversation_id FROM outbound_sends WHERE sent${includeTestSends ? '' : ' AND NOT test_mode'}`)).rows;
+    `SELECT draft_id, to_email, conversation_id, test_mode FROM outbound_sends
+     WHERE sent${includeTestSends ? '' : ' AND NOT test_mode'}
+     ORDER BY test_mode ASC, id DESC`)).rows;
 
   const report = { scanned: messages.length, matched: 0, recorded: 0 };
   let maxReceived = sinceIso;
@@ -41,6 +45,18 @@ export async function pollReplies(pool, { apply = false, includeTestSends = (pro
       [hit.draft_id, m.from, m.subject, m.snippet, m.conversationId, m.id, m.receivedDateTime]);
     if (!ins.rowCount) continue; // already recorded
     report.recorded++;
+    // A reply matched to a TEST send is recorded for visibility and nothing
+    // more: it must never advance a real lead or reach triage, which would
+    // suppress real contacts off the back of a teammate's message. The
+    // rehearsal lane is the full-journey test path; this flag is only the
+    // legacy demonstration.
+    if (hit.test_mode) {
+      await pool.query(
+        `UPDATE outbound_replies SET triaged_at = now(),
+                triage = '{"note":"matched an internal test send; not triaged. Use a rehearsal for the full journey."}'::jsonb
+         WHERE id = $1`, [ins.rows[0].id]);
+      continue;
+    }
     if (hit.draft_id) {
       await pool.query(
         `UPDATE leads SET stage = 'replied', updated_at = now()

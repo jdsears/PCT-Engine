@@ -42,13 +42,15 @@ export function followupDelays() {
 export const maxSequenceSteps = () => 1 + followupDelays().length;
 
 // When the next touch after a send at `step` falls due, or null when the
-// sequence is exhausted. Pure, so the cadence is provable offline.
-export function followupDueAt(sentAtIso, step, delays = followupDelays()) {
+// sequence is exhausted. Pure, so the cadence is provable offline. The unit is
+// days in production and minutes on a rehearsal thread, so the whole sequence
+// can be walked in an afternoon without touching the real cadence.
+export function followupDueAt(sentAtIso, step, delays = followupDelays(), { unit = 'days' } = {}) {
   const delay = delays[step - 1];
   if (!delay) return null;
   const sent = new Date(sentAtIso).getTime();
   if (Number.isNaN(sent)) return null;
-  return new Date(sent + delay * 86_400_000);
+  return new Date(sent + delay * (unit === 'minutes' ? 60_000 : 86_400_000));
 }
 
 // 'Re: ' the previous subject, once. The recipient sees one thread.
@@ -117,7 +119,8 @@ export async function dueFollowups({ now = new Date() } = {}) {
                          AND (r.category IS NULL OR r.category NOT IN ('bounce', 'out_of_office')))`);
   const delays = followupDelays();
   return rows.filter(r => {
-    const due = followupDueAt(r.sent_at, r.sequence_step, delays);
+    const unit = r.campaign === 'rehearsal' ? 'minutes' : 'days';
+    const due = followupDueAt(r.sent_at, r.sequence_step, delays, { unit });
     return due && due.getTime() <= now.getTime();
   });
 }
