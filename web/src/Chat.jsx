@@ -13,9 +13,15 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [configState, setConfigState] = useState(null);
+  const [priceMode, setPriceMode] = useState(false);
+  const [priceReady, setPriceReady] = useState(false);
   const endRef = useRef(null);
   const inputRef = useRef(null);
   useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages, busy]);
+  useEffect(() => {
+    apiFetch('/api/price/status').then(r => r.json())
+      .then(s => setPriceReady(!!s.ready)).catch(() => setPriceReady(false));
+  }, []);
 
   async function send(forced) {
     const q = (forced ?? input).trim();
@@ -62,12 +68,16 @@ export default function Chat() {
               </button>
             </div>
           )}
-          {messages.length === 0 && (
+          {messages.length === 0 && (priceMode ? (
+            <PricePanel onBack={() => setPriceMode(false)} />
+          ) : (
             <Shortcuts
               onConfigure={() => send('build a part number')}
               onPrefill={t => { setInput(t); inputRef.current?.focus(); }}
+              onPrice={() => setPriceMode(true)}
+              priceReady={priceReady}
             />
-          )}
+          ))}
           {messages.map((m, i) => (
             m.role === 'user' ? (
               <div key={i} className="row-user"><div className="ububble">{m.text}</div></div>
@@ -153,12 +163,77 @@ const SHORTCUTS = [
     sub: 'Sales pricing from PCT price lists. Available once the lists are loaded.', kind: 'disabled' },
 ];
 
-function Shortcuts({ onConfigure, onPrefill }) {
+// The price panel: a part number in, the loaded sell prices out. Deliberately
+// not a chat turn, no model sits anywhere in this path; the answer is only
+// ever what the ingested lists say, or an honest nothing.
+function PricePanel({ onBack }) {
+  const [q, setQ] = useState('');
+  const [res, setRes] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const run = async (e) => {
+    e?.preventDefault();
+    const query = q.trim();
+    if (!query || busy) return;
+    setBusy(true);
+    try {
+      const r = await apiFetch(`/api/price?q=${encodeURIComponent(query)}`);
+      const json = await r.json();
+      setRes(r.ok ? json : { error: json.error || 'lookup failed' });
+    } catch { setRes({ error: 'The lookup is not available right now.' }); }
+    setBusy(false);
+  };
+  const sym = { GBP: '£', EUR: '€', USD: '$' };
+  return (
+    <div className="cp-landing">
+      <div className="chat-top">
+        <button className="back-shortcuts" onClick={onBack} aria-label="Back to shortcuts">
+          <ChevronLeft /> Back to shortcuts
+        </button>
+      </div>
+      <div className="cp-eyebrow">Look up a price</div>
+      <form className="price-form" onSubmit={run}>
+        <input className="price-input" placeholder="Part number, for example SEM203/P" value={q}
+          onChange={e => setQ(e.target.value)} autoFocus />
+        <button className="ob-btn primary" disabled={busy || !q.trim()}>Look up</button>
+      </form>
+      {res?.error && <p className="muted-note">{String(res.error)}</p>}
+      {res && !res.error && res.matches.length === 0 && (
+        <p className="muted-note">
+          Nothing in the loaded lists matches "{res.query}". Lines priced per order are quoted through the mega sheet, not here, and a price that is not in the lists is never guessed.
+        </p>
+      )}
+      {res && !res.error && res.matches.length > 0 && (
+        <div className="price-results">
+          {!res.exact && <p className="muted-note">No exact match. The closest part numbers:</p>}
+          {res.matches.map((m, i) => (
+            <div className="card price-row" key={i}>
+              <div className="price-part">{m.partNumber}</div>
+              {m.description && <div className="price-desc">{m.description}</div>}
+              <div className="price-prices">
+                {['GBP', 'EUR', 'USD'].filter(c => m.prices[c] != null).map(c => (
+                  <span className="pill" key={c}>{sym[c]}{Number(m.prices[c]).toLocaleString('en-GB')}</span>
+                ))}
+              </div>
+              <div className="price-meta">
+                Sell price from the {m.sourceTab} tab of the {m.listName}{m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}.
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Shortcuts({ onConfigure, onPrefill, onPrice, priceReady }) {
+  const cards = SHORTCUTS.map(s => (s.id === 'price' && priceReady)
+    ? { ...s, kind: 'price', sub: 'Sell prices from the loaded PCT price lists, exact and cited.' }
+    : s);
   return (
     <div className="cp-landing">
       <div className="cp-eyebrow">Start here</div>
       <div className="cp-shortcuts">
-        {SHORTCUTS.map(s => s.kind === 'disabled' ? (
+        {cards.map(s => s.kind === 'disabled' ? (
           <div key={s.id} className="cp-card disabled" aria-disabled="true">
             <div className="cp-card-top">
               <span className="cp-card-icon">{ICONS[s.icon]()}</span>
@@ -169,7 +244,7 @@ function Shortcuts({ onConfigure, onPrefill }) {
           </div>
         ) : (
           <button key={s.id} className="cp-card"
-            onClick={() => (s.kind === 'configure' ? onConfigure() : onPrefill(s.prompt))}>
+            onClick={() => (s.kind === 'configure' ? onConfigure() : s.kind === 'price' ? onPrice() : onPrefill(s.prompt))}>
             <div className="cp-card-top">
               <span className="cp-card-icon">{ICONS[s.icon]()}</span>
               <span className="cp-card-arrow"><ChevronRight /></span>

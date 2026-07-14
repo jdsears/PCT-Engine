@@ -20,6 +20,7 @@ import { sweepFollowups } from './outbound/followups.mjs';
 import { draftResponse } from './outbound/respond.mjs';
 import { gatherHandoffData, renderHandoffPack } from './outbound/handoff.mjs';
 import { startRehearsal, rehearsalStatus, endRehearsal } from './outbound/rehearsal.mjs';
+import { lookupPrice, priceStatus } from './pricing/lookup.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
@@ -1166,6 +1167,31 @@ app.post('/api/outbound/leads/:id/suppress', async (req, res) => {
       `UPDATE leads SET stage = 'closed', updated_at = now() WHERE id = $1 RETURNING id`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'lead not found' });
     res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Price lookup: deterministic, no model in the path, and prices never touch
+// the embedding pipeline. The co-pilot card appears only when the switch is
+// on and the lists are loaded; the switch stays off until James has verified
+// a sample of stored prices against what he would quote.
+app.get('/api/price/status', async (_req, res) => {
+  try {
+    const s = await priceStatus();
+    const enabled = (await kvGet('pricelookup_enabled')) === 'on';
+    res.json({ ...s, enabled, ready: enabled && s.parts > 0 });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.post('/api/price/toggle', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('pricelookup_enabled', enabled ? 'on' : 'off');
+    res.json({ enabled });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.get('/api/price', async (req, res) => {
+  try {
+    if ((await kvGet('pricelookup_enabled')) !== 'on') return res.status(409).json({ error: 'price lookup is switched off' });
+    res.json(await lookupPrice(String(req.query.q || '')));
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
