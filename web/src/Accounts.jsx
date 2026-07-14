@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TYPE_LABELS, fmtClockDay, fmtMonthYear } from './labels.js';
+import { TYPE_LABELS, fmtClockDay, fmtMonthYear, companyLabel } from './labels.js';
 import { CloseIcon } from './icons.jsx';
 import { apiFetch } from './api.js';
 
@@ -36,7 +36,7 @@ function DetailPanel({ id, isMobile, onClose }) {
           <>
             <div className="panel-head">
               <div className="panel-id">
-                <div className="panel-name">{detail.name}</div>
+                <div className="panel-name">{companyLabel(detail.name)}</div>
                 <div className="panel-pills">
                   <span className="pill">{typeLabel(detail.type)}</span>
                   {detail.region && <span className="pill">{detail.region}</span>}
@@ -144,7 +144,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
           </div>
           {companies.map(c => (
             <button className="acc-grid acc-row" key={c.id} onClick={() => setSelected(c.id)}>
-              <div className="acc-name">{c.name}</div>
+              <div className="acc-name">{companyLabel(c.name)}</div>
               <div className="acc-dim">{typeLabel(c.type)}</div>
               <div className="acc-dim">{c.region || '—'}</div>
               <div className={`acc-flagged${c.domain ? '' : ' missing'}`}>
@@ -169,7 +169,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
           {companies.map(c => (
             <button className="acc-card" key={c.id} onClick={() => setSelected(c.id)}>
               <div className="acc-card-top">
-                <div className="acc-card-name">{c.name}</div>
+                <div className="acc-card-name">{companyLabel(c.name)}</div>
                 <span className="acc-card-score">{c.score ?? '—'}</span>
               </div>
               <ScoreBar score={c.score} wide />

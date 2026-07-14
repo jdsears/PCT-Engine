@@ -64,14 +64,46 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
   return report;
 }
 
+// LinkedIn headlines arrive as stored: often "Role at Company | Sector | Tag"
+// with a tail of credential letters. For the note we want the role alone: keep
+// the first segment (pipes, middots and spaced dashes are separators), cut at
+// " at ", then strip trailing credential tokens (short, multi-capital: BEng,
+// MSc, MCIBSE).
+export function cleanRole(roleTitle) {
+  let r = String(roleTitle || '').trim()
+    .split(/\s*\|\s*|\s*·\s*|\s+[–—-]\s+/)[0]
+    .split(/\s+at\s+/i)[0]
+    .replace(/[.,;\s]+$/g, '');
+  const credential = t => /^[A-Za-z]{2,8}\.?$/.test(t) && (t.match(/[A-Z]/g) || []).length >= 2;
+  let parts = r.split(/,\s*/);
+  while (parts.length > 1 && credential(parts[parts.length - 1])) parts.pop();
+  r = parts.join(', ');
+  let words = r.split(/\s+/);
+  while (words.length > 1 && credential(words[words.length - 1])) words.pop();
+  r = words.join(' ').replace(/[.,;\s]+$/g, '');
+  return r.length > 60 ? '' : r;
+}
+
+// Registered names are upper case in the register. For prose, title-case the
+// all-caps ones and drop the corporate suffix; tokens with digits or three or
+// fewer letters (UK, DC01, EMEA initialisms) are left exactly as stored.
+export function companyDisplay(name) {
+  let n = String(name || '').trim().replace(/[\s,]+(LIMITED|LTD\.?|PLC|LLP)$/i, '');
+  if (n && n === n.toUpperCase()) {
+    n = n.split(/\s+/).map(t =>
+      (/^[A-Z]{4,}$/.test(t) ? t.charAt(0) + t.slice(1).toLowerCase() : t)).join(' ');
+  }
+  return n;
+}
+
 // The suggested connection note: deterministic, in voice, and under LinkedIn's
 // three-hundred character invite limit by construction. No model call, so the
 // queue costs nothing to browse, and the sender edits before sending anyway.
 export function connectNote(contact, companyName) {
   const first = String(contact.full_name || '').trim().split(/\s+/)[0] || 'there';
-  const work = contact.role_title
-    ? `your ${String(contact.role_title).trim()} role at ${companyName}`
-    : `your work at ${companyName}`;
-  const note = `Hi ${first}, I look after flow control for data centre cooling at PCT, supplier of the Marwin and Steriflow valve ranges. Given ${work}, I thought it worth connecting.`;
-  return note.length <= 300 ? note : `Hi ${first}, I look after flow control for data centre cooling at PCT. Given your work at ${companyName}, I thought it worth connecting.`;
+  const company = companyDisplay(companyName);
+  const role = cleanRole(contact.role_title);
+  const work = role ? `your ${role} role at ${company}` : `your work at ${company}`;
+  const note = `Hi ${first}, I'm the MD at PCT, supplier of the Marwin and Steriflow valve ranges used across some of the largest data centre builds. Given ${work}, I thought it worth connecting.`;
+  return note.length <= 300 ? note : `Hi ${first}, I'm the MD at PCT, supplier of the Marwin and Steriflow valve ranges. Given your work at ${company}, I thought it worth connecting.`;
 }

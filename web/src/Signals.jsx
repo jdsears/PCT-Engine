@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SIGNAL_TYPE_LABELS, fmtClockDay } from './labels.js';
+import { SIGNAL_TYPE_LABELS, fmtClockDay, companyLabel } from './labels.js';
 import { apiFetch } from './api.js';
 
 const FILTERS = [
@@ -48,7 +48,7 @@ export default function Signals({ onOpenCompany }) {
               <div className="signal-title">{s.title}</div>
               <div className="signal-foot">
                 {s.company ? (
-                  <button className="signal-company" onClick={() => onOpenCompany(s.companyId)}>{s.company}</button>
+                  <button className="signal-company" onClick={() => onOpenCompany(s.companyId)}>{companyLabel(s.company)}</button>
                 ) : (
                   <span className="signal-nocompany"><span className="flag-dot" />No matched company</span>
                 )}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from './api.js';
+import { companyLabel } from './labels.js';
 
 const STAGE_DEFS = [
   { id: 'sourced', label: 'Sourced', left: '6%' },
@@ -150,7 +151,7 @@ export default function Pipeline({ isMobile }) {
             {leads.map((l, i) => (
               <div className="lead-row" key={i}>
                 <div className="lead-main">
-                  <div className="lead-company">{l.company}</div>
+                  <div className="lead-company">{companyLabel(l.company)}</div>
                   <div className="lead-contact">{l.contact || 'No contact yet'}</div>
                 </div>
                 <div className="lead-side">

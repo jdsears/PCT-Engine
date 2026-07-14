@@ -16,6 +16,8 @@ import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
+import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
+import { CapReached, AccountUnhealthy } from './research/unipile.mjs';
 import { generateLiPosts, connectNote } from './studio/liPosts.mjs';
 
 const app = express();
@@ -694,12 +696,47 @@ app.get('/api/studio/connects', async (_req, res) => {
        FROM contacts ct JOIN companies c ON c.id = ct.company_id
        WHERE ct.in_decision_orbit AND NOT ct.suppressed AND ct.linkedin_url IS NOT NULL AND ct.li_invited_at IS NULL
        ORDER BY c.icp_score DESC NULLS LAST, ct.full_name LIMIT 50`);
-    res.json({ connects: rows.map(ct => ({
-      id: ct.id, name: ct.full_name, role: ct.role_title, linkedin: ct.linkedin_url,
-      company: ct.company, score: ct.score,
-      note: connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company),
-    })) });
+    res.json({
+      inviteReady: inviteReady(),
+      invitesToday: inviteReady() ? await invitesUsedToday() : 0,
+      inviteCap: inviteDailyCap(),
+      connects: rows.map(ct => ({
+        id: ct.id, name: ct.full_name, role: ct.role_title, linkedin: ct.linkedin_url,
+        company: ct.company, score: ct.score,
+        note: connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company),
+      })),
+    });
   } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The sanctioned send: one invite, one named contact, one human click. The
+// eligibility gate runs first, then the strict invites-per-day cap, then the
+// two ledgered Unipile calls; success records the invite so the queue never
+// offers the person again. An account-health error reports plainly and stops.
+app.post('/api/studio/connects/:id/send-invite', async (req, res) => {
+  try {
+    if (!inviteReady()) return res.json({ sent: false, reason: 'Unipile is not configured on this service' });
+    const { rows } = await pool.query(
+      `SELECT ct.*, c.name AS company FROM contacts ct JOIN companies c ON c.id = ct.company_id WHERE ct.id = $1`,
+      [req.params.id]);
+    const ct = rows[0];
+    const gate = canInvite(ct);
+    if (!gate.ok) return res.status(409).json({ sent: false, reason: gate.reason });
+    const used = await invitesUsedToday();
+    if (used >= inviteDailyCap()) {
+      return res.json({ sent: false, reason: `today's invite cap is reached (${used} of ${inviteDailyCap()}); the queue keeps until tomorrow` });
+    }
+    const note = String((req.body || {}).note || '').slice(0, 300) || connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company);
+    const r = await sendConnectionInvite(ct, note);
+    if (r.sent) {
+      await pool.query(`UPDATE contacts SET li_invited_at = now(), li_invite_note = $2 WHERE id = $1`, [ct.id, note]);
+    }
+    res.json(r);
+  } catch (e) {
+    if (e instanceof AccountUnhealthy) return res.json({ sent: false, reason: `LinkedIn account health problem reported; everything stopped, nothing retried: ${String(e.message).slice(0, 200)}` });
+    if (e instanceof CapReached) return res.json({ sent: false, reason: 'the daily Unipile call cap is reached; more tomorrow' });
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 // Marked by the human after they have sent the invite from their own account,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from './api.js';
-import { fmtClockDay } from './labels.js';
+import { fmtClockDay, companyLabel } from './labels.js';
 
 const FILTERS = [
   { id: 'draft', label: 'To review' },
@@ -53,7 +53,7 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
   return (
     <div className="card ob-card">
       <div className="ob-head">
-        <div className="ob-co">{draft.company}</div>
+        <div className="ob-co">{companyLabel(draft.company)}</div>
         <div className="ob-pills">
           {draft.score != null && <span className="pill">ICP {draft.score}</span>}
           {draft.region && <span className="pill">{draft.region}</span>}
@@ -132,7 +132,7 @@ function ReplyCard({ reply }) {
   return (
     <div className="card ob-card">
       <div className="ob-head">
-        <div className="ob-co">{reply.company || reply.from || 'Reply'}</div>
+        <div className="ob-co">{companyLabel(reply.company) || reply.from || 'Reply'}</div>
         {reply.receivedAt && <span className="pill">{fmtClockDay(reply.receivedAt)}</span>}
       </div>
       <div className="ob-to">From {reply.from || 'unknown sender'}</div>
