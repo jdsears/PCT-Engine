@@ -566,10 +566,23 @@ Migration 018 adds the `prices` table, holding customer sell prices only.
   AND the switch on the Health page is on. The switch stays off until James
   has verified a sample of stored prices against what he would quote.
 
-Phase 2, agreed and not yet built: the valve lines (Marwin, Steriflow and the
-other Richards lists), where the customer price is computed at ingest from
-the supplier list and the markup rules, storing only the finished sell price,
-model by model, each verified before it arms.
+The valve lines (Marwin, Steriflow and the other Richards brands, plus
+Equilibar) are priced per enquiry with the margin set per customer, so no
+fixed customer price exists to store. A price query naming one of them
+answers with the process instead (`src/pricing/quotedLines.mjs`, plain data
+taken from the mega sheet's own note pad): where to send the enquiry, and
+that the quoted price goes through the calculator. The routing only fires
+when the stored lists return nothing, so a real part is never shadowed, and
+no margin or discount appears in any note.
+
+A completed part-builder code carries its pricing answer on the completion
+card when the price lookup switch is on: a stored sell price where one
+exists, or the enquiry process for the quoted lines, never a guessed number.
+
+Phase 2, only if James confirms any line is sold at a standard transform off
+the published list rather than quoted: parse that line's list and compute the
+sell price at ingest, storing only the finished figure, verified against his
+numbers before it arms.
 
 ## Usage logging and insights
 

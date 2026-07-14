@@ -80,6 +80,9 @@ button, input { font: inherit; }
 .price-desc { font-size: 13px; color: var(--slate); margin-top: 2px; }
 .price-prices { display: flex; gap: 6px; margin-top: 8px; }
 .price-meta { font-size: 12px; color: var(--slate); margin-top: 8px; }
+.pnprice { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pnprice-quoted { display: block; }
+.pnprice-src { font-size: 12px; color: var(--slate); }
 .cp-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); margin: 0 2px 12px; }
 .cp-shortcuts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .cp-card { display: flex; flex-direction: column; gap: 6px; text-align: left; background: #FFFFFF; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }

@@ -40,6 +40,7 @@ export default function Chat() {
       setMessages(m => [...m, {
         role: 'copilot', text: data.answer, citations: data.citations || [],
         options: data.configOptions || null, config: data.configurator || null,
+        pricing: data.pricing || null,
         logId: data.queryLogId ?? null,
       }]);
     } catch {
@@ -85,7 +86,7 @@ export default function Chat() {
               <div key={i} className="row-copilot">
                 <div className="acard">
                   {m.config ? (
-                    <PartNumberCard config={m.config} />
+                    <PartNumberCard config={m.config} pricing={m.pricing} />
                   ) : (
                     <div className="atext"><ReactMarkdown>{stripEnumeration(m.text, m.options)}</ReactMarkdown></div>
                   )}
@@ -197,7 +198,14 @@ function PricePanel({ onBack }) {
         <button className="ob-btn primary" disabled={busy || !q.trim()}>Look up</button>
       </form>
       {res?.error && <p className="muted-note">{String(res.error)}</p>}
-      {res && !res.error && res.matches.length === 0 && (
+      {res && !res.error && res.matches.length === 0 && res.quoted && (
+        <div className="card price-row">
+          <div className="eyebrow">Priced per enquiry</div>
+          <div className="price-part">{res.quoted.line}</div>
+          <div className="price-desc">{res.quoted.note}</div>
+        </div>
+      )}
+      {res && !res.error && res.matches.length === 0 && !res.quoted && (
         <p className="muted-note">
           Nothing in the loaded lists matches "{res.query}". Lines priced per order are quoted through the mega sheet, not here, and a price that is not in the lists is never guessed.
         </p>
@@ -303,7 +311,9 @@ function OptionList({ options, disabled, onPick }) {
 
 // The completed part number: the code in mono, a per-position decode, and the
 // source line. The code is the deliverable; the table is the audit trail.
-function PartNumberCard({ config }) {
+function PartNumberCard({ config, pricing }) {
+  const sym = { GBP: '£', EUR: '€', USD: '$' };
+  const priced = pricing?.matches?.length > 0 ? pricing.matches[0] : null;
   return (
     <div className="pncard">
       <div className="pncap">Part number</div>
@@ -319,7 +329,21 @@ function PartNumberCard({ config }) {
           ))}
         </tbody>
       </table>
-      <div className="pnsource">Per the ordering matrix in {config.citation}. Pricing is a separate step, handled later.</div>
+      {priced ? (
+        <div className="pnprice">
+          <span className="eyebrow">Sell price</span>
+          {['GBP', 'EUR', 'USD'].filter(c => priced.prices[c] != null).map(c => (
+            <span className="pill" key={c}>{sym[c]}{Number(priced.prices[c]).toLocaleString('en-GB')}</span>
+          ))}
+          <span className="pnprice-src">from the {priced.sourceTab} tab of the {priced.listName}</span>
+        </div>
+      ) : pricing?.quoted ? (
+        <div className="pnprice pnprice-quoted">
+          <span className="eyebrow">Pricing, per enquiry</span>
+          <div className="price-desc">{pricing.quoted.note}</div>
+        </div>
+      ) : null}
+      <div className="pnsource">Per the ordering matrix in {config.citation}.{priced || pricing?.quoted ? '' : ' Pricing is a separate step, handled later.'}</div>
     </div>
   );
 }

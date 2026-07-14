@@ -1,5 +1,6 @@
 import { pool } from '../db.mjs';
 import { normKey } from './parseMega.mjs';
+import { quotedLine } from './quotedLines.mjs';
 
 // The deterministic price lookup: a plain indexed query, no model anywhere in
 // the path. Exact match on the normalised key first; failing that, a prefix
@@ -31,7 +32,11 @@ export async function lookupPrice(query, { limit = 8 } = {}) {
   const prefix = await pool.query(
     `SELECT product_line, part_number, norm_key, description, currency, sell_price, list_name, source_tab, effective_date
      FROM prices WHERE norm_key LIKE $1 || '%' ORDER BY norm_key LIMIT $2`, [key, limit * 3]);
-  return { query, exact: false, matches: groupRows(prefix.rows).slice(0, limit) };
+  const matches = groupRows(prefix.rows).slice(0, limit);
+  // No stored price, but the query names a quoted line: answer with the
+  // process that produces the price, never with a number.
+  const quoted = matches.length === 0 ? quotedLine(query) : null;
+  return { query, exact: false, matches, ...(quoted ? { quoted } : {}) };
 }
 
 export async function priceStatus() {
