@@ -2,7 +2,7 @@
 // stand-in model is injected so the full draft -> check -> revise pipeline runs
 // without a network or a key. The case that matters most is the planted
 // fabrication being caught and surfaced, never stored as clean.
-import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers } from './draft.mjs';
+import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks } from './draft.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 import { voiceGate } from '../answer.mjs';
 
@@ -59,6 +59,32 @@ await check('a planted fabrication is CAUGHT and surfaced, never stored clean', 
   const out = await composeDraft(grounding, { callModel: model });
   assert(out.flags.length > 0, 'the fabrication must be flagged');
   assert(out.flags.some(f => /Dublin/.test(f)), `the Dublin fabrication must be surfaced, got ${JSON.stringify(out.flags)}`);
+});
+
+await check('an invented sign-off with a web address BLOCKS until removed', async () => {
+  // The live failure: the drafter signed off as the PCT sales team with an
+  // invented website. Any address except the booking link must block approval.
+  const model = fakeModel({
+    draft: { subject: 'Flow control for the Slough scheme', body: 'You secured planning in Slough.\n\nWorth a short call.\n\nPCT Sales Team\nwww.pct.co.uk', claims: [{ text: 'planning secured', supportedBy: 'signal' }] },
+    check: { claims: [{ text: 'planning secured', supported: true, by: 'signal' }] },
+  });
+  const out = await composeDraft(grounding, { callModel: model });
+  assert(out.flags.some(f => /^blocking: web address/.test(f) && /pct\.co\.uk/.test(f)),
+    `the invented address must block, got ${JSON.stringify(out.flags)}`);
+});
+
+await check('the booking link is the one permitted address; part numbers never false-positive', async () => {
+  const old = process.env.MEETING_LINK;
+  process.env.MEETING_LINK = 'https://book.example/pct';
+  const model = fakeModel({
+    draft: { subject: 'Slough', body: 'You secured planning in Slough. A short call may help: https://book.example/pct', claims: [] },
+    check: { claims: [] },
+  });
+  const out = await composeDraft(grounding, { callModel: model });
+  assert(!out.flags.some(f => /web address/.test(f)), `the booking link must pass, got ${JSON.stringify(out.flags)}`);
+  if (old === undefined) delete process.env.MEETING_LINK; else process.env.MEETING_LINK = old;
+  assert(findLinks('The CV3861-10 at 3.5 bar suits the Mark 96.').length === 0, 'codes and figures are not links');
+  assert(findLinks('see www.pct.co.uk or pctflow.com').length === 2, 'www and bare domains are both caught');
 });
 
 await check('a successful revision clears the flag and drops the invented claim', async () => {
