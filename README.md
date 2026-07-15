@@ -335,6 +335,16 @@ Rows enriched in the last thirty days are never overwritten. Findymail email
 discovery inside the run requires `EMAIL_DISCOVERY=on` and stays off until
 Andy's curated pack is applied.
 
+The engine can also run the people search itself: with the people search
+switch on the Health page on, each cycle searches a tiny batch of unsearched
+named accounts (`ENGINE_PEOPLE_SEARCH_LIMIT`, default 2), highest score
+first, through the same `findContacts`, queue, pacing, ledger, daily cap and
+thirty-day cooldown as the manual script. It runs before email discovery so
+new orbit contacts get their addresses in the same cycle. Because it works
+the connected LinkedIn account unattended, an account-health error switches
+the feature off by itself and emails the team rather than letting the
+schedule retry.
+
 Because discovered rows are not re-touched for thirty days, a change to the
 orbit titles does not re-classify the contacts already on file. After editing
 `orbitRules.mjs`, run `node scripts/remark-orbit.mjs` to recompute the orbit

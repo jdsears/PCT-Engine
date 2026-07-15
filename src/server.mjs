@@ -22,6 +22,7 @@ import { gatherHandoffData, renderHandoffPack } from './outbound/handoff.mjs';
 import { startRehearsal, rehearsalStatus, endRehearsal } from './outbound/rehearsal.mjs';
 import { lookupPrice, priceStatus } from './pricing/lookup.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
+import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
 import { CapReached, AccountUnhealthy } from './research/unipile.mjs';
@@ -499,6 +500,7 @@ async function engineStatus() {
   return {
     enabled, running: engineRunning,
     autoDiscover: (await kvGet('autodiscover_enabled')) === 'on',
+    autoPeople: (await kvGet('autopeople_enabled')) === 'on',
     intervalHours: ENGINE_INTERVAL_MS / 3600_000,
     lastRun,
     keys: {
@@ -516,6 +518,20 @@ async function runEngineOnce(trigger) {
   const startedAt = new Date().toISOString();
   try {
     const r = await runResearch({ log: m => console.log('[engine]', m) });
+    // With the people search on, a tiny batch of unsearched named accounts
+    // gets its specifiers found each cycle, before email discovery so the new
+    // orbit contacts can have their addresses resolved in the same pass. It
+    // runs on James's account, so an account-health error stands the feature
+    // down rather than letting the schedule knock again.
+    let people = null;
+    if ((await kvGet('autopeople_enabled')) === 'on') {
+      people = await discoverPeople({ log: m => console.log('[people]', m) });
+      if (people.unhealthy) {
+        await kvSet('autopeople_enabled', 'off');
+        await sendTeamNote('LinkedIn account health stopped the people search',
+          `Unipile reported an account health problem during the engine's people search, so the automatic search has switched itself off and nothing will retry.\n\n${people.unhealthy}\n\nCheck the LinkedIn account (a login prompt or checkpoint usually explains it), then turn the switch back on from the Health page.`);
+      }
+    }
     // With auto email discovery on, decision makers found this cycle (and any
     // backlog) get their emails resolved before drafting, capped per cycle so
     // the Findymail spend stays bounded. A verified email is never re-bought.
@@ -531,6 +547,10 @@ async function runEngineOnce(trigger) {
       matched: r.newsMatched, scored: r.scored,
       leadsCreated: r.leadsCreated, leadsUpdated: r.leadsUpdated,
       awaitingMatch: r.awaitingMatch,
+      peopleSearched: people ? people.companies : undefined,
+      peopleFound: people ? people.created : undefined,
+      peopleOrbit: people ? people.orbit : undefined,
+      peopleStopped: people?.unhealthy ? 'account health' : people?.capStopped ? 'daily cap' : undefined,
       emailsResolved: discovery ? discovery.resolved : undefined,
       emailCredits: discovery ? discovery.credits : undefined,
     });
@@ -682,6 +702,17 @@ app.post('/api/engine/autodiscover', async (req, res) => {
   try {
     const enabled = (req.body || {}).enabled === true;
     await kvSet('autodiscover_enabled', enabled ? 'on' : 'off');
+    res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The people search switch: when on, each engine cycle finds specifiers for a
+// tiny batch of unsearched named accounts through the LinkedIn lane. It works
+// James's account, so it stands itself down on any account-health error.
+app.post('/api/engine/autopeople', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('autopeople_enabled', enabled ? 'on' : 'off');
     res.json(await engineStatus());
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
