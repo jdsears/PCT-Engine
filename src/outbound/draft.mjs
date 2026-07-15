@@ -74,7 +74,8 @@ const DRAFT_SYSTEM =
   "POSITIONING RULE: open a conversation about a trusted range, not a data sheet for one valve. Position the Marwin and Steriflow control valve ranges as suited to and trusted in the application. Do NOT lead on a single part number, and do NOT assert any part-specific specification in a cold open, no pressure rating, no material suitability, no temperature figure. Specifics belong in a live conversation, not a first approach. " +
   "TRACK RECORD: you may state, confidently and in general form, that Marwin and Steriflow control valves are already used across some of the largest data centre builds. CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. No 'a major US hyperscaler', no 'a well-known search company', no named operator, nothing that points to a specific customer. " +
   "VOICE: plain technical British English, calm and restrained, one engineer flagging something relevant to a peer then getting out of the way. No opening pleasantries such as hoping the email finds them well, no hype, no superlatives, no closing pressure. No em dashes or en dashes, never the word genuinely, no exclamation marks. " +
-  "STRUCTURE, four or five sentences total: an opening chosen by the grounding (if it gives a signal to open on, open on that event the way a person would; otherwise open on profile fit as the grounding directs, and do not mention any filing or signal); one line positioning the Marwin and Steriflow control valve ranges as trusted for data centre cooling, including the general track record across some of the largest data centre builds, with no named customer and no part-specific spec; a single light specific ask (a short call, or whether they are specifying flow control on the project); a plain sign-off as the PCT sales team. " +
+  "STRUCTURE, four or five sentences total: an opening chosen by the grounding (if it gives a signal to open on, open on that event the way a person would; otherwise open on profile fit as the grounding directs, and do not mention any filing or signal); one line positioning the Marwin and Steriflow control valve ranges as trusted for data centre cooling, including the general track record across some of the largest data centre builds, with no named customer and no part-specific spec; a single light specific ask (a short call, or whether they are specifying flow control on the project). " +
+  "NO SIGN-OFF, absolute: the email ends on the ask. No name, no team line, no company line, no web address, no phone number, no contact details of any kind; the sender's signature is appended by the system after approval, and a web address you write would be invented. " +
   "Every factual sentence must trace to a grounding item. " +
   "Return strict JSON only, no preamble: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|range|contact\"}]}. The body is plain text, short paragraphs separated by a blank line, no Markdown.";
 
@@ -123,6 +124,21 @@ async function reviseDraft(draft, grounding, unsupported, { callModel = callClau
 }
 
 function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// Web addresses in a draft body. The drafters are told the email ends on the
+// ask and the signature owns identity, so any address a draft carries is
+// either invented (the model once wrote www.pct.co.uk, which is not PCT's
+// site) or copied from a grounding source that has no place in a prospect
+// email. Only the configured booking link is permitted. TLD-bounded so part
+// numbers and figures never false-positive.
+const LINK_RE = /https?:\/\/[^\s)>,;]+|www\.[^\s)>,;]+|\b[a-z0-9][a-z0-9-]*\.(?:com|co\.uk|org\.uk|net|org|io|ai|uk|de|fr|eu)(?:\/[^\s)>,;]*)?/gi;
+export function findLinks(text) {
+  return [...new Set(String(text || '').match(LINK_RE) || [])];
+}
+const sameLink = (a, b) => {
+  const norm = s => String(s || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
+  return norm(a) === norm(b) || (norm(b) && norm(a).startsWith(norm(b)));
+};
 
 // Supplier-naming guardrail on the final text: redact any blocked (non-nameable)
 // supplier name the grounding carried, the same policy the co-pilot applies.
@@ -176,10 +192,15 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
   // A named end customer is a blocking fault: the track record is general, the
   // operator is never named. The "blocking" prefix makes the review refuse approval.
   const named = [...new Set([...flagEndCustomers(b.text, grounding.company?.name), ...flagEndCustomers(s.text, grounding.company?.name)])];
+  // Any web address except the booking link blocks approval until removed:
+  // the signature owns identity, and an address the model wrote is invented.
+  const meetingLink = String(process.env.MEETING_LINK || '').trim();
+  const links = findLinks(`${s.text}\n${b.text}`).filter(u => !(meetingLink && sameLink(u, meetingLink)));
   const flags = [
     ...check.unsupported,
     ...redacted.map(n => `supplier name redacted: ${n}`),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
+    ...links.map(u => `blocking: web address in the draft (${u}); remove it, the signature owns identity and only the booking link may appear`),
   ];
   return { subject: s.text, body: b.text, model: draft.model, claims: draft.claims, flags };
 }

@@ -132,6 +132,7 @@ await check('prospect mail carries a signature and a plain opt-out line', async 
   process.env.SENDER_TITLE = 'Sales director';
   const out = withFooter('Short body.');
   assert(out.includes('James Blythe') && out.includes('Sales director') && out.includes('Premier Control Technologies'), 'identity present');
+  assert(out.includes('pctflow.com'), 'the real website, never an invented one');
   assert(out.includes('reply no thanks'), 'opt-out line present');
   assert(!/[—–!]/.test(out), 'no banned marks');
   process.env.SENDER_SIGNATURE = 'Custom block';

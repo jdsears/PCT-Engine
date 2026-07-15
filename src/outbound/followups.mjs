@@ -65,6 +65,7 @@ const FOLLOWUP_SYSTEM =
   "CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. No part-specific spec claims. " +
   "VOICE: plain technical British English, calm, an engineer briefly re-raising something with a peer. No em dashes or en dashes, never the word genuinely, no exclamation marks, no pleasantries, no pressure. " +
   "STRUCTURE, two or three sentences: a fresh, plain angle on why it is worth a look, drawn from the grounding rather than a restatement of the whole first email; the same single light ask (a short call, or whether they are specifying flow control on the project). Do not apologise for writing again. " +
+  "NO SIGN-OFF, absolute: the email ends on the ask. No name, no team or company line, no web address, no contact details; the signature is appended by the system. " +
   "Return strict JSON only: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|range|contact|previous_email\"}]}. The body is plain text, no Markdown.";
 
 // The grounding a follow-up may draw on: everything the cold open could use,

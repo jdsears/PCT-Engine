@@ -43,6 +43,7 @@ export function signatureBlock() {
   if (name) lines.push(name);
   if (title) lines.push(title);
   lines.push('Premier Control Technologies');
+  lines.push('pctflow.com');
   return lines.join('\n');
 }
 
