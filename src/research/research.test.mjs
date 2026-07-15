@@ -5,6 +5,7 @@
 import { matchOperator, normalizeTokens } from './match.mjs';
 import { classifySignal } from './relevance.mjs';
 import { shouldRun } from './schedule.mjs';
+import { inOrbit } from './orbitRules.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -157,6 +158,23 @@ await check('the engine runs only when on, idle, and due', () => {
   assert(!shouldRun({ enabled: true, running: false, lastRunAt: new Date(now - 2 * hour).toISOString(), intervalMs: 6 * hour, now }), 'not yet due');
   assert(shouldRun({ enabled: true, running: false, lastRunAt: new Date(now - 7 * hour).toISOString(), intervalMs: 6 * hour, now }), 'due after the interval');
   assert(shouldRun({ enabled: true, running: false, lastRunAt: 'not a date', intervalMs: 6 * hour, now }), 'an unreadable last-run time does not wedge the engine');
+});
+
+console.log('\nThe decision orbit (pure, evidence from real Virtus headlines):');
+
+await check('operator-side build roles now qualify', async () => {
+  assert(inOrbit('Russell Merry - Project Director') === true, 'project director, singular, qualifies');
+  assert(inOrbit('Pre Construction Cost Manager at VIRTUS Data Centres') === true, 'pre construction with a space qualifies');
+  assert(inOrbit('Director of Cost Management') === true, 'cost management qualifies');
+  assert(inOrbit('Fellow of Data Design at Virtus Data Centres') === true, 'the operator design authority qualifies');
+});
+
+await check('the fences hold: excludes, unknowns and non-roles stay out', async () => {
+  assert(inOrbit('FCIOB - Experienced Construction Professional') === false, 'credentials without a specifier role stay out');
+  assert(inOrbit('Head of Project Controls') === false, 'project controls is cost reporting, not building controls');
+  assert(inOrbit('Talent Acquisition Manager, Data Centres') === false, 'recruiters stay out');
+  assert(inOrbit('') === null && inOrbit(null) === null, 'no title stays unknown, never quietly out');
+  assert(inOrbit('Senior Product Designer') === false, 'bare design still does not qualify');
 });
 
 console.log(`\n=== Research gate: ${pass} passed, ${fail} failed ===`);

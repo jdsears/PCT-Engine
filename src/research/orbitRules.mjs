@@ -17,9 +17,14 @@ export const ORBIT_TITLES = [
   'cooling', 'chilled water', 'water', 'mechanical design', 'project engineer',
   'programme manager', 'program manager', 'm&e', 'design manager', 'design director',
   'head of engineering', 'engineering manager', 'engineering director',
-  'technical director', 'projects director', 'construction director',
-  // The people who select, price and buy the kit at the M&E contractors.
+  'technical director', 'projects director', 'project director', 'construction director',
+  // Operator-side design authority, evidenced at Virtus (Fellow of Data Design).
+  'data design',
+  // The people who select, price and buy the kit, at the M&E contractors and
+  // on the operator's build side. Cost management runs procurement on DC
+  // builds; all three preconstruction spellings occur in real headlines.
   'estimator', 'contracts manager', 'preconstruction', 'pre-construction',
+  'pre construction', 'cost manager', 'cost management',
   'specification', 'procurement', 'category manager',
 ];
 
