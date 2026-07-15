@@ -51,7 +51,8 @@ engineering contact throughout.
       transition). This drives the digest, intel senders, test recipients and
       the reply and meeting notifications.
 - [ ] Health page: signal engine on, email discovery on if Findymail spend is
-      agreed, auto-draft as desired.
+      agreed, people search on if James is happy with the background cadence
+      on his LinkedIn account, auto-draft as desired.
 - [ ] Outbound page: Reply capture on, Follow-ups on.
 - [ ] `FOLLOWUP_DAYS`: confirm the live cadence (default 4,7).
 - [ ] LinkedIn caps sane: `LINKEDIN_DAILY_CAP` (default 40) and

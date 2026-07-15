@@ -55,6 +55,19 @@ function EngineCard() {
     setBusy(false);
   };
 
+  const togglePeople = async () => {
+    if (!engine || busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/autopeople', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !engine.autoPeople }),
+      });
+      setEngine(await res.json());
+    } catch { setNote('The people search switch is not available right now.'); }
+    setBusy(false);
+  };
+
   if (!engine) {
     return (
       <div className="card health-card">
@@ -83,6 +96,10 @@ function EngineCard() {
         <button className="engine-btn" onClick={toggleDiscover} disabled={busy}>
           {engine.autoDiscover ? 'Email discovery: on' : 'Email discovery: off'}
         </button>
+        <button className="engine-btn" onClick={togglePeople} disabled={busy}
+          title="Finds specifiers for a small batch of unsearched named accounts each cycle, through the connected LinkedIn account. Stands itself down on any account-health error.">
+          {engine.autoPeople ? 'People search: on' : 'People search: off'}
+        </button>
       </div>
       <div className="health-sub">
         {engine.enabled
@@ -95,7 +112,7 @@ function EngineCard() {
       {lr && (
         <div className="muted-small">
           Last run {fmtClockDay(lr.at)}{lr.trigger ? ` (${lr.trigger})` : ''}: {lr.ok
-            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed${lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}.`
+            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed${lr.peopleSearched != null ? `, ${lr.peopleSearched} account(s) people-searched, ${lr.peopleFound ?? 0} contacts (${lr.peopleOrbit ?? 0} in orbit)${lr.peopleStopped ? `, stopped on ${lr.peopleStopped}` : ''}` : ''}${lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}.`
             : `failed, ${lr.error}`}
         </div>
       )}
