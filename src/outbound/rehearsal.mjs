@@ -62,7 +62,7 @@ export async function rehearsalStatus() {
     `SELECT
        (SELECT count(*)::int FROM outbound_drafts WHERE campaign = 'rehearsal') AS drafts,
        (SELECT count(*)::int FROM outbound_sends s JOIN outbound_drafts d ON d.id = s.draft_id
-        WHERE d.campaign = 'rehearsal' AND s.sent) AS sends,
+        WHERE d.campaign = 'rehearsal' AND s.sent AND NOT s.test_mode) AS sends,
        (SELECT count(*)::int FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
         WHERE d.campaign = 'rehearsal') AS replies`)).rows[0];
   const active = Object.values(leads).reduce((a, n) => a + n, 0) > 0;
