@@ -1318,8 +1318,25 @@ app.get('/api/health/cards', async (_req, res) => {
 });
 
 // Serve the built chat UI. Kept after the API routes so they match first.
+// Cache discipline, so every deploy reaches every browser on its next load.
+// Vite names the bundles by content hash, so anything under assets/ may be
+// cached hard and forever; the shell (index.html) must never be cached at
+// all, since a stale shell keeps pointing at old bundles and a user can sit
+// on last week's app while fixes deploy around them. That was a live
+// failure: a blank screen that the current bundle could not produce.
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'web', 'dist');
-app.use(express.static(dist));
-app.get('*', (_req, res) => res.sendFile(join(dist, 'index.html')));
+app.use(express.static(dist, {
+  setHeaders: (res, filePath) => {
+    if (/[/\\]assets[/\\]/.test(filePath) && /\.(js|css|woff2?|svg|png|jpg|jpeg)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  },
+}));
+app.get('*', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.sendFile(join(dist, 'index.html'));
+});
 
 app.listen(PORT, () => console.log(`pct-knowledge-copilot listening on ${PORT}`));
