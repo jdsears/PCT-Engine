@@ -2,7 +2,7 @@
 // stand-in model is injected so the full draft -> check -> revise pipeline runs
 // without a network or a key. The case that matters most is the planted
 // fabrication being caught and surfaced, never stored as clean.
-import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks, stripSignoff, reflagText } from './draft.mjs';
+import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks, stripSignoff, reflagText, ensureGreeting } from './draft.mjs';
 import { hasBlockingFlag } from './sendDecision.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 import { voiceGate } from '../answer.mjs';
@@ -101,6 +101,20 @@ await check('a human edit re-checks the guardrails: a fixed body clears, an unfi
   const withLink = reflagText({ subject: 's', body: 'Book here: https://book.example/pct', grounding: g });
   assert(withLink.length === 0, 'the booking link never flags on an edit');
   if (old === undefined) delete process.env.MEETING_LINK; else process.env.MEETING_LINK = old;
+});
+
+await check('the greeting is guaranteed: Dear on cold opens, bare on thread emails, never invented', async () => {
+  assert(ensureGreeting('You secured planning in Slough.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nYou secured planning in Slough.', 'a missing greeting is prepended');
+  assert(ensureGreeting('Sam,\n\nYou secured planning.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nYou secured planning.', 'a bare greeting upgrades to Dear');
+  assert(ensureGreeting('Hi Sam, quick thought on Slough.', 'Sam Lee', { dear: true }) === 'Dear Sam, quick thought on Slough.', 'Hi upgrades and the inline continuation survives');
+  assert(ensureGreeting('Dear Sam,\n\nAs discussed.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nAs discussed.', 'a correct greeting passes through');
+  assert(ensureGreeting('Sam, understood, and that is common.', 'Sam Lee') === 'Sam, understood, and that is common.', 'a thread email keeps its inline register');
+  assert(ensureGreeting('Worth a second look.', null, { dear: true }) === 'Worth a second look.', 'no name on file, no invented greeting');
+  const composed = await composeDraft(grounding, { callModel: fakeModel({
+    draft: { subject: 'Slough', body: 'You secured planning in Slough.\n\nWorth a short call.', claims: [] },
+    check: { claims: [] },
+  }) });
+  assert(composed.body.startsWith('Dear Sam,'), `a cold open always opens Dear, got ${JSON.stringify(composed.body.slice(0, 30))}`);
 });
 
 await check('stripSignoff never eats a real closing line', async () => {

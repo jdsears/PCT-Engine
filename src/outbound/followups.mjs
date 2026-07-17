@@ -1,6 +1,6 @@
 import { pool } from '../db.mjs';
 import { gatherGrounding } from './grounding.mjs';
-import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff } from './draft.mjs';
+import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGreeting } from './draft.mjs';
 
 // Follow-ups: the second and third touch on a thread that has had no reply.
 // Most replies to cold outreach arrive on a later touch, so a first email with
@@ -92,7 +92,11 @@ export async function draftFollowup(grounding, prev, { step, callModel = callCla
   };
   if (!draft.body) throw new Error('follow-up missing body');
   const finished = await finaliseDraft(draft, grounding, { callModel, groundingText });
-  return { ...finished, subject: reSubject(finished.subject || prev.subject) };
+  return {
+    ...finished,
+    subject: reSubject(finished.subject || prev.subject),
+    body: ensureGreeting(finished.body, grounding.contact?.name),
+  };
 }
 
 // Threads whose next touch has fallen due: the latest sent draft per lead still
