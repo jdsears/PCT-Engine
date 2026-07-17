@@ -1,5 +1,6 @@
 import { search } from './retrieve.mjs';
 import { route } from './configurator/converse.mjs';
+import { priceTurn } from './pricing/priceAnswer.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6'; // configurable; confirm against Anthropic docs if it errors
@@ -68,6 +69,19 @@ export async function ask(question, { history = [], k = 10, configState = null }
     };
   }
 
+  // Price questions answer deterministically from the loaded lists or the
+  // enquiry process, web and Teams alike, with no model between a part number
+  // and its price. A pricing failure never fails the answer; the ordinary
+  // path simply carries on.
+  const priced = await priceTurn(question).catch(() => null);
+  if (priced) {
+    return {
+      answer: priced.answer,
+      filters: {}, citations: [], declined: false, citationsUsed: [],
+      sourcesOffered: 0, latencyMs: Date.now() - startedAt, configState: null,
+    };
+  }
+
   // Use the immediate prior turn so a follow-up such as "and the reduced-port
   // version?" still retrieves and scopes against what was being discussed.
   const lastUser = history.filter(m => m.role === 'user').slice(-1).map(m => m.text);
@@ -86,7 +100,8 @@ export async function ask(question, { history = [], k = 10, configState = null }
     "Cite the sources you rely on with their bracket numbers, for example [1]. " +
     "Write in British English, calm and plain. Do not use em dashes or en dashes. Never use the word \"genuinely\". " +
     "Format the answer for easy reading with light Markdown: short paragraphs, and a simple bulleted or numbered list when you list items. Use bold sparingly for a key term, and do not use large headings. " +
-    "Do not invent product specifications or numbers; if a figure is not in the sources, say so." +
+    "Do not invent product specifications or numbers; if a figure is not in the sources, say so. " +
+    "Pricing questions route internally: PCT's own price lookup and the mega price sheet are the source for prices, and quoted lines go through PCT's enquiry process. Never suggest contacting a manufacturer, or give a manufacturer's phone number or address, for pricing." +
     blockNote;
 
   const user = `Question: ${question}\n\nSources:\n${buildContext(results)}`;
