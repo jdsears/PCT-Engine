@@ -9,6 +9,7 @@ import { quotedLine } from './quotedLines.mjs';
 import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary } from './priceAnswer.mjs';
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
+import { parseRichardsBook, parseSizeColumns } from './parseRichardsPdf.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -241,6 +242,47 @@ await check('the row and header primitives hold their shapes', async () => {
   assert(r.model === '3000R' && r.material === 'S6' && r.prices[0] === null && r.prices[1] === 543, JSON.stringify(r));
   assert(parseSizeHeader('some words 1/4" 3/8" 1/2" 3/4" 1"')?.length === 5, 'five sizes found');
   assert(parseSizeHeader('no sizes here') === null, 'prose is not a header');
+});
+
+console.log('\nThe generic Richards book parser (synthetic pages, real layouts):');
+
+// A miniature of the awkward realities: a grouped table with the label above
+// its prices, a missing cell without a placeholder, a hyphenated size, an
+// orientation qualifier, sidebar prose sharing a line with a row, an adder
+// section to skip, and a single-size LowFlow-style table. Fake prices.
+const RICHARDS_FIXTURE = [
+  '                         MARK 77 SANITARY TEST VALVE',
+  '            Body             Vertical Conn     1/2"      3/4"     1-1/2"',
+  '                     Tri-clamp                           $100      $300',
+  '            Part A',
+  '                                               $110      $120     $310',
+  '            Body             Horizontal Conns  1/2"      3/4"     1-1/2"',
+  '  sidebar words here Tri-clamp                 $200      $210     $400',
+  '                             OPTIONS & ADDERS',
+  '            Gasket thing                       $999      $999     $999',
+  '                         MK55HP FRACTIONAL VALVE',
+  '            Body Mat    End Con                1/2"',
+  '            SST Cast    Threaded              $4,921',
+].join('\n');
+
+await check('grouping, gaps, hyphens, orientation, sidebar prose and adders all behave', async () => {
+  const { parts } = parseRichardsBook(RICHARDS_FIXTURE, { line: 'test' });
+  const get = k => parts.find(p => p.part === k);
+  assert(get('MK77-075-TRICLAMP')?.listUsd === 100 && get('MK77-150-TRICLAMP')?.listUsd === 300,
+    `a missing first cell never shifts its neighbours, got ${JSON.stringify(parts.map(p => p.part + '=' + p.listUsd))}`);
+  assert(get('MK77-050-TRICLAMP') === undefined, 'the empty half-inch cell never becomes a part');
+  assert(get('MK77-050-PARTA')?.listUsd === 110 && get('MK77-150-PARTA')?.listUsd === 310, 'a label above its prices claims them');
+  assert(get('MK77-050-TRICLAMP-H')?.listUsd === 200, 'the horizontal group keys apart from the vertical');
+  assert(!get('MK77-050-TRICLAMP-H')?.description.includes('sidebar'), 'sidebar prose never enters a label');
+  assert(!parts.some(p => /GASKET/.test(p.part) || p.listUsd === 999), 'the adder section is skipped wholesale');
+  assert(get('MK55HP-050-SSTCASTTHREADE')?.listUsd === 4921, `the single-size table parses, got ${JSON.stringify(parts.filter(p => p.part.startsWith('MK55')))}`);
+});
+
+await check('the size-column primitives: spans, hyphen canon, single-size guard', async () => {
+  const cols = parseSizeColumns('     Ends   3/4"    1"   1-1/2"    2"');
+  assert(cols?.length === 4 && cols[2].label === '1 1/2"', 'the hyphenated size canonicalises');
+  assert(parseSizeColumns('prose mentioning 1/2" once') === null, 'a stray size in prose is not a header');
+  assert(parseSizeColumns('   Body Mat  End Con   1/2"')?.length === 1, 'a single-size table header qualifies with header words');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
