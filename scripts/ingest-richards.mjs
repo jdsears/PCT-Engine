@@ -13,11 +13,15 @@
 import { execFileSync } from 'node:child_process';
 import { readRichardsTransform, computeGuide } from '../src/pricing/richardsTransform.mjs';
 import { parseRichardsBook } from '../src/pricing/parseRichardsPdf.mjs';
+import { parseBestobell, parseHex } from '../src/pricing/parseBooksSpecial.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
 import { pool } from '../src/db.mjs';
 
-const SUPPORTED = ['steriflow', 'lowflow', 'jordan'];
-const REFUSED = { bestobell: 'model-column tables', hex: 'model-column tables', fb: 'unmatched structure', food_beverage: 'unmatched structure' };
+const SUPPORTED = ['steriflow', 'lowflow', 'jordan', 'bestobell', 'hex'];
+const REFUSED = {
+  fb: 'prices merge across size columns, so single-size attribution would be a guess',
+  food_beverage: 'prices merge across size columns, so single-size attribution would be a guess',
+};
 
 const args = process.argv.slice(2);
 const flag = n => { const i = args.indexOf(n); return i === -1 ? null : (args[i + 1] || null); };
@@ -56,8 +60,11 @@ try {
   console.error(`pdftotext failed: ${e.message}`);
   process.exit(1);
 }
-const { parts, report } = parseRichardsBook(text, { line: LINE });
-console.log(`Parsed ${LINE}: ${report.models} model sections, ${report.rows} price rows, ${parts.length} base part(s); ${report.skippedSections} adder, spares and option sections skipped.`);
+const { parts, report } = LINE === 'bestobell' ? parseBestobell(text)
+  : LINE === 'hex' ? parseHex(text)
+  : parseRichardsBook(text, { line: LINE });
+console.log(`Parsed ${LINE}: ${parts.length} base part(s) (${Object.entries(report).map(([k, v]) => `${k}=${v}`).join(', ')}).`);
+if (report.ambiguous) console.log(`  ${report.ambiguous} price position(s) sat between size columns and were skipped rather than guessed.`);
 if (!parts.length) { console.error('Nothing parsed; not writing.'); await pool.end(); process.exit(2); }
 
 const priced = parts.map(r => ({ ...r, guide: computeGuide(r.listUsd, transform) }));

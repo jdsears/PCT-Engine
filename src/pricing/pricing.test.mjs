@@ -10,6 +10,7 @@ import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary } from '.
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
 import { parseRichardsBook, parseSizeColumns } from './parseRichardsPdf.mjs';
+import { parseBestobell, parseHex } from './parseBooksSpecial.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -283,6 +284,48 @@ await check('the size-column primitives: spans, hyphen canon, single-size guard'
   assert(cols?.length === 4 && cols[2].label === '1 1/2"', 'the hyphenated size canonicalises');
   assert(parseSizeColumns('prose mentioning 1/2" once') === null, 'a stray size in prose is not a header');
   assert(parseSizeColumns('   Body Mat  End Con   1/2"')?.length === 1, 'a single-size table header qualifies with header words');
+});
+
+console.log('\nThe BestoBell and Hex specs (synthetic pages, real layouts):');
+
+await check('BestoBell pairs prices with real part numbers and refuses ambiguous positions', async () => {
+  // Placement is computed, not hand-spaced: column centres at fixed offsets,
+  // so what is "clearly under a column" and what is "between two" is exact.
+  const place = pairs => {
+    let s = '';
+    for (const [text, at] of pairs) s = s.padEnd(Math.max(0, at - Math.floor(text.length / 2))) + text;
+    return s;
+  };
+  const C = { half: 40, threeq: 60, one: 80 };
+  const fixture = [
+    place([['Model GM9', 10], ['1/2"', C.half], ['3/4"', C.threeq], ['1"', C.one]]),
+    place([['NPT', 10], ['$100', C.half], ['$200', C.threeq], ['$300', C.one]]),
+    place([['Part Number', 10], ['GM009210', C.half], ['GM009310', C.threeq], ['GM009410', C.one]]),
+    place([['DTC', 10], ['$555', Math.floor((C.half + C.threeq) / 2)]]),
+    place([['Part Number', 10], ['GM009211', C.half], ['GM009311', C.threeq]]),
+    place([['SW', 10], ['CONSULT FACTORY', C.threeq]]),
+    place([['Part Number', 10], ['GM009220', C.half], ['GM009320', C.threeq]]),
+  ].join('\n');
+  const { parts, report } = parseBestobell(fixture);
+  const get = pn => parts.find(p => p.part === pn);
+  assert(get('GM009210')?.listUsd === 100 && get('GM009310')?.listUsd === 200 && get('GM009410')?.listUsd === 300,
+    `clear columns pair price with true part number, got ${JSON.stringify(parts)}`);
+  assert(get('GM009211') === undefined && get('GM009311') === undefined, 'a price between two columns is refused, not guessed');
+  assert(report.ambiguous >= 1, 'the refusal is counted');
+  assert(get('GM009220') === undefined, 'consult-factory rows price nothing');
+});
+
+await check('Hex flat rows: model number first, list price last, group code dropped', async () => {
+  const fixture = [
+    '               HN41     Model Number     Material     Inlet         Outlet       Seat        Packing   Box Quantity   List Price',
+    '                      HN412D2FM2C2      316 NACE    1/4" FNPT     1/4" MNPT    Delrin (soft)  TFE        1 each         $195',
+    '               HN49   HN490U3131412        SS       1/2" MNPT     1/2" FNPT    Integral (Hard) TFE       1 each         $449',
+  ].join('\n');
+  const { parts } = parseHex(fixture);
+  assert(parts.length === 2, `two parts, got ${JSON.stringify(parts.map(p => p.part))}`);
+  assert(parts[0].part === 'HN412D2FM2C2' && parts[0].listUsd === 195, 'the part number is the key');
+  assert(parts[1].part === 'HN490U3131412' && parts[1].listUsd === 449, 'a leading group code is dropped');
+  assert(parts[1].description.includes('1/2" MNPT'), 'the connections travel in the description');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);

@@ -19,8 +19,8 @@ const SIZE_CODES = {
 // non-global twin, because .test on a global regex leaves a cursor behind
 // and matchAll clones that cursor, silently skipping the start of the next
 // line. That was a live, sequence-dependent parse fault.
-const SIZE_RE = /\d+[\s-]+\d\/\d"|\d\/\d"|\d+"/g;
-const SIZE_TEST = /\d+[\s-]+\d\/\d"|\d\/\d"|\d+"/;
+const SIZE_RE = /\d+[ -]\d\/\d"|\d\/\d"|\d+"/g;
+const SIZE_TEST = /\d+[ -]\d\/\d"|\d\/\d"|\d+"/;
 const canonSize = s => s.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
 
 // The size header with column spans: label plus [start, end) in characters.
