@@ -114,11 +114,20 @@ await check('the configurator models route to their lines', async () => {
   assert(quotedLine('equilibar bpr')?.line === 'Equilibar', 'Equilibar routes to its own note');
 });
 
-await check('the notes carry the enquiry route and never a margin', async () => {
-  const m = quotedLine('cv3000');
-  assert(/thessel@richardsind\.com/.test(m.note), 'the Richards enquiry address travels');
-  assert(!/\d+\s*%/.test(m.note), 'no percentage appears in any note');
-  assert(!/[—–!]/.test(m.note) && !/\bgenuinely\b/i.test(m.note), 'voice rules hold');
+await check('the notes point inward only: no supplier contacts, no team-notepad detail', async () => {
+  // Per James, the mega sheet's note pad is the internal team's scratchpad
+  // and the co-pilot must not repeat it: no supplier names or addresses, no
+  // order rules, no margins. The only pointer is the internal one.
+  for (const q of ['cv3000', 'equilibar bpr', 'steriflow', 'MK601']) {
+    const m = quotedLine(q);
+    assert(m, `${q} still routes`);
+    assert(!/@/.test(m.note), `no email address in the ${m.line} note`);
+    assert(!/tara|simon|thessel|swaring|inquiry/i.test(m.note), `no supplier contact in the ${m.line} note`);
+    assert(!/MOV|minimum order|0055|0012/i.test(m.note), `no notepad rule in the ${m.line} note`);
+    assert(!/\d+\s*%/.test(m.note), 'no percentage appears in any note');
+    assert(/Andy|area sales manager/.test(m.note), 'the internal route is the pointer');
+    assert(!/[—–!]/.test(m.note) && !/\bgenuinely\b/i.test(m.note), 'voice rules hold');
+  }
 });
 
 await check('real parts and unknown queries never route to a quoted line', async () => {
