@@ -22,17 +22,22 @@ const SYSTEM =
   "VOICE: plain British English, calm, first person, three to six sentences. A practitioner's observation about what the story means for data centre cooling and flow control, then a light closing thought or question to invite comment. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. " +
   "Return the post text only, no preamble and no quotation marks around it.";
 
+// The end-customer check for a post, with the story's own subject exempted,
+// since it may be discussed as news but never as a client reference. One
+// function, so writing a post and re-checking an edited one apply the same rule.
+export function postFlags(body, operator) {
+  return flagEndCustomers(body, operator).map(n =>
+    `blocking: names or implies a customer relationship (${n}); the story may be discussed as news, never as a client reference`);
+}
+
 // Write one post from one story, guardrails applied: the voice gate on the
-// text, and the end-customer check with the story's own subject exempted, since
-// it may be discussed as news but never as a client reference. Shared by the
-// signal-driven posts and the intel inbox commentary.
+// text, and the end-customer check. Shared by the signal-driven posts and the
+// intel inbox commentary.
 export async function writePost({ headline, story, operator }, { callModel = callClaude } = {}) {
   const user = `The news story:\nHeadline: ${headline}\n${story ? `Story: ${String(story).slice(0, 900)}\n` : ''}Write the post.`;
   const body = outboundVoice(await callModel(SYSTEM, user, { maxTokens: 500 }));
   if (!body) throw new Error('empty post');
-  const flags = flagEndCustomers(body, operator).map(n =>
-    `blocking: names or implies a customer relationship (${n}); the story may be discussed as news, never as a client reference`);
-  return { body, flags };
+  return { body, flags: postFlags(body, operator) };
 }
 
 // Draft posts from the newest gated signals that do not already have one. The

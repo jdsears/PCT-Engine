@@ -2,7 +2,7 @@
 // stand-in model is injected so the full draft -> check -> revise pipeline runs
 // without a network or a key. The case that matters most is the planted
 // fabrication being caught and surfaced, never stored as clean.
-import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks, stripSignoff } from './draft.mjs';
+import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks, stripSignoff, reflagText } from './draft.mjs';
 import { hasBlockingFlag } from './sendDecision.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 import { voiceGate } from '../answer.mjs';
@@ -86,6 +86,21 @@ await check('a web address in a real sentence still BLOCKS', async () => {
   const out = await composeDraft(grounding, { callModel: model });
   assert(out.flags.some(f => /^blocking: web address/.test(f)), `an in-sentence address must still block, got ${JSON.stringify(out.flags)}`);
   assert(hasBlockingFlag(out.flags), 'and the shared predicate agrees');
+});
+
+await check('a human edit re-checks the guardrails: a fixed body clears, an unfixed fault keeps its flag', async () => {
+  const g = { company: { name: 'Aery Data Centres Ltd' }, blockedSuppliers: ['HiddenOEM'] };
+  const dirty = reflagText({ subject: 'Slough', body: 'Our valves are on the Microsoft campus. See www.pct.co.uk.\nHiddenOEM make them.', grounding: g });
+  assert(dirty.some(f => /microsoft/i.test(f)), 'the end customer still flags after an edit');
+  assert(dirty.some(f => /pct\.co\.uk/.test(f)), 'the address still flags after an edit');
+  assert(dirty.some(f => /HiddenOEM/.test(f)), 'the blocked supplier still flags after an edit');
+  const clean = reflagText({ subject: 'Slough', body: 'You secured planning in Slough. Worth a short call.', grounding: g });
+  assert(clean.length === 0, `a fixed body carries no flags, got ${JSON.stringify(clean)}`);
+  const old = process.env.MEETING_LINK;
+  process.env.MEETING_LINK = 'https://book.example/pct';
+  const withLink = reflagText({ subject: 's', body: 'Book here: https://book.example/pct', grounding: g });
+  assert(withLink.length === 0, 'the booking link never flags on an edit');
+  if (old === undefined) delete process.env.MEETING_LINK; else process.env.MEETING_LINK = old;
 });
 
 await check('stripSignoff never eats a real closing line', async () => {
