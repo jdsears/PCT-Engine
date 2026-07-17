@@ -2,7 +2,8 @@
 // stand-in model is injected so the full draft -> check -> revise pipeline runs
 // without a network or a key. The case that matters most is the planted
 // fabrication being caught and surfaced, never stored as clean.
-import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks } from './draft.mjs';
+import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks, stripSignoff } from './draft.mjs';
+import { hasBlockingFlag } from './sendDecision.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 import { voiceGate } from '../answer.mjs';
 
@@ -61,16 +62,38 @@ await check('a planted fabrication is CAUGHT and surfaced, never stored clean', 
   assert(out.flags.some(f => /Dublin/.test(f)), `the Dublin fabrication must be surfaced, got ${JSON.stringify(out.flags)}`);
 });
 
-await check('an invented sign-off with a web address BLOCKS until removed', async () => {
-  // The live failure: the drafter signed off as the PCT sales team with an
-  // invented website. Any address except the booking link must block approval.
+await check('a copied sign-off is stripped mechanically, noted, and the draft stays clean', async () => {
+  // The live failure, second round: shown a thread with an old sign-off, the
+  // model copies it over the instruction. The tail is removed
+  // deterministically, the reviewer is told, and nothing blocks because the
+  // invented address went with the sign-off.
   const model = fakeModel({
-    draft: { subject: 'Flow control for the Slough scheme', body: 'You secured planning in Slough.\n\nWorth a short call.\n\nPCT Sales Team\nwww.pct.co.uk', claims: [{ text: 'planning secured', supportedBy: 'signal' }] },
+    draft: { subject: 'Flow control for the Slough scheme', body: 'You secured planning in Slough.\n\nWorth a short call.\n\nPCT Sales Team\nPremier Control Technologies\nwww.pct.co.uk', claims: [{ text: 'planning secured', supportedBy: 'signal' }] },
     check: { claims: [{ text: 'planning secured', supported: true, by: 'signal' }] },
   });
   const out = await composeDraft(grounding, { callModel: model });
-  assert(out.flags.some(f => /^blocking: web address/.test(f) && /pct\.co\.uk/.test(f)),
-    `the invented address must block, got ${JSON.stringify(out.flags)}`);
+  assert(!/pct\.co\.uk/.test(out.body) && !/Sales Team/.test(out.body), `the sign-off must be gone, got ${JSON.stringify(out.body)}`);
+  assert(out.body.endsWith('Worth a short call.'), 'the closing ask survives');
+  assert(out.flags.some(f => /sign-off block was removed/.test(f)), 'the removal is noted for the reviewer');
+  assert(!hasBlockingFlag(out.flags), 'nothing blocks once the sign-off is gone');
+});
+
+await check('a web address in a real sentence still BLOCKS', async () => {
+  const model = fakeModel({
+    draft: { subject: 'Slough', body: 'You secured planning in Slough. More detail is at www.pct.co.uk if useful.\n\nWorth a short call.', claims: [] },
+    check: { claims: [] },
+  });
+  const out = await composeDraft(grounding, { callModel: model });
+  assert(out.flags.some(f => /^blocking: web address/.test(f)), `an in-sentence address must still block, got ${JSON.stringify(out.flags)}`);
+  assert(hasBlockingFlag(out.flags), 'and the shared predicate agrees');
+});
+
+await check('stripSignoff never eats a real closing line', async () => {
+  const ask = 'You secured planning in Slough.\n\nWould a short call this week be useful?';
+  assert(stripSignoff(ask).removed === 0 && stripSignoff(ask).body === ask, 'a closing question is content, not a sign-off');
+  const regards = 'Body paragraph here.\n\nKind regards\nJohn';
+  assert(stripSignoff(regards).removed === 1 && stripSignoff(regards).body === 'Body paragraph here.', 'a valediction goes');
+  assert(stripSignoff('Single paragraph only.').removed === 0, 'a lone paragraph is never stripped');
 });
 
 await check('the booking link is the one permitted address; part numbers never false-positive', async () => {

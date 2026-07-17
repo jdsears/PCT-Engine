@@ -10,7 +10,7 @@ import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
 import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, prospectHtml, signatureBlock } from './mail.mjs';
 import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
-import { canSendReal } from './outbound/sendDecision.mjs';
+import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
@@ -963,12 +963,11 @@ async function setDraftStatus(id, to, from) {
 }
 app.post('/api/outbound/drafts/:id/approve', async (req, res) => {
   try {
-    // A blocking flag (a named end customer) prevents clean approval; it must be
-    // rewritten first. Advisory flags do not block.
+    // A blocking flag (a named end customer, an invented web address) prevents
+    // clean approval; it must be rewritten first. Advisory flags do not block.
     const fr = await pool.query(`SELECT grounding_flags FROM outbound_drafts WHERE id = $1`, [req.params.id]);
-    const flags = Array.isArray(fr.rows[0]?.grounding_flags) ? fr.rows[0].grounding_flags : [];
-    if (flags.some(f => /^blocking/i.test(String(f)))) {
-      return res.status(409).json({ error: 'this draft has a blocking flag (a named end customer) and cannot be approved until it is rewritten' });
+    if (hasBlockingFlag(fr.rows[0]?.grounding_flags)) {
+      return res.status(409).json({ error: 'this draft has a blocking flag and cannot be approved until it is rewritten' });
     }
     const s = await setDraftStatus(req.params.id, 'approved', ['draft']);
     if (!s) return res.status(409).json({ error: 'only a draft can be approved' });
@@ -980,6 +979,33 @@ app.post('/api/outbound/drafts/:id/reject', async (req, res) => {
     const s = await setDraftStatus(req.params.id, 'rejected', ['draft', 'approved']);
     if (!s) return res.status(409).json({ error: 'draft is not open' });
     res.json({ ok: true, status: s });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Bulk review, for the testing loop of reject, regenerate, review. Approval in
+// bulk still refuses blocking flags per draft and says how many it skipped;
+// rejection in bulk frees each lead's slot for a fresh draft. Neither touches
+// the rehearsal lane, so a bulk action can never kill a rehearsal mid-flight,
+// and sending remains one click per email, always.
+app.post('/api/outbound/drafts/approve-all', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, grounding_flags FROM outbound_drafts WHERE status = 'draft' AND campaign <> 'rehearsal'`);
+    const clean = rows.filter(r => !hasBlockingFlag(r.grounding_flags)).map(r => r.id);
+    const skipped = rows.length - clean.length;
+    if (clean.length) {
+      await pool.query(
+        `UPDATE outbound_drafts SET status = 'approved', updated_at = now() WHERE id = ANY($1) AND status = 'draft'`, [clean]);
+    }
+    res.json({ approved: clean.length, skippedBlocking: skipped });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.post('/api/outbound/drafts/reject-all', async (_req, res) => {
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE outbound_drafts SET status = 'rejected', updated_at = now()
+       WHERE status = 'draft' AND campaign <> 'rehearsal'`);
+    res.json({ rejected: rowCount });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

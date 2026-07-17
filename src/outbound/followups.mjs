@@ -1,6 +1,6 @@
 import { pool } from '../db.mjs';
 import { gatherGrounding } from './grounding.mjs';
-import { renderGrounding, finaliseDraft, outboundVoice } from './draft.mjs';
+import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff } from './draft.mjs';
 
 // Follow-ups: the second and third touch on a thread that has had no reply.
 // Most replies to cold outreach arrive on a later touch, so a first email with
@@ -72,7 +72,9 @@ const FOLLOWUP_SYSTEM =
 // plus the previous email itself, so a restatement is supported rather than
 // flagged as an invention.
 export function followupGroundingText(grounding, prev) {
-  return `${renderGrounding(grounding)}\nPrevious email on this thread (sent, no reply). Restating its supported facts is permitted:\nSubject: ${prev.subject}\n${prev.body}`;
+  // The previous email is shown without any sign-off it may carry, so the
+  // model never has a bad example to copy over the no-sign-off rule.
+  return `${renderGrounding(grounding)}\nPrevious email on this thread (sent, no reply). Restating its supported facts is permitted:\nSubject: ${prev.subject}\n${stripSignoff(String(prev.body || '')).body}`;
 }
 
 // Draft one follow-up through the shared finishing pass: grounding check, one
