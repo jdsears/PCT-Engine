@@ -36,6 +36,16 @@ export default function Chat() {
         body: JSON.stringify({ question: q, history, configState }),
       });
       const data = await res.json();
+      // An error body parses as JSON too, so the catch below never sees it. It
+      // must land as a readable message, never as an answerless bubble: the
+      // Markdown renderer throws on a missing string and whites the screen.
+      if (!res.ok || typeof data.answer !== 'string') {
+        const why = res.status === 401
+          ? 'Your sign-in has expired. Reload the page and enter the access key again.'
+          : `The co-pilot hit an error${data?.error ? `: ${String(data.error).slice(0, 300)}` : ''}. Try again, and if it repeats send this message to John.`;
+        setMessages(m => [...m, { role: 'copilot', text: why, citations: [] }]);
+        return;
+      }
       setConfigState(data.configState ?? null);
       setMessages(m => [...m, {
         role: 'copilot', text: data.answer, citations: data.citations || [],
@@ -352,7 +362,10 @@ function PartNumberCard({ config, pricing }) {
 // are: ..." enumeration from the prose so the choices are not listed twice. The
 // server phrasing is fixed, and no option label carries a full stop, so the run
 // ends cleanly at the terminating period. Plain-text clients keep the full text.
+// Always a string, whatever arrives: react-markdown v9+ throws on undefined
+// children, and a thrown render is a blank screen.
 function stripEnumeration(text, options) {
-  if (!options) return text;
-  return text.replace(/\s*The options are:[^.]*\./g, '').replace(/\n{3,}/g, '\n\n').trim();
+  const t = String(text ?? '');
+  if (!options) return t;
+  return t.replace(/\s*The options are:[^.]*\./g, '').replace(/\n{3,}/g, '\n\n').trim();
 }
