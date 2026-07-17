@@ -15,6 +15,7 @@ function groupRows(rows) {
       byPart.set(k, {
         partNumber: r.part_number, productLine: r.product_line, description: r.description,
         prices: {}, listName: r.list_name, sourceTab: r.source_tab, effectiveDate: r.effective_date,
+        basis: r.price_basis || 'sell',
       });
     }
     byPart.get(k).prices[r.currency] = Number(r.sell_price);
@@ -26,11 +27,11 @@ export async function lookupPrice(query, { limit = 8 } = {}) {
   const key = normKey(query);
   if (!key) return { query, exact: false, matches: [] };
   const exact = await pool.query(
-    `SELECT product_line, part_number, norm_key, description, currency, sell_price, list_name, source_tab, effective_date
+    `SELECT product_line, part_number, norm_key, description, currency, sell_price, list_name, source_tab, effective_date, price_basis
      FROM prices WHERE norm_key = $1`, [key]);
   if (exact.rows.length) return { query, exact: true, matches: groupRows(exact.rows) };
   const prefix = await pool.query(
-    `SELECT product_line, part_number, norm_key, description, currency, sell_price, list_name, source_tab, effective_date
+    `SELECT product_line, part_number, norm_key, description, currency, sell_price, list_name, source_tab, effective_date, price_basis
      FROM prices WHERE norm_key LIKE $1 || '%' ORDER BY norm_key LIMIT $2`, [key, limit * 3]);
   const matches = groupRows(prefix.rows).slice(0, limit);
   // No stored price, but the query names a quoted line: answer with the
