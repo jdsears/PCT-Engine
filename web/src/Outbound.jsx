@@ -360,7 +360,7 @@ export default function Outbound() {
     setGenBusy(true); setGenNote(null);
     try {
       const r = await apiFetch('/api/outbound/generate', {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ limit: 5 }),
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ limit: 10 }),
       });
       const d = await r.json();
       if (d.started) {
@@ -418,7 +418,7 @@ export default function Outbound() {
               : 'Test sends off.'}
           </div>
         </div>
-        <p className="ob-banner-sub">Drafts queue here for approval and nothing reaches a prospect without a person. With reply capture on, replies are read, classified and flagged to the team within minutes, and follow-ups draft themselves when a thread goes quiet. Sends carry the signature of {convoCfg.sender || 'the PCT sales team'} with a plain opt-out line.</p>
+        <p className="ob-banner-sub">Drafts queue here for approval and nothing reaches a prospect without a person. With reply capture on, replies are read, classified and flagged to the team within minutes; follow-ups draft themselves when a thread goes quiet, and a spent sequence rotates to the company's next specifier after a rest. Sends carry the signature of {convoCfg.sender || 'the PCT sales team'} with a plain opt-out line.</p>
         <div className="ob-banner-controls">
           <button className="ob-btn primary" onClick={generate} disabled={genBusy || drafting.running}>
             {drafting.running ? 'Drafting now' : 'Generate drafts'}

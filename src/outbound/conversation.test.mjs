@@ -5,6 +5,7 @@
 import { followupDelays, followupDueAt, maxSequenceSteps, reSubject, followupGroundingText, draftFollowup } from './followups.mjs';
 import { looksLikeBounce, decideAction, classifyReply } from './triage.mjs';
 import { pollFloor, effectiveSince } from './replies.mjs';
+import { rotateCooldownDays, rotateMaxContacts } from './rotation.mjs';
 import { responseGroundingText } from './respond.mjs';
 import { renderHandoffPack } from './handoff.mjs';
 import { withFooter, signatureBlock, blockedByKillSwitch, prospectHtml, textToHtml } from '../mail.mjs';
@@ -68,6 +69,22 @@ await check('the kill switch invariant: on means internal allowlist only, and on
   process.env.MAIL_KILL_SWITCH = 'off';
   assert(!blockedByKillSwitch('prospect@dc.example'), 'kill switch off is the live state');
   for (const [k, v] of [['MAIL_KILL_SWITCH', olds.k], ['OUTBOUND_TEST_SENDS', olds.t], ['OUTBOUND_TEST_RECIPIENTS', olds.r], ['TEAM_EMAILS', olds.e]]) {
+    if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
+});
+
+await check('rotation is bounded: a rest before the next person, and a hard cap on people per company', async () => {
+  const olds = { c: process.env.ROTATE_COOLDOWN_DAYS, m: process.env.ROTATE_MAX_CONTACTS };
+  delete process.env.ROTATE_COOLDOWN_DAYS; delete process.env.ROTATE_MAX_CONTACTS;
+  assert(rotateCooldownDays() === 10, 'default rest is ten days');
+  assert(rotateMaxContacts() === 3, 'default cap is three people per company');
+  process.env.ROTATE_COOLDOWN_DAYS = '0';
+  assert(rotateCooldownDays() === 1, 'the rest can never be zero');
+  process.env.ROTATE_MAX_CONTACTS = '99';
+  assert(rotateMaxContacts() === 5, 'the cap can never exceed five');
+  process.env.ROTATE_MAX_CONTACTS = 'junk';
+  assert(rotateMaxContacts() === 3, 'junk falls back to the default');
+  for (const [k, v] of [['ROTATE_COOLDOWN_DAYS', olds.c], ['ROTATE_MAX_CONTACTS', olds.m]]) {
     if (v === undefined) delete process.env[k]; else process.env[k] = v;
   }
 });
