@@ -2,6 +2,7 @@ import { pool } from '../db.mjs';
 import { search } from '../retrieve.mjs';
 import { renderGrounding, finaliseDraft, outboundVoice } from './draft.mjs';
 import { reSubject } from './followups.mjs';
+import { COMPANY_FACTS } from './companyFacts.mjs';
 
 // Response drafts: when a prospect replies with interest, a question or an
 // objection, the engine drafts the answer the same way the co-pilot answers a
@@ -39,6 +40,7 @@ const RESPOND_SYSTEM =
   "CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. " +
   "VOICE: plain technical British English, calm, an engineer answering a peer. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hype. Three to six sentences. " +
   "NO SIGN-OFF, absolute: the reply ends on the ask. No name, no team or company line, no contact details; the signature is appended by the system. The only web address permitted is the booking link exactly as the grounding gives it; any other address you write would be invented. " +
+  "SHAPE: two or three short paragraphs separated by blank lines, never one dense block. Answer their point first, then the one light ask. " +
   "Return strict JSON only: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"thread|reply|corpus|range\"}]}. The body is plain text, no Markdown.";
 
 // The grounding a response may draw on: the cold open's grounding, the thread,
@@ -46,6 +48,8 @@ const RESPOND_SYSTEM =
 // booking link when configured.
 export function responseGroundingText(grounding, thread, replyText, extracts) {
   const lines = [renderGrounding(grounding)];
+  lines.push('Standing company facts, citable as they stand:');
+  for (const f of COMPANY_FACTS) lines.push(`  ${f}`);
   lines.push('The thread so far, our sent emails. Restating their supported facts is permitted:');
   for (const t of thread) lines.push(`  [sent] Subject: ${t.subject}\n  ${String(t.body || '').slice(0, 800)}`);
   lines.push(`Their reply, the message to answer:\n${String(replyText || '').slice(0, 3000)}`);

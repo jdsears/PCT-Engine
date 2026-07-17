@@ -8,7 +8,7 @@ import { ask } from './answer.mjs';
 import { REGIONS } from './research/region.mjs';
 import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
-import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, withFooter, signatureBlock } from './mail.mjs';
+import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, prospectHtml, signatureBlock } from './mail.mjs';
 import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
 import { canSendReal } from './outbound/sendDecision.mjs';
 import { runResearch } from './research/runResearch.mjs';
@@ -995,7 +995,7 @@ app.post('/api/outbound/drafts/:id/send-test', async (req, res) => {
     const d = rows[0];
     // The test send mirrors the real one exactly, footer included, so what the
     // team reviews in their inbox is what a prospect would receive.
-    const result = await sendMailTest({ to, subject: d.subject, html: textToHtml(withFooter(d.body)) });
+    const result = await sendMailTest({ to, subject: d.subject, html: prospectHtml(d.body) });
     await pool.query(
       `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason)
        VALUES ($1, $2, $3, true, $4, $5)`,
@@ -1026,7 +1026,7 @@ app.post('/api/outbound/drafts/:id/send', async (req, res) => {
 
     // A response threads as a true reply to the prospect's own message; a cold
     // open or follow-up sends as a tracked message. Same footer, same kill switch.
-    const html = textToHtml(withFooter(d.body));
+    const html = prospectHtml(d.body);
     const result = d.email_type === 'response' && d.inbound_message_id
       ? await sendMailReply({ inboundMessageId: d.inbound_message_id, html, to: d.email })
       : await sendMail({ to: d.email, subject: d.subject, html });
