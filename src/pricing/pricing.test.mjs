@@ -6,7 +6,7 @@
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
 import { quotedLine } from './quotedLines.mjs';
-import { priceIntent, partTokens, renderPriceAnswer } from './priceAnswer.mjs';
+import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary } from './priceAnswer.mjs';
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
 
@@ -190,6 +190,19 @@ await check('a guide price renders labelled as a guide, never as a firm sell', a
   assert(/margin is set per customer/.test(text), 'the per-customer caveat travels');
   assert(/Andy|area sales manager/.test(text), 'the internal confirmation route travels');
   assert(!/never estimated/.test(text), 'the firm-sell promise is not made for a guide');
+});
+
+await check('a whole-line question answers with the loaded range and its honest edge', async () => {
+  const text = renderLineSummary({
+    line: 'Marwin', count: 740, min: 181, max: 12138, anyGuide: true,
+    minPart: 'CV4730F-050-CS/FAHLNN0000NN', minDesc: 'CV4730 full port carbon steel, 1/2"',
+  });
+  assert(text.includes('740 parts priced'), 'the count states the coverage');
+  assert(text.includes('from £181 (CV4730F-050-CS/FAHLNN0000NN'), 'the cheapest loaded part answers "lowest" by name');
+  assert(text.includes('to £12,138'), 'the top of the range travels');
+  assert(/guide prices at the standard margin/.test(text), 'the guide caveat travels when any row is a guide');
+  assert(/beyond the loaded lists are priced per enquiry/.test(text), 'the honest edge is stated');
+  assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
 });
 
 console.log('\nThe Marwin page parser (synthetic table, real layout):');
