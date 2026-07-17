@@ -17,7 +17,11 @@ export default function Chat() {
   const [priceReady, setPriceReady] = useState(false);
   const endRef = useRef(null);
   const inputRef = useRef(null);
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages, busy]);
+  // Braced body on purpose: a concise arrow would leak scrollIntoView's
+  // return value as the effect's cleanup, and newer Chrome returns a value
+  // there, which React then calls as a function the moment a message lands.
+  // That was a live white screen; an effect must return a function or nothing.
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
   useEffect(() => {
     apiFetch('/api/price/status').then(r => r.json())
       .then(s => setPriceReady(!!s.ready)).catch(() => setPriceReady(false));
