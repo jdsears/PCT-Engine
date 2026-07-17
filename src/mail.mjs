@@ -43,21 +43,49 @@ export function signatureBlock() {
   if (name) lines.push(name);
   if (title) lines.push(title);
   lines.push('Premier Control Technologies');
+  const address = String(process.env.SENDER_ADDRESS || '').trim();
+  if (address) lines.push(address);
   lines.push('pctflow.com');
   return lines.join('\n');
 }
 
+const OPT_OUT = 'If this is not relevant to you, reply no thanks and I will not write again.';
+
 export function withFooter(text) {
-  const optOut = 'If this is not relevant to you, reply no thanks and I will not write again.';
-  return `${String(text || '').trim()}\n\n${signatureBlock()}\n\n${optOut}`;
+  return `${String(text || '').trim()}\n\n${signatureBlock()}\n\n${OPT_OUT}`;
 }
 
-// Plain text to a simple, safe HTML body: escape, keep blank-line paragraphs and
-// single line breaks. The drafts are plain text, so this is all the markup needed.
+// Plain text to a simple, safe HTML body: escape, keep blank-line paragraphs
+// and single line breaks, and turn bare URLs into real links so a booking
+// link arrives clickable everywhere rather than relying on the client.
+const URL_RE = /https?:\/\/[^\s<>"')]+/g;
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function inlineHtml(s) {
+  let out = '';
+  let last = 0;
+  for (const m of String(s).matchAll(URL_RE)) {
+    out += escapeHtml(s.slice(last, m.index));
+    const url = m[0];
+    out += `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`;
+    last = m.index + url.length;
+  }
+  out += escapeHtml(s.slice(last));
+  return out;
+}
 export function textToHtml(text) {
-  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   return String(text || '').trim().split(/\n{2,}/)
-    .map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('\n');
+    .map(p => `<p>${inlineHtml(p).replace(/\n/g, '<br>')}</p>`).join('\n');
+}
+
+// The full prospect email body: the draft as written, then the signature and
+// opt-out rendered quietly, smaller and greyer under a light rule, so the
+// email reads as a person's note with a tidy footer rather than three stacked
+// paragraphs of the same weight.
+export function prospectHtml(bodyText) {
+  const footer = `${signatureBlock()}\n\n${OPT_OUT}`;
+  return `${textToHtml(bodyText)}\n<div style="margin-top:16px;padding-top:10px;border-top:1px solid #d9dee4;color:#5a6b7a;font-size:13px;">${textToHtml(footer)}</div>`;
 }
 
 // The actual Graph send. Private: both public paths must gate before reaching it.

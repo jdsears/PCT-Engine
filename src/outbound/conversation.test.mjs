@@ -7,7 +7,7 @@ import { looksLikeBounce, decideAction, classifyReply } from './triage.mjs';
 import { pollFloor, effectiveSince } from './replies.mjs';
 import { responseGroundingText } from './respond.mjs';
 import { renderHandoffPack } from './handoff.mjs';
-import { withFooter, signatureBlock, blockedByKillSwitch } from '../mail.mjs';
+import { withFooter, signatureBlock, blockedByKillSwitch, prospectHtml, textToHtml } from '../mail.mjs';
 import { renderDigest } from '../digest.mjs';
 
 let pass = 0, fail = 0;
@@ -142,6 +142,23 @@ await check('prospect mail carries a signature and a plain opt-out line', async 
   }
 });
 
+await check('prospect email renders links clickable, footer quiet, injection escaped', async () => {
+  const olds = { n: process.env.SENDER_NAME, a: process.env.SENDER_ADDRESS, s: process.env.SENDER_SIGNATURE };
+  delete process.env.SENDER_SIGNATURE;
+  process.env.SENDER_NAME = 'James Blythe';
+  process.env.SENDER_ADDRESS = 'Hethel Engineering Centre, Norfolk, UK';
+  const html = prospectHtml('Worth a short call: https://book.example/pct?x=1\n\n<script>alert(1)</script>');
+  assert(html.includes('<a href="https://book.example/pct?x=1">'), 'the booking link arrives as a real link');
+  assert(html.includes('&lt;script&gt;'), 'markup in a body is escaped, never executed');
+  assert(html.includes('font-size:13px'), 'the footer renders quietly');
+  assert(html.includes('Hethel Engineering Centre'), 'the business address travels in the footer');
+  assert(html.indexOf('Worth a short call') < html.indexOf('James Blythe'), 'body first, footer last');
+  assert(textToHtml('plain words, no links').includes('plain words'), 'plain text still renders');
+  for (const [k, v] of [['SENDER_NAME', olds.n], ['SENDER_ADDRESS', olds.a], ['SENDER_SIGNATURE', olds.s]]) {
+    if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
+});
+
 console.log('\nGrounded follow-up drafting (injected model):');
 
 const grounding = {
@@ -199,6 +216,7 @@ await check('a response may draw on the reply, the thread and the corpus, and th
   ]);
   assert(text.includes('What is your lead time'), 'their question is the grounding');
   assert(text.includes('Marwin CV3000 datasheet'), 'corpus extract present');
+  assert(text.includes('Hethel Engineering Centre'), 'the standing company facts travel, so "where are you based" has a true answer');
   assert(text.includes('https://book.example/pct'), 'booking link travels when set');
   delete process.env.MEETING_LINK;
   const noLink = responseGroundingText(grounding, [prev], 'q', []);
