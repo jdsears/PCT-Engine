@@ -455,6 +455,15 @@ every automatic action is conservative by construction.
   suppressed contacts, snoozed leads and handed-off conversations are never
   followed up.
 
+- Contact rotation (`src/outbound/rotation.mjs`). A sequence that ends in
+  silence does not end the account: after `ROTATE_COOLDOWN_DAYS` (default 10)
+  the lead points at the company's next-best specifier, verified email first,
+  and re-enters the drafting pool for a fresh thread. Never the same person
+  twice, one thread at a time per company, and at most `ROTATE_MAX_CONTACTS`
+  people (default 3) before the account rests for good. Runs with the
+  follow-ups switch; simultaneous multi-contact emailing is deliberately not
+  offered, colleagues compare inboxes.
+
 - Reply triage (`src/outbound/triage.mjs`). With reply capture on (a kv switch
   on the Outbound page), the tick polls the mailbox, classifies each new reply
   (interested, question, not interested, out of office, wrong person, bounce,

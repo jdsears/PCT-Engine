@@ -18,6 +18,7 @@ import { generateDrafts } from './outbound/generateDrafts.mjs';
 import { pollReplies } from './outbound/replies.mjs';
 import { triageReplies } from './outbound/triage.mjs';
 import { sweepFollowups } from './outbound/followups.mjs';
+import { rotateContacts } from './outbound/rotation.mjs';
 import { draftResponse } from './outbound/respond.mjs';
 import { gatherHandoffData, renderHandoffPack } from './outbound/handoff.mjs';
 import { startRehearsal, rehearsalStatus, endRehearsal } from './outbound/rehearsal.mjs';
@@ -569,8 +570,9 @@ async function runEngineOnce(trigger) {
 // Draft generation, shared by the Outbound page's generate button, the manual
 // script, and the engine's auto-draft step. One run at a time; every attempt's
 // outcome lands in kv for the Outbound banner. No send path is involved.
+const autodraftLimit = () => Math.max(1, Math.min(20, parseInt(process.env.ENGINE_AUTODRAFT_LIMIT || '10', 10) || 10));
 let draftingRunning = false;
-async function runDraftsOnce(trigger, limit = 5) {
+async function runDraftsOnce(trigger, limit = autodraftLimit()) {
   if (draftingRunning) return false;
   draftingRunning = true;
   const startedAt = new Date().toISOString();
@@ -626,7 +628,9 @@ async function pollAndTriageOnce(trigger) {
 }
 
 // The follow-up sweep: draft the next touch for threads that have gone quiet,
-// into the review queue. Behind its own kv switch; one run at a time.
+// into the review queue, and rotate spent sequences to the company's next
+// specifier so a dead thread becomes a fresh one after the rest period.
+// Behind the follow-ups switch; one run at a time.
 let followupsRunning = false;
 async function sweepFollowupsOnce(trigger) {
   if (followupsRunning) return false;
@@ -635,8 +639,9 @@ async function sweepFollowupsOnce(trigger) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set on this service');
     const r = await sweepFollowups({ log: m => console.log('[followups]', m) });
-    if (r.due > 0 || r.failed > 0) {
-      await kvSet('followups_last_run', { ok: true, at: startedAt, trigger, ...r });
+    const rot = await rotateContacts({ log: m => console.log('[rotate]', m) });
+    if (r.due > 0 || r.failed > 0 || rot.rotated > 0 || rot.rested > 0) {
+      await kvSet('followups_last_run', { ok: true, at: startedAt, trigger, ...r, rotation: rot });
     }
   } catch (e) {
     console.error('[followups] sweep failed:', e.message);

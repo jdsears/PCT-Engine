@@ -111,7 +111,7 @@ export async function dueFollowups({ now = new Date() } = {}) {
      JOIN LATERAL (
        SELECT id, subject, body, sent_at, sequence_step, campaign, company_id, contact_id
        FROM outbound_drafts WHERE lead_id = l.id AND status = 'sent' AND sent_at IS NOT NULL
-       ORDER BY sequence_step DESC, sent_at DESC LIMIT 1
+       ORDER BY sent_at DESC NULLS LAST, sequence_step DESC LIMIT 1
      ) d ON true
      LEFT JOIN contacts ct ON ct.id = d.contact_id
      WHERE l.stage = 'outbound'

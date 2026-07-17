@@ -14,7 +14,7 @@ export async function generateDrafts({ limit = 5, leadId = null, campaign = 'mar
     `SELECT l.id FROM leads l
      WHERE l.campaign = $1 AND l.stage = 'researched'
        AND NOT EXISTS (SELECT 1 FROM outbound_drafts d WHERE d.lead_id = l.id AND d.campaign = $1 AND d.status IN ('draft','approved'))
-     ORDER BY l.score DESC NULLS LAST LIMIT $2`, [campaign, Math.min(Math.max(1, limit), 10)])).rows.map(r => r.id);
+     ORDER BY l.score DESC NULLS LAST LIMIT $2`, [campaign, Math.min(Math.max(1, limit), 20)])).rows.map(r => r.id);
 
   log(`Drafting cold-open emails for ${leadIds.length} lead(s) in campaign ${campaign}.`);
 
