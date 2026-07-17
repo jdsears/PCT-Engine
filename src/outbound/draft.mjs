@@ -140,6 +140,27 @@ const sameLink = (a, b) => {
   return norm(a) === norm(b) || (norm(b) && norm(a).startsWith(norm(b)));
 };
 
+// A trailing sign-off block, mechanically removed. The drafters are told not
+// to sign off, but a model shown a thread containing an old sign-off will
+// copy the example over the instruction, so the tail is cleaned
+// deterministically: trailing paragraphs of short lines, none ending like a
+// sentence, at least one looking like a sign-off marker (a valediction, a
+// team or company line, a web address). A real closing ask ends with a full
+// stop or question mark and is never touched.
+const SIGNOFF_MARK = /\b(regards|thanks|thank you|sincerely|cheers|sales team|premier control technologies|\bpct\b)\b|www\.|https?:\/\/|\.(com|co\.uk|net|org)\b/i;
+export function stripSignoff(body) {
+  const paras = String(body || '').trim().split(/\n{2,}/);
+  let removed = 0;
+  while (paras.length > 1) {
+    const lines = paras[paras.length - 1].split('\n').map(s => s.trim()).filter(Boolean);
+    const shortLines = lines.length <= 6 && lines.every(l => l.split(/\s+/).length <= 7 && !/[.?!]$/.test(l));
+    if (!(shortLines && lines.some(l => SIGNOFF_MARK.test(l)))) break;
+    paras.pop();
+    removed++;
+  }
+  return { body: paras.join('\n\n'), removed };
+}
+
 // Supplier-naming guardrail on the final text: redact any blocked (non-nameable)
 // supplier name the grounding carried, the same policy the co-pilot applies.
 export function applySupplierGuardrail(text, blocked) {
@@ -186,8 +207,12 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
     draft = await reviseDraft(draft, grounding, check.unsupported, { callModel, groundingText });
     check = await checkGrounding(draft, grounding, { callModel, groundingText });
   }
+  // Clean a copied sign-off before the link check, so an address that only
+  // lived in the sign-off goes quietly with it; a link in a real sentence
+  // still blocks below.
+  const swept = stripSignoff(draft.body);
   const s = applySupplierGuardrail(draft.subject, grounding.blockedSuppliers);
-  const b = applySupplierGuardrail(draft.body, grounding.blockedSuppliers);
+  const b = applySupplierGuardrail(swept.body, grounding.blockedSuppliers);
   const redacted = [...new Set([...s.removed, ...b.removed])];
   // A named end customer is a blocking fault: the track record is general, the
   // operator is never named. The "blocking" prefix makes the review refuse approval.
@@ -198,6 +223,7 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
   const links = findLinks(`${s.text}\n${b.text}`).filter(u => !(meetingLink && sameLink(u, meetingLink)));
   const flags = [
     ...check.unsupported,
+    ...(swept.removed ? ['a trailing sign-off block was removed; the signature is appended at send'] : []),
     ...redacted.map(n => `supplier name redacted: ${n}`),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
     ...links.map(u => `blocking: web address in the draft (${u}); remove it, the signature owns identity and only the booking link may appear`),

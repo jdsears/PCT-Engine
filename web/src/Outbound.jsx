@@ -192,6 +192,38 @@ function ReplyCard({ reply, onChanged }) {
   );
 }
 
+// Bulk review for the testing loop. Two clicks each way (arm, then confirm),
+// blocking flags are skipped by the server and reported, the rehearsal lane is
+// never touched, and sending stays one click per email elsewhere.
+function BulkBar({ count, onDone }) {
+  const [arm, setArm] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const run = async (which) => {
+    if (arm !== which) { setArm(which); return; }
+    setBusy(true); setArm(null);
+    try {
+      const r = await action(`/api/outbound/drafts/${which}-all`, jsonOpts('POST'));
+      onDone(which === 'approve'
+        ? `Approved ${r.approved}. ${r.skippedBlocking ? `${r.skippedBlocking} skipped with blocking flags, fix those by hand.` : 'Nothing skipped.'} Sending remains one click per email.`
+        : `Rejected ${r.rejected}. Their leads are back in the pool; the next drafting run writes them fresh.`);
+    } catch (e) { onDone(String(e.message || e)); }
+    setBusy(false);
+  };
+  return (
+    <div className="ob-actions" style={{ marginBottom: 12 }}>
+      <span className="ob-banner-note">{count} open draft{count === 1 ? '' : 's'} (rehearsal excluded)</span>
+      <span className="ob-spacer" />
+      <button className="ob-btn ghost" onClick={() => run('reject')} disabled={busy}>
+        {arm === 'reject' ? `Confirm reject all (${count})` : 'Reject all'}
+      </button>
+      <button className="ob-btn" onClick={() => run('approve')} disabled={busy}>
+        {arm === 'approve' ? `Confirm approve all (${count})` : 'Approve all'}
+      </button>
+      {arm && <button className="ob-btn ghost" onClick={() => setArm(null)} disabled={busy}>Cancel</button>}
+    </div>
+  );
+}
+
 function ConversationCard({ convo, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -450,6 +482,9 @@ export default function Outbound() {
         ))}
       </div>
 
+      {state === 'ready' && filter === 'draft' && drafts && drafts.length > 1 && (
+        <BulkBar count={drafts.filter(d => !d.rehearsal).length} onDone={(m) => { setGenNote(m); refresh(); }} />
+      )}
       {state === 'loading' && <p className="muted-note">Loading drafts.</p>}
       {state === 'error' && <p className="muted-note">Drafts are not available right now.</p>}
       {state === 'ready' && filter === 'replies' && (

@@ -2,6 +2,13 @@
 // separate from the network so it can be tested offline. The production kill
 // switch is not checked here: that stays the single responsibility of sendMail.
 
+// A blocking flag (a named end customer, an invented web address) prevents
+// clean approval wherever approval happens, one draft or a batch. One
+// predicate, so the rule cannot drift between routes.
+export function hasBlockingFlag(flags) {
+  return Array.isArray(flags) && flags.some(f => /^blocking/i.test(String(f)));
+}
+
 // Whether an approved draft may be sent to its real prospect. The kill switch is
 // enforced afterwards by sendMail, so this covers only the business rules.
 export function canSendReal({ status, contactEmail, suppressed }) {

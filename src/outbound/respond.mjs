@@ -1,6 +1,6 @@
 import { pool } from '../db.mjs';
 import { search } from '../retrieve.mjs';
-import { renderGrounding, finaliseDraft, outboundVoice } from './draft.mjs';
+import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff } from './draft.mjs';
 import { reSubject } from './followups.mjs';
 import { COMPANY_FACTS } from './companyFacts.mjs';
 
@@ -51,7 +51,9 @@ export function responseGroundingText(grounding, thread, replyText, extracts) {
   lines.push('Standing company facts, citable as they stand:');
   for (const f of COMPANY_FACTS) lines.push(`  ${f}`);
   lines.push('The thread so far, our sent emails. Restating their supported facts is permitted:');
-  for (const t of thread) lines.push(`  [sent] Subject: ${t.subject}\n  ${String(t.body || '').slice(0, 800)}`);
+  // Sign-offs are stripped from the examples shown to the model: a model
+  // shown an old sign-off copies it over the no-sign-off instruction.
+  for (const t of thread) lines.push(`  [sent] Subject: ${t.subject}\n  ${stripSignoff(String(t.body || '')).body.slice(0, 800)}`);
   lines.push(`Their reply, the message to answer:\n${String(replyText || '').slice(0, 3000)}`);
   if (extracts.length) {
     lines.push('Corpus extracts from PCT documents, citable facts for answering their question:');
