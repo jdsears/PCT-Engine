@@ -130,16 +130,26 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
             <span className="ob-spacer" />
             <button className="ob-btn ghost" onClick={reject} disabled={busy}>Reject</button>
             {draft.status === 'draft' && <button className="ob-btn primary" onClick={approve} disabled={busy || dirty}>Approve</button>}
-            {draft.status === 'approved' && <button className="ob-btn danger" onClick={sendReal} disabled={busy}>Send to prospect</button>}
+            {draft.status === 'approved' && (
+              <button className={`ob-btn ${draft.rehearsal ? 'primary' : 'danger'}`} onClick={sendReal} disabled={busy}>
+                {draft.rehearsal ? 'Send the rehearsal email' : 'Send to prospect'}
+              </button>
+            )}
           </div>
-          <div className="ob-test">
-            <span className="eyebrow">Send a test</span>
-            <select className="ob-select" value={to} disabled={!testOn || !recipients.length || busy} onChange={e => setTo(e.target.value)}>
-              {recipients.length ? recipients.map(a => <option key={a} value={a}>{a}</option>) : <option value="">no internal recipients set</option>}
-            </select>
-            <button className="ob-btn" onClick={sendTest} disabled={!testOn || !to || busy}>Send test</button>
-            {!testOn && <span className="ob-test-off">test sends are off</span>}
-          </div>
+          {draft.rehearsal ? (
+            <div className="ob-test">
+              <span className="ob-test-off">Test sends are hidden on a rehearsal: reply capture, triage and follow-ups only follow the real send above, which can only reach the internal allowlist while the kill switch is on.</span>
+            </div>
+          ) : (
+            <div className="ob-test">
+              <span className="eyebrow">Send a test</span>
+              <select className="ob-select" value={to} disabled={!testOn || !recipients.length || busy} onChange={e => setTo(e.target.value)}>
+                {recipients.length ? recipients.map(a => <option key={a} value={a}>{a}</option>) : <option value="">no internal recipients set</option>}
+              </select>
+              <button className="ob-btn" onClick={sendTest} disabled={!testOn || !to || busy}>Send test</button>
+              {!testOn && <span className="ob-test-off">test sends are off</span>}
+            </div>
+          )}
         </>
       )}
       {msg && <div className="ob-msg">{msg}</div>}
@@ -346,7 +356,7 @@ export default function Outbound() {
     setRehBusy(true); setRehNote(null);
     try {
       const r = await action('/api/outbound/rehearsal/start', jsonOpts('POST', { to: rehTo || recipients[0] }));
-      setRehNote(`Rehearsal started: a cloned draft is in To review, addressed to ${r.to}. The original draft is untouched. Approve it, send it, and reply from that inbox like a prospect.`);
+      setRehNote(`Rehearsal started: a cloned draft is in To review, addressed to ${r.to}. The original draft is untouched. Approve it, press Send the rehearsal email, then reply from that inbox like a prospect; only that real send drives reply capture, triage and follow-ups.`);
       refresh();
     } catch (e) { setRehNote(String(e.message || e)); }
     setRehBusy(false);
