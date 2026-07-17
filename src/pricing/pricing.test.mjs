@@ -8,6 +8,7 @@ import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellVal
 import { quotedLine } from './quotedLines.mjs';
 import { priceIntent, partTokens, renderPriceAnswer } from './priceAnswer.mjs';
 import { computeGuide } from './richardsTransform.mjs';
+import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -189,6 +190,44 @@ await check('a guide price renders labelled as a guide, never as a firm sell', a
   assert(/margin is set per customer/.test(text), 'the per-customer caveat travels');
   assert(/Andy|area sales manager/.test(text), 'the internal confirmation route travels');
   assert(!/never estimated/.test(text), 'the firm-sell promise is not made for a guide');
+});
+
+console.log('\nThe Marwin page parser (synthetic table, real layout):');
+
+// A miniature of the real pages: a size header, a model row with n/a
+// alignment, the dual-header adder block, and a CV4700 row. Fake prices.
+const MARWIN_FIXTURE = [
+  '    Carbon Steel FULL PORT Standard Models                           1/4"       3/8"     1/2"     3/4"     1"',
+  '    3000F-xxx-CS / PTS6TFTVHL (NPT)                                  $100       $100    $120     $140     $160',
+  '    3000F-xxx-CS / F1S6TFTVHL (150# Flanged) (RF or RTJ)              n/a        n/a    $500     $600     $700',
+  '                                                                       Full         1/4"   3/8"   1/2"   3/4"      1"',
+  'Characterized Seat Adder (316 SS)                   Designator         Reduced             1/2"   3/4"    1"     1 1/4"',
+  '30 Degree                                           A1                              $50   $50   $50   $50     $90',
+  '           Handle Operated Part Number (NPT)                                                      1/2"         3/4"           1"     1 1/2"       2"',
+  '           CV4730F-xxx-CS / FAHLNN0000NN                                                          $316         $349          $432     $719     $1,060',
+].join('\n');
+
+await check('the header, the rows, the n/a alignment and the adder all parse', async () => {
+  const { parts, report } = parseMarwinPages(MARWIN_FIXTURE);
+  assert(report.adder, 'the adder block is found');
+  const half = parts.find(p => p.part === '3000F-050-CS/PTS6TFTVHL');
+  assert(half?.listUsd === 120, `the half-inch NPT lands on its column, got ${JSON.stringify(half)}`);
+  const cvHalf = parts.find(p => p.part === 'CV3000F-050-CS/PTS6TFTVHL');
+  assert(cvHalf?.listUsd === 170, `the CV variant carries the plate adder, got ${JSON.stringify(cvHalf)}`);
+  const flangedQuarter = parts.find(p => p.part === '3000F-025-CS/F1S6TFTVHL');
+  assert(flangedQuarter === undefined, 'an n/a cell never becomes a part');
+  const flangedHalf = parts.find(p => p.part === '3000F-050-CS/F1S6TFTVHL');
+  assert(flangedHalf?.listUsd === 500, 'prices after n/a cells stay on their columns');
+  const cv47 = parts.find(p => p.part === 'CV4730F-100-CS/FAHLNN0000NN');
+  assert(cv47?.listUsd === 432, `CV4700 parses at its five-column width, got ${JSON.stringify(cv47)}`);
+  assert(parts.every(p => !('buying' in p)), 'list prices only; no computed chain leaks from the parser');
+});
+
+await check('the row and header primitives hold their shapes', async () => {
+  const r = parseModelRow('    3000R-xxx-S6 / PTS6TFTVHL (NPT)   n/a   $543   $563');
+  assert(r.model === '3000R' && r.material === 'S6' && r.prices[0] === null && r.prices[1] === 543, JSON.stringify(r));
+  assert(parseSizeHeader('some words 1/4" 3/8" 1/2" 3/4" 1"')?.length === 5, 'five sizes found');
+  assert(parseSizeHeader('no sizes here') === null, 'prose is not a header');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);

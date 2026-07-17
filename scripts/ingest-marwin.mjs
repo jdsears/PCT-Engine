@@ -4,16 +4,19 @@
 // everywhere they surface. Dry run by default; --apply writes.
 //
 //   node --env-file=.env scripts/ingest-marwin.mjs --workbook "<Mega Price List.xlsx>" --probe
-//   node --env-file=.env scripts/ingest-marwin.mjs --workbook "<xlsx>" --csv marwin.csv
-//   node --env-file=.env scripts/ingest-marwin.mjs --workbook "<xlsx>" --csv marwin.csv --apply
+//   node --env-file=.env scripts/ingest-marwin.mjs --workbook "<xlsx>" --pdf "<Marwin_NA_REV1.pdf>"
+//   node --env-file=.env scripts/ingest-marwin.mjs --workbook "<xlsx>" --pdf "<pdf>" --apply
 //
 // --probe only reads and validates the transform against the sheet's own
 // example row, printing a pass or the exact mismatch, never the raw
-// percentages. --csv takes rows of part,description,list_usd (header line
-// optional) as the interim list source until the Marwin PDF page parser
-// lands; the same storage path will take the PDF parser's output unchanged.
+// percentages. --pdf extracts the CV3000 and CV4700 pages (default 27-34,
+// override with --pages "a-b") through pdftotext and parses the base model
+// tables; --csv (rows of part,description,list_usd) remains as the manual
+// side door. Both feed the same transform and storage path.
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { readRichardsTransform, computeGuide } from '../src/pricing/richardsTransform.mjs';
+import { parseMarwinPages } from '../src/pricing/parseMarwinPdf.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
 import { pool } from '../src/db.mjs';
 
@@ -23,6 +26,8 @@ const APPLY = args.includes('--apply');
 const PROBE = args.includes('--probe');
 const WORKBOOK = flag('--workbook');
 const CSV = flag('--csv');
+const PDF = flag('--pdf');
+const PAGES = flag('--pages') || '27-34';
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 
 if (!WORKBOOK) {
@@ -40,24 +45,39 @@ try {
 }
 if (PROBE) { await pool.end(); process.exit(0); }
 
-if (!CSV) {
-  console.error('No list source. Pass --csv <file> with rows of part,description,list_usd.');
+if (!CSV && !PDF) {
+  console.error('No list source. Pass --pdf "<Marwin price list>" (pages 27-34 by default) or --csv <file>.');
   await pool.end();
   process.exit(1);
 }
 
-const rows = [];
-for (const line of readFileSync(CSV, 'utf8').split(/\r?\n/)) {
-  const t = line.trim();
-  if (!t || /^part\b/i.test(t)) continue;
-  const cols = t.split(',').map(s => s.trim());
-  const listUsd = parseFloat(cols[cols.length - 1]);
-  const part = cols[0];
-  const description = cols.slice(1, -1).join(', ') || null;
-  if (!part || !Number.isFinite(listUsd) || listUsd <= 0) { console.log(`  skipped line: ${t.slice(0, 60)}`); continue; }
-  rows.push({ part, description, listUsd });
+let rows = [];
+if (PDF) {
+  const [f, l] = PAGES.split('-').map(n => parseInt(n, 10));
+  let text;
+  try {
+    text = execFileSync('pdftotext', ['-layout', '-f', String(f), '-l', String(l || f), PDF, '-'], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  } catch (e) {
+    console.error(`pdftotext failed: ${e.message}. Install poppler (brew install poppler) or check the path.`);
+    await pool.end();
+    process.exit(1);
+  }
+  const parsed = parseMarwinPages(text);
+  rows = parsed.parts;
+  console.log(`Parsed pages ${PAGES}: ${parsed.report.rows} model rows, ${parsed.report.parts} part(s), characterised-plate adder ${parsed.report.adder ? 'found and applied to the CV variants' : 'NOT found, CV variants skipped'}.`);
+} else {
+  for (const line of readFileSync(CSV, 'utf8').split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || /^part\b/i.test(t)) continue;
+    const cols = t.split(',').map(s => s.trim());
+    const listUsd = parseFloat(cols[cols.length - 1]);
+    const part = cols[0];
+    const description = cols.slice(1, -1).join(', ') || null;
+    if (!part || !Number.isFinite(listUsd) || listUsd <= 0) { console.log(`  skipped line: ${t.slice(0, 60)}`); continue; }
+    rows.push({ part, description, listUsd });
+  }
 }
-if (!rows.length) { console.error('No usable rows in the CSV.'); await pool.end(); process.exit(2); }
+if (!rows.length) { console.error('No usable rows found.'); await pool.end(); process.exit(2); }
 
 const priced = rows.map(r => ({ ...r, guide: computeGuide(r.listUsd, transform) }));
 console.log(`\nMarwin guide prices, effective ${EFFECTIVE}: ${priced.length} part(s).`);
