@@ -237,7 +237,9 @@ function PricePanel({ onBack }) {
                 ))}
               </div>
               <div className="price-meta">
-                Sell price from the {m.sourceTab} tab of the {m.listName}{m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}.
+                {m.basis === 'guide'
+                  ? `Guide price at the standard margin, computed from the ${m.listName}${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. Final margin is set per customer at quote.`
+                  : `Sell price from the ${m.sourceTab} tab of the ${m.listName}${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}.`}
               </div>
             </div>
           ))}
@@ -345,11 +347,15 @@ function PartNumberCard({ config, pricing }) {
       </table>
       {priced ? (
         <div className="pnprice">
-          <span className="eyebrow">Sell price</span>
+          <span className="eyebrow">{priced.basis === 'guide' ? 'Guide price' : 'Sell price'}</span>
           {['GBP', 'EUR', 'USD'].filter(c => priced.prices[c] != null).map(c => (
             <span className="pill" key={c}>{sym[c]}{Number(priced.prices[c]).toLocaleString('en-GB')}</span>
           ))}
-          <span className="pnprice-src">from the {priced.sourceTab} tab of the {priced.listName}</span>
+          <span className="pnprice-src">
+            {priced.basis === 'guide'
+              ? `standard margin guide from the ${priced.listName}; final margin set per customer at quote`
+              : `from the ${priced.sourceTab} tab of the ${priced.listName}`}
+          </span>
         </div>
       ) : pricing?.quoted ? (
         <div className="pnprice pnprice-quoted">

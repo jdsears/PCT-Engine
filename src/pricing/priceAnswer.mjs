@@ -33,10 +33,14 @@ const SYM = { GBP: '£', EUR: '€', USD: '$' };
 export function renderPriceAnswer(m) {
   const prices = ['GBP', 'EUR', 'USD'].filter(c => m.prices[c] != null)
     .map(c => `${SYM[c]}${Number(m.prices[c]).toLocaleString('en-GB')}`).join(', ');
-  return `**${m.partNumber}**${m.description ? `, ${m.description}` : ''}: ${prices}.\n\n` +
-    `Sell price from the ${m.sourceTab} tab of the ${m.listName}` +
-    `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
-    'Prices come from the loaded lists and are never estimated.';
+  const basis = m.basis === 'guide'
+    ? `Guide price at the standard margin, computed from the ${m.listName}` +
+      `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
+      'The final margin is set per customer at quote, so confirm with Andy or your area sales manager before quoting.'
+    : `Sell price from the ${m.sourceTab} tab of the ${m.listName}` +
+      `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
+      'Prices come from the loaded lists and are never estimated.';
+  return `**${m.partNumber}**${m.description ? `, ${m.description}` : ''}: ${prices}.\n\n${basis}`;
 }
 
 // The deterministic price turn, or null to let the ordinary answer path run.

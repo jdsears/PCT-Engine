@@ -7,6 +7,7 @@ import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
 import { quotedLine } from './quotedLines.mjs';
 import { priceIntent, partTokens, renderPriceAnswer } from './priceAnswer.mjs';
+import { computeGuide } from './richardsTransform.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -163,6 +164,31 @@ await check('a stored price renders with its source and never as an estimate', a
   assert(text.includes('Status tab') && text.includes('2026-07-14'), 'the source and date travel');
   assert(/never estimated/.test(text), 'the promise is stated');
   assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
+});
+
+console.log('\nThe Richards guide transform (pure, synthetic parameters only):');
+
+await check('the guide arithmetic compounds discounts, converts, margins and rounds up', async () => {
+  // Synthetic parameters, never the real ones: the commercial figures live
+  // only in the workbook and are read transiently at ingest.
+  const p = { d: 0.1, e: 0.2, margin: 0.5, exportMargin: 0.5, usdPerGbp: 2, eurPerGbp: 1.5 };
+  const g = computeGuide(1000, p);
+  // buying = 1000*0.9*0.8 = 720; GBP = (720/2)/0.5 = 720; USD = 720/0.5 = 1440; EUR = 720*1.5 = 1080.
+  assert(g.GBP === 720 && g.USD === 1440 && g.EUR === 1080, `got ${JSON.stringify(g)}`);
+  const r = computeGuide(1001, p);
+  assert(r.GBP === 721, 'rounds up to the next whole unit, never down');
+  assert(!('buying' in g) && !('d' in g), 'only the three sells come out; the chain stays inside');
+});
+
+await check('a guide price renders labelled as a guide, never as a firm sell', async () => {
+  const text = renderPriceAnswer({
+    partNumber: 'CV3861-10', description: null, basis: 'guide',
+    prices: { GBP: 3433, EUR: 3948, USD: 4463 }, sourceTab: 'guide', listName: 'Marwin NA price list via Richards transform', effectiveDate: '2026-07-17',
+  });
+  assert(/Guide price at the standard margin/.test(text), 'the guide label leads');
+  assert(/margin is set per customer/.test(text), 'the per-customer caveat travels');
+  assert(/Andy|area sales manager/.test(text), 'the internal confirmation route travels');
+  assert(!/never estimated/.test(text), 'the firm-sell promise is not made for a guide');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
