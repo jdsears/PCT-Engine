@@ -1,6 +1,6 @@
 import { pool } from '../db.mjs';
 import { search } from '../retrieve.mjs';
-import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff } from './draft.mjs';
+import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGreeting } from './draft.mjs';
 import { reSubject } from './followups.mjs';
 import { COMPANY_FACTS } from './companyFacts.mjs';
 
@@ -114,6 +114,7 @@ export async function draftResponse(replyId, { replyText = null, callModel = cal
   if (!draft.body) throw new Error('response missing body');
   const finished = await finaliseDraft(draft, { ...grounding, blockedSuppliers: blocked }, { callModel, groundingText });
   const subject = reSubject(finished.subject || r.reply_subject || r.draft_subject);
+  finished.body = ensureGreeting(finished.body, grounding.contact?.name);
 
   const step = (thread[thread.length - 1]?.sequence_step || 1);
   await pool.query(

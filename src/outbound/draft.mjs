@@ -74,6 +74,7 @@ const DRAFT_SYSTEM =
   "POSITIONING RULE: open a conversation about a trusted range, not a data sheet for one valve. Position the Marwin and Steriflow control valve ranges as suited to and trusted in the application. Do NOT lead on a single part number, and do NOT assert any part-specific specification in a cold open, no pressure rating, no material suitability, no temperature figure. Specifics belong in a live conversation, not a first approach. " +
   "TRACK RECORD: you may state, confidently and in general form, that Marwin and Steriflow control valves are already used across some of the largest data centre builds. CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. No 'a major US hyperscaler', no 'a well-known search company', no named operator, nothing that points to a specific customer. " +
   "VOICE: plain technical British English, calm and restrained, one engineer flagging something relevant to a peer then getting out of the way. No opening pleasantries such as hoping the email finds them well, no hype, no superlatives, no closing pressure. No em dashes or en dashes, never the word genuinely, no exclamation marks. " +
+  "GREETING: when the contact's name is given, the body begins 'Dear ' then their first name and a comma, on its own line. With no name given, begin with no greeting at all; never invent a name and never write Dear Sir or Madam. " +
   "STRUCTURE, four or five sentences total: an opening chosen by the grounding (if it gives a signal to open on, open on that event the way a person would; otherwise open on profile fit as the grounding directs, and do not mention any filing or signal); one line positioning the Marwin and Steriflow control valve ranges as trusted for data centre cooling, including the general track record across some of the largest data centre builds, with no named customer and no part-specific spec; a single light specific ask (a short call, or whether they are specifying flow control on the project). " +
   "NO SIGN-OFF, absolute: the email ends on the ask. No name, no team line, no company line, no web address, no phone number, no contact details of any kind; the sender's signature is appended by the system after approval, and a web address you write would be invented. " +
   "Every factual sentence must trace to a grounding item. " +
@@ -159,6 +160,23 @@ export function stripSignoff(body) {
     removed++;
   }
   return { body: paras.join('\n\n'), removed };
+}
+
+// The greeting, guaranteed rather than hoped for: a cold open begins
+// "Dear First," and the lighter thread emails begin "First,". The model is
+// instructed to open this way, and this normaliser makes it certain: a
+// missing greeting is prepended, a bare or Hi/Hello lead-in is upgraded to
+// the house form, an existing correct one passes through, and with no name
+// on file nothing is ever invented. An inline continuation ("Michael,
+// understood, and...") is preserved, only the lead-in token changes.
+export function ensureGreeting(body, fullName, { dear = false } = {}) {
+  const first = String(fullName || '').trim().split(/\s+/)[0];
+  const b = String(body || '').trim();
+  if (!first || !b) return b;
+  const greet = dear ? `Dear ${first},` : `${first},`;
+  const lead = new RegExp(`^(?:dear\\s+|hi\\s+|hello\\s+)?${escapeRe(first)}\\s*,?`, 'i');
+  if (lead.test(b)) return b.replace(lead, greet);
+  return `${greet}\n\n${b}`;
 }
 
 // Re-run the deterministic guardrails against edited text, so a human fix
@@ -251,8 +269,10 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
   return { subject: s.text, body: b.text, model: draft.model, claims: draft.claims, flags };
 }
 
-// The cold-open pipeline: draft, then the shared finishing pass.
+// The cold-open pipeline: draft, the shared finishing pass, then the
+// guaranteed greeting.
 export async function composeDraft(grounding, { callModel = callClaude } = {}) {
   const draft = await draftColdOpen(grounding, { callModel });
-  return finaliseDraft(draft, grounding, { callModel });
+  const finished = await finaliseDraft(draft, grounding, { callModel });
+  return { ...finished, body: ensureGreeting(finished.body, grounding.contact?.name, { dear: true }) };
 }
