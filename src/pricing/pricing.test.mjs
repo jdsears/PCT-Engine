@@ -6,6 +6,7 @@
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
 import { quotedLine } from './quotedLines.mjs';
+import { priceIntent, partTokens, renderPriceAnswer } from './priceAnswer.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -125,6 +126,34 @@ await check('real parts and unknown queries never route to a quoted line', async
   assert(quotedLine('7100') === null, 'a King series is not shadowed');
   assert(quotedLine('random words') === null, 'nonsense stays an honest nothing');
   assert(quotedLine('') === null, 'empty stays empty');
+});
+
+console.log('\nThe co-pilot price turn (pure pieces):');
+
+await check('price intent is money words only, a spec question is never hijacked', async () => {
+  assert(priceIntent('what is the lowest cost of a marwin valve?'), "James's exact question qualifies");
+  assert(priceIntent('what does the CV3000 cost'), 'cost qualifies');
+  assert(priceIntent('can you quote SEM203/P'), 'quote qualifies');
+  assert(!priceIntent('how much flow can the CV3000 pass'), 'a flow question is a spec question');
+  assert(!priceIntent('what is the pressure rating of the CV3000'), 'a rating question is a spec question');
+  assert(!priceIntent(''), 'empty is nothing');
+});
+
+await check('part tokens extract with digits, most specific first', async () => {
+  const t = partTokens('can you price SEM203/P against the 7100 series');
+  assert(t[0] === 'SEM203/P' && t.includes('7100'), `got ${JSON.stringify(t)}`);
+  assert(partTokens('price of a marwin valve').length === 0, 'plain words are not part tokens');
+});
+
+await check('a stored price renders with its source and never as an estimate', async () => {
+  const text = renderPriceAnswer({
+    partNumber: 'SEM203/P', description: 'Push button config',
+    prices: { GBP: 63, USD: 75, EUR: 66 }, sourceTab: 'Status', listName: 'Mega Price List', effectiveDate: '2026-07-14',
+  });
+  assert(text.includes('£63') && text.includes('$75') && text.includes('€66'), 'all three currencies');
+  assert(text.includes('Status tab') && text.includes('2026-07-14'), 'the source and date travel');
+  assert(/never estimated/.test(text), 'the promise is stated');
+  assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
