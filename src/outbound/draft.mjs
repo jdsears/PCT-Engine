@@ -161,6 +161,26 @@ export function stripSignoff(body) {
   return { body: paras.join('\n\n'), removed };
 }
 
+// Re-run the deterministic guardrails against edited text, so a human fix
+// clears a stored flag and an unfixed fault keeps it, honestly. Only the
+// mechanical rules re-run here: the model's unsupported-claim advisories
+// describe the text as drafted, and once a person has edited, authorship is
+// theirs; the absolute rules (end customers, blocked suppliers, web
+// addresses) hold whoever wrote the words.
+export function reflagText({ subject = '', body = '', grounding = {} }) {
+  const text = `${subject}\n${body}`;
+  const meetingLink = String(process.env.MEETING_LINK || '').trim();
+  const links = findLinks(text).filter(u => !(meetingLink && sameLink(u, meetingLink)));
+  const named = [...new Set(flagEndCustomers(text, grounding?.company?.name))];
+  const suppliers = (Array.isArray(grounding?.blockedSuppliers) ? grounding.blockedSuppliers : [])
+    .filter(n => n && text.toLowerCase().includes(String(n).toLowerCase()));
+  return [
+    ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
+    ...suppliers.map(n => `blocking: names a supplier that may not be named (${n})`),
+    ...links.map(u => `blocking: web address in the draft (${u}); remove it, the signature owns identity and only the booking link may appear`),
+  ];
+}
+
 // Supplier-naming guardrail on the final text: redact any blocked (non-nameable)
 // supplier name the grounding carried, the same policy the co-pilot applies.
 export function applySupplierGuardrail(text, blocked) {

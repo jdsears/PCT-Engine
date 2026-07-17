@@ -11,6 +11,7 @@ import { handleTeamsMessage } from './teams.mjs';
 import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, prospectHtml, signatureBlock } from './mail.mjs';
 import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
+import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
@@ -26,7 +27,7 @@ import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
 import { CapReached, AccountUnhealthy } from './research/unipile.mjs';
-import { generateLiPosts, connectNote } from './studio/liPosts.mjs';
+import { generateLiPosts, connectNote, postFlags } from './studio/liPosts.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -752,14 +753,21 @@ app.post('/api/studio/posts/generate', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// The end-customer check re-runs against the edited text, so a fixed post can
+// be marked posted and an unfixed one keeps its flag.
 app.patch('/api/studio/posts/:id', async (req, res) => {
   try {
     const body = String((req.body || {}).body || '').trim();
     if (!body) return res.status(400).json({ error: 'a post body is required' });
-    const { rowCount } = await pool.query(
-      `UPDATE li_posts SET body = $2, updated_at = now() WHERE id = $1 AND status = 'draft'`, [req.params.id, body]);
-    if (!rowCount) return res.status(409).json({ error: 'only a draft post can be edited' });
-    res.json({ ok: true });
+    const { rows } = await pool.query(
+      `UPDATE li_posts SET body = $2, updated_at = now() WHERE id = $1 AND status = 'draft'
+       RETURNING grounding`, [req.params.id, body]);
+    if (!rows.length) return res.status(409).json({ error: 'only a draft post can be edited' });
+    const flags = postFlags(body, rows[0].grounding?.signal?.operator || null);
+    await pool.query(
+      `UPDATE li_posts SET grounding = jsonb_set(COALESCE(grounding, '{}'::jsonb), '{flags}', $2::jsonb) WHERE id = $1`,
+      [req.params.id, JSON.stringify(flags)]);
+    res.json({ ok: true, flags });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
@@ -938,17 +946,23 @@ app.get('/api/outbound/drafts', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-// Edit subject or body, allowed only while the draft is still open.
+// Edit subject or body, allowed only while the draft is still open. The
+// deterministic guardrails re-run against the edited text and the stored
+// flags are rewritten to match, so a hand-fixed draft approves and an
+// unfixed fault keeps its flag.
 app.patch('/api/outbound/drafts/:id', async (req, res) => {
   try {
     const { subject, body } = req.body || {};
     if (subject == null && body == null) return res.status(400).json({ error: 'nothing to update' });
     const { rows } = await pool.query(
       `UPDATE outbound_drafts SET subject = COALESCE($2, subject), body = COALESCE($3, body), updated_at = now()
-       WHERE id = $1 AND status IN ('draft','approved') RETURNING status`,
+       WHERE id = $1 AND status IN ('draft','approved') RETURNING status, subject, body, grounding`,
       [req.params.id, subject ?? null, body ?? null]);
     if (!rows.length) return res.status(409).json({ error: 'draft is not editable' });
-    res.json({ ok: true, status: rows[0].status });
+    const flags = reflagText({ subject: rows[0].subject, body: rows[0].body, grounding: rows[0].grounding || {} });
+    await pool.query(`UPDATE outbound_drafts SET grounding_flags = $2::jsonb WHERE id = $1`,
+      [req.params.id, JSON.stringify(flags)]);
+    res.json({ ok: true, status: rows[0].status, flags });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
