@@ -11,6 +11,7 @@ import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
 import { parseRichardsBook, parseSizeColumns } from './parseRichardsPdf.mjs';
 import { parseBestobell, parseHex } from './parseBooksSpecial.mjs';
+import { parseMarwinMd } from './parseMarwinMd.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -335,6 +336,117 @@ await check('Hex flat rows: model number first, list price last, group code drop
   assert(parts[0].part === 'HN412D2FM2C2' && parts[0].listUsd === 195, 'the part number is the key');
   assert(parts[1].part === 'HN490U3131412' && parts[1].listUsd === 449, 'a leading group code is dropped');
   assert(parts[1].description.includes('1/2" MNPT'), 'the connections travel in the description');
+});
+
+console.log('\nThe Marwin full-book markdown parser (synthetic pages, real layouts):');
+
+// Poison values: weights and adder figures that must never surface as prices.
+const W_POISON = 391, ADDER_POISON = 987;
+
+const MW_FIXTURE = `## Page 3 — 9000 Series
+Manual Operated List Prices
+
+| Valve Size | 1/2" | 3/4" | 2" |
+|---|---|---|---|
+| 9923FTRS-xxx (Carbon Steel) | $44 | $61 | CF |
+| Weight (lbs.) | 0.71 | 1.32 | $${W_POISON} |
+
+| Full Port |  |  |  |
+|---|---|---|---|
+| 9933FTRS-xxx | $47 | n/a | $223 |
+
+## Page 4 — 9000 Series - Spring Return
+
+| STAINLESS STEEL |  |  |  |  |  |
+|---|---|---|---|---|---|
+| SIZE | MODEL | LIST | SIZE | MODEL | LIST |
+| 1/2" | DM9900F-050-S6 / AAS18 (UT-0-SR) | $581 | 1/2" | DM9900F-050-S6 / AAS16 (UT-0-SR) | $581 |
+| 2" | N/A |  | 2" | N/A |  |
+
+| SOLENOIDS | LIST |
+|---|---|
+| ASCO 8551A001MS Nema 4 | $${ADDER_POISON} |
+
+## Page 8 — 8700 Series
+
+| Valve Size | 1/2" | 2" |
+|---|---|---|
+| 8700F-xxx-CS / BAHL | $79 | $324 |
+
+| Special Features Adder | 1/2" | 2" |
+|---|---|---|
+| Fire Tested | $${ADDER_POISON} | $${ADDER_POISON} |
+
+## Page 9 — 8700 Series - Spring Return
+
+| SIZE | MODEL | LIST |
+|---|---|---|
+| 1/2" | 8700F-05A-S6 / BAS18 (UT-0-SR) | $527 |
+
+## Page 16 — 3000 Series Pricing
+
+| Carbon Steel Standard Models | 1/2" | 3/4" | 1" |
+|---|---|---|---|
+| 3000F-xxx-CS / PTS6 (NPT) | $539 | $575 | $740 |
+| 3000F-xxx-S6 / F1S6 (150# Flanged) | n/a | $1,859$2,056$2,707 |  |
+|  | $197 | $218 | $263 |
+
+## Page 17 — 3000 Series Pricing
+
+| Twice Printed | 1/2" | 3/4" | 1" |
+|---|---|---|---|
+| 3000F-xxx-CS / PTS6 (NPT) | $539 | $999 | $740 |
+
+## Page 21 — 3000 Series Pricing - Repair Kits
+
+| Kit | 1/2" |
+|---|---|
+| 3000F-xxx-CS / KIT | $${ADDER_POISON} |
+
+## Page 27 — CV3000 Series
+
+| Valve Size | 1/2" |
+|---|---|
+| 3000F-xxx-CS / CVONLY | $${ADDER_POISON} |
+
+## Page 90 — UT Pneumatic Actuators
+
+| Model | LIST |
+|---|---|
+| UT-0-SR-100-CS | $${ADDER_POISON} |
+`;
+
+await check('conventions come from the book: numeric evidenced, letter evidenced, defaults confessed', async () => {
+  const { parts, report, defaultedSeries, mixedSeries } = parseMarwinMd(MW_FIXTURE);
+  const get = pn => parts.find(p => p.part === pn);
+  assert(get('9923FTRS-050')?.listUsd === 44 && get('9923FTRS-075')?.listUsd === 61,
+    `numeric expansion from the series' own complete codes, got ${JSON.stringify(parts.map(p => p.part))}`);
+  assert(get('9933FTRS-200')?.listUsd === 223, 'a continuation table inherits the page size header');
+  assert(get('DM9900F-050-S6/AAS18')?.listUsd === 581, 'a doubled SIZE MODEL LIST row parses, and is not a size header');
+  assert(get('8700F-05A-CS/BAHL')?.listUsd === 79, 'a letter-evidenced series expands its template to letter codes');
+  assert(get('8700F-050-CS/BAHL') === undefined, 'the numeric form of a letter series is never invented');
+  assert(report.unevidencedSize >= 1 && get('8700F-20A-CS/BAHL') === undefined,
+    'a size with no evidenced letter code is refused and counted, not extrapolated');
+  assert(defaultedSeries.includes('3000') && !defaultedSeries.includes('8700'),
+    'a series with no complete code is named as defaulted to the stated numeric rule');
+  assert(mixedSeries.length === 0, 'no series mixes conventions in the fixture');
+});
+
+await check('the refusals hold: collapsed cells, modelless rows, conflicts withdrawn, poisons never price', async () => {
+  const { parts, report, conflictParts } = parseMarwinMd(MW_FIXTURE);
+  const get = pn => parts.find(p => p.part === pn);
+  assert(report.spanRefused >= 1 && get('3000F-075-S6/F1S6') === undefined,
+    'a cell holding several prices refuses its whole row');
+  assert(report.modelless >= 1, 'a priced row with no part number is counted');
+  assert(conflictParts.includes('3000F-075-CS/PTS6') && get('3000F-075-CS/PTS6') === undefined,
+    'the same code at two prices is withdrawn entirely and listed');
+  assert(get('3000F-050-CS/PTS6')?.listUsd === 539, 'the same code at the same price twice is one part');
+  assert(!parts.some(p => p.listUsd === W_POISON), 'a weight figure never becomes a price');
+  assert(!parts.some(p => p.listUsd === ADDER_POISON),
+    'adder, solenoid, repair-kit, CV-page and accessory-page figures never become prices');
+  assert(report.cf >= 1, 'consult-factory cells are counted');
+  assert(report.skippedPages.cv === 1 && report.skippedPages.kits === 1 && report.skippedPages.accessories === 1,
+    'CV, repair-kit and accessory pages are skipped and counted');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
