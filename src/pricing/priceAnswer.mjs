@@ -1,6 +1,7 @@
 import { pool } from '../db.mjs';
 import { lookupPrice } from './lookup.mjs';
 import { quotedLine } from './quotedLines.mjs';
+import { marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
 
 // Price questions in the co-pilot answer deterministically, never through the
 // model: a stored part answers with its sell prices exactly as loaded, a
@@ -57,6 +58,23 @@ export function renderLineSummary(s) {
     'Parts and series beyond the loaded lists are priced per enquiry via Andy or your area sales manager.';
 }
 
+// One Marwin series, found by its description prefix from the book ingest.
+async function seriesSummary(series) {
+  const prefix = `Marwin ${series} series%`;
+  const { rows } = await pool.query(
+    `SELECT count(DISTINCT norm_key)::int AS count, min(sell_price) AS min, max(sell_price) AS max
+     FROM prices WHERE product_line = 'marwin' AND currency = 'GBP' AND description LIKE $1`, [prefix]);
+  if (!rows[0] || !rows[0].count) return null;
+  const cheapest = (await pool.query(
+    `SELECT part_number, description FROM prices
+     WHERE product_line = 'marwin' AND currency = 'GBP' AND description LIKE $1
+     ORDER BY sell_price ASC, norm_key LIMIT 1`, [prefix])).rows[0];
+  return {
+    series, count: rows[0].count, min: Number(rows[0].min), max: Number(rows[0].max),
+    minPart: cheapest?.part_number || '', minDesc: cheapest?.description || null,
+  };
+}
+
 async function lineSummary(lineLabel) {
   const key = String(lineLabel || '').toLowerCase();
   const { rows } = await pool.query(
@@ -83,6 +101,11 @@ export async function priceTurn(question) {
   for (const tok of partTokens(question)) {
     const r = await lookupPrice(tok);
     if (r.exact && r.matches.length) return { answer: renderPriceAnswer(r.matches[0]), kind: 'price' };
+  }
+  const series = marwinSeriesOf(question);
+  if (series) {
+    const s = await seriesSummary(series).catch(() => null);
+    if (s) return { answer: renderSeriesSummary(s), kind: 'series' };
   }
   const q = quotedLine(question);
   if (q) {

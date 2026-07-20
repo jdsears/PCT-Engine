@@ -23,6 +23,7 @@ import { draftResponse } from './outbound/respond.mjs';
 import { gatherHandoffData, renderHandoffPack } from './outbound/handoff.mjs';
 import { startRehearsal, rehearsalStatus, endRehearsal } from './outbound/rehearsal.mjs';
 import { lookupPrice, priceStatus } from './pricing/lookup.mjs';
+import { buildRangeTree } from './pricing/marwinRanges.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
@@ -1278,6 +1279,40 @@ app.get('/api/price', async (req, res) => {
   try {
     if ((await kvGet('pricelookup_enabled')) !== 'on') return res.status(409).json({ error: 'price lookup is switched off' });
     res.json(await lookupPrice(String(req.query.q || '')));
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The Marwin range builder, stage one: choosers over the priced book. Every
+// leaf the tree offers is a stored part, so the builder cannot invent a
+// code; the tree itself is derived per request from the prices table.
+app.get('/api/marwin/ranges', async (_req, res) => {
+  try {
+    if ((await kvGet('pricelookup_enabled')) !== 'on') return res.status(409).json({ error: 'price lookup is switched off' });
+    const { rows } = await pool.query(
+      `SELECT substring(description from '^Marwin ([^,]+?) series') AS series,
+              count(DISTINCT norm_key)::int AS parts, min(sell_price) AS floor
+       FROM prices WHERE product_line = 'marwin' AND currency = 'GBP'
+         AND description LIKE 'Marwin %'
+       GROUP BY 1 ORDER BY 1`);
+    res.json({ ranges: rows.filter(r => r.series).map(r => ({ series: r.series, parts: r.parts, floorGBP: Number(r.floor) })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+app.get('/api/marwin/range/:series', async (req, res) => {
+  try {
+    if ((await kvGet('pricelookup_enabled')) !== 'on') return res.status(409).json({ error: 'price lookup is switched off' });
+    const { rows } = await pool.query(
+      `SELECT part_number, min(description) AS description,
+              max(sell_price) FILTER (WHERE currency = 'GBP') AS gbp,
+              max(sell_price) FILTER (WHERE currency = 'EUR') AS eur,
+              max(sell_price) FILTER (WHERE currency = 'USD') AS usd
+       FROM prices WHERE product_line = 'marwin' AND description LIKE $1
+       GROUP BY part_number ORDER BY part_number`,
+      [`Marwin ${String(req.params.series)} series%`]);
+    const tree = buildRangeTree(rows.map(r => ({
+      part_number: r.part_number, description: r.description,
+      prices: { GBP: Number(r.gbp), EUR: Number(r.eur), USD: Number(r.usd) },
+    })));
+    res.json({ series: req.params.series, ...tree });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
