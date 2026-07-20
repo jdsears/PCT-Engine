@@ -1237,7 +1237,7 @@ app.post('/api/outbound/rehearsal/start', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 app.post('/api/outbound/rehearsal/end', async (req, res) => {
-  try { res.json(await endRehearsal()); }
+  try { res.json(await endRehearsal({ to: (req.body || {}).to || null })); }
   catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

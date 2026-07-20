@@ -6,6 +6,7 @@ import { followupDelays, followupDueAt, maxSequenceSteps, reSubject, followupGro
 import { looksLikeBounce, decideAction, classifyReply } from './triage.mjs';
 import { pollFloor, effectiveSince } from './replies.mjs';
 import { rotateCooldownDays, rotateMaxContacts } from './rotation.mjs';
+import { wipeStatements } from './rehearsal.mjs';
 import { responseGroundingText } from './respond.mjs';
 import { renderHandoffPack } from './handoff.mjs';
 import { withFooter, signatureBlock, blockedByKillSwitch, prospectHtml, textToHtml } from '../mail.mjs';
@@ -55,6 +56,24 @@ await check('a rehearsal thread runs the same cadence in minutes', async () => {
   const due = followupDueAt(sent, 1, delays, { unit: 'minutes' });
   assert(due.toISOString() === '2026-07-01T09:04:00.000Z', 'four minutes, not four days');
   assert(followupDueAt(sent, 3, delays, { unit: 'minutes' }) === null, 'the sequence still ends');
+});
+
+await check('the rehearsal wipe names only tagged rows, and a scoped wipe stays in its lane', async () => {
+  const all = wipeStatements();
+  assert(all.map(s => s.table).join(',') === 'replies,sends,drafts,leads,contacts',
+    'children go first and stand-in contacts last');
+  for (const s of all) {
+    assert(/campaign = 'rehearsal'|contacts WHERE rehearsal/.test(s.sql),
+      `the ${s.table} statement names the rehearsal tag, nothing else is reachable`);
+    assert(s.params.length === 0, 'the full wipe takes no address');
+  }
+  const scoped = wipeStatements(' James@PCT.example ');
+  for (const s of scoped) {
+    assert(/rehearsal/.test(s.sql), `the scoped ${s.table} statement still names the rehearsal tag`);
+    assert(/lower\(email\) = \$1/.test(s.sql), `the scoped ${s.table} statement narrows to the one address`);
+    assert(s.params.length === 1 && s.params[0] === 'james@pct.example',
+      'the scope is the trimmed, lower-cased address');
+  }
 });
 
 await check('the kill switch invariant: on means internal allowlist only, and only while test sends are on', async () => {

@@ -12,8 +12,11 @@ engineering contact throughout.
 
 ## A. The reset, so live starts from zero
 
-- [ ] End rehearsal and wipe, from the Outbound banner. Removes every
-      rehearsal lead, draft, send, reply and stand-in contact.
+- [ ] End every rehearsal lane, from the Outbound banner. Each teammate's
+      rehearsal runs on its own lane and can be ended alone; for the reset use
+      End all rehearsals (or End this rehearsal on the last remaining lane),
+      which removes every rehearsal lead, draft, send, reply and stand-in
+      contact across all lanes.
 - [ ] Set `REPLY_CAPTURE_TEST_SENDS=off` on Railway (testing-window flag).
 - [ ] Reject any drafts left over from the testing window and regenerate
       fresh ones, so nothing goes out on stale grounding.

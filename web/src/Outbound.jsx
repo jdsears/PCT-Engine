@@ -384,21 +384,24 @@ export default function Outbound() {
   const [rehTo, setRehTo] = useState('');
   const [rehBusy, setRehBusy] = useState(false);
   const [rehNote, setRehNote] = useState(null);
+  const lanes = reh?.lanes || [];
+  const freeRecipients = recipients.filter(a => !lanes.some(l => l.to === String(a).toLowerCase()));
   const startReh = async () => {
     setRehBusy(true); setRehNote(null);
     try {
-      const r = await action('/api/outbound/rehearsal/start', jsonOpts('POST', { to: rehTo || recipients[0] }));
-      setRehNote(`Rehearsal started: a cloned draft is in To review, addressed to ${r.to}. The original draft is untouched. Approve it, press Send the rehearsal email, then reply from that inbox like a prospect; only that real send drives reply capture, triage and follow-ups.`);
+      const r = await action('/api/outbound/rehearsal/start', jsonOpts('POST', { to: rehTo || freeRecipients[0] }));
+      setRehNote(`Rehearsal started for ${r.to}: a cloned draft is in To review. The original draft is untouched, and any other rehearsal keeps running on its own lane. Approve it, press Send the rehearsal email, then reply from that inbox like a prospect; only that real send drives reply capture, triage and follow-ups.`);
+      setRehTo('');
       refresh();
     } catch (e) { setRehNote(String(e.message || e)); }
     setRehBusy(false);
   };
-  const endReh = async () => {
+  const endReh = async (to) => {
     setRehBusy(true); setRehNote(null);
     try {
-      const r = await action('/api/outbound/rehearsal/end', jsonOpts('POST'));
+      const r = await action('/api/outbound/rehearsal/end', jsonOpts('POST', to ? { to } : {}));
       const w = r.wiped || {};
-      setRehNote(`Rehearsal wiped: ${w.drafts ?? 0} drafts, ${w.sends ?? 0} sends, ${w.replies ?? 0} replies, ${w.leads ?? 0} leads, ${w.contacts ?? 0} stand-ins removed. The real pipeline was never part of it.`);
+      setRehNote(`${to ? `Rehearsal for ${to} wiped` : 'All rehearsals wiped'}: ${w.drafts ?? 0} drafts, ${w.sends ?? 0} sends, ${w.replies ?? 0} replies, ${w.leads ?? 0} leads, ${w.contacts ?? 0} stand-ins removed. ${to ? 'Other lanes were not touched, and the' : 'The'} real pipeline was never part of it.`);
       refresh();
     } catch (e) { setRehNote(String(e.message || e)); }
     setRehBusy(false);
@@ -452,25 +455,35 @@ export default function Outbound() {
         {genNote && <p className="ob-banner-sub">{genNote}</p>}
         <div className="ob-banner-controls">
           <span className="eyebrow">Rehearsal</span>
-          {reh?.active ? (
-            <>
-              <span className="ob-banner-note">
-                Live: {reh.drafts ?? 0} draft{(reh.drafts ?? 0) === 1 ? '' : 's'}, {reh.sends ?? 0} send{(reh.sends ?? 0) === 1 ? '' : 's'}, {reh.replies ?? 0} repl{(reh.replies ?? 0) === 1 ? 'y' : 'ies'} on the rehearsal lane, tagged and excluded from the digest.
-              </span>
-              <button className="ob-btn ghost" onClick={endReh} disabled={rehBusy}>End rehearsal and wipe</button>
-            </>
-          ) : (
-            <>
-              <select className="ob-select" value={rehTo || recipients[0] || ''} disabled={rehBusy || !recipients.length} onChange={e => setRehTo(e.target.value)}>
-                {recipients.length ? recipients.map(a => <option key={a} value={a}>{a}</option>) : <option value="">no internal recipients set</option>}
-              </select>
-              <button className="ob-btn" onClick={startReh} disabled={rehBusy || !recipients.length}
-                title="Clones the latest clean draft onto a rehearsal lead addressed to the chosen teammate. The full journey then runs for real, follow-ups on a minutes clock, and everything wipes afterwards.">
-                Start a rehearsal
-              </button>
-            </>
+          <select className="ob-select" value={rehTo || freeRecipients[0] || ''} disabled={rehBusy || !freeRecipients.length} onChange={e => setRehTo(e.target.value)}>
+            {freeRecipients.length
+              ? freeRecipients.map(a => <option key={a} value={a}>{a}</option>)
+              : <option value="">{recipients.length ? 'every internal address is mid-rehearsal' : 'no internal recipients set'}</option>}
+          </select>
+          <button className="ob-btn" onClick={startReh} disabled={rehBusy || !freeRecipients.length}
+            title="Clones the latest clean draft onto a rehearsal lead addressed to the chosen teammate. Each address runs its own lane, so teammates can rehearse at the same time; follow-ups run on a minutes clock and each lane wipes on its own.">
+            Start a rehearsal
+          </button>
+          {lanes.length > 1 && (
+            <button className="ob-btn ghost" onClick={() => endReh()} disabled={rehBusy}>End all rehearsals</button>
           )}
         </div>
+        {lanes.map(l => (
+          <div className="ob-banner-controls" key={l.to}>
+            <span className="ob-banner-note">
+              {l.to}: {l.stage === 'researched' ? 'not yet sent' : l.stage.replace(/_/g, ' ')}, {l.drafts ?? 0} draft{(l.drafts ?? 0) === 1 ? '' : 's'}, {l.sends ?? 0} send{(l.sends ?? 0) === 1 ? '' : 's'}, {l.replies ?? 0} repl{(l.replies ?? 0) === 1 ? 'y' : 'ies'}, tagged and excluded from the digest.
+            </span>
+            <button className="ob-btn ghost" onClick={() => endReh(l.to)} disabled={rehBusy}>End this rehearsal</button>
+          </div>
+        ))}
+        {reh?.active && !lanes.length && (
+          <div className="ob-banner-controls">
+            <span className="ob-banner-note">
+              Live: {reh.drafts ?? 0} draft{(reh.drafts ?? 0) === 1 ? '' : 's'}, {reh.sends ?? 0} send{(reh.sends ?? 0) === 1 ? '' : 's'}, {reh.replies ?? 0} repl{(reh.replies ?? 0) === 1 ? 'y' : 'ies'} on the rehearsal lane.
+            </span>
+            <button className="ob-btn ghost" onClick={() => endReh()} disabled={rehBusy}>End rehearsal and wipe</button>
+          </div>
+        )}
         {rehNote && <p className="ob-banner-sub">{rehNote}</p>}
       </div>
 
