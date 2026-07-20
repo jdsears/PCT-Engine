@@ -10,13 +10,29 @@ import { isTestRecipient } from '../mail.mjs';
 // live. The real lead, its draft and its contact are never touched, so going
 // live starts exactly where it would have anyway, and ending the rehearsal
 // deletes every tagged row.
+//
+// Each stand-in address is its own lane, so John, James and Andy can rehearse
+// at the same time without treading on each other. Replies attribute by
+// conversation id, follow-ups schedule per send, and triage works per reply,
+// so concurrent lanes never cross; status reports per lane, and ending a lane
+// wipes that lane alone. The full wipe, no address given, remains the reset
+// before going live.
 
 // Clone one reviewable cold open onto a rehearsal lead addressed to an
 // internal teammate. The recipient must be on the internal allowlist, the same
-// list test sends use; the kill switch keeps blocking everyone else.
+// list test sends use; the kill switch keeps blocking everyone else. One
+// rehearsal per address at a time: the lane is keyed by the address, so a
+// second start for the same inbox would fold two journeys into one thread
+// listing and muddle both.
 export async function startRehearsal({ draftId = null, to }) {
   const addr = String(to || '').trim().toLowerCase();
   if (!isTestRecipient(addr)) return { started: false, reason: 'the stand-in address must be on the internal test allowlist' };
+  const running = await pool.query(
+    `SELECT 1 FROM leads l JOIN contacts ct ON ct.id = l.contact_id
+     WHERE l.campaign = 'rehearsal' AND ct.rehearsal AND lower(ct.email) = $1 LIMIT 1`, [addr]);
+  if (running.rows.length) {
+    return { started: false, reason: 'this address already has a rehearsal running; end that one first. Rehearsals to other addresses are separate and carry on untouched' };
+  }
 
   const d = (await pool.query(
     draftId
@@ -53,7 +69,8 @@ export async function startRehearsal({ draftId = null, to }) {
   return { started: true, leadId: lead.id, draftId: clone.id, clonedFrom: d.id, to: addr };
 }
 
-// What the rehearsal lane currently holds, for the banner.
+// What the rehearsal lanes currently hold: the aggregate for the banner, and
+// one entry per stand-in address so three teammates each see their own thread.
 export async function rehearsalStatus() {
   const leads = (await pool.query(
     `SELECT stage, count(*)::int AS n FROM leads WHERE campaign = 'rehearsal' GROUP BY stage`)).rows
@@ -65,25 +82,62 @@ export async function rehearsalStatus() {
         WHERE d.campaign = 'rehearsal' AND s.sent AND NOT s.test_mode) AS sends,
        (SELECT count(*)::int FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
         WHERE d.campaign = 'rehearsal') AS replies`)).rows[0];
+  const laneRows = (await pool.query(
+    `SELECT DISTINCT ON (lower(ct.email)) lower(ct.email) AS to_email, l.stage
+     FROM leads l JOIN contacts ct ON ct.id = l.contact_id
+     WHERE l.campaign = 'rehearsal' AND ct.rehearsal
+     ORDER BY lower(ct.email), l.created_at DESC`)).rows;
+  const lanes = [];
+  for (const lr of laneRows) {
+    const c = (await pool.query(
+      `SELECT
+         (SELECT count(*)::int FROM outbound_drafts d JOIN contacts c2 ON c2.id = d.contact_id
+          WHERE d.campaign = 'rehearsal' AND c2.rehearsal AND lower(c2.email) = $1) AS drafts,
+         (SELECT count(*)::int FROM outbound_sends s JOIN outbound_drafts d ON d.id = s.draft_id
+          JOIN contacts c2 ON c2.id = d.contact_id
+          WHERE d.campaign = 'rehearsal' AND c2.rehearsal AND lower(c2.email) = $1
+            AND s.sent AND NOT s.test_mode) AS sends,
+         (SELECT count(*)::int FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
+          JOIN contacts c2 ON c2.id = d.contact_id
+          WHERE d.campaign = 'rehearsal' AND c2.rehearsal AND lower(c2.email) = $1) AS replies`,
+      [lr.to_email])).rows[0];
+    lanes.push({ to: lr.to_email, stage: lr.stage, ...c });
+  }
   const active = Object.values(leads).reduce((a, n) => a + n, 0) > 0;
-  return { active, leads, ...counts };
+  return { active, lanes, leads, ...counts };
 }
 
-// End the rehearsal: delete every tagged row, children first, and nothing
-// else. The real pipeline cannot be touched here by construction, since only
-// campaign 'rehearsal' rows and rehearsal contacts are named.
-export async function endRehearsal() {
-  const replies = await pool.query(
-    `DELETE FROM outbound_replies WHERE draft_id IN (SELECT id FROM outbound_drafts WHERE campaign = 'rehearsal')`);
-  const sends = await pool.query(
-    `DELETE FROM outbound_sends WHERE draft_id IN (SELECT id FROM outbound_drafts WHERE campaign = 'rehearsal')`);
-  const drafts = await pool.query(`DELETE FROM outbound_drafts WHERE campaign = 'rehearsal'`);
-  const leads = await pool.query(`DELETE FROM leads WHERE campaign = 'rehearsal'`);
-  const contacts = await pool.query(`DELETE FROM contacts WHERE rehearsal`);
-  return {
-    wiped: {
-      replies: replies.rowCount, sends: sends.rowCount, drafts: drafts.rowCount,
-      leads: leads.rowCount, contacts: contacts.rowCount,
-    },
-  };
+// The wipe, as data: every statement names campaign 'rehearsal' rows or
+// rehearsal contacts and nothing else, children first, so the real pipeline
+// cannot be touched here by construction. Scoped to one address it narrows
+// every statement to that lane's stand-in contacts; unscoped it is the full
+// reset before going live. Pure, so the gate can prove both properties.
+export function wipeStatements(to = null) {
+  const addr = to ? String(to).trim().toLowerCase() : null;
+  const contactIds = addr
+    ? `SELECT id FROM contacts WHERE rehearsal AND lower(email) = $1`
+    : `SELECT id FROM contacts WHERE rehearsal`;
+  const draftIds = addr
+    ? `SELECT id FROM outbound_drafts WHERE campaign = 'rehearsal' AND contact_id IN (${contactIds})`
+    : `SELECT id FROM outbound_drafts WHERE campaign = 'rehearsal'`;
+  const params = addr ? [addr] : [];
+  return [
+    { table: 'replies', sql: `DELETE FROM outbound_replies WHERE draft_id IN (${draftIds})`, params },
+    { table: 'sends', sql: `DELETE FROM outbound_sends WHERE draft_id IN (${draftIds})`, params },
+    { table: 'drafts', sql: `DELETE FROM outbound_drafts WHERE id IN (${draftIds})`, params },
+    { table: 'leads', sql: addr
+        ? `DELETE FROM leads WHERE campaign = 'rehearsal' AND contact_id IN (${contactIds})`
+        : `DELETE FROM leads WHERE campaign = 'rehearsal'`, params },
+    { table: 'contacts', sql: `DELETE FROM contacts WHERE id IN (${contactIds})`, params },
+  ];
+}
+
+// End a rehearsal. With an address, only that lane goes; without one, every
+// lane goes, which is the going-live reset.
+export async function endRehearsal({ to = null } = {}) {
+  const wiped = {};
+  for (const s of wipeStatements(to)) {
+    wiped[s.table] = (await pool.query(s.sql, s.params)).rowCount;
+  }
+  return { wiped, scope: to ? String(to).trim().toLowerCase() : 'all' };
 }
