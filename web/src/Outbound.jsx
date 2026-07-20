@@ -435,7 +435,7 @@ export default function Outbound() {
           {drafting.lastRun && (
             <span className="ob-banner-note">
               Last drafting run {fmtClockDay(drafting.lastRun.at)}{drafting.lastRun.trigger ? ` (${drafting.lastRun.trigger})` : ''}: {drafting.lastRun.ok
-                ? `${drafting.lastRun.drafted ?? 0} drafted, ${drafting.lastRun.flagged ?? 0} flagged, ${drafting.lastRun.failed ?? 0} failed.`
+                ? `${drafting.lastRun.drafted ?? 0} drafted, ${drafting.lastRun.flagged ?? 0} flagged, ${drafting.lastRun.failed ?? 0} failed${drafting.lastRun.waitingContact ? `, ${drafting.lastRun.waitingContact} lead(s) waiting on contact discovery` : ''}.`
                 : `failed, ${drafting.lastRun.error}`}
             </span>
           )}

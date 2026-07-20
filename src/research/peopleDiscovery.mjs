@@ -19,8 +19,11 @@ export const peopleSearchLimit = () => Math.max(1, Math.min(5, parseInt(process.
 export async function discoverPeople({ limit = peopleSearchLimit(), log = () => {} } = {}) {
   if (!laneReady()) return { skipped: 'the LinkedIn lane is not configured on this service' };
 
-  // The same selection as the enrich script's --new: highest-scoring named
-  // accounts with no people search in the last thirty days.
+  // Selection order serves the drafting queue: companies whose researched
+  // leads are waiting on a contact come first, then the rest by score, all
+  // still under the thirty-day per-account cooldown. Drafting only happens
+  // once a company has an emailable specifier, so the search works the
+  // backlog that is actually blocking outreach before it explores.
   const { rows: companies } = await pool.query(
     `SELECT id, name FROM companies
      WHERE named_account
@@ -28,7 +31,14 @@ export async function discoverPeople({ limit = peopleSearchLimit(), log = () => 
          SELECT 1 FROM unipile_calls u
          WHERE u.target = 'findContacts: ' || companies.name
            AND u.called_at > now() - interval '30 days')
-     ORDER BY icp_score DESC NULLS LAST, name LIMIT $1`, [limit]);
+     ORDER BY EXISTS (
+         SELECT 1 FROM leads l WHERE l.company_id = companies.id AND l.stage = 'researched'
+           AND NOT EXISTS (
+             SELECT 1 FROM contacts ct WHERE ct.company_id = companies.id
+               AND ct.in_decision_orbit AND NOT ct.suppressed AND NOT ct.rehearsal
+               AND ct.email IS NOT NULL AND ct.email_bounced_at IS NULL)
+       ) DESC,
+       icp_score DESC NULLS LAST, name LIMIT $1`, [limit]);
   if (!companies.length) return { companies: 0, note: 'every named account has been searched in the last thirty days' };
 
   const report = { companies: 0, created: 0, updated: 0, orbit: 0 };

@@ -9,16 +9,34 @@ import { composeDraft } from './draft.mjs';
 // here and the kill switch is never touched: every draft lands in the review
 // queue, and the one-open-draft-per-lead rule means re-running never piles up
 // duplicates.
+// A lead may only be drafted when its company has someone to write to: an
+// in-orbit contact, not suppressed, with a live email. A draft without a
+// recipient cannot be sent and only clutters the review queue; the people
+// search and email discovery keep working the waiting leads until they
+// qualify, and the report says how many are held back so the queue's
+// silence is explained rather than mysterious.
+const HAS_CONTACT = `EXISTS (
+  SELECT 1 FROM contacts ct WHERE ct.company_id = l.company_id
+    AND ct.in_decision_orbit AND NOT ct.suppressed AND NOT ct.rehearsal
+    AND ct.email IS NOT NULL AND ct.email_bounced_at IS NULL)`;
+
 export async function generateDrafts({ limit = 5, leadId = null, campaign = 'marwin_dc', log = () => {} } = {}) {
   const leadIds = leadId ? [leadId] : (await pool.query(
     `SELECT l.id FROM leads l
      WHERE l.campaign = $1 AND l.stage = 'researched'
        AND NOT EXISTS (SELECT 1 FROM outbound_drafts d WHERE d.lead_id = l.id AND d.campaign = $1 AND d.status IN ('draft','approved'))
+       AND ${HAS_CONTACT}
      ORDER BY l.score DESC NULLS LAST LIMIT $2`, [campaign, Math.min(Math.max(1, limit), 20)])).rows.map(r => r.id);
 
-  log(`Drafting cold-open emails for ${leadIds.length} lead(s) in campaign ${campaign}.`);
+  const waiting = leadId ? 0 : (await pool.query(
+    `SELECT count(*)::int AS n FROM leads l
+     WHERE l.campaign = $1 AND l.stage = 'researched'
+       AND NOT EXISTS (SELECT 1 FROM outbound_drafts d WHERE d.lead_id = l.id AND d.campaign = $1 AND d.status IN ('draft','approved'))
+       AND NOT ${HAS_CONTACT}`, [campaign])).rows[0].n;
 
-  const report = { considered: leadIds.length, drafted: 0, flagged: 0, failed: 0 };
+  log(`Drafting cold-open emails for ${leadIds.length} lead(s) in campaign ${campaign}${waiting ? `; ${waiting} lead(s) waiting on contact discovery` : ''}.`);
+
+  const report = { considered: leadIds.length, drafted: 0, flagged: 0, failed: 0, waitingContact: waiting };
   for (const id of leadIds) {
     try {
       const grounding = await gatherGrounding(id);
