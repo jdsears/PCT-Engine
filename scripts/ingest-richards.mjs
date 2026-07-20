@@ -6,10 +6,10 @@
 //   node --env-file=.env scripts/ingest-richards.mjs --workbook "<Mega Price List.xlsx>" --line steriflow --pdf "<STERIFLOW...pdf>"
 //   ... --apply
 //
-// BestoBell, Hex and Food and Beverage are refused for now: their tables put
-// models in the columns rather than sizes, and a parser that misreads a
-// price is worse than no parser. They keep the per-enquiry answer until
-// their own page specs are built.
+// BestoBell and Hex go through their own page specs in parseBooksSpecial.
+// Food and Beverage stays refused: its tables merge one price across several
+// size columns, beyond the two-size pair James ruled on, so it keeps the
+// per-enquiry answer until there is guidance for it.
 import { execFileSync } from 'node:child_process';
 import { readRichardsTransform, computeGuide } from '../src/pricing/richardsTransform.mjs';
 import { parseRichardsBook } from '../src/pricing/parseRichardsPdf.mjs';
@@ -64,7 +64,8 @@ const { parts, report } = LINE === 'bestobell' ? parseBestobell(text)
   : LINE === 'hex' ? parseHex(text)
   : parseRichardsBook(text, { line: LINE });
 console.log(`Parsed ${LINE}: ${parts.length} base part(s) (${Object.entries(report).map(([k, v]) => `${k}=${v}`).join(', ')}).`);
-if (report.ambiguous) console.log(`  ${report.ambiguous} price position(s) sat between size columns and were skipped rather than guessed.`);
+if (report.spanned) console.log(`  ${report.spanned} price(s) printed between two sizes were applied to both, as James confirmed in July 2026.`);
+if (report.ambiguous) console.log(`  ${report.ambiguous} part-number position(s) sat between size columns and were skipped rather than guessed.`);
 if (!parts.length) { console.error('Nothing parsed; not writing.'); await pool.end(); process.exit(2); }
 
 const priced = parts.map(r => ({ ...r, guide: computeGuide(r.listUsd, transform) }));

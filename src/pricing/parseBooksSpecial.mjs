@@ -4,8 +4,8 @@
 // the same size columns, so parts here get their true numbers rather than
 // derived slugs. Hex is flat: one row per orderable part, model number
 // first, list price last. Food and Beverage stays refused: its tables merge
-// one price across several size columns, and a parser that guesses which
-// size a merged price belongs to would misprice.
+// one price across several size columns, and James's ruling covers a price
+// printed between two sizes, not a spread across many.
 
 const SIZE_CODES = {
   '3/8"': '038', '1/2"': '050', '3/4"': '075', '1"': '100',
@@ -25,10 +25,13 @@ function sizeColumns(line) {
   }
   return cols.length >= 2 ? cols : null;
 }
-// A price claims a column only when it clearly sits under one: near enough,
-// and decisively nearer than the runner-up. BestoBell prints some prices
-// spanning a pair of sizes, and claiming either side would be a guess, so an
-// ambiguous position is skipped and counted, never resolved by proximity.
+// A price claims a column when it clearly sits under one: near enough, and
+// decisively nearer than the runner-up. When a price is printed between two
+// size columns it belongs to both: James confirmed in July 2026 that a price
+// printed between two sizes applies to both, so those positions return the
+// pair rather than being refused. Part numbers are different: one part number
+// is one part, so a part-number position that cannot pick its column is still
+// skipped and counted, never guessed.
 const nearestCol = (cols, at) => {
   let best = null, second = null;
   for (const c of cols) {
@@ -37,7 +40,7 @@ const nearestCol = (cols, at) => {
     else if (!second || d < second.d) second = { c, d };
   }
   if (!best || best.d > 12) return null;
-  if (second && second.d - best.d < 8) return { ambiguous: true };
+  if (second && second.d - best.d < 8) return { pair: [best.c, second.c] };
   return best.c;
 };
 
@@ -48,7 +51,7 @@ export function parseBestobell(text) {
   const lines = String(text || '').split(/\r?\n/);
   const parts = [];
   const seen = new Set();
-  const report = { models: 0, rows: 0, parts: 0, ambiguous: 0 };
+  const report = { models: 0, rows: 0, parts: 0, spanned: 0, ambiguous: 0 };
   let model = null, cols = null, pending = null;
   for (const raw of lines) {
     const mh = raw.match(/^\s*Model\s+([A-Z]{1,3}\d+[A-Z]?)\b/);
@@ -65,7 +68,7 @@ export function parseBestobell(text) {
         .map(m => ({ pn: m[1], at: m.index + Math.floor(m[1].length / 2) }));
       for (const { pn, at } of pns) {
         const col = nearestCol(cols, at);
-        if (!col || col.ambiguous) { if (col?.ambiguous) report.ambiguous++; continue; }
+        if (!col || col.pair) { if (col?.pair) report.ambiguous++; continue; }
         const price = pending.byCol.get(col.label);
         if (price == null) continue;
         if (seen.has(pn)) continue;
@@ -84,8 +87,10 @@ export function parseBestobell(text) {
     const byCol = new Map();
     for (const m of money) {
       const col = nearestCol(cols, m.index + Math.floor(m[0].length / 2));
-      if (col && !col.ambiguous) byCol.set(col.label, parseFloat(m[1].replace(/,/g, '')));
-      else if (col?.ambiguous) report.ambiguous++;
+      if (!col) continue;
+      const v = parseFloat(m[1].replace(/,/g, ''));
+      if (col.pair) { for (const p of col.pair) { if (!byCol.has(p.label)) byCol.set(p.label, v); } report.spanned++; }
+      else byCol.set(col.label, v);
     }
     pending = { label, byCol };
     report.rows++;

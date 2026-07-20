@@ -288,7 +288,7 @@ await check('the size-column primitives: spans, hyphen canon, single-size guard'
 
 console.log('\nThe BestoBell and Hex specs (synthetic pages, real layouts):');
 
-await check('BestoBell pairs prices with real part numbers and refuses ambiguous positions', async () => {
+await check('BestoBell pairs prices with real part numbers; spanned prices apply to both sizes', async () => {
   // Placement is computed, not hand-spaced: column centres at fixed offsets,
   // so what is "clearly under a column" and what is "between two" is exact.
   const place = pairs => {
@@ -297,21 +297,30 @@ await check('BestoBell pairs prices with real part numbers and refuses ambiguous
     return s;
   };
   const C = { half: 40, threeq: 60, one: 80 };
+  const mid = Math.floor((C.half + C.threeq) / 2);
   const fixture = [
     place([['Model GM9', 10], ['1/2"', C.half], ['3/4"', C.threeq], ['1"', C.one]]),
     place([['NPT', 10], ['$100', C.half], ['$200', C.threeq], ['$300', C.one]]),
     place([['Part Number', 10], ['GM009210', C.half], ['GM009310', C.threeq], ['GM009410', C.one]]),
-    place([['DTC', 10], ['$555', Math.floor((C.half + C.threeq) / 2)]]),
+    place([['DTC', 10], ['$555', mid]]),
     place([['Part Number', 10], ['GM009211', C.half], ['GM009311', C.threeq]]),
     place([['SW', 10], ['CONSULT FACTORY', C.threeq]]),
     place([['Part Number', 10], ['GM009220', C.half], ['GM009320', C.threeq]]),
+    place([['FLG', 10], ['$700', C.half], ['$800', C.threeq]]),
+    place([['Part Number', 10], ['GM009230', mid]]),
   ].join('\n');
   const { parts, report } = parseBestobell(fixture);
   const get = pn => parts.find(p => p.part === pn);
   assert(get('GM009210')?.listUsd === 100 && get('GM009310')?.listUsd === 200 && get('GM009410')?.listUsd === 300,
     `clear columns pair price with true part number, got ${JSON.stringify(parts)}`);
-  assert(get('GM009211') === undefined && get('GM009311') === undefined, 'a price between two columns is refused, not guessed');
-  assert(report.ambiguous >= 1, 'the refusal is counted');
+  // James, July 2026: a price printed between two sizes applies to both.
+  assert(get('GM009211')?.listUsd === 555 && get('GM009311')?.listUsd === 555,
+    'a price printed between two sizes applies to both part numbers of the pair');
+  assert(get('GM009211')?.description.includes('1/2"') && get('GM009311')?.description.includes('3/4"'),
+    'each part of the pair keeps its own size in the description');
+  assert(report.spanned >= 1, 'the spanned price is counted as spanned, not ambiguous');
+  assert(get('GM009230') === undefined && report.ambiguous >= 1,
+    'a part number between two columns is still refused and counted; parts never span');
   assert(get('GM009220') === undefined, 'consult-factory rows price nothing');
 });
 
