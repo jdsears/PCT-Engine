@@ -9,6 +9,8 @@ import { quotedLine } from './quotedLines.mjs';
 import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary } from './priceAnswer.mjs';
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
+import { parseRichardsBook, parseSizeColumns } from './parseRichardsPdf.mjs';
+import { parseBestobell, parseHex } from './parseBooksSpecial.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -241,6 +243,89 @@ await check('the row and header primitives hold their shapes', async () => {
   assert(r.model === '3000R' && r.material === 'S6' && r.prices[0] === null && r.prices[1] === 543, JSON.stringify(r));
   assert(parseSizeHeader('some words 1/4" 3/8" 1/2" 3/4" 1"')?.length === 5, 'five sizes found');
   assert(parseSizeHeader('no sizes here') === null, 'prose is not a header');
+});
+
+console.log('\nThe generic Richards book parser (synthetic pages, real layouts):');
+
+// A miniature of the awkward realities: a grouped table with the label above
+// its prices, a missing cell without a placeholder, a hyphenated size, an
+// orientation qualifier, sidebar prose sharing a line with a row, an adder
+// section to skip, and a single-size LowFlow-style table. Fake prices.
+const RICHARDS_FIXTURE = [
+  '                         MARK 77 SANITARY TEST VALVE',
+  '            Body             Vertical Conn     1/2"      3/4"     1-1/2"',
+  '                     Tri-clamp                           $100      $300',
+  '            Part A',
+  '                                               $110      $120     $310',
+  '            Body             Horizontal Conns  1/2"      3/4"     1-1/2"',
+  '  sidebar words here Tri-clamp                 $200      $210     $400',
+  '                             OPTIONS & ADDERS',
+  '            Gasket thing                       $999      $999     $999',
+  '                         MK55HP FRACTIONAL VALVE',
+  '            Body Mat    End Con                1/2"',
+  '            SST Cast    Threaded              $4,921',
+].join('\n');
+
+await check('grouping, gaps, hyphens, orientation, sidebar prose and adders all behave', async () => {
+  const { parts } = parseRichardsBook(RICHARDS_FIXTURE, { line: 'test' });
+  const get = k => parts.find(p => p.part === k);
+  assert(get('MK77-075-TRICLAMP')?.listUsd === 100 && get('MK77-150-TRICLAMP')?.listUsd === 300,
+    `a missing first cell never shifts its neighbours, got ${JSON.stringify(parts.map(p => p.part + '=' + p.listUsd))}`);
+  assert(get('MK77-050-TRICLAMP') === undefined, 'the empty half-inch cell never becomes a part');
+  assert(get('MK77-050-PARTA')?.listUsd === 110 && get('MK77-150-PARTA')?.listUsd === 310, 'a label above its prices claims them');
+  assert(get('MK77-050-TRICLAMP-H')?.listUsd === 200, 'the horizontal group keys apart from the vertical');
+  assert(!get('MK77-050-TRICLAMP-H')?.description.includes('sidebar'), 'sidebar prose never enters a label');
+  assert(!parts.some(p => /GASKET/.test(p.part) || p.listUsd === 999), 'the adder section is skipped wholesale');
+  assert(get('MK55HP-050-SSTCASTTHREADE')?.listUsd === 4921, `the single-size table parses, got ${JSON.stringify(parts.filter(p => p.part.startsWith('MK55')))}`);
+});
+
+await check('the size-column primitives: spans, hyphen canon, single-size guard', async () => {
+  const cols = parseSizeColumns('     Ends   3/4"    1"   1-1/2"    2"');
+  assert(cols?.length === 4 && cols[2].label === '1 1/2"', 'the hyphenated size canonicalises');
+  assert(parseSizeColumns('prose mentioning 1/2" once') === null, 'a stray size in prose is not a header');
+  assert(parseSizeColumns('   Body Mat  End Con   1/2"')?.length === 1, 'a single-size table header qualifies with header words');
+});
+
+console.log('\nThe BestoBell and Hex specs (synthetic pages, real layouts):');
+
+await check('BestoBell pairs prices with real part numbers and refuses ambiguous positions', async () => {
+  // Placement is computed, not hand-spaced: column centres at fixed offsets,
+  // so what is "clearly under a column" and what is "between two" is exact.
+  const place = pairs => {
+    let s = '';
+    for (const [text, at] of pairs) s = s.padEnd(Math.max(0, at - Math.floor(text.length / 2))) + text;
+    return s;
+  };
+  const C = { half: 40, threeq: 60, one: 80 };
+  const fixture = [
+    place([['Model GM9', 10], ['1/2"', C.half], ['3/4"', C.threeq], ['1"', C.one]]),
+    place([['NPT', 10], ['$100', C.half], ['$200', C.threeq], ['$300', C.one]]),
+    place([['Part Number', 10], ['GM009210', C.half], ['GM009310', C.threeq], ['GM009410', C.one]]),
+    place([['DTC', 10], ['$555', Math.floor((C.half + C.threeq) / 2)]]),
+    place([['Part Number', 10], ['GM009211', C.half], ['GM009311', C.threeq]]),
+    place([['SW', 10], ['CONSULT FACTORY', C.threeq]]),
+    place([['Part Number', 10], ['GM009220', C.half], ['GM009320', C.threeq]]),
+  ].join('\n');
+  const { parts, report } = parseBestobell(fixture);
+  const get = pn => parts.find(p => p.part === pn);
+  assert(get('GM009210')?.listUsd === 100 && get('GM009310')?.listUsd === 200 && get('GM009410')?.listUsd === 300,
+    `clear columns pair price with true part number, got ${JSON.stringify(parts)}`);
+  assert(get('GM009211') === undefined && get('GM009311') === undefined, 'a price between two columns is refused, not guessed');
+  assert(report.ambiguous >= 1, 'the refusal is counted');
+  assert(get('GM009220') === undefined, 'consult-factory rows price nothing');
+});
+
+await check('Hex flat rows: model number first, list price last, group code dropped', async () => {
+  const fixture = [
+    '               HN41     Model Number     Material     Inlet         Outlet       Seat        Packing   Box Quantity   List Price',
+    '                      HN412D2FM2C2      316 NACE    1/4" FNPT     1/4" MNPT    Delrin (soft)  TFE        1 each         $195',
+    '               HN49   HN490U3131412        SS       1/2" MNPT     1/2" FNPT    Integral (Hard) TFE       1 each         $449',
+  ].join('\n');
+  const { parts } = parseHex(fixture);
+  assert(parts.length === 2, `two parts, got ${JSON.stringify(parts.map(p => p.part))}`);
+  assert(parts[0].part === 'HN412D2FM2C2' && parts[0].listUsd === 195, 'the part number is the key');
+  assert(parts[1].part === 'HN490U3131412' && parts[1].listUsd === 449, 'a leading group code is dropped');
+  assert(parts[1].description.includes('1/2" MNPT'), 'the connections travel in the description');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
