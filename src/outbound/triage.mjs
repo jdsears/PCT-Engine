@@ -84,9 +84,10 @@ export function decideAction({ category, confidence }) {
 }
 
 // The reply's own new text, without the quoted thread below it, read once at
-// triage time. uniqueBody is Graph's cut of exactly that.
-async function fetchReplyBody(graphMessageId) {
-  const mb = process.env.ENGINE_MAILBOX;
+// triage time. uniqueBody is Graph's cut of exactly that. The mailbox is the
+// one the reply was captured in; a message id means nothing anywhere else.
+async function fetchReplyBody(graphMessageId, mailbox = null) {
+  const mb = mailbox || process.env.ENGINE_MAILBOX;
   const m = await graphJson(`/users/${mb}/messages/${encodeURIComponent(graphMessageId)}?$select=body,uniqueBody`);
   const html = m?.uniqueBody?.content || m?.body?.content || '';
   return htmlToText(html).slice(0, 8000);
@@ -106,7 +107,7 @@ export async function triageOne(r, { callModel = callClaude, log = () => {} } = 
     verdict = { category: 'bounce', confidence: 'high', reason: 'delivery failure notification', returnDate: null, referral: null };
   } else {
     if (!text && r.graph_message_id) {
-      try { text = await fetchReplyBody(r.graph_message_id); } catch { text = r.snippet || ''; }
+      try { text = await fetchReplyBody(r.graph_message_id, r.mailbox || null); } catch { text = r.snippet || ''; }
     }
     verdict = await classifyReply({ from: r.from_email, subject: r.subject, text: text || r.snippet || '' }, { callModel });
   }
@@ -175,7 +176,7 @@ export async function triageOne(r, { callModel = callClaude, log = () => {} } = 
 // Triage everything still unread, oldest first, capped per pass.
 export async function triageReplies({ limit = 10, callModel = callClaude, log = () => {} } = {}) {
   const { rows } = await pool.query(
-    `SELECT r.id, r.graph_message_id, r.from_email, r.subject, r.snippet, r.body, r.draft_id,
+    `SELECT r.id, r.graph_message_id, r.mailbox, r.from_email, r.subject, r.snippet, r.body, r.draft_id,
             d.lead_id, d.contact_id, d.campaign, c.name AS company
      FROM outbound_replies r
      LEFT JOIN outbound_drafts d ON d.id = r.draft_id

@@ -8,6 +8,8 @@ import { pollFloor, effectiveSince } from './replies.mjs';
 import { rotateCooldownDays, rotateMaxContacts } from './rotation.mjs';
 import { wipeStatements, standInName } from './rehearsal.mjs';
 import { ensureGreeting } from './draft.mjs';
+import { senderList, senderFor, replyMailboxes } from './senders.mjs';
+import { pollCursorKey } from './replies.mjs';
 import { responseGroundingText } from './respond.mjs';
 import { renderHandoffPack } from './handoff.mjs';
 import { withFooter, signatureBlock, blockedByKillSwitch, prospectHtml, textToHtml } from '../mail.mjs';
@@ -57,6 +59,50 @@ await check('a rehearsal thread runs the same cadence in minutes', async () => {
   const due = followupDueAt(sent, 1, delays, { unit: 'minutes' });
   assert(due.toISOString() === '2026-07-01T09:04:00.000Z', 'four minutes, not four days');
   assert(followupDueAt(sent, 3, delays, { unit: 'minutes' }) === null, 'the sequence still ends');
+});
+
+await check('regional senders map sales areas to reps and fall back to the single mailbox', async () => {
+  const old = process.env.OUTBOUND_SENDERS;
+  process.env.OUTBOUND_SENDERS = JSON.stringify([
+    { areas: ['1'], name: 'Guy Beavan', mailbox: 'Guy.beavan@pctflow.com' },
+    { areas: ['2', '3'], name: 'Craig Downs', mailbox: 'craig.downs@pctflow.com' },
+    { areas: ['RA-4', 'RA-6'], name: 'Patrick Mangell', mailbox: 'patrick.mangell@pctflow.com' },
+  ]);
+  assert(senderFor('RA-1')?.name === 'Guy Beavan', 'area 1 is Guy');
+  assert(senderFor('RA-1')?.mailbox === 'guy.beavan@pctflow.com',
+    'addresses compare lower-cased; the dot in the local part is what distinguishes prospecting from actual');
+  assert(senderFor('RA-3')?.name === 'Craig Downs' && senderFor('RA-6')?.name === 'Patrick Mangell',
+    'a rep can hold several areas, in either area spelling');
+  assert(senderFor('RA-5') === null, 'an unmapped area falls back to the engine mailbox, never a guessed rep');
+  assert(senderFor(null) === null && senderFor('nonsense') === null, 'no region, no sender');
+  process.env.OUTBOUND_SENDERS = 'not json';
+  assert(senderList().length === 0 && senderFor('RA-1') === null, 'malformed config disables itself, never throws');
+  if (old === undefined) delete process.env.OUTBOUND_SENDERS; else process.env.OUTBOUND_SENDERS = old;
+});
+
+await check('the signature and the reply sweep follow the regional sender', async () => {
+  const olds = {
+    n: process.env.SENDER_NAME, s: process.env.SENDER_SIGNATURE,
+    m: process.env.ENGINE_MAILBOX, o: process.env.OUTBOUND_SENDERS,
+  };
+  process.env.SENDER_NAME = 'James Blythe';
+  delete process.env.SENDER_SIGNATURE;
+  const sig = signatureBlock({ name: 'Guy Beavan', title: 'Area sales manager, Scotland' });
+  assert(sig.startsWith('Guy Beavan\nArea sales manager, Scotland'), 'the rep signs their own mail');
+  assert(sig.includes('Premier Control Technologies') && sig.includes('pctflow.com'), 'the company lines hold');
+  assert(signatureBlock().startsWith('James Blythe'), 'with no sender the single identity holds');
+  assert(prospectHtml('Short note.', { name: 'Guy Beavan' }).includes('Guy Beavan'), 'the footer carries the rep');
+  process.env.ENGINE_MAILBOX = 'johnsears@pctflow.com';
+  process.env.OUTBOUND_SENDERS = JSON.stringify([{ areas: ['1'], name: 'Guy Beavan', mailbox: 'guy.beavan@pctflow.com' }]);
+  assert(JSON.stringify(replyMailboxes()) === JSON.stringify(['johnsears@pctflow.com', 'guy.beavan@pctflow.com']),
+    'reply capture sweeps the engine mailbox and every rep mailbox');
+  assert(pollCursorKey('johnsears@pctflow.com') === 'outbound_replies_last_poll',
+    'the engine mailbox keeps its original cursor, nothing re-crawls on upgrade');
+  assert(pollCursorKey('guy.beavan@pctflow.com') === 'outbound_replies_last_poll:guy.beavan@pctflow.com',
+    'each rep mailbox holds its own cursor');
+  for (const [k, v] of [['SENDER_NAME', olds.n], ['SENDER_SIGNATURE', olds.s], ['ENGINE_MAILBOX', olds.m], ['OUTBOUND_SENDERS', olds.o]]) {
+    if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
 });
 
 await check('the rehearsal stand-in carries the persona, so generated turns greet the prospect name', async () => {

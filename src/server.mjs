@@ -24,6 +24,7 @@ import { gatherHandoffData, renderHandoffPack } from './outbound/handoff.mjs';
 import { startRehearsal, rehearsalStatus, endRehearsal } from './outbound/rehearsal.mjs';
 import { lookupPrice, priceStatus } from './pricing/lookup.mjs';
 import { buildRangeTree } from './pricing/marwinRanges.mjs';
+import { senderFor } from './outbound/senders.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
@@ -1036,16 +1037,23 @@ app.post('/api/outbound/drafts/:id/send-test', async (req, res) => {
   try {
     const to = String((req.body || {}).to || '').trim();
     if (!isTestRecipient(to)) return res.status(400).json({ error: 'recipient is not on the internal test allowlist' });
-    const { rows } = await pool.query(`SELECT id, subject, body FROM outbound_drafts WHERE id = $1`, [req.params.id]);
+    const { rows } = await pool.query(
+      `SELECT d.id, d.subject, d.body, COALESCE(l.region, co.region) AS region
+       FROM outbound_drafts d
+       LEFT JOIN leads l ON l.id = d.lead_id
+       LEFT JOIN companies co ON co.id = d.company_id
+       WHERE d.id = $1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'draft not found' });
     const d = rows[0];
-    // The test send mirrors the real one exactly, footer included, so what the
-    // team reviews in their inbox is what a prospect would receive.
-    const result = await sendMailTest({ to, subject: d.subject, html: prospectHtml(d.body) });
+    // The test send mirrors the real one exactly, footer, regional sender and
+    // all, so what the team reviews in their inbox is what a prospect would
+    // receive, from the mailbox that would really send it.
+    const sender = senderFor(d.region);
+    const result = await sendMailTest({ to, subject: d.subject, html: prospectHtml(d.body, sender), from: sender?.mailbox || null });
     await pool.query(
-      `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason)
-       VALUES ($1, $2, $3, true, $4, $5)`,
-      [d.id, to, d.subject, !!result.sent, result.reason || null]);
+      `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason, sender_mailbox)
+       VALUES ($1, $2, $3, true, $4, $5, $6)`,
+      [d.id, to, d.subject, !!result.sent, result.reason || null, sender?.mailbox || null]);
     res.json(result);
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -1059,10 +1067,13 @@ app.post('/api/outbound/drafts/:id/send', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT d.id, d.subject, d.body, d.status, d.lead_id, d.email_type, d.reply_id,
               ct.email, ct.suppressed, ct.email_bounced_at,
-              r.graph_message_id AS inbound_message_id
+              r.graph_message_id AS inbound_message_id, r.mailbox AS inbound_mailbox,
+              COALESCE(l.region, co.region) AS region
        FROM outbound_drafts d
        LEFT JOIN contacts ct ON ct.id = d.contact_id
        LEFT JOIN outbound_replies r ON r.id = d.reply_id
+       LEFT JOIN leads l ON l.id = d.lead_id
+       LEFT JOIN companies co ON co.id = d.company_id
        WHERE d.id = $1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'draft not found' });
     const d = rows[0];
@@ -1070,17 +1081,22 @@ app.post('/api/outbound/drafts/:id/send', async (req, res) => {
     if (!gate.ok) return res.status(409).json({ error: gate.reason });
     if (d.email_bounced_at) return res.status(409).json({ error: 'the address on file has bounced; find a fresh one before sending' });
 
-    // A response threads as a true reply to the prospect's own message; a cold
-    // open or follow-up sends as a tracked message. Same footer, same kill switch.
-    const html = prospectHtml(d.body);
+    // A response threads as a true reply to the prospect's own message, through
+    // the mailbox the inbound message lives in; a cold open or follow-up sends
+    // as a tracked message from the lead's regional sender. Same footer rules,
+    // same kill switch.
+    const sender = senderFor(d.region);
+    const html = prospectHtml(d.body, sender);
     const result = d.email_type === 'response' && d.inbound_message_id
-      ? await sendMailReply({ inboundMessageId: d.inbound_message_id, html, to: d.email })
-      : await sendMail({ to: d.email, subject: d.subject, html });
+      ? await sendMailReply({ inboundMessageId: d.inbound_message_id, html, to: d.email, from: d.inbound_mailbox || null })
+      : await sendMail({ to: d.email, subject: d.subject, html, from: sender?.mailbox || null });
+    const sentFrom = d.email_type === 'response' && d.inbound_message_id
+      ? (d.inbound_mailbox || null) : (sender?.mailbox || null);
     await pool.query(
-      `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason, graph_message_id, conversation_id, internet_message_id)
-       VALUES ($1, $2, $3, false, $4, $5, $6, $7, $8)`,
+      `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason, graph_message_id, conversation_id, internet_message_id, sender_mailbox)
+       VALUES ($1, $2, $3, false, $4, $5, $6, $7, $8, $9)`,
       [d.id, d.email, d.subject, !!result.sent, result.reason || null,
-       result.messageId || null, result.conversationId || null, result.internetMessageId || null]);
+       result.messageId || null, result.conversationId || null, result.internetMessageId || null, sentFrom]);
 
     if (result.sent) {
       await pool.query(`UPDATE outbound_drafts SET status = 'sent', sent_at = now(), updated_at = now() WHERE id = $1`, [d.id]);
