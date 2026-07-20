@@ -12,6 +12,7 @@ import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinP
 import { parseRichardsBook, parseSizeColumns } from './parseRichardsPdf.mjs';
 import { parseBestobell, parseHex } from './parseBooksSpecial.mjs';
 import { parseMarwinMd } from './parseMarwinMd.mjs';
+import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -447,6 +448,57 @@ await check('the refusals hold: collapsed cells, modelless rows, conflicts withd
   assert(report.cf >= 1, 'consult-factory cells are counted');
   assert(report.skippedPages.cv === 1 && report.skippedPages.kits === 1 && report.skippedPages.accessories === 1,
     'CV, repair-kit and accessory pages are skipped and counted');
+});
+
+console.log('\nThe Marwin range builder, stage one (pure derivation over stored parts):');
+
+await check('a part number decomposes into its choosing axes, numeric and letter sizes alike', async () => {
+  assert(JSON.stringify(decomposePart('2000F-050-CS-F1/BFS28')) ===
+    JSON.stringify({ model: '2000F', size: '1/2"', material: 'CS', packageCode: 'F1/BFS28' }),
+    'end-class and options both land in the package');
+  assert(decomposePart('9923FTRS-050')?.model === '9923FTRS' && decomposePart('9923FTRS-050')?.packageCode === null,
+    'a catalogue number with nothing after the size has no package');
+  assert(decomposePart('3T-3700R-025-S6/AAHL')?.model === '3T-3700R', 'a hyphenated model keeps its hyphen');
+  assert(decomposePart('8700F-05A-CS/BAHL')?.size === '3/4"' === false && decomposePart('8700F-05A-CS/BAHL')?.size === '1/2"',
+    'letter size codes read as their size');
+  assert(decomposePart('UT-0-SR') === null, 'a string with no size segment is not a part');
+});
+
+await check('the range tree offers only stored parts, grouped and sorted for choosing', async () => {
+  const rows = [
+    { part_number: '666FTTS-200', description: 'Marwin 600 series, 2", Full Port (Brass Internals)', prices: { GBP: 130 } },
+    { part_number: '666FTTS-025', description: 'Marwin 600 series, 1/4", Full Port (Brass Internals)', prices: { GBP: 11 } },
+    { part_number: '633FTRS-025', description: 'Marwin 600 series, 1/4", Full Port (Stainless Steel Internals)', prices: { GBP: 35 } },
+    { part_number: 'DM600F-025-BR/AANN', description: 'Marwin 600 series, 1/4", brass, Direct Mount', prices: { GBP: 38 } },
+    { part_number: 'garbage', description: 'not a part', prices: {} },
+  ];
+  const tree = buildRangeTree(rows);
+  assert(tree.skipped === 1, 'an undecomposable row is skipped and counted, never guessed into the tree');
+  assert(tree.models.map(m => m.model).join(',') === '633FTRS,666FTTS,DM600F', 'models sort');
+  const m666 = tree.models.find(m => m.model === '666FTTS');
+  assert(m666.sizes.map(s => s.size).join(',') === '1/4",2"', 'sizes sort by size, not text');
+  const leaf = m666.sizes[0].materials[0].packages[0];
+  assert(leaf.part === '666FTTS-025' && leaf.prices.GBP === 11, 'the leaf is the stored part with its prices');
+  assert(leaf.label.includes('Full Port'), 'the package label carries the port and internals gloss');
+});
+
+await check('series questions route to their series, and only with intent words plus series or marwin', async () => {
+  assert(marwinSeriesOf('what is the cheapest 9000 series valve?') === '9000');
+  assert(marwinSeriesOf('marwin 8700 price please') === '8700');
+  assert(marwinSeriesOf('fw4700 series cost') === 'FW4700', 'FW4700 beats 4700');
+  assert(marwinSeriesOf('ms3000 series pricing') === 'MS3000', 'MS3000 beats 3000');
+  assert(marwinSeriesOf('price a 3L-2100 for me') === '3T-2100/3L-2100', 'the three-way families route together');
+  assert(marwinSeriesOf('we sold 3000 units last year') === null, 'a bare number without marwin or series is not a series');
+  assert(marwinSeriesOf('cv3000 pricing') === null, 'CV3000 stays with the existing whole-line answer');
+  assert(marwinSeriesOf('what is the price of SEM203/P') === null, 'part questions are not series questions');
+});
+
+await check('the series answer states what is loaded, the cheapest by name, and the honest edges', async () => {
+  const text = renderSeriesSummary({ series: '600', count: 96, min: 11, max: 727, minPart: '666FTTS-025', minDesc: 'Marwin 600 series, 1/4", Full Port (Brass Internals)' });
+  assert(text.includes('96 parts priced') && text.includes('£11') && text.includes('666FTTS-025'), 'the floor is named');
+  assert(text.includes('guide prices') && text.includes('margin is set per customer at quote'), 'the guide caveat holds');
+  assert(text.includes('per enquiry'), 'the beyond-the-book edge holds');
+  assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
