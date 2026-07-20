@@ -11,12 +11,19 @@
 // example row, printing a pass or the exact mismatch, never the raw
 // percentages. --pdf extracts the CV3000 and CV4700 pages (default 27-34,
 // override with --pages "a-b") through pdftotext and parses the base model
-// tables; --csv (rows of part,description,list_usd) remains as the manual
-// side door. Both feed the same transform and storage path.
+// tables; --md takes the full book's markdown extraction and covers every
+// other valve series through parseMarwinMd; --csv (rows of
+// part,description,list_usd) remains as the manual side door. All feed the
+// same transform and storage path, but each source owns only its own rows:
+// the PDF ingest keeps source_tab 'guide', the markdown ingest writes
+// source_tab 'book', and neither delete touches the other. A code the
+// markdown parse produces that the applied CV ingest already holds is
+// skipped and named rather than silently repriced.
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { readRichardsTransform, computeGuide } from '../src/pricing/richardsTransform.mjs';
 import { parseMarwinPages } from '../src/pricing/parseMarwinPdf.mjs';
+import { parseMarwinMd } from '../src/pricing/parseMarwinMd.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
 import { pool } from '../src/db.mjs';
 
@@ -27,6 +34,7 @@ const PROBE = args.includes('--probe');
 const WORKBOOK = flag('--workbook');
 const CSV = flag('--csv');
 const PDF = flag('--pdf');
+const MD = flag('--md');
 const PAGES = flag('--pages') || '27-34';
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 
@@ -45,14 +53,33 @@ try {
 }
 if (PROBE) { await pool.end(); process.exit(0); }
 
-if (!CSV && !PDF) {
-  console.error('No list source. Pass --pdf "<Marwin price list>" (pages 27-34 by default) or --csv <file>.');
+if (!CSV && !PDF && !MD) {
+  console.error('No list source. Pass --pdf "<Marwin price list>" (pages 27-34 by default), --md "<full book markdown>" or --csv <file>.');
   await pool.end();
   process.exit(1);
 }
 
 let rows = [];
-if (PDF) {
+if (MD) {
+  const parsed = parseMarwinMd(readFileSync(MD, 'utf8'));
+  rows = parsed.parts;
+  const r = parsed.report;
+  console.log(`Parsed the full book: ${r.pages} valve page(s), ${r.parts} part(s).`);
+  if (parsed.defaultedSeries.length) {
+    console.log(`  sizes expanded by the book's stated numeric rule, no complete code on their own pages, check a sample per series: ${parsed.defaultedSeries.join(', ')}.`);
+  }
+  if (parsed.mixedSeries.length) {
+    console.log(`  refused outright, mixed size-code conventions: ${parsed.mixedSeries.join(', ')}.`);
+  }
+  if (r.conflicts) {
+    console.log(`  ${r.conflicts} code(s) printed at two different prices are withheld until James rules:`);
+    for (const c of parsed.conflictParts) console.log(`    ${c}`);
+  }
+  if (r.spanRefused) console.log(`  ${r.spanRefused} row(s) with prices collapsed into one cell were refused rather than guessed.`);
+  if (r.modelless) console.log(`  ${r.modelless} priced row(s) carry no part number in the extraction and priced nothing.`);
+  if (r.unevidencedSize) console.log(`  ${r.unevidencedSize} size cell(s) had no evidenced code for their series and were refused.`);
+  console.log(`  CV3000 and CV4700 pages stay with the applied PDF ingest; repair-kit and accessory pages are excluded so a kit can never be the cheapest valve.`);
+} else if (PDF) {
   const [f, l] = PAGES.split('-').map(n => parseInt(n, 10));
   let text;
   try {
@@ -79,10 +106,37 @@ if (PDF) {
 }
 if (!rows.length) { console.error('No usable rows found.'); await pool.end(); process.exit(2); }
 
-const priced = rows.map(r => ({ ...r, guide: computeGuide(r.listUsd, transform) }));
+let priced = rows.map(r => ({ ...r, guide: computeGuide(r.listUsd, transform) }));
+
+// The markdown ingest never repriced a code the applied CV ingest already
+// holds: the CV section and the 3000 section print a few identical codes at
+// different figures, and which section owns them is James's call, not an
+// overwrite order's.
+const SOURCE = MD ? 'book' : 'guide';
+if (MD) {
+  try {
+    const { rows: held } = await pool.query(
+      `SELECT norm_key FROM prices WHERE product_line = 'marwin' AND source_tab <> 'book'`);
+    const heldKeys = new Set(held.map(h => h.norm_key));
+    const overlapping = priced.filter(r => heldKeys.has(normKey(r.part)));
+    if (overlapping.length) {
+      priced = priced.filter(r => !heldKeys.has(normKey(r.part)));
+      console.log(`  ${overlapping.length} code(s) already priced by the applied CV ingest are kept as applied and skipped here, for James to rule on:`);
+      for (const o of overlapping.slice(0, 8)) console.log(`    ${o.part}`);
+      if (overlapping.length > 8) console.log(`    and ${overlapping.length - 8} more`);
+    }
+  } catch (e) {
+    console.log(`  could not check overlaps with the applied CV ingest (${String(e.message).slice(0, 60)}); the apply run checks again.`);
+  }
+}
+
 console.log(`\nMarwin guide prices, effective ${EFFECTIVE}: ${priced.length} part(s).`);
 for (const s of priced.slice(0, 5)) {
   console.log(`  sample: ${s.part}  £${s.guide.GBP}  €${s.guide.EUR}  $${s.guide.USD}${s.description ? '  ' + s.description.slice(0, 40) : ''}`);
+}
+if (MD && priced.length) {
+  const floor = [...priced].sort((a, b) => a.guide.GBP - b.guide.GBP)[0];
+  console.log(`  cheapest: ${floor.part}  £${floor.guide.GBP}  €${floor.guide.EUR}  $${floor.guide.USD}  ${floor.description ? floor.description.slice(0, 60) : ''}`);
 }
 console.log('  (list prices and the transform parameters are not stored or printed)');
 
@@ -95,13 +149,19 @@ if (!APPLY) {
 const client = await pool.connect();
 try {
   await client.query('BEGIN');
-  await client.query(`DELETE FROM prices WHERE product_line = 'marwin'`);
+  await client.query(`DELETE FROM prices WHERE product_line = 'marwin' AND source_tab = $1`, [SOURCE]);
   for (const r of priced) {
     for (const [currency, sell] of Object.entries(r.guide)) {
       await client.query(
         `INSERT INTO prices (product_line, part_number, norm_key, description, currency, sell_price, price_basis, list_name, source_tab, effective_date)
-         VALUES ('marwin', $1, $2, $3, $4, $5, 'guide', 'Marwin NA price list via Richards transform', 'guide', $6)`,
-        [r.part, normKey(r.part), r.description, currency, sell, EFFECTIVE]);
+         VALUES ('marwin', $1, $2, $3, $4, $5, 'guide', $6, $7, $8)
+         ON CONFLICT (product_line, norm_key, currency) DO UPDATE SET sell_price = EXCLUDED.sell_price,
+           part_number = EXCLUDED.part_number, description = EXCLUDED.description,
+           list_name = EXCLUDED.list_name, source_tab = EXCLUDED.source_tab,
+           effective_date = EXCLUDED.effective_date, ingested_at = now()`,
+        [r.part, normKey(r.part), r.description, currency, sell,
+         MD ? 'Marwin NA price list, full book, via Richards transform' : 'Marwin NA price list via Richards transform',
+         SOURCE, EFFECTIVE]);
     }
   }
   await client.query('COMMIT');
