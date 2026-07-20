@@ -18,6 +18,20 @@ import { isTestRecipient } from '../mail.mjs';
 // wipes that lane alone. The full wipe, no address given, remains the reset
 // before going live.
 
+// The stand-in carries the persona of the contact being rehearsed. Greetings
+// on follow-ups and responses come from the lead's contact name, so a
+// stand-in called "Rehearsal prospect" would make every generated turn open
+// "Rehearsal," instead of "Dear Nancy,". Naming the stand-in after the real
+// contact, with the stand-in marker kept in the tail, means what the
+// teammate receives reads exactly as the prospect would receive it, which is
+// the rehearsal's whole promise. With no contact name on file the neutral
+// name remains and nothing is invented.
+export function standInName(personaName, addr) {
+  const local = String(addr || '').split('@')[0] || 'stand-in';
+  const persona = String(personaName || '').trim();
+  return persona ? `${persona} (rehearsal stand-in, ${local})` : `Rehearsal prospect (${local})`;
+}
+
 // Clone one reviewable cold open onto a rehearsal lead addressed to an
 // internal teammate. The recipient must be on the internal allowlist, the same
 // list test sends use; the kill switch keeps blocking everyone else. One
@@ -51,7 +65,7 @@ export async function startRehearsal({ draftId = null, to }) {
   const contact = (await pool.query(
     `INSERT INTO contacts (company_id, full_name, role_title, email, in_decision_orbit, rehearsal)
      VALUES ($1, $2, 'Rehearsal stand-in', $3, false, true) RETURNING id`,
-    [d.company_id, `Rehearsal prospect (${addr.split('@')[0]})`, addr])).rows[0];
+    [d.company_id, standInName(d.grounding?.contact?.name, addr), addr])).rows[0];
   const lead = (await pool.query(
     `INSERT INTO leads (company_id, contact_id, stage, campaign, score, region)
      SELECT company_id, $2, 'researched', 'rehearsal', score, region FROM leads WHERE id = $1

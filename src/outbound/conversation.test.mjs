@@ -6,7 +6,8 @@ import { followupDelays, followupDueAt, maxSequenceSteps, reSubject, followupGro
 import { looksLikeBounce, decideAction, classifyReply } from './triage.mjs';
 import { pollFloor, effectiveSince } from './replies.mjs';
 import { rotateCooldownDays, rotateMaxContacts } from './rotation.mjs';
-import { wipeStatements } from './rehearsal.mjs';
+import { wipeStatements, standInName } from './rehearsal.mjs';
+import { ensureGreeting } from './draft.mjs';
 import { responseGroundingText } from './respond.mjs';
 import { renderHandoffPack } from './handoff.mjs';
 import { withFooter, signatureBlock, blockedByKillSwitch, prospectHtml, textToHtml } from '../mail.mjs';
@@ -56,6 +57,17 @@ await check('a rehearsal thread runs the same cadence in minutes', async () => {
   const due = followupDueAt(sent, 1, delays, { unit: 'minutes' });
   assert(due.toISOString() === '2026-07-01T09:04:00.000Z', 'four minutes, not four days');
   assert(followupDueAt(sent, 3, delays, { unit: 'minutes' }) === null, 'the sequence still ends');
+});
+
+await check('the rehearsal stand-in carries the persona, so generated turns greet the prospect name', async () => {
+  assert(standInName('Nancy Tripplehorn', 'jameskybird@pctflow.com') === 'Nancy Tripplehorn (rehearsal stand-in, jameskybird)',
+    'the stand-in is named for the contact being rehearsed, with the marker in the tail');
+  assert(standInName('', 'andy@pctflow.com') === 'Rehearsal prospect (andy)', 'no contact name on file, nothing invented');
+  assert(ensureGreeting('Quick thought on the cooling spec.', standInName('Nancy Tripplehorn', 'j@x.com')) ===
+    'Nancy,\n\nQuick thought on the cooling spec.',
+    'a rehearsal follow-up greets the persona, not the word Rehearsal');
+  assert(ensureGreeting('Quick thought.', standInName('Nancy Tripplehorn', 'j@x.com'), { dear: true }).startsWith('Dear Nancy,'),
+    'a rehearsal cold open greets Dear plus the persona');
 });
 
 await check('the rehearsal wipe names only tagged rows, and a scoped wipe stays in its lane', async () => {
