@@ -30,15 +30,18 @@ export function isTestRecipient(addr) {
 
 // The sender identity on prospect mail. A cold email from a bare system address
 // converts poorly and reads automated; a named person with a plain signature is
-// both politer and clearer under PECR. SENDER_SIGNATURE overrides the whole
-// block when set; otherwise it is built from the parts. The opt-out line is
+// both politer and clearer under PECR. A regional sender carries its rep's
+// name and title; otherwise SENDER_SIGNATURE overrides the whole block when
+// set, and the block is built from the SENDER_* parts. The opt-out line is
 // always appended to prospect mail: an opt-out we invite is an opt-out we can
 // honour, and the triage path suppresses the contact when one arrives.
-export function signatureBlock() {
-  const custom = String(process.env.SENDER_SIGNATURE || '').trim();
-  if (custom) return custom;
-  const name = String(process.env.SENDER_NAME || '').trim();
-  const title = String(process.env.SENDER_TITLE || '').trim();
+export function signatureBlock(sender = null) {
+  if (!sender) {
+    const custom = String(process.env.SENDER_SIGNATURE || '').trim();
+    if (custom) return custom;
+  }
+  const name = String(sender?.name || process.env.SENDER_NAME || '').trim();
+  const title = String(sender?.title || (sender ? '' : process.env.SENDER_TITLE) || '').trim();
   const lines = [];
   if (name) lines.push(name);
   if (title) lines.push(title);
@@ -51,8 +54,8 @@ export function signatureBlock() {
 
 const OPT_OUT = 'If this is not relevant to you, reply no thanks and I will not write again.';
 
-export function withFooter(text) {
-  return `${String(text || '').trim()}\n\n${signatureBlock()}\n\n${OPT_OUT}`;
+export function withFooter(text, sender = null) {
+  return `${String(text || '').trim()}\n\n${signatureBlock(sender)}\n\n${OPT_OUT}`;
 }
 
 // Plain text to a simple, safe HTML body: escape, keep blank-line paragraphs
@@ -83,14 +86,18 @@ export function textToHtml(text) {
 // opt-out rendered quietly, smaller and greyer under a light rule, so the
 // email reads as a person's note with a tidy footer rather than three stacked
 // paragraphs of the same weight.
-export function prospectHtml(bodyText) {
-  const footer = `${signatureBlock()}\n\n${OPT_OUT}`;
+export function prospectHtml(bodyText, sender = null) {
+  const footer = `${signatureBlock(sender)}\n\n${OPT_OUT}`;
   return `${textToHtml(bodyText)}\n<div style="margin-top:16px;padding-top:10px;border-top:1px solid #d9dee4;color:#5a6b7a;font-size:13px;">${textToHtml(footer)}</div>`;
 }
 
+// The mailbox a send goes from: the regional sender's when one is given, the
+// engine mailbox otherwise.
+const fromMailbox = from => String(from || process.env.ENGINE_MAILBOX || '').trim();
+
 // The actual Graph send. Private: both public paths must gate before reaching it.
-async function deliver({ to, subject, html }) {
-  await graphJson(`/users/${process.env.ENGINE_MAILBOX}/sendMail`, {
+async function deliver({ to, subject, html, from = null }) {
+  await graphJson(`/users/${fromMailbox(from)}/sendMail`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -103,8 +110,8 @@ async function deliver({ to, subject, html }) {
 // Create the message as a draft, read its identifiers, then send it. The two
 // step form is used for real sends so the conversation id is known and an inbound
 // reply can be matched back to the draft it answers.
-async function deliverTracked({ to, subject, html }) {
-  const mb = process.env.ENGINE_MAILBOX;
+async function deliverTracked({ to, subject, html, from = null }) {
+  const mb = fromMailbox(from);
   const created = await graphJson(`/users/${mb}/messages`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -132,11 +139,11 @@ export function blockedByKillSwitch(to) {
 // (explicitly off, or an internal allowlisted address during the testing
 // window). This is the production gate and stays on by default. On a send it
 // returns the message identifiers so the reply poller can correlate.
-export async function sendMail({ to, subject, html }) {
+export async function sendMail({ to, subject, html, from = null }) {
   if (blockedByKillSwitch(to)) {
     return { sent: false, reason: 'kill switch on' };
   }
-  const ids = await deliverTracked({ to, subject, html });
+  const ids = await deliverTracked({ to, subject, html, from });
   return { sent: true, ...ids };
 }
 
@@ -147,11 +154,13 @@ export async function sendMail({ to, subject, html }) {
 // gate since Graph derives the actual recipient from the thread. Returns no
 // message ids (Graph's reply endpoint sends immediately); the conversation id
 // on the inbound message already correlates.
-export async function sendMailReply({ inboundMessageId, html, to }) {
+export async function sendMailReply({ inboundMessageId, html, to, from = null }) {
   if (blockedByKillSwitch(to)) {
     return { sent: false, reason: 'kill switch on' };
   }
-  await graphJson(`/users/${process.env.ENGINE_MAILBOX}/messages/${inboundMessageId}/reply`, {
+  // The reply must go through the mailbox the inbound message lives in; a
+  // Graph message id means nothing in any other mailbox.
+  await graphJson(`/users/${fromMailbox(from)}/messages/${inboundMessageId}/reply`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ comment: html }),
@@ -162,14 +171,14 @@ export async function sendMailReply({ inboundMessageId, html, to }) {
 // Internal test send. Refuses unless test sends are explicitly enabled and the
 // recipient is on the internal allowlist, so it can never reach a prospect even
 // when the production kill switch is off.
-export async function sendMailTest({ to, subject, html }) {
+export async function sendMailTest({ to, subject, html, from = null }) {
   if ((process.env.OUTBOUND_TEST_SENDS || 'off') !== 'on') {
     return { sent: false, reason: 'test sends disabled' };
   }
   if (!isTestRecipient(to)) {
     return { sent: false, reason: 'recipient not on the internal allowlist' };
   }
-  await deliver({ to, subject, html });
+  await deliver({ to, subject, html, from });
   return { sent: true };
 }
 

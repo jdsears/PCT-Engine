@@ -27,22 +27,44 @@ engineering contact throughout.
 
 ## B. Mailboxes and sending identity
 
-- [ ] Decide the live sending model: regional mailboxes or per-rep addresses
-      (agreed direction; the engine currently sends everything from one
-      `ENGINE_MAILBOX`). Once the addresses are decided, MoonBoots builds the
-      per-region or per-rep sender selection; it is a contained change, the
-      whole conversation machinery sits behind one send function.
-- [ ] Create the live mailbox or mailboxes in Microsoft 365. Real mailboxes,
-      not distribution lists; shared mailboxes are free and work.
-- [ ] Move `ENGINE_MAILBOX` off johnsears@pctflow.com to the live mailbox.
-- [ ] Set `SENDER_NAME` and `SENDER_TITLE` (or a whole `SENDER_SIGNATURE`) to
-      the agreed live identity. The opt-out line is appended automatically.
+The live sending model, decided with James in July 2026: each regional rep
+gets a dedicated prospecting address, separate from their actual mailbox so
+campaign mail stays out of HubSpot and the day-to-day inbox, and personal
+from the first touch. The distinguishing feature is the dot in the local
+part, not the capitalisation (capitals in email addresses are cosmetic):
+
+| Sales areas | Rep | Actual | Prospecting |
+| --- | --- | --- | --- |
+| 1 (Scotland) | Guy Beavan | guybeavan@pctflow.com | guy.beavan@pctflow.com |
+| 2 + 3 (West) | Craig Downs | craigdowns@pctflow.com | craig.downs@pctflow.com |
+| 4 + 6 (East) | Patrick Mangell | patrickmangell@pctflow.com | patrick.mangell@pctflow.com |
+
+- [ ] Ask James which rep owns sales area 5; it is not in his mapping, and
+      until it is, area 5 leads send from `ENGINE_MAILBOX` with the single
+      `SENDER_*` identity.
+- [ ] James: create the three prospecting mailboxes with Exchange Online
+      (plan 1) licences. Real licensed mailboxes so Graph can send and read
+      as each of them; the app permissions already granted apply org-wide.
+- [ ] Set `OUTBOUND_SENDERS` on Railway (one JSON line; titles optional):
+      `[{"areas":["1"],"name":"Guy Beavan","mailbox":"guy.beavan@pctflow.com"},{"areas":["2","3"],"name":"Craig Downs","mailbox":"craig.downs@pctflow.com"},{"areas":["4","6"],"name":"Patrick Mangell","mailbox":"patrick.mangell@pctflow.com"}]`
+      With it set, each lead sends from its area's rep, the signature carries
+      the rep's name, replies are captured from every rep mailbox, and
+      responses thread from the mailbox the reply arrived in. Unset, or for
+      an unmapped area, everything falls back to the single `ENGINE_MAILBOX`.
+- [ ] Run `npm run migrate` (020 records sender per send and mailbox per
+      reply).
+- [ ] Move `ENGINE_MAILBOX` off johnsears@pctflow.com to a neutral live
+      mailbox; it remains the fallback sender and the intel inbox.
+- [ ] Set `SENDER_NAME` and `SENDER_TITLE` (or a whole `SENDER_SIGNATURE`) as
+      the fallback identity. The opt-out line is appended automatically.
 - [ ] Set `MEETING_LINK` to the live booking page (Microsoft Bookings or
       similar) so response drafts can carry the meeting ask.
 - [ ] Re-run `node scripts/check-mail-dns.mjs` if the sending domain or DNS
       has changed. pctflow.com passed SPF, DKIM and DMARC in July 2026.
-- [ ] Keep the first fortnight on any brand-new mailbox gentle: small volumes.
-      The approval-per-send model and caps already enforce this; do not raise
+- [ ] Keep the first fortnight on every brand-new mailbox gentle: the three
+      prospecting addresses start with no sending history, so small volumes
+      per address matter even more than they did with one mailbox. The
+      approval-per-send model and caps already enforce this; do not raise
       them for launch week.
 
 ## C. Configuration on the day
