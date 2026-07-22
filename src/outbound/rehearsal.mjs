@@ -62,26 +62,56 @@ export async function startRehearsal({ draftId = null, to }) {
     return { started: false, reason: 'that draft carries a blocking flag; rehearse with a clean one' };
   }
 
-  const contact = (await pool.query(
-    `INSERT INTO contacts (company_id, full_name, role_title, email, in_decision_orbit, rehearsal)
-     VALUES ($1, $2, 'Rehearsal stand-in', $3, false, true) RETURNING id`,
-    [d.company_id, standInName(d.grounding?.contact?.name, addr), addr])).rows[0];
-  const lead = (await pool.query(
-    `INSERT INTO leads (company_id, contact_id, stage, campaign, score, region)
-     SELECT company_id, $2, 'researched', 'rehearsal', score, region FROM leads WHERE id = $1
-     RETURNING id`, [d.lead_id, contact.id])).rows[0];
-  const clone = (await pool.query(
-    `INSERT INTO outbound_drafts (lead_id, company_id, contact_id, campaign, email_type, sequence_step,
-                                  subject, body, grounding, grounding_flags, rationale, model, status)
-     VALUES ($1, $2, $3, 'rehearsal', 'cold_open', 1, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9, 'draft')
-     RETURNING id`,
-    [lead.id, d.company_id, contact.id, d.subject, d.body,
-     JSON.stringify(d.grounding || {}), JSON.stringify(flags),
-     JSON.stringify({ ...(d.rationale || {}), rehearsal: `cloned from draft ${d.id}; the original is untouched` }),
-     d.model])).rows[0];
-
-  return { started: true, leadId: lead.id, draftId: clone.id, clonedFrom: d.id, to: addr };
+  // One transaction for the three inserts, so a mid-way failure can never
+  // leave an orphaned stand-in behind to block the next attempt with a
+  // duplicate-key error, which is exactly what it did once.
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const contact = (await client.query(STAND_IN_UPSERT,
+      [d.company_id, standInName(d.grounding?.contact?.name, addr), addr])).rows[0];
+    if (!contact) {
+      await client.query('ROLLBACK');
+      return { started: false, reason: 'a real contact at this company already carries the stand-in name; rehearse from a different draft' };
+    }
+    const lead = (await client.query(
+      `INSERT INTO leads (company_id, contact_id, stage, campaign, score, region)
+       SELECT company_id, $2, 'researched', 'rehearsal', score, region FROM leads WHERE id = $1
+       RETURNING id`, [d.lead_id, contact.id])).rows[0];
+    const clone = (await client.query(
+      `INSERT INTO outbound_drafts (lead_id, company_id, contact_id, campaign, email_type, sequence_step,
+                                    subject, body, grounding, grounding_flags, rationale, model, status)
+       VALUES ($1, $2, $3, 'rehearsal', 'cold_open', 1, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9, 'draft')
+       RETURNING id`,
+      [lead.id, d.company_id, contact.id, d.subject, d.body,
+       JSON.stringify(d.grounding || {}), JSON.stringify(flags),
+       JSON.stringify({ ...(d.rationale || {}), rehearsal: `cloned from draft ${d.id}; the original is untouched` }),
+       d.model])).rows[0];
+    await client.query('COMMIT');
+    return { started: true, leadId: lead.id, draftId: clone.id, clonedFrom: d.id, to: addr };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 }
+
+// The stand-in insert adopts a leftover rehearsal row with the same name at
+// the same company (an orphan from a failed earlier start) instead of
+// colliding with it on the contacts unique index. The WHERE clause is the
+// safety: only a rehearsal row can be adopted, so if the name somehow
+// matched a real contact the insert returns nothing and the start refuses
+// rather than repurposing real data. Exported so the gate can prove both
+// properties.
+export const STAND_IN_UPSERT =
+  `INSERT INTO contacts (company_id, full_name, role_title, email, in_decision_orbit, rehearsal)
+   VALUES ($1, $2, 'Rehearsal stand-in', $3, false, true)
+   ON CONFLICT (company_id, lower(full_name)) DO UPDATE
+     SET email = EXCLUDED.email, role_title = 'Rehearsal stand-in',
+         in_decision_orbit = false, rehearsal = true, suppressed = false, email_bounced_at = NULL
+     WHERE contacts.rehearsal
+   RETURNING id`;
 
 // What the rehearsal lanes currently hold: the aggregate for the banner, and
 // one entry per stand-in address so three teammates each see their own thread.
