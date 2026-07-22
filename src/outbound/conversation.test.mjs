@@ -6,7 +6,7 @@ import { followupDelays, followupDueAt, maxSequenceSteps, reSubject, followupGro
 import { looksLikeBounce, decideAction, classifyReply } from './triage.mjs';
 import { pollFloor, effectiveSince } from './replies.mjs';
 import { rotateCooldownDays, rotateMaxContacts } from './rotation.mjs';
-import { wipeStatements, standInName } from './rehearsal.mjs';
+import { wipeStatements, standInName, STAND_IN_UPSERT } from './rehearsal.mjs';
 import { ensureGreeting } from './draft.mjs';
 import { senderList, senderFor, replyMailboxes } from './senders.mjs';
 import { pollCursorKey } from './replies.mjs';
@@ -114,6 +114,16 @@ await check('the rehearsal stand-in carries the persona, so generated turns gree
     'a rehearsal follow-up greets the persona, not the word Rehearsal');
   assert(ensureGreeting('Quick thought.', standInName('Nancy Tripplehorn', 'j@x.com'), { dear: true }).startsWith('Dear Nancy,'),
     'a rehearsal cold open greets Dear plus the persona');
+});
+
+await check('the stand-in upsert adopts only rehearsal rows and never repurposes a real contact', async () => {
+  assert(/ON CONFLICT \(company_id, lower\(full_name\)\)/.test(STAND_IN_UPSERT),
+    'it targets the contacts unique index rather than colliding with an orphan from a failed start');
+  assert(/WHERE contacts\.rehearsal/.test(STAND_IN_UPSERT),
+    'adoption is scoped to rehearsal rows; a name clash with a real contact refuses the start instead');
+  assert(/rehearsal = true/.test(STAND_IN_UPSERT) && /suppressed = false/.test(STAND_IN_UPSERT)
+    && /email_bounced_at = NULL/.test(STAND_IN_UPSERT),
+    'an adopted orphan is reset to a clean stand-in');
 });
 
 await check('the rehearsal wipe names only tagged rows, and a scoped wipe stays in its lane', async () => {
