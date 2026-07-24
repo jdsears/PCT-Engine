@@ -32,7 +32,7 @@ import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
 import { CapReached, AccountUnhealthy } from './research/unipile.mjs';
-import { generateLiPosts, connectNote, postFlags } from './studio/liPosts.mjs';
+import { generateLiPosts, connectNote, postFlags, hashtagsFor, renderPostText, publishPost } from './studio/liPosts.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -810,9 +810,24 @@ app.get('/api/studio/posts', async (req, res) => {
     res.json({ posts: rows.map(p => ({
       id: p.id, topic: p.topic, body: p.body, status: p.status,
       source: p.grounding?.signal?.source ?? null, flags: p.grounding?.flags ?? [],
+      hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
+      preview: renderPostText({
+        body: p.body, sourceUrl: p.grounding?.signal?.source || null,
+        hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
+      }),
       createdAt: p.created_at, postedAt: p.posted_at,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Publish one post through the connected account: one human click on one
+// open, unflagged draft, capped per day. A refusal returns its plain reason.
+app.post('/api/studio/posts/:id/post', async (req, res) => {
+  try {
+    const r = await publishPost(req.params.id);
+    if (!r.posted) return res.status(409).json({ error: r.reason });
+    res.json(r);
+  } catch (e) { res.status(500).json({ error: String(e.message || e).slice(0, 300) }); }
 });
 
 app.post('/api/studio/posts/generate', async (req, res) => {

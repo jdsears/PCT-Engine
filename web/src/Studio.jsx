@@ -37,6 +37,7 @@ function CopyButton({ text, label = 'Copy' }) {
 function PostCard({ post, onChanged }) {
   const [body, setBody] = useState(post.body);
   const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
   const dirty = body !== post.body;
   const open = post.status === 'draft';
 
@@ -44,6 +45,15 @@ function PostCard({ post, onChanged }) {
   const save = () => run(() => action(`/api/studio/posts/${post.id}`, jsonOpts('PATCH', { body })));
   const posted = () => run(() => action(`/api/studio/posts/${post.id}/posted`, jsonOpts('POST')));
   const reject = () => run(() => action(`/api/studio/posts/${post.id}/reject`, jsonOpts('POST')));
+  const publish = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      await action(`/api/studio/posts/${post.id}/post`, jsonOpts('POST'));
+      setMsg('Posted through the connected account.');
+      onChanged();
+    } catch (e) { setMsg(String(e.message || e)); }
+    setBusy(false);
+  };
 
   return (
     <div className="card ob-card">
@@ -57,19 +67,29 @@ function PostCard({ post, onChanged }) {
           {post.flags.map((f, i) => <div className="ob-flag-line" key={i}>{f}</div>)}
         </div>
       )}
-      <textarea className="ob-body" rows={6} value={body} disabled={!open || busy} onChange={e => setBody(e.target.value)} />
+      <textarea className="ob-body" rows={8} value={body} disabled={!open || busy} onChange={e => setBody(e.target.value)} />
+      <div className="muted-small">
+        Added underneath automatically:{post.source ? ' the story link and' : ''} {(post.hashtags || []).join(' ')}
+      </div>
       {open && (
         <div className="ob-actions">
           {dirty && <button className="ob-btn" onClick={save} disabled={busy}>Save changes</button>}
-          <CopyButton text={body} label="Copy post" />
+          <CopyButton text={post.preview || body} label="Copy full post" />
           <span className="ob-spacer" />
           <button className="ob-btn ghost" onClick={reject} disabled={busy}>Reject</button>
-          <button className="ob-btn primary" onClick={posted} disabled={busy || dirty || post.flags.length > 0}
-            title={post.flags.length ? 'Clear the flags by editing before marking posted' : undefined}>
+          <button className="ob-btn" onClick={posted} disabled={busy || dirty || post.flags.length > 0}
+            title="For a post you published by hand: records it as posted without sending anything.">
             Mark as posted
+          </button>
+          <button className="ob-btn primary" onClick={publish} disabled={busy || dirty || post.flags.length > 0}
+            title={post.flags.length ? 'Clear the flags by editing before posting'
+              : dirty ? 'Save your edit first, so what posts is what you see'
+              : 'Posts this text, with the story link and hashtags, through the connected LinkedIn account. One click, one post, capped per day.'}>
+            Post to LinkedIn
           </button>
         </div>
       )}
+      {msg && <div className="muted-small">{msg}</div>}
     </div>
   );
 }
@@ -152,7 +172,7 @@ export default function Studio() {
   return (
     <div className="content-pad outbound-queue">
       <div className="card ob-banner">
-        <p className="ob-banner-sub">The engine drafts the posts and queues the people. Posts you copy and publish yourself, nothing posts on your behalf. Invites send through the connected account only when you click Send invite on a person, one at a time, capped per day, with the note editable first.</p>
+        <p className="ob-banner-sub">The engine drafts the posts and queues the people. A post publishes through the connected account only when you click Post to LinkedIn on it, one at a time, capped per day, with the story link and hashtags added underneath; copy and publish by hand still works. Invites send the same way, one click per person, note editable first. Nothing ever posts or invites on a schedule.</p>
         <div className="ob-banner-controls">
           <button className="ob-btn primary" onClick={generate} disabled={genBusy}>{genBusy ? 'Drafting now' : 'Draft posts from this week'}</button>
         </div>

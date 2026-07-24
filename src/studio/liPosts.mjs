@@ -1,5 +1,6 @@
 import { pool } from '../db.mjs';
 import { outboundVoice, flagEndCustomers } from '../outbound/draft.mjs';
+import { unipile, ROUTES, unipileConfigured } from '../research/unipile.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -20,7 +21,47 @@ const SYSTEM =
   "GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. You may add one general line that the Marwin and Steriflow control valve ranges his company supplies are trusted across some of the largest data centre builds. " +
   "CONFIDENTIALITY RULE, absolute: never state or imply that any named company is a customer. The story's subject may be discussed as news; it must never read as a client reference. No customer names, ever. " +
   "VOICE: plain British English, calm, first person, three to six sentences. A practitioner's observation about what the story means for data centre cooling and flow control, then a light closing thought or question to invite comment. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. " +
+  "SHAPE: the first sentence stands alone as its own opening line and must carry the story's hook, since the feed folds everything after it. Then short paragraphs of one or two sentences separated by blank lines, never one solid block. " +
   "Return the post text only, no preamble and no quotation marks around it.";
+
+// The shape guaranteed rather than hoped for: a hook line, then paragraphs of
+// at most two sentences with blank lines between. A post that arrives as one
+// solid block is split at sentence boundaries; one already shaped passes
+// through with its whitespace tidied. The editor can always reshape by hand.
+export function formatPost(body) {
+  const paras = String(body || '').trim().split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const out = [];
+  for (const p of paras) {
+    const sentences = p.split(/(?<=[.?])\s+(?=[A-Z£$0-9])/);
+    if (out.length === 0 && sentences.length > 1) {
+      out.push(sentences.shift());
+    }
+    for (let i = 0; i < sentences.length; i += 2) {
+      out.push(sentences.slice(i, i + 2).join(' '));
+    }
+  }
+  return out.join('\n\n');
+}
+
+// Hashtags are curated, never model-chosen, so a tag can never be invented:
+// the standing pair, plus cooling when the story is about cooling, plus the
+// UK tag on UK project stories.
+export function hashtagsFor({ title = '', body = '', geoScope = '' } = {}) {
+  const tags = ['#datacentres', '#flowcontrol'];
+  if (/cool|chill|thermal|liquid/i.test(`${title} ${body}`)) tags.push('#cooling');
+  if (geoScope === 'uk_project') tags.push('#ukconstruction');
+  tags.push('#valves');
+  return tags;
+}
+
+// The full text as it should appear on LinkedIn: the shaped body, the story
+// link on its own line so readers can check the source, then the hashtags.
+export function renderPostText({ body, sourceUrl = null, hashtags = [] }) {
+  const parts = [formatPost(body)];
+  if (sourceUrl) parts.push(`Story: ${sourceUrl}`);
+  if (hashtags.length) parts.push(hashtags.join(' '));
+  return parts.filter(Boolean).join('\n\n');
+}
 
 // The end-customer check for a post, with the story's own subject exempted,
 // since it may be discussed as news but never as a client reference. One
@@ -67,6 +108,50 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
     }
   }
   return report;
+}
+
+// Publishing, the studio's second sanctioned write after the invite, agreed
+// with John in July 2026: one post per human click on one open, unflagged
+// draft, through the connected account, capped per day, with the exact text
+// assembled here from the approved body, the story link and the curated
+// hashtags. Nothing ever posts on a schedule.
+export const postDailyCap = () => Math.max(1, parseInt(process.env.LINKEDIN_POST_DAILY_CAP || '2', 10));
+
+export async function postsPublishedToday() {
+  const { rows } = await pool.query(
+    `SELECT count(*)::int AS n FROM unipile_calls
+     WHERE endpoint = 'POST /api/v1/posts' AND outcome = 'ok'
+       AND (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date`);
+  return rows[0].n;
+}
+
+export async function publishPost(id) {
+  const p = (await pool.query(
+    `SELECT id, topic, body, grounding, status FROM li_posts WHERE id = $1`, [id])).rows[0];
+  if (!p) return { posted: false, reason: 'post not found' };
+  if (p.status !== 'draft') return { posted: false, reason: 'only an open draft can be posted' };
+  const flags = p.grounding?.flags || [];
+  if (flags.length) return { posted: false, reason: 'the draft carries a blocking flag; edit it clean first' };
+  if (!unipileConfigured()) return { posted: false, reason: 'the LinkedIn lane is not configured on this service' };
+  if (!process.env.UNIPILE_ACCOUNT_ID) return { posted: false, reason: 'UNIPILE_ACCOUNT_ID is not set' };
+  const used = await postsPublishedToday();
+  if (used >= postDailyCap()) {
+    return { posted: false, reason: `the daily post cap is used (${used} of ${postDailyCap()}); it resets at midnight UTC` };
+  }
+  const text = renderPostText({
+    body: p.body,
+    sourceUrl: p.grounding?.signal?.source || null,
+    hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
+  });
+  await unipile(ROUTES.createPost, {
+    body: { account_id: process.env.UNIPILE_ACCOUNT_ID, text },
+    target: `li_post ${p.id}`,
+  });
+  await pool.query(
+    `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now(),
+            grounding = jsonb_set(COALESCE(grounding, '{}'::jsonb), '{postedText}', $2::jsonb)
+     WHERE id = $1`, [p.id, JSON.stringify(text)]);
+  return { posted: true };
 }
 
 // LinkedIn headlines arrive as stored: often "Role at Company | Sector | Tag"
