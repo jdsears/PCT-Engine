@@ -31,6 +31,12 @@ const s8700 = JSON.parse(readFileSync(join(here, 'models', '8700.json'), 'utf8')
 const s4700 = JSON.parse(readFileSync(join(here, 'models', '4700.json'), 'utf8'));
 const s10000 = JSON.parse(readFileSync(join(here, 'models', '10000.json'), 'utf8'));
 const s9700 = JSON.parse(readFileSync(join(here, 'models', '9700.json'), 'utf8'));
+const jrh = JSON.parse(readFileSync(join(here, 'models', 'jrh.json'), 'utf8'));
+const jrhf = JSON.parse(readFileSync(join(here, 'models', 'jrhf.json'), 'utf8'));
+const jrdl = JSON.parse(readFileSync(join(here, 'models', 'jrdl.json'), 'utf8'));
+const jb = JSON.parse(readFileSync(join(here, 'models', 'jb.json'), 'utf8'));
+const jbdl = JSON.parse(readFileSync(join(here, 'models', 'jbdl.json'), 'utf8'));
+const jrpl = JSON.parse(readFileSync(join(here, 'models', 'jrpl.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -566,6 +572,83 @@ check('the 9700 keeps its port split and its consult-factory carbon steel', () =
   const d = decode(s9700, '9700F-05A-S6/KAHLNN0000NN');
   assert.equal(d.ok, true, JSON.stringify(d));
   assert.equal(d.state.packingSeat, 'K', 'Grafoil/Delrin, the only listed pair');
+});
+
+console.log('\nThe LowFlow regulator family, JRH, JRHF, JRDL, JB, JBDL and JRPL:');
+
+check('each of the six schematics round-trips a full build in the JR family shape', () => {
+  roundTrip(jrh, {
+    model: 'JRH', size: '038', material: '6L', endConnection: 'B', portConfig: 'R',
+    trim: '4R', seat: 'K4', rangeSpring: 'E1', diaphragm: 'JL', actuator: 'LW',
+    inletGauge: 'NN', outletGauge: 'N', sep: 'G', accessories: 'S',
+  }, 'JRH0386LBR4RK4E1JLLWNNNGS');
+  roundTrip(jrhf, {
+    model: 'JRHF', size: '100', material: '6L', endConnection: 'C', portConfig: 'V',
+    trim: '2K', seat: 'PK', rangeSpring: '15', diaphragm: 'JL', actuator: 'TP',
+    inletGauge: '0N', outletGauge: '0N', sep: 'G', accessories: 'X',
+  }, 'JRHF1006LCV2KPK15JLTP0N0NGX');
+  roundTrip(jrdl, {
+    model: 'JRDL', size: '075', material: '6L', endConnection: 'D', portConfig: 'K',
+    trim: 'VV', seat: 'VV', rangeSpring: 'E2', diaphragm: 'VV', actuator: 'PM',
+    inletGauge: 'NN', outletGauge: 'C', sep: '0', accessories: '0',
+  }, 'JRDL0756LDKVVVVE2VVPMNNC00');
+  roundTrip(jb, {
+    model: 'JB', size: '025', material: '6L', endConnection: 'A', portConfig: 'S',
+    trim: '4S', seat: 'K1', rangeSpring: 'E7', diaphragm: 'JL', actuator: 'ZZ',
+    inletGauge: 'JJ', outletGauge: 'J', sep: '0', accessories: '0',
+  }, 'JB0256LAS4SK1E7JLZZJJJ00');
+  roundTrip(jbdl, {
+    model: 'JBDL', size: '050', material: '6L', endConnection: 'F', portConfig: 'S',
+    trim: 'EE', seat: 'K5', rangeSpring: 'E5', diaphragm: 'EE', actuator: 'LW',
+    inletGauge: 'VV', outletGauge: 'N', sep: 'G', accessories: 'A',
+  }, 'JBDL0506LFSEEK5E5EELWVVNGA');
+  roundTrip(jrpl, {
+    model: 'JRPL', size: '100', material: '6L', endConnection: 'H', portConfig: 'F',
+    trim: 'VV', seat: 'K5', rangeSpring: 'E3', diaphragm: '00', actuator: 'PM',
+    inletGauge: 'MM', outletGauge: 'K', sep: '0', accessories: 'B',
+  }, 'JRPL1006LHFVVK5E300PMMMK0B');
+});
+
+check('the family couplings hold: size to end, trim Cv to seat Cv, and the JB E7 actuator gap', () => {
+  assert.ok(checkConstraints(jrh, { size: '038', endConnection: 'C' }).length > 0, 'JRH end matches size');
+  assert.equal(checkConstraints(jrh, { size: '038', endConnection: 'ZZ' }).length, 0, 'a non-standard end passes either size');
+  assert.ok(checkConstraints(jrdl, { size: '100', endConnection: 'F' }).length > 0, 'JRDL BSPP end matches size too');
+  assert.ok(checkConstraints(jrpl, { size: '050', endConnection: 'E' }).length > 0, 'JRPL end matches size');
+  assert.ok(checkConstraints(jb, { trim: '1S', seat: 'K1' }).length > 0, 'the shifted Kel-F numbering cannot cross the trim Cv');
+  assert.equal(checkConstraints(jb, { trim: '1S', seat: 'K2' }).length, 0, 'K2 is the Kel-F match for Cv 0.15');
+  assert.ok(checkConstraints(jb, { rangeSpring: 'E7', actuator: 'SK' }).length > 0, 'the actuator table stops at E6, so E7 refuses a standard actuator');
+  assert.equal(checkConstraints(jb, { rangeSpring: 'E6', actuator: 'SK' }).length, 0, 'E6 takes the standard actuator');
+});
+
+check('printed absences refuse: no port F on the JRDL, no gauges on the JBDL outlet, no 1/4 inch JRH', () => {
+  assert.equal(applyValue(jrdl, {}, 'portConfig', 'F').accepted, false, 'the JRDL sheet prints no Port F row');
+  assert.equal(applyValue(jbdl, {}, 'outletGauge', 'B').accepted, false, 'the JBDL outlet offers none or non-standard alone');
+  assert.equal(applyValue(jrh, {}, 'size', '025').accepted, false, 'the JRH starts at 3/8 inch');
+  assert.equal(applyValue(jrpl, {}, 'diaphragm', 'JL').accepted, false, 'the piston operated JRPL has no diaphragm to choose');
+});
+
+check('the gauge-span liability note cautions and never blocks, across the family', () => {
+  assert.equal(checkCautions(jrh, { rangeSpring: 'E5', outletGauge: 'A' }).length, 1, 'an under-spanned JRH outlet gauge cautions');
+  assert.equal(checkCautions(jrh, { rangeSpring: 'E1', outletGauge: 'A' }).length, 0, 'the 2-10 psi spring is covered by every gauge');
+  assert.equal(checkCautions(jrdl, { rangeSpring: 'E4', inletGauge: 'HH' }).length, 0, 'JRDL inlet gauges start at 600 psi, so no inlet caution can arise');
+  assert.equal(checkCautions(jbdl, { rangeSpring: 'E3', inletGauge: 'LL' }).length, 1, 'the JBDL 0-60 inlet gauge cannot cover the 0-200 spring');
+  assert.equal(checkCautions(jrpl, { rangeSpring: 'EC', outletGauge: 'E' }).length, 1, 'the 0-200 outlet gauge sits under the 0-275 silver spring');
+  const built = assemble(jb, buildByCodes(jb, {
+    model: 'JB', size: '050', material: '6L', endConnection: 'C', portConfig: 'A',
+    trim: '1S', seat: 'P1', rangeSpring: 'E6', diaphragm: 'JL', actuator: 'SK',
+    inletGauge: 'AA', outletGauge: 'A', sep: '0', accessories: '0',
+  }));
+  assert.ok(built.ok, 'a doubly cautioned build still assembles, the matrix permits it');
+});
+
+check('the extraction artefacts are confessed in the notes, held rather than corrected', () => {
+  assert.ok(/verif/i.test(jrhf.note) && /port/i.test(jrhf.note), 'the JRHF dropped port-code column is flagged');
+  assert.ok(/0N/.test(jrhf.note), 'the JRHF 0N-for-NN oddity is flagged');
+  assert.ok(/None row/i.test(jrhf.note), 'the JRHF missing None rows are flagged, not invented');
+  assert.equal(applyValue(jrhf, {}, 'sep', '0').accepted, false, 'no SEP None is offered until the PDF says otherwise');
+  assert.ok(/page boundary/i.test(jrh.note), 'the JRH missing ZZ rows are flagged as a page-boundary suspicion');
+  assert.ok(/JRPH/.test(jrpl.note) && /PDF/.test(jrpl.note), 'the unbuilt JRPH sister is named, with why');
+  assert.ok(/LL/.test(jbdl.note), 'the JBDL private gauge ladder is called out against the family');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
