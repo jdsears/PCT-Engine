@@ -94,7 +94,7 @@ export async function runResearch({ log = () => {} } = {}) {
     const { rows: upserted } = await pool.query(
       `INSERT INTO leads (company_id, stage, campaign, score, score_breakdown, region)
        VALUES ($1, 'researched', $2, $3, $4::jsonb, $5)
-       ON CONFLICT (company_id, campaign) DO UPDATE SET
+       ON CONFLICT (company_id, campaign) WHERE campaign <> 'rehearsal' DO UPDATE SET
          score = EXCLUDED.score, score_breakdown = EXCLUDED.score_breakdown,
          region = COALESCE(leads.region, EXCLUDED.region),
          stage = CASE WHEN leads.stage = 'sourced' THEN 'researched' ELSE leads.stage END,
