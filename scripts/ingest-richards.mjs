@@ -15,6 +15,7 @@ import { readRichardsTransform, computeGuide } from '../src/pricing/richardsTran
 import { parseRichardsBook } from '../src/pricing/parseRichardsPdf.mjs';
 import { parseBestobell, parseHex } from '../src/pricing/parseBooksSpecial.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
+import { storeGuideRows } from '../src/pricing/storeGuide.mjs';
 import { materialiseSource } from '../src/sharepoint.mjs';
 import { pool } from '../src/db.mjs';
 
@@ -92,16 +93,10 @@ const client = await pool.connect();
 try {
   await client.query('BEGIN');
   await client.query(`DELETE FROM prices WHERE product_line = $1`, [LINE]);
-  for (const r of priced) {
-    for (const [currency, sell] of Object.entries(r.guide)) {
-      await client.query(
-        `INSERT INTO prices (product_line, part_number, norm_key, description, currency, sell_price, price_basis, list_name, source_tab, effective_date)
-         VALUES ($1, $2, $3, $4, $5, $6, 'guide', $7, 'guide', $8)
-         ON CONFLICT (product_line, norm_key, currency) DO UPDATE SET sell_price = EXCLUDED.sell_price,
-           part_number = EXCLUDED.part_number, description = EXCLUDED.description, effective_date = EXCLUDED.effective_date, ingested_at = now()`,
-        [LINE, r.part, normKey(r.part), r.description, currency, sell, `${LINE} price list via Richards transform`, EFFECTIVE]);
-    }
-  }
+  await storeGuideRows(client, {
+    line: LINE, priced, normKey,
+    listName: `${LINE} price list via Richards transform`, sourceTab: 'guide', effective: EFFECTIVE,
+  });
   await client.query('COMMIT');
   console.log(`\nStored. ${priced.length} ${LINE} part(s) carry guide prices, labelled guide everywhere they surface.`);
 } catch (e) {
