@@ -20,7 +20,47 @@ const SYSTEM =
   "GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. You may add one general line that the Marwin and Steriflow control valve ranges his company supplies are trusted across some of the largest data centre builds. " +
   "CONFIDENTIALITY RULE, absolute: never state or imply that any named company is a customer. The story's subject may be discussed as news; it must never read as a client reference. No customer names, ever. " +
   "VOICE: plain British English, calm, first person, three to six sentences. A practitioner's observation about what the story means for data centre cooling and flow control, then a light closing thought or question to invite comment. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. " +
+  "SHAPE: the first sentence stands alone as its own opening line and must carry the story's hook, since the feed folds everything after it. Then short paragraphs of one or two sentences separated by blank lines, never one solid block. " +
   "Return the post text only, no preamble and no quotation marks around it.";
+
+// The shape guaranteed rather than hoped for: a hook line, then paragraphs of
+// at most two sentences with blank lines between. A post that arrives as one
+// solid block is split at sentence boundaries; one already shaped passes
+// through with its whitespace tidied. The editor can always reshape by hand.
+export function formatPost(body) {
+  const paras = String(body || '').trim().split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const out = [];
+  for (const p of paras) {
+    const sentences = p.split(/(?<=[.?])\s+(?=[A-Z£$0-9])/);
+    if (out.length === 0 && sentences.length > 1) {
+      out.push(sentences.shift());
+    }
+    for (let i = 0; i < sentences.length; i += 2) {
+      out.push(sentences.slice(i, i + 2).join(' '));
+    }
+  }
+  return out.join('\n\n');
+}
+
+// Hashtags are curated, never model-chosen, so a tag can never be invented:
+// the standing pair, plus cooling when the story is about cooling, plus the
+// UK tag on UK project stories.
+export function hashtagsFor({ title = '', body = '', geoScope = '' } = {}) {
+  const tags = ['#datacentres', '#flowcontrol'];
+  if (/cool|chill|thermal|liquid/i.test(`${title} ${body}`)) tags.push('#cooling');
+  if (geoScope === 'uk_project') tags.push('#ukconstruction');
+  tags.push('#valves');
+  return tags;
+}
+
+// The full text as it should appear on LinkedIn: the shaped body, the story
+// link on its own line so readers can check the source, then the hashtags.
+export function renderPostText({ body, sourceUrl = null, hashtags = [] }) {
+  const parts = [formatPost(body)];
+  if (sourceUrl) parts.push(`Story: ${sourceUrl}`);
+  if (hashtags.length) parts.push(hashtags.join(' '));
+  return parts.filter(Boolean).join('\n\n');
+}
 
 // The end-customer check for a post, with the story's own subject exempted,
 // since it may be discussed as news but never as a client reference. One

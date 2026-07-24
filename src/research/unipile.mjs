@@ -25,6 +25,7 @@ export const ROUTES = {
   search: { method: 'POST', path: '/api/v1/linkedin/search' }, // ?account_id=&limit=
   profile: { method: 'GET', path: '/api/v1/users' },           // /{identifier}?account_id=
   invite: { method: 'POST', path: '/api/v1/users/invite' },    // { account_id, provider_id, message }
+  createPost: { method: 'POST', path: '/api/v1/posts' },       // { account_id, text }; per Unipile docs, unverifiable without posting, so the first human-approved post is its live test
 };
 
 export const unipileConfigured = () => Boolean(DSN && KEY);
