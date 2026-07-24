@@ -15,6 +15,7 @@ import { readRichardsTransform, computeGuide } from '../src/pricing/richardsTran
 import { parseRichardsBook } from '../src/pricing/parseRichardsPdf.mjs';
 import { parseBestobell, parseHex } from '../src/pricing/parseBooksSpecial.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
+import { materialiseSource } from '../src/sharepoint.mjs';
 import { pool } from '../src/db.mjs';
 
 const SUPPORTED = ['steriflow', 'lowflow', 'jordan', 'bestobell', 'hex'];
@@ -26,8 +27,14 @@ const REFUSED = {
 const args = process.argv.slice(2);
 const flag = n => { const i = args.indexOf(n); return i === -1 ? null : (args[i + 1] || null); };
 const APPLY = args.includes('--apply');
-const WORKBOOK = flag('--workbook');
-const PDF = flag('--pdf');
+// Source flags also take "sharepoint:<path in the Sales Engine library>",
+// fetched read-only and transiently at run time.
+const src = async v => {
+  try { return await materialiseSource(v, { log: m => console.log(m) }); }
+  catch (e) { console.error(`SharePoint fetch failed: ${String(e.message).slice(0, 200)}`); process.exit(1); }
+};
+const WORKBOOK = await src(flag('--workbook'));
+const PDF = await src(flag('--pdf'));
 const LINE = (flag('--line') || '').toLowerCase();
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 
