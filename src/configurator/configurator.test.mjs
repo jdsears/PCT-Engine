@@ -27,6 +27,7 @@ const f5801 = JSON.parse(readFileSync(join(here, 'models', '5801.json'), 'utf8')
 const f6801 = JSON.parse(readFileSync(join(here, 'models', '6801.json'), 'utf8'));
 const dm9900 = JSON.parse(readFileSync(join(here, 'models', 'dm9900.json'), 'utf8'));
 const dm600 = JSON.parse(readFileSync(join(here, 'models', 'dm600.json'), 'utf8'));
+const s8700 = JSON.parse(readFileSync(join(here, 'models', '8700.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -517,6 +518,20 @@ check('the book\'s automated direct mount codes decode, and the unprinted L elec
   assert.equal(applyValue(dm9900, {}, 'operation', 'S6').accepted, false, 'DM9900 springs stop at UT-3');
   assert.equal(applyValue(dm600, {}, 'operation', 'M9').accepted, false, 'DM600 electrics stop at M5');
   assert.ok(checkConstraints(dm600, { operation: 'S6', limitSwitch: 'AA' }).length > 0, 'switch spans hold');
+});
+
+console.log('\nThe 8700 3-piece family (built from its ordering schematic):');
+
+check('the 8700 keeps its letter sizes, decodes the book, and swaps BA for BB exactly as its note says', () => {
+  const d = decode(s8700, '8700F-05A-CS/BAHLNN0000NN');
+  assert.equal(d.ok, true, JSON.stringify(d));
+  assert.equal(d.state.packingSeat, 'B', 'standard PTFE/RPTFE');
+  assert.equal(d.state.ends, 'A', 'FNPT');
+  const fsw = assemble(s8700, { ...d.state, ends: 'B' });
+  assert.ok(fsw.code.includes('/BBHL'), 'replace BA with BB for FSW ends, the book\'s own instruction');
+  assert.equal(applyValue(s8700, {}, 'size', '050').accepted, false, 'numeric size codes do not exist in this family');
+  assert.ok(checkConstraints(s8700, { operation: 'EB', pressure: '80' }).length > 0, 'the stem extension takes no air supply');
+  assert.ok(checkConstraints(s8700, { operation: 'S6', limitSwitch: 'AA' }).length > 0, 'switch spans hold');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
