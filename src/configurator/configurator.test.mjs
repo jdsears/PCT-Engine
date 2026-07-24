@@ -21,6 +21,7 @@ const jr = JSON.parse(readFileSync(join(here, 'models', 'jr.json'), 'utf8'));
 const mark96 = JSON.parse(readFileSync(join(here, 'models', 'mark96.json'), 'utf8'));
 const t2100 = JSON.parse(readFileSync(join(here, 'models', '2100.json'), 'utf8'));
 const s3000 = JSON.parse(readFileSync(join(here, 'models', '3000.json'), 'utf8'));
+const ms3000 = JSON.parse(readFileSync(join(here, 'models', 'ms3000.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -431,6 +432,34 @@ check('the 3000 matrix\'s own couplings refuse what it never printed', () => {
   const clean = { prefix: '', model: '3000R', size: '400', body: 'S6', ends: 'F3', trim: '6P', seat: 'PK', packing: 'GV', handle: 'NN', actuator: 'S8', solenoid: '3A', limitSwitch: 'D', positioner: 'R', fail: '2', accessory: '4' };
   assert.equal(checkConstraints(s3000, clean).length, 0, 'a fully coupled automated build within every span is valid');
   assert.ok(checkCautions(s3000, { actuator: 'M2' }).some(n => /Nema 7/.test(n.note)), 'the electric caution carries over');
+});
+
+console.log('\nThe MS3000 metal seated family (built from its ordering schematic):');
+
+check('a metal seated build round-trips with the sheet\'s fixed standards', () => {
+  const bare = { model: 'MS3000X', size: '100', body: 'CS', ends: 'PT', trim: 'S3', seat: 'W5', packing: 'GR', handle: 'HL', operation: 'NN', solenoid: '00', limitSwitch: '0', positioner: '0', fail: '0', accessory: '00' };
+  const a = assemble(ms3000, bare);
+  assert.equal(a.ok, true, JSON.stringify(a));
+  assert.ok(a.code.startsWith('MS3000X-100-CS/PTS3W5GRHL'), 'the code carries the metal seated standards as printed');
+  assert.deepEqual(decode(ms3000, a.code).state, bare, 'decode rebuilds the exact choices');
+  const auto = { ...bare, handle: 'NN', operation: 'S8', solenoid: '3A', limitSwitch: 'D', positioner: '0', fail: '2', accessory: '04' };
+  const aa = assemble(ms3000, auto);
+  assert.equal(aa.ok, true, JSON.stringify(aa));
+  assert.deepEqual(decode(ms3000, aa.code).state, auto, 'an automated build round-trips too');
+});
+
+check('the MS3000 couplings and cautions hold as printed', () => {
+  const base = { model: 'MS3000X', size: '100', body: 'CS', ends: 'PT', trim: 'S3', seat: 'W5', packing: 'GR', handle: 'NN', operation: 'NN', solenoid: '00', limitSwitch: '0', positioner: '0', fail: '0', accessory: '00' };
+  for (const bad of [
+    { ...base, operation: 'S9', solenoid: '3A' },
+    { ...base, operation: 'P4', solenoid: '3A' },
+    { ...base, operation: 'S3', positioner: 'E' },
+    { ...base, operation: 'M2', accessory: '04' },
+    { ...base, fail: '2' },
+  ]) assert.ok(checkConstraints(ms3000, bad).length > 0, `must refuse ${JSON.stringify(bad)}`);
+  assert.ok(checkCautions(ms3000, { size: '300' }).some(n => /consult factory/i.test(n.note)), 'the starred sizes carry their consult factory caution');
+  assert.ok(checkCautions(ms3000, { positioner: 'R' }).some(n => /DA where the pattern says SR/.test(n.note)), 'the printed R label discrepancy is held, not corrected');
+  assert.equal(checkConstraints(ms3000, { operation: 'PB', positioner: 'R' }).length, 0, 'R is not asserted SR-only, since its own label prints DA');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
