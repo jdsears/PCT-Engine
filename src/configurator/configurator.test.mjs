@@ -25,6 +25,8 @@ const ms3000 = JSON.parse(readFileSync(join(here, 'models', 'ms3000.json'), 'utf
 const f2000 = JSON.parse(readFileSync(join(here, 'models', '2000.json'), 'utf8'));
 const f5801 = JSON.parse(readFileSync(join(here, 'models', '5801.json'), 'utf8'));
 const f6801 = JSON.parse(readFileSync(join(here, 'models', '6801.json'), 'utf8'));
+const dm9900 = JSON.parse(readFileSync(join(here, 'models', 'dm9900.json'), 'utf8'));
+const dm600 = JSON.parse(readFileSync(join(here, 'models', 'dm600.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -496,6 +498,25 @@ check('the trio\'s couplings hold and their printed absences refuse', () => {
     { ...base5, operation: 'M2', pressure: '80' },
     { ...base5, operation: 'HL', fail: '01' },
   ]) assert.ok(checkConstraints(f5801, bad).length > 0, `must refuse ${JSON.stringify(bad)}`);
+});
+
+console.log('\nThe direct mounts, DM9900 and DM600 (built from their ordering matrices):');
+
+check('the book\'s automated direct mount codes decode, and the unprinted L electrics stay out', () => {
+  const d = decode(dm9900, 'DM9900F-025-S6/AAS180000001');
+  assert.equal(d.ok, true, JSON.stringify(d));
+  assert.equal(d.state.operation, 'S1', 'the UT-0 spring return package');
+  assert.equal(decode(dm9900, 'DM9900F-025-S6/AAL1NN0000NN').ok, false,
+    'the book\'s L-coded Nema 7 electric is not in this matrix and does not decode; it lives in the priced chooser');
+  assert.ok(checkCautions(dm9900, { operation: 'M1' }).some(n => /L-coded/.test(n.note)), 'and the caution says where it lives');
+  const d6 = decode(dm600, 'DM600F-025-BR/AANNNN0000NN');
+  assert.equal(d6.ok, true, JSON.stringify(d6));
+  assert.equal(d6.state.operation, 'NN', 'the bare direct mount valve the book prices');
+  assert.ok(checkCautions(dm9900, { size: '025' }).some(n => /reducer bushings/.test(n.note)),
+    'the starred small sizes carry the sheet\'s bushing note');
+  assert.equal(applyValue(dm9900, {}, 'operation', 'S6').accepted, false, 'DM9900 springs stop at UT-3');
+  assert.equal(applyValue(dm600, {}, 'operation', 'M9').accepted, false, 'DM600 electrics stop at M5');
+  assert.ok(checkConstraints(dm600, { operation: 'S6', limitSwitch: 'AA' }).length > 0, 'switch spans hold');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
