@@ -1,0 +1,241 @@
+{
+  "model": "10000",
+  "line": "marwin",
+  "displayName": "Marwin 10000 series high pressure ball valve",
+  "match": ["10000 series", "10000f", "marwin 10000", "high pressure ball", "6000 psi ball"],
+  "source": { "doc": "10000-Full.pdf", "page": 9, "section": "Ordering matrix" },
+  "note": "Extracted by hand from the ordering matrix of the 6000 psi barstock sheet. Eighteen positions in the 3000 shape without the special-options prefix: model, size, body, then ends, trim, seat, packing, handle, operation, solenoid, and single characters for limit switch, positioner, fail and a two character accessory. Barstock bodies CB and SB lead the alloy list, ends run to 2500# flanged and schedule 160 butt weld, seats are the hard three, Delrin, PEEK and C-PEEK, and the largest size is the 3 inch double reduced. Operation runs to UT-7 both ways with electrics to MD, with 00 as its none. The positioner R label prints DA where the pattern says SR, the same misprint as the MS3000 sheet, transcribed as printed, unasserted, and flagged. Nema 7 electric remains the per-enquiry caution per James, July 2026. Siemens is named per the CV3000 decision.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{packing}{handle}{operation}{solenoid}{limitSwitch}{positioner}{fail}{accessory}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "10000F", "label": "3-piece high pressure ball valve, full port", "aliases": ["10000", "10000f"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\"", "aliases": ["1/4\""] },
+        { "code": "038", "label": "3/8\"", "aliases": ["3/8\""] },
+        { "code": "050", "label": "1/2\"", "aliases": ["1/2\""] },
+        { "code": "075", "label": "3/4\"", "aliases": ["3/4\""] },
+        { "code": "100", "label": "1\"", "aliases": ["1\""] },
+        { "code": "125", "label": "1-1/4\"", "aliases": ["1-1/4\""] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\""] },
+        { "code": "200", "label": "2\"", "aliases": ["2\""] },
+        { "code": "300", "label": "3\" double reduced", "aliases": ["3\"", "double reduced"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CB", "label": "Carbon steel barstock", "aliases": ["carbon barstock", "cs barstock"] },
+        { "code": "SB", "label": "Stainless steel barstock", "aliases": ["stainless barstock", "ss barstock"] },
+        { "code": "A2", "label": "Alloy 20", "aliases": ["alloy 20"] },
+        { "code": "DU", "label": "Duplex", "aliases": ["duplex"] },
+        { "code": "HC", "label": "Hastelloy C", "aliases": ["hastelloy c"] },
+        { "code": "HB", "label": "Hastelloy B", "aliases": ["hastelloy b"] },
+        { "code": "MN", "label": "Monel", "aliases": ["monel"] },
+        { "code": "TI", "label": "Titanium", "aliases": ["titanium"] },
+        { "code": "ZZ", "label": "Other special alloy", "aliases": ["special alloy"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "FNPT", "aliases": ["npt", "fnpt", "threaded"] },
+        { "code": "SW", "label": "FSW", "aliases": ["socket weld", "fsw"] },
+        { "code": "SE", "label": "SW extended", "aliases": ["extended socket weld"] },
+        { "code": "F9", "label": "900# flanged ends", "aliases": ["900#"] },
+        { "code": "F5", "label": "1500# flanged ends", "aliases": ["1500#"] },
+        { "code": "F2", "label": "2500# flanged ends", "aliases": ["2500#"] },
+        { "code": "E4", "label": "Extended butt weld, schedule 40", "aliases": ["schedule 40 butt weld"] },
+        { "code": "E8", "label": "Extended butt weld, schedule 80", "aliases": ["schedule 80 butt weld"] },
+        { "code": "E6", "label": "Extended butt weld, schedule 160", "aliases": ["schedule 160 butt weld"] },
+        { "code": "ZZ", "label": "Non-standard ends", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim, ball and stem (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "S6", "label": "Stainless steel", "aliases": ["316 trim"] },
+        { "code": "6P", "label": "Stainless steel / 17-4", "aliases": ["17-4", "6p"] },
+        { "code": "A2", "label": "Alloy 20 trim", "aliases": ["alloy 20 trim"] },
+        { "code": "DU", "label": "Duplex trim", "aliases": ["duplex trim"] },
+        { "code": "HC", "label": "Hastelloy C trim", "aliases": ["hastelloy c trim"] },
+        { "code": "HB", "label": "Hastelloy B trim", "aliases": ["hastelloy b trim"] },
+        { "code": "MN", "label": "Monel trim", "aliases": ["monel trim"] },
+        { "code": "TI", "label": "Titanium trim", "aliases": ["titanium trim"] },
+        { "code": "ZZ", "label": "Other special alloy trim", "aliases": ["special trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat, body seals and thrust washer (5 and 6)", "position": 6, "required": true,
+      "options": [
+        { "code": "DL", "label": "Delrin/Viton/RPTFE", "aliases": ["delrin"] },
+        { "code": "PK", "label": "PEEK/Viton/PEEK", "aliases": ["peek"] },
+        { "code": "CP", "label": "C-PEEK/Graphite/PEEK", "aliases": ["c-peek", "carbon peek"] },
+        { "code": "ZZ", "label": "Non-standard seats", "aliases": ["non-standard seats"] }
+      ]
+    },
+    {
+      "id": "packing", "label": "Packing and stem O-ring (7 and 8)", "position": 7, "required": true,
+      "options": [
+        { "code": "TV", "label": "PTFE/Viton", "aliases": ["ptfe viton"] },
+        { "code": "TE", "label": "PTFE/EPDM", "aliases": ["ptfe epdm"] },
+        { "code": "GV", "label": "Grafoil/Viton", "aliases": ["grafoil viton"] },
+        { "code": "GE", "label": "Grafoil/EPDM", "aliases": ["grafoil epdm"] },
+        { "code": "UV", "label": "UHMWPE/Viton", "aliases": ["uhmwpe viton"] },
+        { "code": "UE", "label": "UHMWPE/EPDM", "aliases": ["uhmwpe epdm"] },
+        { "code": "ZZ", "label": "Non-standard packing", "aliases": ["non-standard packing"] }
+      ]
+    },
+    {
+      "id": "handle", "label": "Handle and gear operator (9 and 10)", "position": 8, "required": true,
+      "options": [
+        { "code": "NN", "label": "None", "aliases": ["no handle"] },
+        { "code": "HL", "label": "Handle lever", "aliases": ["lever", "handle"] },
+        { "code": "HD", "label": "Handle lever with locking device", "aliases": ["locking lever"] },
+        { "code": "ZZ", "label": "Non-standard operator", "aliases": ["non-standard handle"] }
+      ]
+    },
+    {
+      "id": "operation", "label": "Operation (11 and 12)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no actuator", "bare", "manual"] },
+        { "code": "P1", "label": "UT-0A-DA STD", "aliases": ["ut-0a da"] },
+        { "code": "P2", "label": "UT-0-DA STD", "aliases": ["ut-0 da"] },
+        { "code": "P3", "label": "UT-1-DA STD", "aliases": ["ut-1 da"] },
+        { "code": "P4", "label": "UT-2-DA STD", "aliases": ["ut-2 da"] },
+        { "code": "P5", "label": "UT-2.5-DA STD", "aliases": ["ut-2.5 da"] },
+        { "code": "P6", "label": "UT-3-DA STD", "aliases": ["ut-3 da", "double acting"] },
+        { "code": "P7", "label": "UT-3.5-DA STD", "aliases": ["ut-3.5 da"] },
+        { "code": "P8", "label": "UT-4-DA STD", "aliases": ["ut-4 da"] },
+        { "code": "PF", "label": "UT-4.5-DA STD", "aliases": ["ut-4.5 da"] },
+        { "code": "P9", "label": "UT-5-DA STD", "aliases": ["ut-5 da"] },
+        { "code": "PA", "label": "UT-6-DA STD", "aliases": ["ut-6 da"] },
+        { "code": "PB", "label": "UT-7-DA STD", "aliases": ["ut-7 da"] },
+        { "code": "S1", "label": "UT-0-SR STD", "aliases": ["ut-0 sr"] },
+        { "code": "S2", "label": "UT-1-SR STD", "aliases": ["ut-1 sr"] },
+        { "code": "S3", "label": "UT-2-SR STD", "aliases": ["ut-2 sr"] },
+        { "code": "S4", "label": "UT-2.5-SR STD", "aliases": ["ut-2.5 sr"] },
+        { "code": "S5", "label": "UT-3-SR STD", "aliases": ["ut-3 sr", "spring return"] },
+        { "code": "S6", "label": "UT-3.5-SR STD", "aliases": ["ut-3.5 sr"] },
+        { "code": "S7", "label": "UT-4-SR STD", "aliases": ["ut-4 sr"] },
+        { "code": "SF", "label": "UT-4.5-SR STD", "aliases": ["ut-4.5 sr"] },
+        { "code": "S8", "label": "UT-5-SR STD", "aliases": ["ut-5 sr"] },
+        { "code": "S9", "label": "UT-6-SR STD", "aliases": ["ut-6 sr"] },
+        { "code": "SA", "label": "UT-7-SR STD", "aliases": ["ut-7 sr"] },
+        { "code": "M1", "label": "ER-1-2.5-4 110 VAC electric", "aliases": ["er-1-2.5-4"] },
+        { "code": "M2", "label": "ER-2-5-4 110 VAC electric", "aliases": ["er-2-5-4", "electric"] },
+        { "code": "M3", "label": "ER-3-5-4 110 VAC electric", "aliases": ["er-3-5-4"] },
+        { "code": "M8", "label": "ER-4-10-4 110 VAC electric", "aliases": ["er-4-10-4"] },
+        { "code": "M4", "label": "ER-6-15-4 110 VAC electric", "aliases": ["er-6-15-4"] },
+        { "code": "M5", "label": "ER-10-15-4 110 VAC electric", "aliases": ["er-10-15-4"] },
+        { "code": "M9", "label": "ER-15-30-4 110 VAC electric", "aliases": ["er-15-30-4"] },
+        { "code": "MA", "label": "ER-20-12-4 110 VAC electric", "aliases": ["er-20-12-4"] },
+        { "code": "M7", "label": "ER-38-14-4 110 VAC electric", "aliases": ["er-38-14-4"] },
+        { "code": "MC", "label": "ER-50-68-4 110 VAC electric", "aliases": ["er-50-68-4"] },
+        { "code": "MD", "label": "ER-70-68-4 110 VAC electric", "aliases": ["er-70-68-4"] },
+        { "code": "ZZ", "label": "Non-standard operation", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "solenoid", "label": "Solenoid feature (13 and 14)", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no solenoid"] },
+        { "code": "3A", "label": "3W 8551-120VAC N4, UT-0/5, spring return", "aliases": ["8551 n4 sr"] },
+        { "code": "3C", "label": "3W EF8551-120VAC N7, UT-0/5, spring return", "aliases": ["ef8551 n7 sr"] },
+        { "code": "3J", "label": "3W 8317G35-120VAC N4, UT-0/2.5, spring return", "aliases": ["8317 n4 sr"] },
+        { "code": "3M", "label": "3W 8321G1-120VAC N4, UT-3/5, spring return", "aliases": ["8321 n4 sr"] },
+        { "code": "3Q", "label": "3W EF8317G35-120VAC N7, UT-0/2.5, spring return", "aliases": ["ef8317 n7 sr"] },
+        { "code": "3R", "label": "3W EF8321G1-120VAC N7, UT-3/5, spring return", "aliases": ["ef8321 n7 sr"] },
+        { "code": "4A", "label": "4W 8551-120VAC N4, UT-0A, double acting", "aliases": ["8551 n4 da 0a"] },
+        { "code": "4B", "label": "4W 8551-120VAC N4, UT-0/5, double acting", "aliases": ["8551 n4 da"] },
+        { "code": "4D", "label": "4W EF8551-120VAC N7, UT-0A, double acting", "aliases": ["ef8551 n7 da 0a"] },
+        { "code": "4E", "label": "4W EF8551-120VAC N7, UT-0/5, double acting", "aliases": ["ef8551 n7 da"] },
+        { "code": "ZZ", "label": "Non-standard solenoid", "aliases": ["non-standard solenoid"] }
+      ]
+    },
+    {
+      "id": "limitSwitch", "label": "Limit switch (15)", "position": 11, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no limit switch"] },
+        { "code": "A", "label": "LS FMYB-5120-N4, fits UT-0 to UT-3", "aliases": ["fmyb n4 small"] },
+        { "code": "B", "label": "LS FMYB-5120-N4, fits UT-3.5 to UT-7", "aliases": ["fmyb n4 large"] },
+        { "code": "C", "label": "LS AMYB-5120-N7, fits UT-0 to UT-3", "aliases": ["amyb n7 small"] },
+        { "code": "D", "label": "LS AMYB-5120-N7, fits UT-3.5 to UT-7", "aliases": ["amyb n7 large"] },
+        { "code": "Z", "label": "Non-standard limit switch", "aliases": ["non-standard limit switch"] }
+      ]
+    },
+    {
+      "id": "positioner", "label": "Positioner (16)", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no positioner"] },
+        { "code": "A", "label": "Siemens 760P (3-15 psi), for UT-0/3", "aliases": ["760p small"] },
+        { "code": "B", "label": "Siemens 760P (3-15 psi), for UT-3.5/7", "aliases": ["760p large"] },
+        { "code": "C", "label": "Siemens 760E (4-20mA), for UT-0/3", "aliases": ["760e small"] },
+        { "code": "D", "label": "Siemens 760E (4-20mA), for UT-3.5/7", "aliases": ["760e large"] },
+        { "code": "E", "label": "Siemens 2-IQ (4-20mA), for UT-0/3 DA", "aliases": ["2-iq da small"] },
+        { "code": "F", "label": "Siemens 2-IQ (4-20mA), for UT-3.5/7 DA", "aliases": ["2-iq da large"] },
+        { "code": "Q", "label": "Siemens 2-IQ (4-20mA), for UT-0/3 SR", "aliases": ["2-iq sr small"] },
+        { "code": "R", "label": "Siemens 2-IQ (4-20mA), for UT-3.5/7 DA as printed", "aliases": ["2-iq large r"] },
+        { "code": "Z", "label": "Non-standard positioner", "aliases": ["non-standard positioner"] }
+      ]
+    },
+    {
+      "id": "fail", "label": "Fail position (17)", "position": 13, "required": true,
+      "options": [
+        { "code": "0", "label": "None / no spring actuator", "aliases": ["no fail action"] },
+        { "code": "1", "label": "Fail open, 80 psi supply", "aliases": ["fail open 80"] },
+        { "code": "2", "label": "Fail closed, 80 psi supply", "aliases": ["fail closed"] },
+        { "code": "3", "label": "Fail open, 60 psi supply", "aliases": ["fail open 60"] },
+        { "code": "4", "label": "Fail closed, 60 psi supply", "aliases": ["fail closed 60"] }
+      ]
+    },
+    {
+      "id": "accessory", "label": "Accessory (18)", "position": 14, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no accessory"] },
+        { "code": "04", "label": "Air filter regulator", "aliases": ["air filter regulator", "afr"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "solenoid": ["3A", "3C", "3J", "3M", "3Q", "3R"] }, "forbid": { "operation": ["00", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9", "PA", "PB", "M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "reason": "a three-way solenoid pairs with a spring return actuator, as its own table marks" },
+    { "when": { "solenoid": ["4A", "4B", "4D", "4E"] }, "forbid": { "operation": ["00", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9", "SA", "M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "reason": "a four-way solenoid pairs with a double acting actuator, as its own table marks" },
+    { "when": { "solenoid": ["3A", "3C"] }, "forbid": { "operation": ["S9", "SA"] },
+      "reason": "the 8551 solenoids cover UT-0 to UT-5, per their printed span" },
+    { "when": { "solenoid": ["3J", "3Q"] }, "forbid": { "operation": ["S5", "S6", "S7", "SF", "S8", "S9", "SA"] },
+      "reason": "the 8317 solenoids cover UT-0 to UT-2.5, per their printed span" },
+    { "when": { "solenoid": ["3M", "3R"] }, "forbid": { "operation": ["S1", "S2", "S3", "S4", "S9", "SA"] },
+      "reason": "the 8321 solenoids cover UT-3 to UT-5, per their printed span" },
+    { "when": { "solenoid": ["4A", "4D"] }, "forbid": { "operation": ["P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9", "PA", "PB"] },
+      "reason": "these solenoids are marked for the UT-0A actuator alone" },
+    { "when": { "solenoid": ["4B", "4E"] }, "forbid": { "operation": ["PA", "PB"] },
+      "reason": "these solenoids cover UT-0 to UT-5, per their printed span" },
+    { "when": { "limitSwitch": ["A", "C"] }, "forbid": { "operation": ["00", "P7", "P8", "PF", "P9", "PA", "PB", "S6", "S7", "SF", "S8", "S9", "SA", "M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "reason": "these limit switches mount to UT-0 through UT-3 actuators, per their printed range" },
+    { "when": { "limitSwitch": ["B", "D"] }, "forbid": { "operation": ["00", "P1", "P2", "P3", "P4", "P5", "P6", "S1", "S2", "S3", "S4", "S5", "M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "reason": "these limit switches mount to UT-3.5 through UT-7 actuators, per their printed range" },
+    { "when": { "positioner": ["A", "C", "E", "Q"] }, "forbid": { "operation": ["00", "P7", "P8", "PF", "P9", "PA", "PB", "S6", "S7", "SF", "S8", "S9", "SA", "M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "reason": "these positioners are for UT-0 through UT-3 actuators, per their printed range" },
+    { "when": { "positioner": ["B", "D", "F", "R"] }, "forbid": { "operation": ["00", "P1", "P2", "P3", "P4", "P5", "P6", "S1", "S2", "S3", "S4", "S5", "M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "reason": "these positioners are for UT-3.5 through UT-7 actuators, per their printed range" },
+    { "when": { "positioner": ["E", "F"] }, "forbid": { "operation": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9", "SA"] },
+      "reason": "the 2-IQ DA positioners pair with double acting actuators, as printed" },
+    { "when": { "positioner": ["Q"] }, "forbid": { "operation": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9", "PA", "PB"] },
+      "reason": "the 2-IQ SR positioner pairs with spring return actuators, as printed; R's own label prints DA and is left unasserted" },
+    { "when": { "fail": ["1", "2", "3", "4"] }, "forbid": { "operation": ["00", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9", "PA", "PB", "M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "reason": "a fail position is the spring's doing; it belongs to spring return builds" },
+    { "when": { "accessory": "04" }, "forbid": { "operation": ["00", "M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "reason": "an air filter regulator serves a pneumatic actuator" }
+  ],
+  "cautions": [
+    { "when": { "operation": ["M1", "M2", "M3", "M4", "M5", "M7", "M8", "M9", "MA", "MC", "MD"] },
+      "note": "The electric actuators in this matrix are Nema 4. A Nema 7 electric build has no designator here and is quoted per enquiry, per James, July 2026." },
+    { "when": { "positioner": "R" },
+      "note": "The R positioner's printed label says DA where the pattern says SR, the same misprint as the MS3000 sheet; confirm with the factory before relying on it." }
+  ]
+}
