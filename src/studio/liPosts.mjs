@@ -1,5 +1,6 @@
 import { pool } from '../db.mjs';
 import { outboundVoice, flagEndCustomers } from '../outbound/draft.mjs';
+import { unipile, ROUTES, unipileConfigured } from '../research/unipile.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -107,6 +108,50 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
     }
   }
   return report;
+}
+
+// Publishing, the studio's second sanctioned write after the invite, agreed
+// with John in July 2026: one post per human click on one open, unflagged
+// draft, through the connected account, capped per day, with the exact text
+// assembled here from the approved body, the story link and the curated
+// hashtags. Nothing ever posts on a schedule.
+export const postDailyCap = () => Math.max(1, parseInt(process.env.LINKEDIN_POST_DAILY_CAP || '2', 10));
+
+export async function postsPublishedToday() {
+  const { rows } = await pool.query(
+    `SELECT count(*)::int AS n FROM unipile_calls
+     WHERE endpoint = 'POST /api/v1/posts' AND outcome = 'ok'
+       AND (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date`);
+  return rows[0].n;
+}
+
+export async function publishPost(id) {
+  const p = (await pool.query(
+    `SELECT id, topic, body, grounding, status FROM li_posts WHERE id = $1`, [id])).rows[0];
+  if (!p) return { posted: false, reason: 'post not found' };
+  if (p.status !== 'draft') return { posted: false, reason: 'only an open draft can be posted' };
+  const flags = p.grounding?.flags || [];
+  if (flags.length) return { posted: false, reason: 'the draft carries a blocking flag; edit it clean first' };
+  if (!unipileConfigured()) return { posted: false, reason: 'the LinkedIn lane is not configured on this service' };
+  if (!process.env.UNIPILE_ACCOUNT_ID) return { posted: false, reason: 'UNIPILE_ACCOUNT_ID is not set' };
+  const used = await postsPublishedToday();
+  if (used >= postDailyCap()) {
+    return { posted: false, reason: `the daily post cap is used (${used} of ${postDailyCap()}); it resets at midnight UTC` };
+  }
+  const text = renderPostText({
+    body: p.body,
+    sourceUrl: p.grounding?.signal?.source || null,
+    hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
+  });
+  await unipile(ROUTES.createPost, {
+    body: { account_id: process.env.UNIPILE_ACCOUNT_ID, text },
+    target: `li_post ${p.id}`,
+  });
+  await pool.query(
+    `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now(),
+            grounding = jsonb_set(COALESCE(grounding, '{}'::jsonb), '{postedText}', $2::jsonb)
+     WHERE id = $1`, [p.id, JSON.stringify(text)]);
+  return { posted: true };
 }
 
 // LinkedIn headlines arrive as stored: often "Role at Company | Sector | Tag"

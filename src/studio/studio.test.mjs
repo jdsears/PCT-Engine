@@ -1,7 +1,7 @@
 // The studio's pure parts. Post generation needs the database and a model, so
 // it is exercised on the deploy; the note builder and its invite-length bound
 // are provable here.
-import { connectNote, cleanRole, companyDisplay, writePost } from './liPosts.mjs';
+import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText } from './liPosts.mjs';
 import { htmlToText, splitNewsletter, intelSenders } from './intelInbox.mjs';
 import { linkedinSlug, canInvite, inviteDailyCap } from './liInvite.mjs';
 
@@ -102,6 +102,36 @@ check('the profile slug parses from the usual URL shapes', () => {
   assert(linkedinSlug('http://linkedin.com/in/lee%20neville?trk=x') === 'lee neville');
   assert(linkedinSlug('https://www.linkedin.com/company/pct/') === null, 'company pages are not people');
   assert(inviteDailyCap() >= 1, 'the invite cap is always at least one');
+});
+
+console.log('\nPost shape, story link and hashtags (pure):');
+
+check('a solid block becomes a hook line then short paragraphs', () => {
+  const block = 'Slough is getting another 40MW hall. That is a lot of chilled water to move. Control valve selection decides how well it moves. The ranges we supply are trusted across some of the largest builds. What are others seeing on spec?';
+  const shaped = formatPost(block);
+  const paras = shaped.split('\n\n');
+  assert(paras[0] === 'Slough is getting another 40MW hall.', 'the first sentence stands alone as the hook');
+  assert(paras.every(p => (p.match(/[.?]/g) || []).length <= 2), 'no paragraph carries more than two sentences');
+  assert(formatPost(shaped) === shaped, 'an already shaped post passes through unchanged');
+  assert(formatPost('One line only.') === 'One line only.', 'a single sentence stays a single line');
+});
+
+check('hashtags are curated, never invented: the base pair, cooling and UK when earned', () => {
+  const base = hashtagsFor({ title: 'New planning approval', body: 'x', geoScope: 'expansion_watch' });
+  assert(JSON.stringify(base) === JSON.stringify(['#datacentres', '#flowcontrol', '#valves']), 'the standing set');
+  const cool = hashtagsFor({ title: 'Liquid cooling retrofit', body: 'x', geoScope: 'uk_project' });
+  assert(cool.includes('#cooling') && cool.includes('#ukconstruction'), 'cooling and UK tags when the story earns them');
+  assert(cool.every(t => /^#[a-z]+$/.test(t)), 'every tag is a plain lowercase hashtag');
+});
+
+check('the full post text puts the story link then the hashtags at the bottom', () => {
+  const text = renderPostText({ body: 'A point.\n\nA second point.', sourceUrl: 'https://news.example/story', hashtags: ['#datacentres', '#valves'] });
+  const parts = text.split('\n\n');
+  assert(parts[parts.length - 1] === '#datacentres #valves', 'hashtags close the post');
+  assert(parts[parts.length - 2] === 'Story: https://news.example/story', 'the story link sits above them');
+  assert(!/[—–]/.test(text) && !/!/.test(text), 'voice rules hold in the assembled text');
+  const noLink = renderPostText({ body: 'A point.', sourceUrl: null, hashtags: ['#valves'] });
+  assert(!/Story:/.test(noLink), 'no link line is invented when the signal has no url');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);
