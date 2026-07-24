@@ -7,12 +7,15 @@
 //   node --env-file=.env scripts/sharepoint-probe.mjs                    site + top-level folders
 //   node --env-file=.env scripts/sharepoint-probe.mjs --path "Richards"  list a folder
 //   node --env-file=.env scripts/sharepoint-probe.mjs --get "Richards/somefile.pdf"
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { spSite, resolveSite, listFolder, downloadFile } from '../src/sharepoint.mjs';
 
 const args = process.argv.slice(2);
 const flag = n => { const i = args.indexOf(n); return i === -1 ? null : (args[i + 1] || null); };
 const PATH = flag('--path') || '';
 const GET = flag('--get');
+const SAVE = flag('--save');
 
 const grantHelp = () => {
   console.log(`
@@ -49,7 +52,30 @@ try {
 }
 
 try {
-  if (GET) {
+  if (SAVE) {
+    // Mirror a folder to local disk, for handing a batch of data sheets to
+    // the builder work in one drop. Recursive, files as they are, the tree
+    // flattened into file names so one directory holds everything.
+    const walk = async (p, out) => {
+      for (const i of await listFolder(p)) {
+        const child = p ? `${p}/${i.name}` : i.name;
+        if (i.folder) await walk(child, out);
+        else out.push(child);
+      }
+    };
+    const files = [];
+    await walk(PATH, files);
+    mkdirSync(SAVE, { recursive: true });
+    let bytes = 0;
+    for (const f of files) {
+      const buf = await downloadFile(f);
+      const local = join(SAVE, f.replace(new RegExp(`^${PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?`), '').replace(/\//g, ' - '));
+      writeFileSync(local, buf);
+      bytes += buf.length;
+      console.log(`  saved  ${local}  (${buf.length.toLocaleString('en-GB')} bytes)`);
+    }
+    console.log(`\n${files.length} file(s), ${bytes.toLocaleString('en-GB')} bytes, saved under ${SAVE}.`);
+  } else if (GET) {
     const buf = await downloadFile(GET);
     console.log(`Downloaded ${GET}: ${buf.length.toLocaleString('en-GB')} bytes. Contents not printed.`);
   } else {
