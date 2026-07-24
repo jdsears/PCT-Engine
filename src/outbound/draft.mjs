@@ -1,5 +1,6 @@
 import { voiceGate } from '../answer.mjs';
 import { isOpenerGrade } from './openerGrade.mjs';
+import { approvedLinkList } from './links.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -136,10 +137,19 @@ const LINK_RE = /https?:\/\/[^\s)>,;]+|www\.[^\s)>,;]+|\b[a-z0-9][a-z0-9-]*\.(?:
 export function findLinks(text) {
   return [...new Set(String(text || '').match(LINK_RE) || [])];
 }
+const normLink = s => String(s || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '')
+  .replace(/[.,;:]+$/, '').replace(/\/+$/, '');
 const sameLink = (a, b) => {
-  const norm = s => String(s || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
-  return norm(a) === norm(b) || (norm(b) && norm(a).startsWith(norm(b)));
+  return normLink(a) === normLink(b) || (normLink(b) && normLink(a).startsWith(normLink(b)));
 };
+// An address a draft may carry: the booking link (prefix match, it carries
+// query parameters) or an approved PCT page matched exactly, so a deeper
+// path invented under an approved page still blocks.
+export function allowedLink(u) {
+  const meetingLink = String(process.env.MEETING_LINK || '').trim();
+  if (meetingLink && sameLink(u, meetingLink)) return true;
+  return approvedLinkList().some(a => normLink(u) === normLink(a));
+}
 
 // A trailing sign-off block, mechanically removed. The drafters are told not
 // to sign off, but a model shown a thread containing an old sign-off will
@@ -187,15 +197,14 @@ export function ensureGreeting(body, fullName, { dear = false } = {}) {
 // addresses) hold whoever wrote the words.
 export function reflagText({ subject = '', body = '', grounding = {} }) {
   const text = `${subject}\n${body}`;
-  const meetingLink = String(process.env.MEETING_LINK || '').trim();
-  const links = findLinks(text).filter(u => !(meetingLink && sameLink(u, meetingLink)));
+  const links = findLinks(text).filter(u => !allowedLink(u));
   const named = [...new Set(flagEndCustomers(text, grounding?.company?.name))];
   const suppliers = (Array.isArray(grounding?.blockedSuppliers) ? grounding.blockedSuppliers : [])
     .filter(n => n && text.toLowerCase().includes(String(n).toLowerCase()));
   return [
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
     ...suppliers.map(n => `blocking: names a supplier that may not be named (${n})`),
-    ...links.map(u => `blocking: web address in the draft (${u}); remove it, the signature owns identity and only the booking link may appear`),
+    ...links.map(u => `blocking: web address not on the approved list (${u}); only the booking link and the approved PCT pages may appear, never a manufacturer site`),
   ];
 }
 
@@ -255,16 +264,17 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
   // A named end customer is a blocking fault: the track record is general, the
   // operator is never named. The "blocking" prefix makes the review refuse approval.
   const named = [...new Set([...flagEndCustomers(b.text, grounding.company?.name), ...flagEndCustomers(s.text, grounding.company?.name)])];
-  // Any web address except the booking link blocks approval until removed:
-  // the signature owns identity, and an address the model wrote is invented.
-  const meetingLink = String(process.env.MEETING_LINK || '').trim();
-  const links = findLinks(`${s.text}\n${b.text}`).filter(u => !(meetingLink && sameLink(u, meetingLink)));
+  // Any web address off the approved list blocks approval until removed. A
+  // grounded link is not the same as an approved one: the documentation is
+  // full of manufacturer addresses, and prospects are sent to PCT's own
+  // pages, never a factory's.
+  const links = findLinks(`${s.text}\n${b.text}`).filter(u => !allowedLink(u));
   const flags = [
     ...check.unsupported,
     ...(swept.removed ? ['a trailing sign-off block was removed; the signature is appended at send'] : []),
     ...redacted.map(n => `supplier name redacted: ${n}`),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
-    ...links.map(u => `blocking: web address in the draft (${u}); remove it, the signature owns identity and only the booking link may appear`),
+    ...links.map(u => `blocking: web address not on the approved list (${u}); only the booking link and the approved PCT pages may appear, never a manufacturer site`),
   ];
   return { subject: s.text, body: b.text, model: draft.model, claims: draft.claims, flags };
 }

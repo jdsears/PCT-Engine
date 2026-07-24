@@ -6,6 +6,7 @@ import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, v
 import { hasBlockingFlag } from './sendDecision.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 import { voiceGate } from '../answer.mjs';
+import { promptLinksBlock } from './links.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -115,6 +116,36 @@ await check('the greeting is guaranteed: Dear on cold opens, bare on thread emai
     check: { claims: [] },
   }) });
   assert(composed.body.startsWith('Dear Sam,'), `a cold open always opens Dear, got ${JSON.stringify(composed.body.slice(0, 30))}`);
+});
+
+await check('links: approved PCT pages pass, manufacturer sites block even when grounded', async () => {
+  // Per James, July 2026: prospects are pointed at PCT's own pages, never a
+  // factory's. A grounded manufacturer address is still the wrong address.
+  const olds = { m: process.env.MEETING_LINK, o: process.env.OUTBOUND_LINKS };
+  process.env.MEETING_LINK = 'https://cal.example/pct';
+  delete process.env.OUTBOUND_LINKS;
+  const flagsFor = body => reflagText({ subject: 's', body, grounding: {} }).filter(f => /web address/.test(f));
+  assert(flagsFor('See https://www.pctflow.com/our-products/valves/steriflow/ for the range.').length === 0,
+    'an approved PCT page passes');
+  assert(flagsFor('Book here: https://cal.example/pct?x=1').length === 0, 'the booking link still passes');
+  assert(flagsFor('Details at www.marwinvalve.com.').length === 1,
+    'a manufacturer site blocks, grounded or not');
+  assert(flagsFor('See https://www.pctflow.com/our-products/valves/steriflow/deep/invented/').length === 1,
+    'an invented deeper path under an approved page blocks');
+  process.env.OUTBOUND_LINKS = JSON.stringify({ marwin_page: { url: 'https://www.pctflow.com/our-products/valves/marwin/', label: 'Marwin range page' } });
+  assert(flagsFor('See https://www.pctflow.com/our-products/valves/marwin/.').length === 0,
+    'a page added through the override passes without a deploy');
+  process.env.OUTBOUND_LINKS = JSON.stringify({ evil: { url: 'https://marwinvalve.com/', label: 'nope' } });
+  assert(flagsFor('Details at https://marwinvalve.com/.').length === 1,
+    'the override can never approve a non-PCT address');
+  process.env.OUTBOUND_LINKS = 'not json';
+  assert(flagsFor('See https://www.pctflow.com/our-products/valves/steriflow/.').length === 0,
+    'a malformed override changes nothing');
+  assert(/steriflow/.test(promptLinksBlock()) && /Never any other web address/.test(promptLinksBlock()),
+    'the drafter is shown the approved pages and the prohibition');
+  for (const [k, v] of [['MEETING_LINK', olds.m], ['OUTBOUND_LINKS', olds.o]]) {
+    if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
 });
 
 await check('stripSignoff never eats a real closing line', async () => {
