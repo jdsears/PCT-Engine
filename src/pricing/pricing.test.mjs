@@ -13,6 +13,7 @@ import { parseRichardsBook, parseSizeColumns } from './parseRichardsPdf.mjs';
 import { parseBestobell, parseHex } from './parseBooksSpecial.mjs';
 import { parseMarwinMd } from './parseMarwinMd.mjs';
 import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
+import { GUIDE_UPSERT } from './storeGuide.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -499,6 +500,19 @@ await check('the series answer states what is loaded, the cheapest by name, and 
   assert(text.includes('guide prices') && text.includes('margin is set per customer at quote'), 'the guide caveat holds');
   assert(text.includes('per enquiry'), 'the beyond-the-book edge holds');
   assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
+});
+
+await check('the twice-priced ruling lives in the one storage statement: the higher figure stands', async () => {
+  // James, July 2026, on codes both book sections price: the parts are
+  // identical, go with the higher price. Direction is per code, not per
+  // section: the CV pages are higher on some codes, the 3000 pages on others.
+  assert(/GREATEST\(prices\.sell_price, EXCLUDED\.sell_price\)/.test(GUIDE_UPSERT),
+    'the higher figure stands whichever ingest runs last');
+  assert((GUIDE_UPSERT.match(/CASE WHEN EXCLUDED\.sell_price > prices\.sell_price/g) || []).length >= 4,
+    'the identity columns follow whichever source won');
+  assert(/ON CONFLICT \(product_line, norm_key, currency\)/.test(GUIDE_UPSERT),
+    'keyed per code and per currency');
+  assert(/'guide'/.test(GUIDE_UPSERT), 'everything through this path is labelled guide');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);

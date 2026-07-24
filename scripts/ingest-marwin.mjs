@@ -25,6 +25,7 @@ import { readRichardsTransform, computeGuide } from '../src/pricing/richardsTran
 import { parseMarwinPages } from '../src/pricing/parseMarwinPdf.mjs';
 import { parseMarwinMd } from '../src/pricing/parseMarwinMd.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
+import { storeGuideRows } from '../src/pricing/storeGuide.mjs';
 import { materialiseSource } from '../src/sharepoint.mjs';
 import { pool } from '../src/db.mjs';
 
@@ -80,7 +81,9 @@ if (MD) {
     console.log(`  refused outright, mixed size-code conventions: ${parsed.mixedSeries.join(', ')}.`);
   }
   if (r.conflicts) {
-    console.log(`  ${r.conflicts} code(s) printed at two different prices are withheld until James rules:`);
+    console.log(`  ${r.conflicts} code(s) printed at two prices are two products under one printed code, per James (July 2026):`);
+    console.log(`  the limit switch differs at configurator parts 9 and 10, Nema 4 carries the lower list, Nema 7 the higher.`);
+    console.log(`  They stay unpriced until the Flanged Valves datasheet's designators give them distinct codes:`);
     for (const c of parsed.conflictParts) console.log(`    ${c}`);
   }
   if (r.spanRefused) console.log(`  ${r.spanRefused} row(s) with prices collapsed into one cell were refused rather than guessed.`);
@@ -114,27 +117,25 @@ if (MD) {
 }
 if (!rows.length) { console.error('No usable rows found.'); await pool.end(); process.exit(2); }
 
-let priced = rows.map(r => ({ ...r, guide: computeGuide(r.listUsd, transform) }));
+const priced = rows.map(r => ({ ...r, guide: computeGuide(r.listUsd, transform) }));
 
-// The markdown ingest never repriced a code the applied CV ingest already
-// holds: the CV section and the 3000 section print a few identical codes at
-// different figures, and which section owns them is James's call, not an
-// overwrite order's.
+// Codes both the 3000 section and the CV section print take the higher
+// figure, per James (July 2026): the parts are identical, the higher price
+// stands. The storage statement applies it per code and per currency, so
+// this dry-run report only says how many held prices would rise.
 const SOURCE = MD ? 'book' : 'guide';
 if (MD) {
   try {
     const { rows: held } = await pool.query(
-      `SELECT norm_key FROM prices WHERE product_line = 'marwin' AND source_tab <> 'book'`);
-    const heldKeys = new Set(held.map(h => h.norm_key));
-    const overlapping = priced.filter(r => heldKeys.has(normKey(r.part)));
+      `SELECT norm_key, sell_price FROM prices WHERE product_line = 'marwin' AND currency = 'GBP'`);
+    const heldBy = new Map(held.map(h => [h.norm_key, Number(h.sell_price)]));
+    const overlapping = priced.filter(r => heldBy.has(normKey(r.part)));
+    const rising = overlapping.filter(r => r.guide.GBP > heldBy.get(normKey(r.part)));
     if (overlapping.length) {
-      priced = priced.filter(r => !heldKeys.has(normKey(r.part)));
-      console.log(`  ${overlapping.length} code(s) already priced by the applied CV ingest are kept as applied and skipped here, for James to rule on:`);
-      for (const o of overlapping.slice(0, 8)) console.log(`    ${o.part}`);
-      if (overlapping.length > 8) console.log(`    and ${overlapping.length - 8} more`);
+      console.log(`  ${overlapping.length} code(s) are already priced from the CV pages; per James the higher figure stands, so ${rising.length} would rise and the rest hold.`);
     }
   } catch (e) {
-    console.log(`  could not check overlaps with the applied CV ingest (${String(e.message).slice(0, 60)}); the apply run checks again.`);
+    console.log(`  could not compare against held prices (${String(e.message).slice(0, 60)}); the apply run applies the higher-figure rule regardless.`);
   }
 }
 
@@ -158,20 +159,11 @@ const client = await pool.connect();
 try {
   await client.query('BEGIN');
   await client.query(`DELETE FROM prices WHERE product_line = 'marwin' AND source_tab = $1`, [SOURCE]);
-  for (const r of priced) {
-    for (const [currency, sell] of Object.entries(r.guide)) {
-      await client.query(
-        `INSERT INTO prices (product_line, part_number, norm_key, description, currency, sell_price, price_basis, list_name, source_tab, effective_date)
-         VALUES ('marwin', $1, $2, $3, $4, $5, 'guide', $6, $7, $8)
-         ON CONFLICT (product_line, norm_key, currency) DO UPDATE SET sell_price = EXCLUDED.sell_price,
-           part_number = EXCLUDED.part_number, description = EXCLUDED.description,
-           list_name = EXCLUDED.list_name, source_tab = EXCLUDED.source_tab,
-           effective_date = EXCLUDED.effective_date, ingested_at = now()`,
-        [r.part, normKey(r.part), r.description, currency, sell,
-         MD ? 'Marwin NA price list, full book, via Richards transform' : 'Marwin NA price list via Richards transform',
-         SOURCE, EFFECTIVE]);
-    }
-  }
+  await storeGuideRows(client, {
+    line: 'marwin', priced, normKey,
+    listName: MD ? 'Marwin NA price list, full book, via Richards transform' : 'Marwin NA price list via Richards transform',
+    sourceTab: SOURCE, effective: EFFECTIVE,
+  });
   await client.query('COMMIT');
   console.log(`\nStored. ${priced.length} Marwin part(s) carry guide prices, labelled guide everywhere they surface.`);
   console.log('Have James check a few against the calculator before the team leans on them.');
