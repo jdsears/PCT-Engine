@@ -86,18 +86,27 @@ function decodeState(config, state) {
 }
 
 // Parse an assembled code back into its slot choices, consuming each slot's
-// code in assembly order, longest match first. Powers round-trip testing.
+// code in assembly order, longest match first, and consuming any literal
+// separators the assembly template carries exactly as written, so a family
+// whose printed codes read model-size-body/options decodes as faithfully as
+// one that concatenates. Powers round-trip testing.
 export function decode(config, code) {
-  const order = [...config.assembly.matchAll(/\{(\w+)\}/g)].map(m => m[1]);
+  const parts = String(config.assembly).split(/(\{\w+\})/).filter(Boolean);
   let rest = String(code);
   const state = {};
-  for (const slotId of order) {
-    const slot = config.slots.find(s => s.id === slotId);
+  for (const part of parts) {
+    const ph = part.match(/^\{(\w+)\}$/);
+    if (!ph) {
+      if (!rest.startsWith(part)) return { ok: false, error: `expected "${part}" at "${rest.slice(0, 16)}"` };
+      rest = rest.slice(part.length);
+      continue;
+    }
+    const slot = config.slots.find(s => s.id === ph[1]);
     const match = slot.options
       .filter(o => rest.startsWith(o.code))
       .sort((a, b) => b.code.length - a.code.length)[0];
-    if (!match) return { ok: false, error: `cannot decode slot ${slotId} from "${rest}"` };
-    state[slotId] = match.code;
+    if (!match) return { ok: false, error: `cannot decode slot ${ph[1]} from "${rest}"` };
+    state[ph[1]] = match.code;
     rest = rest.slice(match.code.length);
   }
   if (rest.length) return { ok: false, error: `trailing characters after decode: "${rest}"` };
