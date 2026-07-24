@@ -7,11 +7,10 @@
 // approved page, is a blocking flag.
 //
 // Provenance: James supplied the Steriflow landing page and the data centre
-// cooling article by WhatsApp in July 2026, and confirmed the site is live
-// for Marwin and Steriflow. His message pasted the Steriflow address twice,
-// so the Marwin landing page is not yet on file and Marwin carries no page
-// rather than a guessed one; add it here or via OUTBOUND_LINKS when he
-// sends it.
+// cooling article by WhatsApp in July 2026 and confirmed the site is live
+// for Marwin and Steriflow; John supplied the Marwin landing page on 24
+// July. Its path is marwin-valve, not marwin, which is why these are never
+// guessed from a pattern.
 //
 // OUTBOUND_LINKS (optional, Railway) merges over these defaults without a
 // deploy: {"marwin_page":{"url":"https://www.pctflow.com/...","label":"Marwin range page"}}
@@ -21,6 +20,10 @@ const DEFAULTS = {
   steriflow_page: {
     url: 'https://www.pctflow.com/our-products/valves/steriflow/',
     label: 'Steriflow range page',
+  },
+  marwin_page: {
+    url: 'https://www.pctflow.com/our-products/valves/marwin-valve/',
+    label: 'Marwin range page',
   },
   dc_cooling_article: {
     url: 'https://www.pctflow.com/applications/data-centres-liquid-cooling-control-valves-and-europes-ai-build-out/',

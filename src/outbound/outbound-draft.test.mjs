@@ -132,8 +132,10 @@ await check('links: approved PCT pages pass, manufacturer sites block even when 
     'a manufacturer site blocks, grounded or not');
   assert(flagsFor('See https://www.pctflow.com/our-products/valves/steriflow/deep/invented/').length === 1,
     'an invented deeper path under an approved page blocks');
-  process.env.OUTBOUND_LINKS = JSON.stringify({ marwin_page: { url: 'https://www.pctflow.com/our-products/valves/marwin/', label: 'Marwin range page' } });
-  assert(flagsFor('See https://www.pctflow.com/our-products/valves/marwin/.').length === 0,
+  assert(flagsFor('The range is at https://www.pctflow.com/our-products/valves/marwin-valve/.').length === 0,
+    'the Marwin page John supplied passes, and its path is marwin-valve, not the guessable marwin');
+  process.env.OUTBOUND_LINKS = JSON.stringify({ example_page: { url: 'https://www.pctflow.com/our-products/valves/example-range/', label: 'Example range page' } });
+  assert(flagsFor('See https://www.pctflow.com/our-products/valves/example-range/.').length === 0,
     'a page added through the override passes without a deploy');
   process.env.OUTBOUND_LINKS = JSON.stringify({ evil: { url: 'https://marwinvalve.com/', label: 'nope' } });
   assert(flagsFor('Details at https://marwinvalve.com/.').length === 1,
