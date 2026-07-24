@@ -25,16 +25,24 @@ import { readRichardsTransform, computeGuide } from '../src/pricing/richardsTran
 import { parseMarwinPages } from '../src/pricing/parseMarwinPdf.mjs';
 import { parseMarwinMd } from '../src/pricing/parseMarwinMd.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
+import { materialiseSource } from '../src/sharepoint.mjs';
 import { pool } from '../src/db.mjs';
 
 const args = process.argv.slice(2);
 const flag = n => { const i = args.indexOf(n); return i === -1 ? null : (args[i + 1] || null); };
 const APPLY = args.includes('--apply');
 const PROBE = args.includes('--probe');
-const WORKBOOK = flag('--workbook');
-const CSV = flag('--csv');
-const PDF = flag('--pdf');
-const MD = flag('--md');
+// Any source flag also takes "sharepoint:<path in the Sales Engine library>",
+// fetched read-only and transiently at run time so the ingest always reads
+// the current file, not a stale download.
+const src = async v => {
+  try { return await materialiseSource(v, { log: m => console.log(m) }); }
+  catch (e) { console.error(`SharePoint fetch failed: ${String(e.message).slice(0, 200)}`); process.exit(1); }
+};
+const WORKBOOK = await src(flag('--workbook'));
+const CSV = await src(flag('--csv'));
+const PDF = await src(flag('--pdf'));
+const MD = await src(flag('--md'));
 const PAGES = flag('--pages') || '27-34';
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 

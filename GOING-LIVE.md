@@ -72,6 +72,13 @@ part, not the capitalisation (capitals in email addresses are cosmetic):
 - [ ] `INTEL_SENDERS`: delete the variable so it falls back to the whole
       `TEAM_EMAILS` list (it was narrowed to John's moonboots address while
       the engine used his personal mailbox).
+- [ ] SharePoint read access, optional but recommended: the app needs
+      `Sites.Selected` plus a read grant on the Sales Engine site, and then
+      every ingest source flag takes `sharepoint:<path>` so pricing and data
+      sheets always read the current file. `scripts/sharepoint-probe.mjs`
+      tests the access and prints the exact grant steps for James when it is
+      missing. `SHAREPOINT_SITE` overrides the default site if it is ever
+      renamed.
 - [ ] `TEAM_EMAILS`: confirm the live list (James, Andy, John during the
       transition). This drives the digest, intel senders, test recipients and
       the reply and meeting notifications.
