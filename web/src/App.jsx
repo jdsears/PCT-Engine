@@ -35,13 +35,30 @@ function useIsMobile() {
   return mobile;
 }
 
+// The active section lives in the URL hash, so a refresh stays on the tab
+// being read and back and forward walk the tabs. An unknown or empty hash
+// lands on the co-pilot as before.
+const sectionFromHash = () => {
+  const h = window.location.hash.replace(/^#/, '');
+  return ORDER.includes(h) ? h : 'copilot';
+};
+
 export default function App() {
-  const [section, setSection] = useState('copilot');
+  const [section, setSection] = useState(sectionFromHash);
   const [expanded, setExpanded] = useState(true);
   const [gateOpen, setGateOpen] = useState(false);
   const [gateForced, setGateForced] = useState(false);
   const [focusCompanyId, setFocusCompanyId] = useState(null);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const onHash = () => setSection(sectionFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  useEffect(() => {
+    if (window.location.hash.replace(/^#/, '') !== section) window.location.hash = section;
+  }, [section]);
 
   // Send the UI to the gate on any 401, and check up front so an unauthed
   // visitor meets the gate rather than an empty shell.
