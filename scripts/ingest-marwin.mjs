@@ -132,7 +132,7 @@ if (MD) {
     const overlapping = priced.filter(r => heldBy.has(normKey(r.part)));
     const rising = overlapping.filter(r => r.guide.GBP > heldBy.get(normKey(r.part)));
     if (overlapping.length) {
-      console.log(`  ${overlapping.length} code(s) are already priced from the CV pages; per James the higher figure stands, so ${rising.length} would rise and the rest hold.`);
+      console.log(`  ${overlapping.length} code(s) are already held; per James the higher figure stands, so ${rising.length} would rise and the rest hold.`);
     }
   } catch (e) {
     console.log(`  could not compare against held prices (${String(e.message).slice(0, 60)}); the apply run applies the higher-figure rule regardless.`);
