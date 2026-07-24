@@ -21,6 +21,28 @@ if (!unipileConfigured()) {
 }
 pass(`configuration present, DSN ${ (process.env.UNIPILE_DSN || '').replace(/^https?:\/\//, '').split(':')[0] }`);
 
+// --post-schema: fetch the create-post contract by sending a deliberately
+// empty body. A 400 cannot publish, no account is named, and Unipile's own
+// error carries the endpoint's expected schema, printed here in full. This is
+// how a write route gets specified precisely without writing anything. The
+// call is ledgered like every other.
+if (process.argv.includes('--post-schema')) {
+  const res = await fetch(`${(process.env.UNIPILE_DSN || '').replace(/\/+$/, '')}/api/v1/posts`, {
+    method: 'POST',
+    headers: { 'X-API-KEY': process.env.UNIPILE_API_KEY, accept: 'application/json', 'content-type': 'application/json' },
+    body: '{}',
+  });
+  const text = await res.text();
+  await pool.query(
+    `INSERT INTO unipile_calls (endpoint, target, outcome) VALUES ('POST /api/v1/posts', 'check: schema probe', $1)`,
+    [res.ok ? 'ok' : `http_${res.status}`]);
+  console.log(`\nHTTP ${res.status} from POST /api/v1/posts with an empty body. Full response:\n`);
+  try { console.log(JSON.stringify(JSON.parse(text), null, 2)); } catch { console.log(text); }
+  console.log('\nNothing was posted: an empty body cannot publish and no account was named.');
+  await pool.end();
+  process.exit(0);
+}
+
 // 2. List connected accounts. Distinguishes a bad key from a bad DSN.
 let accounts = null;
 try {
