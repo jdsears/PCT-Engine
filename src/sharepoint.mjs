@@ -34,6 +34,24 @@ export async function resolveSite() {
   return siteCache;
 }
 
+// The document library's own web address, for linking people to the place
+// where adding or updating a file is how the co-pilot learns.
+let driveCache = null;
+export async function resolveDrive() {
+  if (!driveCache) {
+    const site = await resolveSite();
+    driveCache = await graphJson(`/sites/${site.id}/drive?$select=id,webUrl`);
+  }
+  return driveCache;
+}
+
+// A browser link to a document on the site, from the library url and the
+// synced path. Pure over its inputs so the encoding is provable.
+export function docWebUrl(driveWebUrl, path) {
+  const base = String(driveWebUrl || '').replace(/\/+$/, '');
+  return base && path ? `${base}/${encodeDrivePath(path)}` : null;
+}
+
 // List a folder in the site's default document library; '' lists the root.
 export async function listFolder(path = '') {
   const site = await resolveSite();

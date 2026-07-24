@@ -26,6 +26,7 @@ import { lookupPrice, priceStatus } from './pricing/lookup.mjs';
 import { buildRangeTree } from './pricing/marwinRanges.mjs';
 import { senderFor } from './outbound/senders.mjs';
 import { syncSharepointDocs, syncRoots } from './sharepointSync.mjs';
+import { resolveSite, resolveDrive, docWebUrl } from './sharepoint.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
@@ -739,6 +740,40 @@ app.post('/api/engine/autopeople', async (req, res) => {
     const enabled = (req.body || {}).enabled === true;
     await kvSet('autopeople_enabled', enabled ? 'on' : 'off');
     res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// What the document sync currently holds, for the Health card: totals, the
+// recently refreshed documents, and links back to the site, because adding
+// or updating a file there is how the co-pilot learns.
+app.get('/api/sharepoint/docs', async (_req, res) => {
+  try {
+    let totals, docs;
+    try {
+      totals = (await pool.query(
+        `SELECT count(*)::int AS docs, COALESCE(sum(chunks), 0)::int AS chunks, max(synced_at) AS last
+         FROM sharepoint_docs`)).rows[0];
+      docs = (await pool.query(
+        `SELECT path, line, chunks, synced_at FROM sharepoint_docs
+         ORDER BY synced_at DESC LIMIT 12`)).rows;
+    } catch {
+      return res.json({ migrationPending: true });
+    }
+    let siteUrl = null, driveUrl = null;
+    try {
+      siteUrl = (await resolveSite()).webUrl || null;
+      driveUrl = (await resolveDrive()).webUrl || null;
+    } catch { /* no Graph from here; the card still shows what the database knows */ }
+    res.json({
+      configured: syncRoots().length > 0,
+      enabled: (await kvGet('sharepoint_sync_enabled')) === 'on',
+      siteUrl,
+      totals: { docs: totals.docs, chunks: totals.chunks, lastSync: totals.last },
+      docs: docs.map(r => ({
+        name: String(r.path).split('/').pop(), path: r.path, line: r.line,
+        chunks: r.chunks, syncedAt: r.synced_at, url: docWebUrl(driveUrl, r.path),
+      })),
+    });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
