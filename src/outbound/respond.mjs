@@ -3,6 +3,7 @@ import { search } from '../retrieve.mjs';
 import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGreeting } from './draft.mjs';
 import { reSubject } from './followups.mjs';
 import { COMPANY_FACTS } from './companyFacts.mjs';
+import { promptLinksBlock } from './links.mjs';
 
 // Response drafts: when a prospect replies with interest, a question or an
 // objection, the engine drafts the answer the same way the co-pilot answers a
@@ -65,6 +66,7 @@ export function responseGroundingText(grounding, thread, replyText, extracts) {
   lines.push(link
     ? `Booking link you may include, exactly as given: ${link}`
     : 'No booking link is configured; offer to suggest times for a short call instead.');
+  lines.push(promptLinksBlock());
   return lines.join('\n');
 }
 
