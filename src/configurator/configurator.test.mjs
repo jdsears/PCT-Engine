@@ -22,6 +22,15 @@ const mark96 = JSON.parse(readFileSync(join(here, 'models', 'mark96.json'), 'utf
 const t2100 = JSON.parse(readFileSync(join(here, 'models', '2100.json'), 'utf8'));
 const s3000 = JSON.parse(readFileSync(join(here, 'models', '3000.json'), 'utf8'));
 const ms3000 = JSON.parse(readFileSync(join(here, 'models', 'ms3000.json'), 'utf8'));
+const f2000 = JSON.parse(readFileSync(join(here, 'models', '2000.json'), 'utf8'));
+const f5801 = JSON.parse(readFileSync(join(here, 'models', '5801.json'), 'utf8'));
+const f6801 = JSON.parse(readFileSync(join(here, 'models', '6801.json'), 'utf8'));
+const dm9900 = JSON.parse(readFileSync(join(here, 'models', 'dm9900.json'), 'utf8'));
+const dm600 = JSON.parse(readFileSync(join(here, 'models', 'dm600.json'), 'utf8'));
+const s8700 = JSON.parse(readFileSync(join(here, 'models', '8700.json'), 'utf8'));
+const s4700 = JSON.parse(readFileSync(join(here, 'models', '4700.json'), 'utf8'));
+const s10000 = JSON.parse(readFileSync(join(here, 'models', '10000.json'), 'utf8'));
+const s9700 = JSON.parse(readFileSync(join(here, 'models', '9700.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -460,6 +469,103 @@ check('the MS3000 couplings and cautions hold as printed', () => {
   assert.ok(checkCautions(ms3000, { size: '300' }).some(n => /consult factory/i.test(n.note)), 'the starred sizes carry their consult factory caution');
   assert.ok(checkCautions(ms3000, { positioner: 'R' }).some(n => /DA where the pattern says SR/.test(n.note)), 'the printed R label discrepancy is held, not corrected');
   assert.equal(checkConstraints(ms3000, { operation: 'PB', positioner: 'R' }).length, 0, 'R is not asserted SR-only, since its own label prints DA');
+});
+
+console.log('\nThe flanged trio, 2000, 5801 and 6801 (built from their ordering matrices):');
+
+check('the book\'s own automated codes decode letter for letter across the trio', () => {
+  const d2 = decode(f2000, '2000F-050-CS-F1/BFS280000001');
+  assert.equal(d2.ok, true, JSON.stringify(d2));
+  assert.equal(d2.state.operation, 'S2', 'UT-1 spring return');
+  assert.equal(d2.state.fail, '01', 'fail closed, exactly the book\'s trailing 01');
+  assert.deepEqual(assemble(f2000, d2.state).code, '2000F-050-CS-F1/BFS280000001', 'and assembles back identically');
+  const d5 = decode(f5801, '5801F-800-S6/FFSJ80000001');
+  assert.equal(d5.ok, true, JSON.stringify(d5));
+  assert.equal(d5.state.operation, 'SJ', 'the UT-7.5 spring return the eight inch carries');
+  const d6 = decode(f6801, '6801F-600-S6/FGZZNN0000NN');
+  assert.equal(d6.ok, true, JSON.stringify(d6));
+  assert.equal(d6.state.operation, 'ZZ', 'the withheld dual-priced codes carry the non-standard operation, as printed');
+  assert.ok(checkCautions(f6801, { operation: 'ZZ' }).some(n => /per enquiry/.test(n.note)),
+    'and the builder says so as a caution');
+});
+
+check('the trio\'s couplings hold and their printed absences refuse', () => {
+  assert.equal(applyValue(f2000, {}, 'size', '8"').accepted, false, 'the 2000 has no eight inch');
+  assert.equal(applyValue(f2000, {}, 'operation', 'MC').accepted, false, 'the 2000 electrics stop at MA');
+  assert.equal(applyValue(f5801, {}, 'size', '1-1/4"').accepted, false, 'no 1-1/4 inch anywhere in the trio');
+  assert.equal(applyValue(f6801, {}, 'operation', 'PJ').accepted, false, 'the 6801 has no UT-7.5 double acting');
+  const base5 = { model: '5801F', size: '800', body: 'S6', packingSeat: 'F', ends: 'F', operation: 'SJ', pressure: '80', solenoid: '00', limitSwitch: '00', fail: '01' };
+  assert.equal(checkConstraints(f5801, base5).length, 0, 'the book\'s own eight inch build is valid');
+  for (const bad of [
+    { ...base5, solenoid: '3A' },
+    { ...base5, limitSwitch: 'AB' },
+    { ...base5, operation: 'M2', pressure: '80' },
+    { ...base5, operation: 'HL', fail: '01' },
+  ]) assert.ok(checkConstraints(f5801, bad).length > 0, `must refuse ${JSON.stringify(bad)}`);
+});
+
+console.log('\nThe direct mounts, DM9900 and DM600 (built from their ordering matrices):');
+
+check('the book\'s automated direct mount codes decode, and the unprinted L electrics stay out', () => {
+  const d = decode(dm9900, 'DM9900F-025-S6/AAS180000001');
+  assert.equal(d.ok, true, JSON.stringify(d));
+  assert.equal(d.state.operation, 'S1', 'the UT-0 spring return package');
+  assert.equal(decode(dm9900, 'DM9900F-025-S6/AAL1NN0000NN').ok, false,
+    'the book\'s L-coded Nema 7 electric is not in this matrix and does not decode; it lives in the priced chooser');
+  assert.ok(checkCautions(dm9900, { operation: 'M1' }).some(n => /L-coded/.test(n.note)), 'and the caution says where it lives');
+  const d6 = decode(dm600, 'DM600F-025-BR/AANNNN0000NN');
+  assert.equal(d6.ok, true, JSON.stringify(d6));
+  assert.equal(d6.state.operation, 'NN', 'the bare direct mount valve the book prices');
+  assert.ok(checkCautions(dm9900, { size: '025' }).some(n => /reducer bushings/.test(n.note)),
+    'the starred small sizes carry the sheet\'s bushing note');
+  assert.equal(applyValue(dm9900, {}, 'operation', 'S6').accepted, false, 'DM9900 springs stop at UT-3');
+  assert.equal(applyValue(dm600, {}, 'operation', 'M9').accepted, false, 'DM600 electrics stop at M5');
+  assert.ok(checkConstraints(dm600, { operation: 'S6', limitSwitch: 'AA' }).length > 0, 'switch spans hold');
+});
+
+console.log('\nThe 8700 3-piece family (built from its ordering schematic):');
+
+check('the 8700 keeps its letter sizes, decodes the book, and swaps BA for BB exactly as its note says', () => {
+  const d = decode(s8700, '8700F-05A-CS/BAHLNN0000NN');
+  assert.equal(d.ok, true, JSON.stringify(d));
+  assert.equal(d.state.packingSeat, 'B', 'standard PTFE/RPTFE');
+  assert.equal(d.state.ends, 'A', 'FNPT');
+  const fsw = assemble(s8700, { ...d.state, ends: 'B' });
+  assert.ok(fsw.code.includes('/BBHL'), 'replace BA with BB for FSW ends, the book\'s own instruction');
+  assert.equal(applyValue(s8700, {}, 'size', '050').accepted, false, 'numeric size codes do not exist in this family');
+  assert.ok(checkConstraints(s8700, { operation: 'EB', pressure: '80' }).length > 0, 'the stem extension takes no air supply');
+  assert.ok(checkConstraints(s8700, { operation: 'S6', limitSwitch: 'AA' }).length > 0, 'switch spans hold');
+});
+
+console.log('\nThe last three matrices from the drop, 4700, 10000 and 9700:');
+
+check('the 4700 decodes the book, and the SF reading is flagged rather than trusted', () => {
+  const d = decode(s4700, '4700F-05A-CS/FAHLNN0000NN');
+  assert.equal(d.ok, true, JSON.stringify(d));
+  assert.equal(d.state.packingSeat, 'F', 'the firesafe standard Grafoil/RPTFE');
+  assert.ok(checkCautions(s4700, { operation: 'SF' }).some(n => /verified against the PDF/.test(n.note)),
+    'the twice-printed S6 is held as a flagged SF, not silently corrected');
+  assert.equal(applyValue(s4700, {}, 'size', '6"').accepted, false, 'the 4700 stops at 4 inch');
+});
+
+check('the 10000 runs the full eighteen positions with its hard seats and barstock bodies', () => {
+  const bare = { model: '10000F', size: '100', body: 'SB', ends: 'PT', trim: 'S6', seat: 'PK', packing: 'TV', handle: 'HL', operation: '00', solenoid: '00', limitSwitch: '0', positioner: '0', fail: '0', accessory: '00' };
+  const a = assemble(s10000, bare);
+  assert.equal(a.ok, true, JSON.stringify(a));
+  assert.deepEqual(decode(s10000, a.code).state, bare, 'the bare high pressure build round-trips');
+  assert.equal(applyValue(s10000, {}, 'seat', 'TF').accepted, false, 'soft PTFE seats do not exist at 6000 psi');
+  assert.equal(applyValue(s10000, {}, 'ends', 'F1').accepted, false, 'flanges start at 900#');
+  assert.ok(checkConstraints(s10000, { operation: 'SA', solenoid: '3A' }).length > 0, 'solenoid spans hold at the top of the range');
+  assert.ok(checkCautions(s10000, { positioner: 'R' }).some(n => /same misprint as the MS3000/.test(n.note)), 'the repeated R misprint is flagged');
+});
+
+check('the 9700 keeps its port split and its consult-factory carbon steel', () => {
+  assert.ok(checkConstraints(s9700, { model: '9700F', size: '20A' }).length > 0, 'the 2 inch belongs to the reduced port');
+  assert.ok(checkConstraints(s9700, { model: '9700R', size: '05A' }).length > 0, 'and the reduced port is the 2 inch alone');
+  assert.ok(checkCautions(s9700, { body: 'CS' }).some(n => /consult factory/i.test(n.note)), 'carbon steel carries the sheet\'s own special-order line');
+  const d = decode(s9700, '9700F-05A-S6/KAHLNN0000NN');
+  assert.equal(d.ok, true, JSON.stringify(d));
+  assert.equal(d.state.packingSeat, 'K', 'Grafoil/Delrin, the only listed pair');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

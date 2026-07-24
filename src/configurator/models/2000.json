@@ -1,0 +1,168 @@
+{
+  "model": "2000",
+  "line": "marwin",
+  "displayName": "Marwin 2000 series Class 150 flanged ball valve",
+  "match": ["2000 series", "2000f", "2000r", "marwin 2000", "class 150 flanged ball"],
+  "source": { "doc": "2000-full-150.pdf and 2000-reduced-150.pdf", "page": 4, "section": "Ordering matrix" },
+  "note": "Extracted by hand from the ordering matrices of the full and reduced port Class 150 sheets, which share every table. The code reads model, size, body, the F1 end connection element, then single character packing-seat and ends, and pairs for operation, actuator pressure, solenoid, limit switch and fail position. This family has no 1-1/4 inch, no positioner position and no accessory position, and its operation table stops at P8 and S9 with electrics to MA, all exactly as printed. The book's automated code 2000F-050-CS-F1/BFS280000001 decodes through this model letter for letter. Nema 7 electric remains the per-enquiry caution per James, July 2026.",
+  "assembly": "{model}-{size}-{body}-{endConn}/{packingSeat}{ends}{operation}{pressure}{solenoid}{limitSwitch}{fail}",
+  "slots": [
+    {
+      "id": "model", "label": "Model and port", "position": 1, "required": true,
+      "options": [
+        { "code": "2000F", "label": "Full port", "aliases": ["full port", "2000f"] },
+        { "code": "2000R", "label": "Reduced port", "aliases": ["reduced port", "2000r"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\"", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\"", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\"", "aliases": ["1\"", "DN25"] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\"", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\"", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\"", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\"", "aliases": ["4\"", "DN100"] },
+        { "code": "600", "label": "6\"", "aliases": ["6\"", "DN150"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel", "aliases": ["stainless", "316"] }
+      ]
+    },
+    {
+      "id": "endConn", "label": "End connection", "position": 4, "required": true,
+      "options": [
+        { "code": "F1", "label": "Class 150 flanged ends", "aliases": ["150#", "class 150", "flanged"] }
+      ]
+    },
+    {
+      "id": "packingSeat", "label": "Packing and seat (1)", "position": 5, "required": true,
+      "options": [
+        { "code": "A", "label": "PTFE/PTFE", "aliases": ["ptfe ptfe"] },
+        { "code": "B", "label": "PTFE/RPTFE (standard)", "aliases": ["standard", "ptfe rptfe"] },
+        { "code": "C", "label": "PTFE/C-RPTFE", "aliases": ["ptfe c-rptfe"] },
+        { "code": "G", "label": "Grafoil/C-RPTFE", "aliases": ["grafoil"] },
+        { "code": "J", "label": "UHMW-PE/UHMW-PE", "aliases": ["uhmwpe"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "Ends (2)", "position": 6, "required": true,
+      "options": [
+        { "code": "F", "label": "Class 150 flanged ends", "aliases": ["class 150 fe"] }
+      ]
+    },
+    {
+      "id": "operation", "label": "Operation (3 and 4)", "position": 7, "required": true,
+      "options": [
+        { "code": "HL", "label": "Lever", "aliases": ["lever", "manual"] },
+        { "code": "NN", "label": "None", "aliases": ["none", "bare"] },
+        { "code": "P1", "label": "UT-0A-DA STD", "aliases": ["ut-0a da"] },
+        { "code": "P2", "label": "UT-0-DA STD", "aliases": ["ut-0 da"] },
+        { "code": "P3", "label": "UT-1-DA STD", "aliases": ["ut-1 da"] },
+        { "code": "P4", "label": "UT-2-DA STD", "aliases": ["ut-2 da"] },
+        { "code": "P5", "label": "UT-2.5-DA STD", "aliases": ["ut-2.5 da"] },
+        { "code": "P6", "label": "UT-3-DA STD", "aliases": ["ut-3 da", "double acting"] },
+        { "code": "P7", "label": "UT-3.5-DA STD", "aliases": ["ut-3.5 da"] },
+        { "code": "P8", "label": "UT-4-DA STD", "aliases": ["ut-4 da"] },
+        { "code": "S1", "label": "UT-0-SR STD", "aliases": ["ut-0 sr"] },
+        { "code": "S2", "label": "UT-1-SR STD", "aliases": ["ut-1 sr"] },
+        { "code": "S3", "label": "UT-2-SR STD", "aliases": ["ut-2 sr"] },
+        { "code": "S4", "label": "UT-2.5-SR STD", "aliases": ["ut-2.5 sr"] },
+        { "code": "S5", "label": "UT-3-SR STD", "aliases": ["ut-3 sr", "spring return"] },
+        { "code": "S6", "label": "UT-3.5-SR STD", "aliases": ["ut-3.5 sr"] },
+        { "code": "S7", "label": "UT-4-SR STD", "aliases": ["ut-4 sr"] },
+        { "code": "SF", "label": "UT-4.5-SR STD", "aliases": ["ut-4.5 sr"] },
+        { "code": "S8", "label": "UT-5-SR STD", "aliases": ["ut-5 sr"] },
+        { "code": "S9", "label": "UT-6-SR STD", "aliases": ["ut-6 sr"] },
+        { "code": "M1", "label": "ER-1-2.5-4 110 VAC electric", "aliases": ["er-1-2.5-4"] },
+        { "code": "M2", "label": "ER-2-5-4 110 VAC electric", "aliases": ["er-2-5-4", "electric"] },
+        { "code": "M3", "label": "ER-3-5-4 110 VAC electric", "aliases": ["er-3-5-4"] },
+        { "code": "M8", "label": "ER-4-10-4 110 VAC electric", "aliases": ["er-4-10-4"] },
+        { "code": "M4", "label": "ER-6-15-4 110 VAC electric", "aliases": ["er-6-15-4"] },
+        { "code": "M5", "label": "ER-10-15-4 110 VAC electric", "aliases": ["er-10-15-4"] },
+        { "code": "M9", "label": "ER-15-30-4 110 VAC electric", "aliases": ["er-15-30-4"] },
+        { "code": "MA", "label": "ER-20-12-4 110 VAC electric", "aliases": ["er-20-12-4"] },
+        { "code": "ZZ", "label": "Non-standard operation", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "pressure", "label": "Actuator pressure (5 and 6)", "position": 8, "required": true,
+      "options": [
+        { "code": "60", "label": "60 psi air supply", "aliases": ["60 psi"] },
+        { "code": "80", "label": "80 psi air supply", "aliases": ["80 psi"] },
+        { "code": "NN", "label": "N/A (no pneumatic actuator)", "aliases": ["n/a", "none"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard pressure"] }
+      ]
+    },
+    {
+      "id": "solenoid", "label": "Solenoid feature (7 and 8)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no solenoid"] },
+        { "code": "3A", "label": "3W 8551-120VAC N4, UT-0/5, spring return", "aliases": ["8551 n4 sr"] },
+        { "code": "3C", "label": "3W EF8551-120VAC N7, UT-0/5, spring return", "aliases": ["ef8551 n7 sr"] },
+        { "code": "3J", "label": "3W 8317G35-120VAC N4, UT-0/2.5, spring return", "aliases": ["8317 n4 sr"] },
+        { "code": "3M", "label": "3W 8321G1-120VAC N4, UT-3/5, spring return", "aliases": ["8321 n4 sr"] },
+        { "code": "3Q", "label": "3W EF8317G35-120VAC N7, UT-0/2.5, spring return", "aliases": ["ef8317 n7 sr"] },
+        { "code": "3R", "label": "3W EF8321G1-120VAC N7, UT-3/5, spring return", "aliases": ["ef8321 n7 sr"] },
+        { "code": "4A", "label": "4W 8551-120VAC N4, UT-0A, double acting", "aliases": ["8551 n4 da 0a"] },
+        { "code": "4B", "label": "4W 8551-120VAC N4, UT-0/5, double acting", "aliases": ["8551 n4 da"] },
+        { "code": "4D", "label": "4W EF8551-120VAC N7, UT-0A, double acting", "aliases": ["ef8551 n7 da 0a"] },
+        { "code": "4E", "label": "4W EF8551-120VAC N7, UT-0/5, double acting", "aliases": ["ef8551 n7 da"] },
+        { "code": "ZZ", "label": "Non-standard solenoid", "aliases": ["non-standard solenoid"] }
+      ]
+    },
+    {
+      "id": "limitSwitch", "label": "Limit switch (9 and 10)", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no limit switch"] },
+        { "code": "AA", "label": "LS FMYB-5120-N4, fits UT-0 to UT-3", "aliases": ["fmyb n4 small"] },
+        { "code": "AB", "label": "LS FMYB-5120-N4, fits UT-3.5 to UT-7", "aliases": ["fmyb n4 large"] },
+        { "code": "AC", "label": "LS AMYB-5120-N7, fits UT-0 to UT-3", "aliases": ["amyb n7 small"] },
+        { "code": "AD", "label": "LS AMYB-5120-N7, fits UT-3.5 to UT-7", "aliases": ["amyb n7 large"] },
+        { "code": "0Z", "label": "Non-standard limit switch", "aliases": ["non-standard limit switch"] }
+      ]
+    },
+    {
+      "id": "fail", "label": "Fail position (11 and 12)", "position": 11, "required": true,
+      "options": [
+        { "code": "NN", "label": "Fail position N/A (no spring return actuator)", "aliases": ["no fail action", "n/a"] },
+        { "code": "01", "label": "Fail closed", "aliases": ["fail closed"] },
+        { "code": "02", "label": "Fail open", "aliases": ["fail open"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "operation": ["HL", "NN", "M1", "M2", "M3", "M4", "M5", "M8", "M9", "MA"] }, "forbid": { "pressure": ["60", "80"] },
+      "reason": "an air supply pressure applies only to a pneumatic actuator" },
+    { "when": { "operation": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9"] }, "forbid": { "pressure": ["NN"] },
+      "reason": "a pneumatic actuator needs its air supply stated" },
+    { "when": { "solenoid": ["3A", "3C", "3J", "3M", "3Q", "3R"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "M1", "M2", "M3", "M4", "M5", "M8", "M9", "MA"] },
+      "reason": "a three-way solenoid pairs with a spring return actuator, as its own table marks" },
+    { "when": { "solenoid": ["4A", "4B", "4D", "4E"] }, "forbid": { "operation": ["HL", "NN", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8", "S9", "M1", "M2", "M3", "M4", "M5", "M8", "M9", "MA"] },
+      "reason": "a four-way solenoid pairs with a double acting actuator, as its own table marks" },
+    { "when": { "solenoid": ["3A", "3C"] }, "forbid": { "operation": ["S9"] },
+      "reason": "the 8551 solenoids cover UT-0 to UT-5, per their printed span" },
+    { "when": { "solenoid": ["3J", "3Q"] }, "forbid": { "operation": ["S5", "S6", "S7", "SF", "S8", "S9"] },
+      "reason": "the 8317 solenoids cover UT-0 to UT-2.5, per their printed span" },
+    { "when": { "solenoid": ["3M", "3R"] }, "forbid": { "operation": ["S1", "S2", "S3", "S4", "S9"] },
+      "reason": "the 8321 solenoids cover UT-3 to UT-5, per their printed span" },
+    { "when": { "solenoid": ["4A", "4D"] }, "forbid": { "operation": ["P2", "P3", "P4", "P5", "P6", "P7", "P8"] },
+      "reason": "these solenoids are marked for the UT-0A actuator alone" },
+    { "when": { "limitSwitch": ["AA", "AC"] }, "forbid": { "operation": ["HL", "NN", "P7", "P8", "S6", "S7", "SF", "S8", "S9", "M1", "M2", "M3", "M4", "M5", "M8", "M9", "MA"] },
+      "reason": "these limit switches mount to UT-0 through UT-3 actuators, per their printed range" },
+    { "when": { "limitSwitch": ["AB", "AD"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "S1", "S2", "S3", "S4", "S5", "M1", "M2", "M3", "M4", "M5", "M8", "M9", "MA"] },
+      "reason": "these limit switches mount to UT-3.5 through UT-7 actuators, per their printed range" },
+    { "when": { "fail": ["01", "02"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "M1", "M2", "M3", "M4", "M5", "M8", "M9", "MA"] },
+      "reason": "a fail position is the spring's doing; it belongs to spring return builds" }
+  ],
+  "cautions": [
+    { "when": { "operation": ["M1", "M2", "M3", "M4", "M5", "M8", "M9", "MA"] },
+      "note": "The electric actuators in this matrix are Nema 4. A Nema 7 electric build has no designator here and is quoted per enquiry, per James, July 2026." }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "model": "9700",
+  "line": "marwin",
+  "displayName": "Marwin 9700 series seal welded ball valve",
+  "match": ["9700", "9700f", "9700r", "marwin 9700", "seal welded"],
+  "source": { "doc": "9700Series.pdf", "page": 3, "section": "Sample ordering schematic" },
+  "note": "Extracted by hand from the ordering schematic. Letter sizes 02A to 15A on the full port and 20A alone on the reduced, held as constraints. Grafoil/Delrin is the only listed packing-seat and FNPT the only end. Carbon steel bodies carry the sheet's own special-order consult-factory line as a caution, which matches the price book listing the whole series consult factory. Pneumatics to UT-2.5 double acting and UT-3.5 spring, electrics M1 to M4 by way of M8, exactly as printed.",
+  "assembly": "{model}-{size}-{body}/{packingSeat}{ends}{operation}{pressure}{solenoid}{limitSwitch}{fail}",
+  "slots": [
+    {
+      "id": "model", "label": "Model and port", "position": 1, "required": true,
+      "options": [
+        { "code": "9700F", "label": "Full port, 1/4\" to 1-1/2\"", "aliases": ["full port", "9700f"] },
+        { "code": "9700R", "label": "Reduced port, 2\"", "aliases": ["reduced port", "9700r"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "02A", "label": "1/4\"", "aliases": ["1/4\""] },
+        { "code": "03A", "label": "3/8\"", "aliases": ["3/8\""] },
+        { "code": "05A", "label": "1/2\"", "aliases": ["1/2\""] },
+        { "code": "07A", "label": "3/4\"", "aliases": ["3/4\""] },
+        { "code": "10A", "label": "1\"", "aliases": ["1\""] },
+        { "code": "12A", "label": "1-1/4\"", "aliases": ["1-1/4\""] },
+        { "code": "15A", "label": "1-1/2\"", "aliases": ["1-1/2\""] },
+        { "code": "20A", "label": "2\" (reduced port)", "aliases": ["2\""] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel (special order, consult factory)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel", "aliases": ["stainless", "316"] }
+      ]
+    },
+    {
+      "id": "packingSeat", "label": "Packing and seat (1)", "position": 4, "required": true,
+      "options": [ { "code": "K", "label": "Grafoil/Delrin", "aliases": ["grafoil delrin"] } ]
+    },
+    {
+      "id": "ends", "label": "End connections (2)", "position": 5, "required": true,
+      "options": [ { "code": "A", "label": "FNPT", "aliases": ["npt", "fnpt", "threaded"] } ]
+    },
+    {
+      "id": "operation", "label": "Operation (3 and 4)", "position": 6, "required": true,
+      "options": [
+        { "code": "HL", "label": "Lever", "aliases": ["lever", "manual"] },
+        { "code": "NN", "label": "None", "aliases": ["none", "bare"] },
+        { "code": "P1", "label": "UT-0A-DA STD", "aliases": ["ut-0a da"] },
+        { "code": "P2", "label": "UT-0-DA STD", "aliases": ["ut-0 da"] },
+        { "code": "P3", "label": "UT-1-DA STD", "aliases": ["ut-1 da"] },
+        { "code": "P4", "label": "UT-2-DA STD", "aliases": ["ut-2 da"] },
+        { "code": "P5", "label": "UT-2.5-DA STD", "aliases": ["ut-2.5 da", "double acting"] },
+        { "code": "S1", "label": "UT-0-SR STD", "aliases": ["ut-0 sr"] },
+        { "code": "S2", "label": "UT-1-SR STD", "aliases": ["ut-1 sr"] },
+        { "code": "S3", "label": "UT-2-SR STD", "aliases": ["ut-2 sr"] },
+        { "code": "S4", "label": "UT-2.5-SR STD", "aliases": ["ut-2.5 sr"] },
+        { "code": "S5", "label": "UT-3-SR STD", "aliases": ["ut-3 sr", "spring return"] },
+        { "code": "S6", "label": "UT-3.5-SR STD", "aliases": ["ut-3.5 sr"] },
+        { "code": "M1", "label": "ER-1-2.5-4 110 VAC electric", "aliases": ["er-1-2.5-4", "electric"] },
+        { "code": "M2", "label": "ER-2-5-4 110 VAC electric", "aliases": ["er-2-5-4"] },
+        { "code": "M3", "label": "ER-3-5-4 110 VAC electric", "aliases": ["er-3-5-4"] },
+        { "code": "M8", "label": "ER-4-10-4 110 VAC electric", "aliases": ["er-4-10-4"] },
+        { "code": "M4", "label": "ER-6-15-4 110 VAC electric", "aliases": ["er-6-15-4"] },
+        { "code": "ZZ", "label": "Non-standard operation", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "pressure", "label": "Actuator pressure (5 and 6)", "position": 7, "required": true,
+      "options": [
+        { "code": "60", "label": "60 psi air supply", "aliases": ["60 psi"] },
+        { "code": "80", "label": "80 psi air supply", "aliases": ["80 psi"] },
+        { "code": "NN", "label": "N/A (no pneumatic actuator)", "aliases": ["n/a", "none"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard pressure"] }
+      ]
+    },
+    {
+      "id": "solenoid", "label": "Solenoid feature (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no solenoid"] },
+        { "code": "3A", "label": "3W 8551-120VAC N4, UT-0/5, spring return", "aliases": ["8551 n4 sr"] },
+        { "code": "3C", "label": "3W EF8551-120VAC N7, UT-0/5, spring return", "aliases": ["ef8551 n7 sr"] },
+        { "code": "3J", "label": "3W 8317G35-120VAC N4, UT-0/2.5, spring return", "aliases": ["8317 n4 sr"] },
+        { "code": "3M", "label": "3W 8321G1-120VAC N4, UT-3/5, spring return", "aliases": ["8321 n4 sr"] },
+        { "code": "3Q", "label": "3W EF8317G35-120VAC N7, UT-0/2.5, spring return", "aliases": ["ef8317 n7 sr"] },
+        { "code": "3R", "label": "3W EF8321G1-120VAC N7, UT-3/5, spring return", "aliases": ["ef8321 n7 sr"] },
+        { "code": "4A", "label": "4W 8551-120VAC N4, UT-0A, double acting", "aliases": ["8551 n4 da 0a"] },
+        { "code": "4B", "label": "4W 8551-120VAC N4, UT-0/5, double acting", "aliases": ["8551 n4 da"] },
+        { "code": "4D", "label": "4W EF8551-120VAC N7, UT-0A, double acting", "aliases": ["ef8551 n7 da 0a"] },
+        { "code": "4E", "label": "4W EF8551-120VAC N7, UT-0/5, double acting", "aliases": ["ef8551 n7 da"] },
+        { "code": "ZZ", "label": "Non-standard solenoid", "aliases": ["non-standard solenoid"] }
+      ]
+    },
+    {
+      "id": "limitSwitch", "label": "Limit switch (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no limit switch"] },
+        { "code": "AA", "label": "LS FMYB-5120-N4, fits UT-0 to UT-3", "aliases": ["fmyb n4 small"] },
+        { "code": "AB", "label": "LS FMYB-5120-N4, fits UT-3.5 to UT-7", "aliases": ["fmyb n4 large"] },
+        { "code": "AC", "label": "LS AMYB-5120-N7, fits UT-0 to UT-3", "aliases": ["amyb n7 small"] },
+        { "code": "AD", "label": "LS AMYB-5120-N7, fits UT-3.5 to UT-7", "aliases": ["amyb n7 large"] },
+        { "code": "ZZ", "label": "Non-standard limit switch", "aliases": ["non-standard limit switch"] }
+      ]
+    },
+    {
+      "id": "fail", "label": "Fail position (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "NN", "label": "Fail position N/A (no spring return actuator)", "aliases": ["no fail action", "n/a"] },
+        { "code": "01", "label": "Fail closed", "aliases": ["fail closed"] },
+        { "code": "02", "label": "Fail open", "aliases": ["fail open"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "model": "9700F" }, "forbid": { "size": ["20A"] },
+      "reason": "the 2 inch is the reduced port's alone" },
+    { "when": { "model": "9700R" }, "forbid": { "size": ["02A", "03A", "05A", "07A", "10A", "12A", "15A"] },
+      "reason": "the reduced port is the 2 inch alone" },
+    { "when": { "operation": ["HL", "NN", "M1", "M2", "M3", "M4", "M8"] }, "forbid": { "pressure": ["60", "80"] },
+      "reason": "an air supply pressure applies only to a pneumatic actuator" },
+    { "when": { "operation": ["P1", "P2", "P3", "P4", "P5", "S1", "S2", "S3", "S4", "S5", "S6"] }, "forbid": { "pressure": ["NN"] },
+      "reason": "a pneumatic actuator needs its air supply stated" },
+    { "when": { "solenoid": ["3A", "3C", "3J", "3M", "3Q", "3R"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "M1", "M2", "M3", "M4", "M8"] },
+      "reason": "a three-way solenoid pairs with a spring return actuator, as its own table marks" },
+    { "when": { "solenoid": ["4A", "4B", "4D", "4E"] }, "forbid": { "operation": ["HL", "NN", "S1", "S2", "S3", "S4", "S5", "S6", "M1", "M2", "M3", "M4", "M8"] },
+      "reason": "a four-way solenoid pairs with a double acting actuator, as its own table marks" },
+    { "when": { "solenoid": ["3J", "3Q"] }, "forbid": { "operation": ["S5", "S6"] },
+      "reason": "the 8317 solenoids cover UT-0 to UT-2.5, per their printed span" },
+    { "when": { "solenoid": ["3M", "3R"] }, "forbid": { "operation": ["S1", "S2", "S3", "S4"] },
+      "reason": "the 8321 solenoids cover UT-3 to UT-5, per their printed span" },
+    { "when": { "solenoid": ["4A", "4D"] }, "forbid": { "operation": ["P2", "P3", "P4", "P5"] },
+      "reason": "these solenoids are marked for the UT-0A actuator alone" },
+    { "when": { "limitSwitch": ["AA", "AC"] }, "forbid": { "operation": ["HL", "NN", "S6", "M1", "M2", "M3", "M4", "M8"] },
+      "reason": "these limit switches mount to UT-0 through UT-3 actuators, per their printed range" },
+    { "when": { "limitSwitch": ["AB", "AD"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "S1", "S2", "S3", "S4", "S5", "M1", "M2", "M3", "M4", "M8"] },
+      "reason": "these limit switches mount to UT-3.5 through UT-7 actuators, per their printed range" },
+    { "when": { "fail": ["01", "02"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "M1", "M2", "M3", "M4", "M8"] },
+      "reason": "a fail position is the spring's doing; it belongs to spring return builds" }
+  ],
+  "cautions": [
+    { "when": { "body": "CS" },
+      "note": "The sheet's own line: carbon steel is a special order, consult factory." },
+    { "when": { "operation": ["M1", "M2", "M3", "M4", "M8"] },
+      "note": "The electric actuators in this matrix are Nema 4. A Nema 7 electric build has no designator here and is quoted per enquiry, per James, July 2026." }
+  ]
+}
