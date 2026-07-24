@@ -20,6 +20,7 @@ const cv4700 = JSON.parse(readFileSync(join(here, 'models', 'cv4700.json'), 'utf
 const jr = JSON.parse(readFileSync(join(here, 'models', 'jr.json'), 'utf8'));
 const mark96 = JSON.parse(readFileSync(join(here, 'models', 'mark96.json'), 'utf8'));
 const t2100 = JSON.parse(readFileSync(join(here, 'models', '2100.json'), 'utf8'));
+const s3000 = JSON.parse(readFileSync(join(here, 'models', '3000.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -392,6 +393,44 @@ check('the Nema 7 electric gap is a caution, never a code', () => {
   assert.ok(notes.some(n => /Nema 7/.test(n.note) && /per enquiry/.test(n.note)), 'the caution states the book evidence and the route');
   assert.ok(!t2100.slots.find(s => s.id === 'operation').options.some(o => /ER.*-7\b/.test(o.label)), 'no Nema 7 electric designator is invented');
   assert.equal(decode(t2100, '3L-2100F-050-S6/XXM2NN0000A2').ok, false, 'an unlisted ends code refuses to decode');
+});
+
+console.log('\nThe 3000 series family (built from the full and reduced port matrices):');
+
+check('a full eighteen-position build round-trips, and the book\'s manual code is its printed head', () => {
+  const bare = { prefix: '', model: '3000F', size: '050', body: 'CS', ends: 'PT', trim: 'S6', seat: 'TF', packing: 'TV', handle: 'HL', actuator: '00', solenoid: '00', limitSwitch: '0', positioner: '0', fail: '0', accessory: '0' };
+  const a = assemble(s3000, bare);
+  assert.equal(a.ok, true, JSON.stringify(a));
+  assert.ok(a.code.startsWith('3000F-050-CS/PTS6TFTVHL'),
+    'the price book\'s manual row is the full code\'s printed head, zeros stated');
+  const d = decode(s3000, a.code);
+  assert.equal(d.ok, true, JSON.stringify(d));
+  assert.deepEqual(d.state, bare, 'decode rebuilds the exact choices');
+  const fs = { prefix: 'FS', model: '3000F', size: '150', body: 'CS', ends: 'F1', trim: 'S6', seat: 'TG', packing: 'GV', handle: 'NN', actuator: 'S6', solenoid: '3A', limitSwitch: 'B', positioner: 'R', fail: '2', accessory: '4' };
+  const af = assemble(s3000, fs);
+  assert.equal(af.ok, true, JSON.stringify(af));
+  const df = decode(s3000, af.code);
+  assert.equal(df.ok, true && af.code.startsWith('FS3000F-150-CS/'), 'the firesafe prefix leads the code');
+  assert.deepEqual(df.state, fs, 'the automated firesafe build round-trips');
+});
+
+check('the 3000 matrix\'s own couplings refuse what it never printed', () => {
+  const base = { prefix: '', body: 'CS', ends: 'PT', trim: 'S6', seat: 'TF', packing: 'TV', handle: 'HL', actuator: '00', solenoid: '00', limitSwitch: '0', positioner: '0', fail: '0', accessory: '0' };
+  for (const bad of [
+    { ...base, model: '3000F', size: '400' },
+    { ...base, model: '3000R', size: '025' },
+    { ...base, model: '3000F', size: '100', seat: 'PK' },
+    { ...base, model: '3000F', size: '100', prefix: 'FS' },
+    { ...base, model: '3000F', size: '100', prefix: 'FS', seat: 'TG', packing: 'TV' },
+    { ...base, model: '3000F', size: '100', handle: 'NN', actuator: 'S9', solenoid: '3A' },
+    { ...base, model: '3000F', size: '100', handle: 'NN', actuator: 'P4', positioner: 'Q' },
+    { ...base, model: '3000F', size: '100', handle: 'NN', actuator: 'SJ', limitSwitch: 'B' },
+    { ...base, model: '3000F', size: '100', fail: '2' },
+    { ...base, model: '3000F', size: '100', actuator: 'M2', accessory: '4' },
+  ]) assert.ok(checkConstraints(s3000, bad).length > 0, `must refuse ${JSON.stringify(bad)}`);
+  const clean = { prefix: '', model: '3000R', size: '400', body: 'S6', ends: 'F3', trim: '6P', seat: 'PK', packing: 'GV', handle: 'NN', actuator: 'S8', solenoid: '3A', limitSwitch: 'D', positioner: 'R', fail: '2', accessory: '4' };
+  assert.equal(checkConstraints(s3000, clean).length, 0, 'a fully coupled automated build within every span is valid');
+  assert.ok(checkCautions(s3000, { actuator: 'M2' }).some(n => /Nema 7/.test(n.note)), 'the electric caution carries over');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
