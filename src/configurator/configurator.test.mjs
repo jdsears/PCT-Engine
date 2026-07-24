@@ -19,6 +19,7 @@ const cv3000 = JSON.parse(readFileSync(join(here, 'models', 'cv3000.json'), 'utf
 const cv4700 = JSON.parse(readFileSync(join(here, 'models', 'cv4700.json'), 'utf8'));
 const jr = JSON.parse(readFileSync(join(here, 'models', 'jr.json'), 'utf8'));
 const mark96 = JSON.parse(readFileSync(join(here, 'models', 'mark96.json'), 'utf8'));
+const t2100 = JSON.parse(readFileSync(join(here, 'models', '2100.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -348,6 +349,49 @@ check('new model names do not enter the build on a question, and resolve on buil
   assert.equal(extractModel('build a mark 96 part number'), 'MARK96');
   assert.equal(extractModel('configure a cv4700'), 'CV4700');
   assert.equal(extractModel('i need a part number for the jr series'), 'JR');
+});
+
+console.log('\nThe 3T/3L-2100 three-way family (built from the FF and FA ordering matrices):');
+
+check('the price book\'s own code round-trips through assemble and decode, separators and all', () => {
+  const state = { model: '3L-2100F', size: '050', body: 'S6', ends: 'BF', operation: 'M2', pressure: 'NN', solenoid: '00', limitSwitch: '00', startPosition: 'A2' };
+  const a = assemble(t2100, state);
+  assert.equal(a.ok, true, JSON.stringify(a));
+  assert.equal(a.code, '3L-2100F-050-S6/BFM2NN0000A2', 'exactly as the price book prints it');
+  const d = decode(t2100, a.code);
+  assert.equal(d.ok, true, JSON.stringify(d));
+  assert.deepEqual(d.state, state, 'decode rebuilds the exact choices');
+  const d2 = decode(t2100, '3T-2100F-150-CS/BFS68000003A');
+  assert.equal(d2.ok, true, 'the spring return book code decodes too');
+  assert.equal(d2.state.operation, 'S6', 'UT-3.5 spring return');
+  assert.equal(d2.state.pressure, '80', '80 psi supply');
+});
+
+check('the matrix\'s own rules refuse the combinations it never printed', () => {
+  const base = { size: '100', body: 'CS', ends: 'BA', pressure: 'NN', solenoid: '00', limitSwitch: '00' };
+  for (const bad of [
+    { ...base, model: '3T-2100F', operation: 'HL', startPosition: 'A2' },
+    { ...base, model: '3L-2100F', operation: 'HL', startPosition: '3A' },
+    { model: '3L-2100F', size: '600', body: 'S6', ends: 'BA', operation: 'HL', pressure: 'NN', solenoid: '00', limitSwitch: '00', startPosition: 'A2' },
+    { ...base, model: '3L-2100F', operation: 'M2', pressure: '60', startPosition: 'A2' },
+    { ...base, model: '3L-2100F', operation: 'S3', pressure: 'NN', startPosition: 'A2' },
+    { ...base, model: '3L-2100F', operation: 'P4', pressure: '60', solenoid: '3A', startPosition: 'A2' },
+    { ...base, model: '3L-2100F', operation: 'S9', pressure: '60', solenoid: '3A', startPosition: 'A2' },
+    { ...base, model: '3L-2100F', operation: 'S5', pressure: '60', solenoid: '3J', startPosition: 'A2' },
+    { ...base, model: '3L-2100F', operation: 'S6', pressure: '60', limitSwitch: 'AA', startPosition: 'A2' },
+    { ...base, model: '3L-2100F', operation: 'S3', pressure: '60', limitSwitch: 'AD', startPosition: 'A2' },
+  ]) assert.ok(checkConstraints(t2100, bad).length > 0, `must refuse ${JSON.stringify(bad)}`);
+  const clean = { model: '3T-2100F', size: '150', body: 'CS', ends: 'BF', operation: 'S6', pressure: '80', solenoid: '00', limitSwitch: '00', startPosition: '3A' };
+  assert.equal(checkConstraints(t2100, clean).length, 0, 'the book\'s own spring return build is valid');
+  const withKit = { ...clean, solenoid: '3A', limitSwitch: 'AB' };
+  assert.equal(checkConstraints(t2100, withKit).length, 0, 'solenoid and switch within their printed spans are valid');
+});
+
+check('the Nema 7 electric gap is a caution, never a code', () => {
+  const notes = checkCautions(t2100, { operation: 'M2' });
+  assert.ok(notes.some(n => /Nema 7/.test(n.note) && /per enquiry/.test(n.note)), 'the caution states the book evidence and the route');
+  assert.ok(!t2100.slots.find(s => s.id === 'operation').options.some(o => /ER.*-7\b/.test(o.label)), 'no Nema 7 electric designator is invented');
+  assert.equal(decode(t2100, '3L-2100F-050-S6/XXM2NN0000A2').ok, false, 'an unlisted ends code refuses to decode');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
