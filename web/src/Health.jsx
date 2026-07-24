@@ -68,6 +68,19 @@ function EngineCard() {
     setBusy(false);
   };
 
+  const toggleSync = async () => {
+    if (!engine || busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/autosync', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !engine.autoSync }),
+      });
+      setEngine(await res.json());
+    } catch { setNote('The SharePoint sync switch is not available right now.'); }
+    setBusy(false);
+  };
+
   if (!engine) {
     return (
       <div className="card health-card">
@@ -100,6 +113,12 @@ function EngineCard() {
           title="Finds specifiers for a small batch of unsearched named accounts each cycle, through the connected LinkedIn account. Stands itself down on any account-health error.">
           {engine.autoPeople ? 'People search: on' : 'People search: off'}
         </button>
+        <button className="engine-btn" onClick={toggleSync} disabled={busy || !engine.syncConfigured}
+          title={engine.syncConfigured
+            ? 'Refreshes the document corpus from the configured Sales Engine folders each cycle. Documents only; price files are refused by the sync itself.'
+            : 'Set SHAREPOINT_SYNC_FOLDERS on the service to name the folders first; nothing syncs without it.'}>
+          {engine.autoSync ? 'SharePoint sync: on' : 'SharePoint sync: off'}
+        </button>
       </div>
       <div className="health-sub">
         {engine.enabled
@@ -112,7 +131,7 @@ function EngineCard() {
       {lr && (
         <div className="muted-small">
           Last run {fmtClockDay(lr.at)}{lr.trigger ? ` (${lr.trigger})` : ''}: {lr.ok
-            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed${lr.peopleSearched != null ? `, ${lr.peopleSearched} account(s) people-searched, ${lr.peopleFound ?? 0} contacts (${lr.peopleOrbit ?? 0} in orbit)${lr.peopleStopped ? `, stopped on ${lr.peopleStopped}` : ''}` : ''}${lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}.`
+            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed${lr.peopleSearched != null ? `, ${lr.peopleSearched} account(s) people-searched, ${lr.peopleFound ?? 0} contacts (${lr.peopleOrbit ?? 0} in orbit)${lr.peopleStopped ? `, stopped on ${lr.peopleStopped}` : ''}` : ''}${lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}${lr.docsChecked != null ? `, ${lr.docsChecked} document(s) checked, ${lr.docsUpdated ?? 0} refreshed${lr.docsRemoved ? `, ${lr.docsRemoved} withdrawn` : ''}${lr.docsErrors ? `, ${lr.docsErrors} sync error(s)` : ''}` : ''}.`
             : `failed, ${lr.error}`}
         </div>
       )}

@@ -25,6 +25,7 @@ import { startRehearsal, rehearsalStatus, endRehearsal } from './outbound/rehear
 import { lookupPrice, priceStatus } from './pricing/lookup.mjs';
 import { buildRangeTree } from './pricing/marwinRanges.mjs';
 import { senderFor } from './outbound/senders.mjs';
+import { syncSharepointDocs, syncRoots } from './sharepointSync.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
@@ -505,6 +506,8 @@ async function engineStatus() {
     enabled, running: engineRunning,
     autoDiscover: (await kvGet('autodiscover_enabled')) === 'on',
     autoPeople: (await kvGet('autopeople_enabled')) === 'on',
+    autoSync: (await kvGet('sharepoint_sync_enabled')) === 'on',
+    syncConfigured: syncRoots().length > 0,
     intervalHours: ENGINE_INTERVAL_MS / 3600_000,
     lastRun,
     keys: {
@@ -544,6 +547,15 @@ async function runEngineOnce(trigger) {
       const cap = Math.max(1, Number(process.env.ENGINE_EMAIL_DISCOVERY_LIMIT || 10));
       discovery = await discoverEmails({ limit: cap, log: m => console.log('[emails]', m) });
     }
+    // With the SharePoint sync on, the corpus refreshes from the configured
+    // folders: changed files re-embed, removed files withdraw. A sync failure
+    // is recorded and never fails the cycle.
+    let spSync = null;
+    if ((await kvGet('sharepoint_sync_enabled')) === 'on') {
+      spSync = await syncSharepointDocs({ log: m => console.log('[sharepoint]', m) })
+        .catch(e => ({ errors: [String(e.message).slice(0, 200)] }));
+      if (spSync?.errors?.length) console.log('[sharepoint] errors:', spSync.errors.join(' | '));
+    }
     await kvSet('engine_last_run', {
       ok: true, at: startedAt, trigger,
       signalsStored: r.newsCounts.inserted ?? 0, signalsRejected: r.newsCounts.rejected ?? 0,
@@ -557,6 +569,11 @@ async function runEngineOnce(trigger) {
       peopleStopped: people?.unhealthy ? 'account health' : people?.capStopped ? 'daily cap' : undefined,
       emailsResolved: discovery ? discovery.resolved : undefined,
       emailCredits: discovery ? discovery.credits : undefined,
+      docsChecked: spSync && !spSync.skipped ? spSync.files : undefined,
+      docsUpdated: spSync && !spSync.skipped ? spSync.updated : undefined,
+      docsRemoved: spSync && !spSync.skipped ? spSync.removed : undefined,
+      docsErrors: spSync?.errors?.length ? spSync.errors.length : undefined,
+      docsSkipped: spSync?.skipped || undefined,
     });
     // With auto-draft on, freshly researched leads get a grounded draft into
     // the review queue at the end of the cycle. Review, approval and sending
@@ -721,6 +738,17 @@ app.post('/api/engine/autopeople', async (req, res) => {
   try {
     const enabled = (req.body || {}).enabled === true;
     await kvSet('autopeople_enabled', enabled ? 'on' : 'off');
+    res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The SharePoint document sync switch: when on, each engine cycle refreshes
+// the corpus from the configured Sales Engine folders. Documents only; price
+// material is refused inside the sync itself.
+app.post('/api/engine/autosync', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('sharepoint_sync_enabled', enabled ? 'on' : 'off');
     res.json(await engineStatus());
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });

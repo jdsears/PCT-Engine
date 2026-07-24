@@ -3,6 +3,7 @@
 // The network side is proven by scripts/sharepoint-probe.mjs on a machine
 // with credentials; nothing here touches the network.
 import { spSite, encodeDrivePath, isSharepointRef, sharepointPath } from './sharepoint.mjs';
+import { lineForPath, syncDecision, chunkText } from './sharepointSync.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -37,6 +38,35 @@ await check('the site defaults to the Sales Engine team site and can be overridd
   process.env.SHAREPOINT_SITE = 'pctflow.sharepoint.com:/sites/Other';
   assert(spSite() === 'pctflow.sharepoint.com:/sites/Other', 'the override wins');
   if (old === undefined) delete process.env.SHAREPOINT_SITE; else process.env.SHAREPOINT_SITE = old;
+});
+
+console.log('\nThe document sync rules (pure):');
+
+await check('folders map to their canonical corpus lines', async () => {
+  assert(lineForPath('Richards/7. Marwin/Technical Information/DM600.pdf') === 'marwin', 'Marwin folder is line marwin');
+  assert(lineForPath('Richards/3. Steriflow Food and Beverage/x.pdf') === 'steriflow_fb', 'the F&B folder maps');
+  assert(lineForPath('PCT Information/About.pdf') === 'general', 'PCT information files under general');
+  assert(lineForPath('Richards/Something New/y.pdf') === 'general', 'an unknown folder files under general, never guesses a line');
+});
+
+await check('price material and spreadsheets never enter the corpus', async () => {
+  assert(syncDecision('DM600 (1).pdf').sync, 'a data sheet syncs');
+  assert(syncDecision('Installation notes.docx').sync && syncDecision('readme.md').sync, 'documents sync');
+  assert(syncDecision('Marwin_NA_Price_List_REV1.pdf').why === 'price rule', 'a price list is refused by name');
+  assert(syncDecision('STERIFLOW-FY26-PL_rev1.pdf').why === 'price rule', 'the PL shorthand is refused');
+  assert(syncDecision('Costing summary.docx').why === 'price rule', 'cost material is refused');
+  assert(syncDecision('Mega Price List.xlsx').why !== undefined, 'the workbook is refused');
+  assert(syncDecision('Sizes.xlsx').why === 'type', 'every spreadsheet is refused by type');
+  assert(syncDecision('Richards Presentation.pptx').sync, 'a presentation syncs');
+});
+
+await check('chunking splits on paragraphs, hard-splits monsters, and caps the flood', async () => {
+  const { chunks } = chunkText('First paragraph.\n\nSecond paragraph.\n\n' + 'x'.repeat(4000));
+  assert(chunks[0].includes('First paragraph.') && chunks[0].includes('Second paragraph.'), 'small paragraphs share a chunk');
+  assert(chunks.length >= 3 && chunks.every(c => c.length <= 1500), 'an oversized paragraph hard-splits within the size');
+  const flood = chunkText(Array.from({ length: 900 }, (_, i) => `Para ${i} ${'y'.repeat(1400)}`).join('\n\n'));
+  assert(flood.chunks.length === 400 && flood.truncated, 'one enormous document cannot flood the corpus');
+  assert(chunkText('').chunks.length === 0, 'empty text yields nothing');
 });
 
 console.log(`\n=== SharePoint gate: ${pass} passed, ${fail} failed ===`);
