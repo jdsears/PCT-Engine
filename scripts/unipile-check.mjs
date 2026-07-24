@@ -39,27 +39,29 @@ if (process.argv.includes('--post-schema')) {
   console.log(`\nHTTP ${res.status} from POST /api/v1/posts with an empty body. Full response:\n`);
   try { console.log(JSON.stringify(JSON.parse(text), null, 2)); } catch { console.log(text); }
 
-  // Second probe: our exact body shape with a deliberately invalid account
-  // id. It can never publish, the account cannot resolve, but the reply says
-  // whether {account_id, text} is the accepted shape (an account error) or
-  // which field the API wants instead (another schema error).
+  // Second probe: the corrected shape, multipart form fields with a
+  // deliberately invalid account id. It can never publish, the account
+  // cannot resolve, but an account-flavoured error confirms the multipart
+  // contract end to end while any schema error names what is still wrong.
+  const form = new FormData();
+  form.append('account_id', 'probe-invalid-account');
+  form.append('text', 'schema probe, never published');
   const res2 = await fetch(`${(process.env.UNIPILE_DSN || '').replace(/\/+$/, '')}/api/v1/posts`, {
     method: 'POST',
-    headers: { 'X-API-KEY': process.env.UNIPILE_API_KEY, accept: 'application/json', 'content-type': 'application/json' },
-    body: JSON.stringify({ account_id: 'probe-invalid-account', text: 'schema probe, never published' }),
+    headers: { 'X-API-KEY': process.env.UNIPILE_API_KEY, accept: 'application/json' },
+    body: form,
   });
   const text2 = await res2.text();
   await pool.query(
     `INSERT INTO unipile_calls (endpoint, target, outcome) VALUES ('POST /api/v1/posts', 'check: schema probe 2', $1)`,
     [res2.ok ? 'ok' : `http_${res2.status}`]);
-  console.log(`\nHTTP ${res2.status} from POST /api/v1/posts with {account_id: <invalid>, text}. Full response:\n`);
+  console.log(`\nHTTP ${res2.status} from POST /api/v1/posts as multipart form, invalid account. Full response:\n`);
   try { console.log(JSON.stringify(JSON.parse(text2), null, 2)); } catch { console.log(text2); }
-  if (/account/i.test(text2) && !/Required property/.test(text2)) {
-    console.log('\nReading: the {account_id, text} shape is accepted and the complaint is the account itself,');
-    console.log('so the live failure points at the UNIPILE_ACCOUNT_ID value on the service. Run this script');
-    console.log('without --post-schema and compare the listed account id against Railway.');
+  if (/account/i.test(text2) && !/Required property|Expected object/.test(text2)) {
+    console.log('\nReading: the multipart shape is accepted and only the account is refused, which is the');
+    console.log('probe working as designed. The Post to LinkedIn button now speaks this contract.');
   } else {
-    console.log('\nReading: the shape itself is refused; the response above names the field to fix.');
+    console.log('\nReading: the shape is still refused; the response above names what to fix next.');
   }
   console.log('\nNothing was posted: an invalid account cannot publish.');
   await pool.end();

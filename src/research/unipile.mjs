@@ -25,7 +25,7 @@ export const ROUTES = {
   search: { method: 'POST', path: '/api/v1/linkedin/search' }, // ?account_id=&limit=
   profile: { method: 'GET', path: '/api/v1/users' },           // /{identifier}?account_id=
   invite: { method: 'POST', path: '/api/v1/users/invite' },    // { account_id, provider_id, message }
-  createPost: { method: 'POST', path: '/api/v1/posts' },       // { account_id, text }; per Unipile docs, unverifiable without posting, so the first human-approved post is its live test
+  createPost: { method: 'POST', path: '/api/v1/posts' },       // multipart form fields account_id and text; the endpoint's own 400 echoed a file-upload schema at JSON, which is how the shape was pinned down without posting
 };
 
 export const unipileConfigured = () => Boolean(DSN && KEY);
@@ -67,7 +67,7 @@ export function unipile(route, opts = {}) {
   return task;
 }
 
-async function doCall(route, { pathSuffix = '', query = {}, body, target } = {}) {
+async function doCall(route, { pathSuffix = '', query = {}, body, form, target } = {}) {
   if (!unipileConfigured()) throw new Error('UNIPILE_DSN and UNIPILE_API_KEY are not set');
   const endpoint = `${route.method} ${route.path}${pathSuffix ? '/{id}' : ''}`;
 
@@ -82,17 +82,20 @@ async function doCall(route, { pathSuffix = '', query = {}, body, target } = {})
   const qs = new URLSearchParams(query).toString();
   const url = `${DSN}${route.path}${pathSuffix ? '/' + encodeURIComponent(pathSuffix) : ''}${qs ? '?' + qs : ''}`;
 
+  // A form option sends multipart/form-data (fetch sets the boundary
+  // itself, so no content-type header here); body stays JSON as before.
+  let fetchBody;
+  const headers = { 'X-API-KEY': KEY, accept: 'application/json' };
+  if (form) {
+    fetchBody = new FormData();
+    for (const [k, v] of Object.entries(form)) fetchBody.append(k, String(v));
+  } else if (body) {
+    headers['content-type'] = 'application/json';
+    fetchBody = JSON.stringify(body);
+  }
   let res;
   try {
-    res = await fetch(url, {
-      method: route.method,
-      headers: {
-        'X-API-KEY': KEY,
-        accept: 'application/json',
-        ...(body ? { 'content-type': 'application/json' } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    res = await fetch(url, { method: route.method, headers, body: fetchBody });
   } catch (e) {
     await log(endpoint, target, 'network_error');
     throw new Error(`Unipile unreachable at ${DSN}: ${e.message}. Check UNIPILE_DSN.`);

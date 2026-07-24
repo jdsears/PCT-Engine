@@ -144,7 +144,7 @@ export async function publishPost(id) {
     hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
   });
   await unipile(ROUTES.createPost, {
-    body: { account_id: process.env.UNIPILE_ACCOUNT_ID, text },
+    form: { account_id: process.env.UNIPILE_ACCOUNT_ID, text },
     target: `li_post ${p.id}`,
   });
   await pool.query(
