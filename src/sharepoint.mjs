@@ -38,10 +38,11 @@ export async function resolveSite() {
 export async function listFolder(path = '') {
   const site = await resolveSite();
   const p = path ? `root:/${encodeDrivePath(path)}:/children` : 'root/children';
-  const json = await graphJson(`/sites/${site.id}/drive/${p}?$top=200&$select=name,size,folder,file,lastModifiedDateTime`);
+  const json = await graphJson(`/sites/${site.id}/drive/${p}?$top=200&$select=name,size,folder,file,lastModifiedDateTime,eTag`);
   return (json?.value || []).map(i => ({
     name: i.name, folder: !!i.folder, size: i.size ?? null,
     children: i.folder?.childCount ?? null, modified: i.lastModifiedDateTime || null,
+    etag: i.eTag || null,
   }));
 }
 
