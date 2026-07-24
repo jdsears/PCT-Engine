@@ -131,7 +131,7 @@ function EngineCard() {
       {lr && (
         <div className="muted-small">
           Last run {fmtClockDay(lr.at)}{lr.trigger ? ` (${lr.trigger})` : ''}: {lr.ok
-            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed${lr.peopleSearched != null ? `, ${lr.peopleSearched} account(s) people-searched, ${lr.peopleFound ?? 0} contacts (${lr.peopleOrbit ?? 0} in orbit)${lr.peopleStopped ? `, stopped on ${lr.peopleStopped}` : ''}` : ''}${lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}${lr.docsChecked != null ? `, ${lr.docsChecked} document(s) checked, ${lr.docsUpdated ?? 0} refreshed${lr.docsRemoved ? `, ${lr.docsRemoved} withdrawn` : ''}${lr.docsErrors ? `, ${lr.docsErrors} sync error(s)` : ''}` : ''}.`
+            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed${lr.peopleSearched != null ? `, ${lr.peopleSearched} account(s) people-searched, ${lr.peopleFound ?? 0} contacts (${lr.peopleOrbit ?? 0} in orbit)${lr.peopleStopped ? `, stopped on ${lr.peopleStopped}` : ''}` : ''}${lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}${lr.docsChecked != null ? `, ${lr.docsChecked} document(s) checked, ${lr.docsUpdated ?? 0} refreshed${lr.docsRemoved ? `, ${lr.docsRemoved} withdrawn` : ''}${lr.docsErrors ? `, ${lr.docsErrors} sync error(s)` : ''}` : ''}${lr.docsSkipped ? `, document sync skipped: ${lr.docsSkipped}` : ''}.`
             : `failed, ${lr.error}`}
         </div>
       )}
@@ -267,6 +267,45 @@ function RangeBuilder() {
   );
 }
 
+// What the SharePoint sync holds: the recently refreshed documents with
+// their lines, and the honest instruction that the site itself is where you
+// add or update a document to teach the co-pilot. Upload happens there, in
+// SharePoint's own UI, because the engine's access is read-only by design.
+function SharePointDocsCard() {
+  const [d, setD] = useState(null);
+  useEffect(() => {
+    apiFetch('/api/sharepoint/docs').then(r => (r.ok ? r.json() : null)).then(setD).catch(() => setD(null));
+  }, []);
+  if (!d || d.migrationPending) return null;
+  if (!d.configured && !(d.totals?.docs > 0)) return null;
+  return (
+    <div className="card health-card gap-10">
+      <div className="eyebrow">SharePoint documents</div>
+      <div className="muted-small">
+        {d.totals.docs > 0
+          ? `${d.totals.docs} document${d.totals.docs === 1 ? '' : 's'} synced from the site (${d.totals.chunks.toLocaleString('en-GB')} chunks), last sync ${d.totals.lastSync ? fmtClockDay(d.totals.lastSync) : 'unknown'}.${d.enabled ? '' : ' The sync switch is off; the engine cycle is not refreshing them.'}`
+          : `Nothing synced yet. ${d.enabled ? 'The next engine cycle (or Run now) does the first sync.' : 'Turn SharePoint sync on from the Signal engine card.'}`}
+      </div>
+      {d.docs.length > 0 && (
+        <div className="muted-small">
+          {d.docs.map(doc => (
+            <div key={doc.path}>
+              {doc.url
+                ? <a href={doc.url} target="_blank" rel="noreferrer">{doc.name}</a>
+                : doc.name}
+              {' '}({lineLabel(doc.line)}, {fmtClockDay(doc.syncedAt)})
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="muted-small">
+        Add or update documents on the site itself and the engine picks them up each cycle; removing one there withdraws it here.
+        {d.siteUrl && <> <a href={d.siteUrl} target="_blank" rel="noreferrer">Open the Sales Engine site</a>.</>}
+      </div>
+    </div>
+  );
+}
+
 export default function Health() {
   const [data, setData] = useState(null);
   const [state, setState] = useState('loading');
@@ -292,6 +331,7 @@ export default function Health() {
         <EngineCard />
         <PriceCard />
         <RangeBuilder />
+        <SharePointDocsCard />
 
         <div className="card health-card">
           <div className="eyebrow">Corpus</div>

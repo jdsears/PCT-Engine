@@ -2,7 +2,7 @@
 // addressing and the sharepoint: source references the ingest scripts take.
 // The network side is proven by scripts/sharepoint-probe.mjs on a machine
 // with credentials; nothing here touches the network.
-import { spSite, encodeDrivePath, isSharepointRef, sharepointPath } from './sharepoint.mjs';
+import { spSite, encodeDrivePath, isSharepointRef, sharepointPath, docWebUrl } from './sharepoint.mjs';
 import { lineForPath, syncDecision, chunkText } from './sharepointSync.mjs';
 
 let pass = 0, fail = 0;
@@ -38,6 +38,13 @@ await check('the site defaults to the Sales Engine team site and can be overridd
   process.env.SHAREPOINT_SITE = 'pctflow.sharepoint.com:/sites/Other';
   assert(spSite() === 'pctflow.sharepoint.com:/sites/Other', 'the override wins');
   if (old === undefined) delete process.env.SHAREPOINT_SITE; else process.env.SHAREPOINT_SITE = old;
+});
+
+await check('document links join the library url and the encoded path', async () => {
+  assert(docWebUrl('https://pctflow.sharepoint.com/sites/SalesEngine/Shared%20Documents/', 'Richards/7. Marwin/DM600 (1).pdf')
+    === 'https://pctflow.sharepoint.com/sites/SalesEngine/Shared%20Documents/Richards/7.%20Marwin/DM600%20(1).pdf',
+    'the trailing slash trims and each segment encodes');
+  assert(docWebUrl(null, 'x.pdf') === null && docWebUrl('https://x', '') === null, 'no base or no path, no link');
 });
 
 console.log('\nThe document sync rules (pure):');
