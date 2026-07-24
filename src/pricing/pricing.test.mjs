@@ -13,7 +13,7 @@ import { parseRichardsBook, parseSizeColumns } from './parseRichardsPdf.mjs';
 import { parseBestobell, parseHex } from './parseBooksSpecial.mjs';
 import { parseMarwinMd } from './parseMarwinMd.mjs';
 import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
-import { GUIDE_UPSERT } from './storeGuide.mjs';
+import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -513,6 +513,12 @@ await check('the twice-priced ruling lives in the one storage statement: the hig
   assert(/ON CONFLICT \(product_line, norm_key, currency\)/.test(GUIDE_UPSERT),
     'keyed per code and per currency');
   assert(/'guide'/.test(GUIDE_UPSERT), 'everything through this path is labelled guide');
+  const batched = buildGuideUpsert(3);
+  assert((batched.match(/\('?\$/g) || []).length === 3 && /\$27\)/.test(batched),
+    'the batched form carries one tuple per row with contiguous parameters');
+  assert(/GREATEST\(prices\.sell_price, EXCLUDED\.sell_price\)/.test(batched)
+    && (batched.match(/'guide'/g) || []).length === 3,
+    'the ruling clauses and the guide label are identical at any batch width');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
