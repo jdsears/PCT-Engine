@@ -99,6 +99,10 @@ const mk978 = JSON.parse(readFileSync(join(here, 'models', 'mk978.json'), 'utf8'
 const mk978m = JSON.parse(readFileSync(join(here, 'models', 'mk978m.json'), 'utf8'));
 const jsrlp = JSON.parse(readFileSync(join(here, 'models', 'jsrlp.json'), 'utf8'));
 const ssc = JSON.parse(readFileSync(join(here, 'models', 'ssc.json'), 'utf8'));
+const jsrlf = JSON.parse(readFileSync(join(here, 'models', 'jsrlf.json'), 'utf8'));
+const jsrlfe = JSON.parse(readFileSync(join(here, 'models', 'jsrlfe.json'), 'utf8'));
+const jsrlflp = JSON.parse(readFileSync(join(here, 'models', 'jsrlflp.json'), 'utf8'));
+const jsrlflpe = JSON.parse(readFileSync(join(here, 'models', 'jsrlflpe.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1373,6 +1377,39 @@ check('both round-trip and the no-airload-with-self-relieve rule holds', () => {
   assert.equal(checkCautions(jsrlp, { rangeSpring: '25', outletGauge: 'A' }).length, 1, 'the one uncovered range cautions');
   assert.equal(checkCautions(ssc, { acc2: 'F' }).length, 1, 'the document-required gasket cautions');
   assert.ok(/Mark 93/.test(ssc.note), 'the trap grid points at the existing 93 builder');
+});
+
+console.log('\nThe JSRL low flow family: F, FE, FLP and FLPE:');
+
+check('all four round-trip and the family rules hold', () => {
+  roundTrip(jsrlf, {
+    model: 'JSRLF', size: '050', material: '6L', endConnection: 'C', portConfig: 'A',
+    trim: '4R', seat: 'P4', rangeSpring: 'E6', diaphragm: 'JL', actuator: 'CV1',
+    inletGauge: 'MM', outletGauge: 'J', sep: 'G', accessories: 'J',
+  }, 'JSRLF-050-6L/CA4RP4E6JLCV1MMJGJ');
+  roundTrip(jsrlfe, {
+    model: 'JSRLFE', size: '025', material: '30', endConnection: 'A', portConfig: 'A',
+    trim: '1S', seat: 'D1', rangeSpring: 'E5', diaphragm: 'JL', actuator: 'SK',
+    inletGauge: '00', outletGauge: '00', sep: '0', accessories: '0',
+  }, 'JSRLFE-025-30/AA1SD1E5JLSK0000 00'.replace(' ', ''));
+  roundTrip(jsrlflp, {
+    model: 'JSRLFLP', size: '038', material: '6L', endConnection: 'B', portConfig: 'C',
+    trim: '2S', seat: 'T2', rangeSpring: 'E1', diaphragm: 'JL', actuator: 'PM',
+    inletGauge: 'DD', outletGauge: 'C', sep: 'Z', accessories: 'X',
+  }, 'JSRLFLP-038-6L/BC2ST2E1JLPMDDCZX');
+  roundTrip(jsrlflpe, {
+    model: 'JSRLFLPE', size: '050', material: '6L', endConnection: 'W', portConfig: 'E',
+    trim: '3R', seat: 'D3', rangeSpring: 'E2', diaphragm: 'JL', actuator: 'TP',
+    inletGauge: 'NN', outletGauge: 'N', sep: 'G', accessories: 'A',
+  }, 'JSRLFLPE-050-6L/WE3RD3E2JLTPNNNGA');
+  assert.ok(checkConstraints(jsrlf, { rangeSpring: 'E6', endConnection: 'T' }).length > 0, 'the E6 range is NPT only');
+  assert.ok(checkConstraints(jsrlf, { inletGauge: 'KK', endConnection: 'S1' }).length > 0, 'the high gauge spans are NPT only');
+  assert.ok(checkConstraints(jsrlf, { trim: '1S', seat: 'P2' }).length > 0, 'the seat Cv matches the trim Cv');
+  assert.ok(checkConstraints(jsrlfe, { actuator: 'AA1', trim: '2R' }).length > 0, 'self-relieve and air-load refuse each other');
+  assert.ok(checkConstraints(jsrlflp, { endConnection: 'A', size: '050' }).length > 0, 'the FNPT ends match their sizes');
+  assert.equal(applyValue(jsrlfe, {}, 'rangeSpring', 'E6').accepted, false, 'the EPDM sheet stops at E5');
+  assert.equal(applyValue(jsrlflp, {}, 'inletGauge', 'HH').accepted, false, 'the low pressure ladder stops at 160');
+  assert.ok(/4S is the correct order code/.test(jsrlf.slots.find(s => s.id === 'trim').options.find(o => o.code === '4S').label), 'the out-of-sequence note rides the option');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
