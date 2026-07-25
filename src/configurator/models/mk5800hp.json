@@ -1,0 +1,254 @@
+{
+  "model": "MK5800HP",
+  "line": "lowflow",
+  "displayName": "LowFlow Mark 5800HP high pressure regulator",
+  "match": [
+    "mk5800hp",
+    "mark 5800hp",
+    "5800hp"
+  ],
+  "source": {
+    "doc": "mk5800hp.pdf",
+    "page": 2,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, assembled bare in the printed column order: model, body material, o-ring, then the numbered positions. The body pair couples a size letter with an end connection letter and prints one ZZ across the pair. The accessory section prints no none row, only clean for oil free and non-standard, carried as the sheet has it. The folder's installation manual names a 5850HP as well; no datasheet for it is in the folder, so only the 5800HP is modelled.",
+  "assembly": "{model}{body}{oRing}{size}{endConn}{trim}{range}{accessory}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "5800HP",
+          "label": "Standard",
+          "aliases": [
+            "5800hp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "316",
+          "label": "316 stainless steel",
+          "aliases": [
+            "316"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oRing",
+      "label": "O-ring",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "B",
+          "label": "Buna-N",
+          "aliases": [
+            "buna-n"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "EPDM",
+          "aliases": [
+            "epdm"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "Viton",
+          "aliases": [
+            "viton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Body size (1)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "B",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "C",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across size and end connection)",
+          "aliases": [
+            "non-standard size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endConn",
+      "label": "End connection (2)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "150# flange",
+          "aliases": [
+            "150 flange"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "300# flange",
+          "aliases": [
+            "300 flange"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "600# flange",
+          "aliases": [
+            "600 flange"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "900# flange",
+          "aliases": [
+            "900 flange"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "1500# flange",
+          "aliases": [
+            "1500 flange"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across size and end connection)",
+          "aliases": [
+            "non-standard end"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim (3 and 4)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "EE",
+          "label": "Cv 1.0 316 / TFE",
+          "aliases": [
+            "cv 1.0"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "range",
+      "label": "Set range (5 and 6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "R4",
+          "label": "240-800 psi (17-55 bar)",
+          "aliases": [
+            "240-800"
+          ]
+        },
+        {
+          "code": "R9",
+          "label": "400-2500 psi (27,5-172 bar)",
+          "aliases": [
+            "400-2500"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessory",
+      "label": "Accessory (7 and 8)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "SC",
+          "label": "Clean / oil free",
+          "aliases": [
+            "clean",
+            "oil free"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessory"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

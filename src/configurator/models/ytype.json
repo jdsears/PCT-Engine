@@ -1,0 +1,420 @@
+{
+  "model": "YTYPE",
+  "line": "jordan",
+  "displayName": "Jordan Y-type line strainer",
+  "match": [
+    "y-type",
+    "y type",
+    "ytype",
+    "y strainer",
+    "line strainer"
+  ],
+  "source": {
+    "doc": "YType-Strainers.pdf",
+    "page": 2,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, six positions assembled bare. The sheet is headed Accessory Products and lives in the pressure reducing folder. The pressure rating rows print their own body brackets and the 250 row prints ANSI 250 without the hash, carried as printed. The flanged connection codes are matched to their pressure ratings as an inferred coupling, held for John; the schematic itself prints no such bracket.",
+  "assembly": "{model}{rating}{body}{size}{connection}{screen}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "Y",
+          "label": "Y-type strainer",
+          "aliases": [
+            "y-type strainer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rating",
+      "label": "Pressure rating (2)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "125",
+          "label": "ANSI 125#; CI, BR",
+          "aliases": [
+            "125"
+          ]
+        },
+        {
+          "code": "150",
+          "label": "ANSI 150#; BR, CS, SS",
+          "aliases": [
+            "150"
+          ]
+        },
+        {
+          "code": "250",
+          "label": "ANSI 250; CI, BR",
+          "aliases": [
+            "250"
+          ]
+        },
+        {
+          "code": "300",
+          "label": "ANSI 300#; CS, SS",
+          "aliases": [
+            "300"
+          ]
+        },
+        {
+          "code": "600",
+          "label": "ANSI 600#; CS, SS",
+          "aliases": [
+            "600"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material (3)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "CI",
+          "label": "Cast iron",
+          "aliases": [
+            "cast iron"
+          ]
+        },
+        {
+          "code": "BR",
+          "label": "Bronze",
+          "aliases": [
+            "bronze"
+          ]
+        },
+        {
+          "code": "CS",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "SS",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (4)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\"",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1-1/4\"",
+          "aliases": [
+            "1-1/4\""
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\"",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "8",
+          "label": "2-1/2\"",
+          "aliases": [
+            "2-1/2\""
+          ]
+        },
+        {
+          "code": "9",
+          "label": "3\"",
+          "aliases": [
+            "3\""
+          ]
+        },
+        {
+          "code": "B",
+          "label": "4\"",
+          "aliases": [
+            "4\""
+          ]
+        },
+        {
+          "code": "C",
+          "label": "5\"",
+          "aliases": [
+            "5\""
+          ]
+        },
+        {
+          "code": "D",
+          "label": "6\"",
+          "aliases": [
+            "6\""
+          ]
+        },
+        {
+          "code": "E",
+          "label": "8\"",
+          "aliases": [
+            "8\""
+          ]
+        },
+        {
+          "code": "F",
+          "label": "10\"",
+          "aliases": [
+            "10\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connection",
+      "label": "Connection (5)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "SWE (CS/SS only)",
+          "aliases": [
+            "swe",
+            "socket weld"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "125# ANSI flange",
+          "aliases": [
+            "125 flange"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "150# ANSI flange",
+          "aliases": [
+            "150 flange"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "250# ANSI flange",
+          "aliases": [
+            "250 flange"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "300# ANSI flange",
+          "aliases": [
+            "300 flange"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "600# ANSI flange",
+          "aliases": [
+            "600 flange"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screen",
+      "label": "Screen size (6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Standard",
+          "aliases": [
+            "standard screen"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard screen"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "rating": [
+          "125",
+          "250"
+        ]
+      },
+      "forbid": {
+        "body": [
+          "CS",
+          "SS"
+        ]
+      },
+      "reason": "the 125 and 250 rows print cast iron and bronze"
+    },
+    {
+      "when": {
+        "rating": "150"
+      },
+      "forbid": {
+        "body": [
+          "CI"
+        ]
+      },
+      "reason": "the 150 row prints bronze, carbon and stainless"
+    },
+    {
+      "when": {
+        "rating": [
+          "300",
+          "600"
+        ]
+      },
+      "forbid": {
+        "body": [
+          "CI",
+          "BR"
+        ]
+      },
+      "reason": "the 300 and 600 rows print carbon and stainless"
+    },
+    {
+      "when": {
+        "connection": "2"
+      },
+      "forbid": {
+        "body": [
+          "CI",
+          "BR"
+        ]
+      },
+      "reason": "the SWE row prints CS/SS only"
+    },
+    {
+      "when": {
+        "connection": "J"
+      },
+      "forbid": {
+        "rating": [
+          "150",
+          "250",
+          "300",
+          "600"
+        ]
+      },
+      "reason": "the 125# flange matches the 125 rating, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "connection": "3"
+      },
+      "forbid": {
+        "rating": [
+          "125",
+          "250",
+          "300",
+          "600"
+        ]
+      },
+      "reason": "the 150# flange matches the 150 rating, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "connection": "K"
+      },
+      "forbid": {
+        "rating": [
+          "125",
+          "150",
+          "300",
+          "600"
+        ]
+      },
+      "reason": "the 250# flange matches the 250 rating, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "connection": "4"
+      },
+      "forbid": {
+        "rating": [
+          "125",
+          "150",
+          "250",
+          "600"
+        ]
+      },
+      "reason": "the 300# flange matches the 300 rating, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "connection": "5"
+      },
+      "forbid": {
+        "rating": [
+          "125",
+          "150",
+          "250",
+          "300"
+        ]
+      },
+      "reason": "the 600# flange matches the 600 rating, held as an inferred coupling for John"
+    }
+  ],
+  "cautions": []
+}
