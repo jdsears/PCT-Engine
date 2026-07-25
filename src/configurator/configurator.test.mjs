@@ -63,6 +63,9 @@ const mk75ptp = JSON.parse(readFileSync(join(here, 'models', 'mk75ptp.json'), 'u
 const mk79 = JSON.parse(readFileSync(join(here, 'models', 'mk79.json'), 'utf8'));
 const mk701 = JSON.parse(readFileSync(join(here, 'models', 'mk701.json'), 'utf8'));
 const mk76 = JSON.parse(readFileSync(join(here, 'models', 'mk76.json'), 'utf8'));
+const mk78 = JSON.parse(readFileSync(join(here, 'models', 'mk78.json'), 'utf8'));
+const mk4046 = JSON.parse(readFileSync(join(here, 'models', 'mk4046.json'), 'utf8'));
+const mk37 = JSON.parse(readFileSync(join(here, 'models', 'mk37.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -1003,6 +1006,37 @@ check('the class couplings, actuator brackets and artefact confessions hold', ()
   assert.ok(checkConstraints(mk76, { diaphragm: 'B3', actuator: 'A6' }).length > 0, 'the diaphragm size digit matches the actuator');
   assert.ok(/I5/.test(mk76.note) || /FE/.test(mk76.note), 'the 76 I5 label oddity is noted');
   assert.equal(applyValue(mk79, {}, 'size', '300').accepted, false, 'the 79 sheet stops at 2 inch, 3 inch per its own contact-factory line');
+});
+
+console.log('\nThe globe 78, the float and lever 40/46 and the motor operated 37/377:');
+
+check('the three sheets round-trip', () => {
+  roundTrip(mk78, {
+    model: '78TP', size: '200', body: 'S6', ends: 'F4', trim: 'BS', seatChar: 'D', cv: '1',
+    actuatorRange: 'G8', diaphragm: 'B8', actuator: 'R8', accessories: 'AR', action: 'R',
+    ip: '8', oring: 'V', smp: 'G', ped: 'F',
+  }, '78TP200S6F4BSD1G8B8R8ARR8VGF');
+  roundTrip(mk4046, {
+    model: '40', size: '075', body: 'BR', ends: 'F1', trim: 'T6', seat: 'W', cv: '3',
+    yoke: 'SD', lever: '15', floatArm: 'BR', float: '6C', action: 'D',
+  }, '40-075-BR/F1T6W3SD15BR6CD');
+  roundTrip(mk37, {
+    model: '377', size: '150', body: 'CI', ends: 'I2', trim: 'V6', seat: 'V', cv: '3',
+    range: 'V1', actuator: 'C2', accessories: '02', action: 'RR',
+  }, '377-150-CI/I2V6V3V1C202RR');
+});
+
+check('the printed must-match rule, model splits and size brackets hold', () => {
+  assert.ok(checkConstraints(mk78, { actuatorRange: 'A3', actuator: 'R8' }).length > 0, 'the 78 size digit must match across boxes');
+  assert.ok(checkConstraints(mk78, { model: '78', actuator: 'S3' }).length > 0, 'the actuator type letter belongs to its model');
+  assert.ok(checkConstraints(mk4046, { model: '46', float: '6C' }).length > 0, 'the lever operated 46 takes no float');
+  assert.ok(checkConstraints(mk4046, { model: '40', floatArm: '00' }).length > 0, 'the float operated 40 needs a real arm');
+  assert.ok(checkConstraints(mk4046, { float: '8C', size: '050' }).length > 0, 'the 8 inch floats keep their 1 to 2 inch bracket');
+  assert.ok(checkConstraints(mk37, { cv: 'N', model: '37' }).length > 0, 'an MK377 Cv refuses the standard 37');
+  assert.equal(checkConstraints(mk37, { cv: '3', model: '377' }).length, 0, 'the shared digit passes, reading 230 there');
+  assert.ok(checkConstraints(mk37, { trim: 'T6', range: '42' }).length > 0, 'an on-off trim refuses a signal range');
+  assert.equal(checkCautions(mk37, { size: '300' }).length, 1, 'the consult-factory large sizes carry the caution');
+  assert.ok(/no none row/.test(mk78.note) || /none row/.test(mk78.note), 'the 78 SMP missing none row is confessed');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

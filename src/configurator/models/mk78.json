@@ -1,0 +1,227 @@
+{
+  "model": "MK78",
+  "line": "jordan",
+  "displayName": "Jordan Mark 78 globe style control valve",
+  "match": ["mk78", "mark 78", "jordan 78", "globe control valve"],
+  "source": { "doc": "mk78.pdf", "page": "4 and 5", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, nineteen positions assembled bare. The sheet's own line under the actuator boxes, the actuator size choice must match across 7 and 8, 9 and 10 and 11 and 12, is enforced as constraints, and the actuator type letter is coupled to the model, standard, side positioner or the top positioner's own air-to-close and air-to-open forms. Held for the PDF: the I5 and I3 ends print FE where the I family reads IFE, carried as printed with this note; the seat Cv row for 15 prints a 25.8 Kv, the 30's figure; and the SMP column prints no none row where every sibling sheet has one, so an SMP is always chosen and the starred positioner-required ranges are satisfied by construction.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seatChar}{cv}{actuatorRange}{diaphragm}{actuator}{accessories}{action}{ip}{oring}{smp}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "78", "label": "Standard", "aliases": ["mk78", "standard"] },
+        { "code": "78TP", "label": "Top mounted positioner", "aliases": ["78tp"] },
+        { "code": "78SP", "label": "Side mounted positioner", "aliases": ["78sp"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "F5", "label": "150# FE", "aliases": ["150 flanged"] },
+        { "code": "F3", "label": "300# FE", "aliases": ["300 flanged"] },
+        { "code": "I5", "label": "150# (printed FE against the I family's IFE, see note)", "aliases": ["150 ife"] },
+        { "code": "I3", "label": "300# (printed FE against the I family's IFE, see note)", "aliases": ["300 ife"] },
+        { "code": "F7", "label": "PN10 DIN FE", "aliases": ["pn10 flanged"] },
+        { "code": "F6", "label": "PN16 DIN FE", "aliases": ["pn16 flanged"] },
+        { "code": "F8", "label": "PN25 DIN FE", "aliases": ["pn25 flanged"] },
+        { "code": "F4", "label": "PN40 DIN FE", "aliases": ["pn40 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "TS", "label": "316SS Teflon packing", "aliases": ["316 teflon"] },
+        { "code": "BS", "label": "316SS Teflon braided packing", "aliases": ["316 braided"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seatChar", "label": "Seat characteristic (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "Linear hard", "aliases": ["linear hard"] },
+        { "code": "B", "label": "Linear soft", "aliases": ["linear soft"] },
+        { "code": "C", "label": "Equal percentage hard", "aliases": ["equal percentage hard"] },
+        { "code": "D", "label": "Equal percentage soft", "aliases": ["equal percentage soft"] },
+        { "code": "E", "label": "Quick open hard", "aliases": ["quick open hard"] },
+        { "code": "F", "label": "Quick open soft", "aliases": ["quick open soft"] },
+        { "code": "G", "label": "Equal linear hard", "aliases": ["equal linear hard"] },
+        { "code": "H", "label": "Equal linear soft", "aliases": ["equal linear soft"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard characteristic"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Seat Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "4", "label": "1.8 (1.5 Kv)", "aliases": ["1.8"] },
+        { "code": "5", "label": "2.5 (2.2 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.8 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "4.6 (4.0 Kv)", "aliases": ["4.6"] },
+        { "code": "8", "label": "8.0 (6.9 Kv)", "aliases": ["8.0"] },
+        { "code": "M", "label": "9.0 (7.7 Kv)", "aliases": ["9.0"] },
+        { "code": "N", "label": "11.5 (9.9 Kv)", "aliases": ["11.5"] },
+        { "code": "P", "label": "12.0 (10 Kv)", "aliases": ["12.0"] },
+        { "code": "Q", "label": "12.2 (10.5 Kv)", "aliases": ["12.2"] },
+        { "code": "R", "label": "12.7 (10.9 Kv)", "aliases": ["12.7"] },
+        { "code": "9", "label": "15 (the sheet prints 25.8 Kv here, the 30's figure, see note)", "aliases": ["15"] },
+        { "code": "B", "label": "30 (25.8 Kv)", "aliases": ["30"] },
+        { "code": "V", "label": "35 (30.1 Kv)", "aliases": ["35"] },
+        { "code": "U", "label": "40 (34.4 Kv)", "aliases": ["40"] },
+        { "code": "W", "label": "45 (38.7 Kv)", "aliases": ["45"] },
+        { "code": "C", "label": "50 (43.0 Kv)", "aliases": ["50"] },
+        { "code": "1", "label": "60 (51.6 Kv)", "aliases": ["60"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "actuatorRange", "label": "Actuator range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "A3", "label": "3-15 direct, 35M", "aliases": ["3-15 direct 35m"] },
+        { "code": "A5", "label": "3-15 direct, 55M", "aliases": ["3-15 direct 55m"] },
+        { "code": "A8", "label": "3-15 direct, 85M", "aliases": ["3-15 direct 85m"] },
+        { "code": "B3", "label": "3-15 reverse, 35M", "aliases": ["3-15 reverse 35m"] },
+        { "code": "B5", "label": "3-15 reverse, 55M", "aliases": ["3-15 reverse 55m"] },
+        { "code": "B8", "label": "3-15 reverse, 85M", "aliases": ["3-15 reverse 85m"] },
+        { "code": "C3", "label": "3-9 direct, 35M (positioner required)", "aliases": ["3-9 direct 35m"] },
+        { "code": "C5", "label": "3-9 direct, 55M (positioner required)", "aliases": ["3-9 direct 55m"] },
+        { "code": "C8", "label": "3-9 direct, 85M (positioner required)", "aliases": ["3-9 direct 85m"] },
+        { "code": "D3", "label": "3-9 reverse, 35M (positioner required)", "aliases": ["3-9 reverse 35m"] },
+        { "code": "D5", "label": "3-9 reverse, 55M (positioner required)", "aliases": ["3-9 reverse 55m"] },
+        { "code": "D8", "label": "3-9 reverse, 85M (positioner required)", "aliases": ["3-9 reverse 85m"] },
+        { "code": "E3", "label": "9-15 direct, 35M (positioner required)", "aliases": ["9-15 direct 35m"] },
+        { "code": "E5", "label": "9-15 direct, 55M (positioner required)", "aliases": ["9-15 direct 55m"] },
+        { "code": "E8", "label": "9-15 direct, 85M (positioner required)", "aliases": ["9-15 direct 85m"] },
+        { "code": "F3", "label": "9-15 reverse, 35M (positioner required)", "aliases": ["9-15 reverse 35m"] },
+        { "code": "F5", "label": "9-15 reverse, 55M (positioner required)", "aliases": ["9-15 reverse 55m"] },
+        { "code": "F8", "label": "9-15 reverse, 85M (positioner required)", "aliases": ["9-15 reverse 85m"] },
+        { "code": "G3", "label": "6-30 direct, 35M", "aliases": ["6-30 direct 35m"] },
+        { "code": "G5", "label": "6-30 direct, 55M", "aliases": ["6-30 direct 55m"] },
+        { "code": "G8", "label": "6-30 direct, 85M", "aliases": ["6-30 direct 85m"] },
+        { "code": "H3", "label": "6-30 reverse, 35M", "aliases": ["6-30 reverse 35m"] },
+        { "code": "H5", "label": "6-30 reverse, 55M", "aliases": ["6-30 reverse 55m"] },
+        { "code": "H8", "label": "6-30 reverse, 85M", "aliases": ["6-30 reverse 85m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "B3", "label": "Buna-N, 35M", "aliases": ["buna 35m"] },
+        { "code": "B5", "label": "Buna-N, 55M", "aliases": ["buna 55m"] },
+        { "code": "B8", "label": "Buna-N, 85M", "aliases": ["buna 85m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "A3", "label": "Standard, 35M (MK78)", "aliases": ["standard 35m"] },
+        { "code": "A5", "label": "Standard, 55M (MK78)", "aliases": ["standard 55m"] },
+        { "code": "A8", "label": "Standard, 85M (MK78)", "aliases": ["standard 85m"] },
+        { "code": "S3", "label": "With side mount positioner, 35M (MK78SP)", "aliases": ["side positioner 35m"] },
+        { "code": "S5", "label": "With side mount positioner, 55M (MK78SP)", "aliases": ["side positioner 55m"] },
+        { "code": "S8", "label": "With side mount positioner, 85M (MK78SP)", "aliases": ["side positioner 85m"] },
+        { "code": "D3", "label": "Air-to-close, 35M (MK78TP)", "aliases": ["tp close 35m"] },
+        { "code": "D5", "label": "Air-to-close, 55M (MK78TP)", "aliases": ["tp close 55m"] },
+        { "code": "D8", "label": "Air-to-close, 85M (MK78TP)", "aliases": ["tp close 85m"] },
+        { "code": "R3", "label": "Air-to-open, 35M (MK78TP)", "aliases": ["tp open 35m"] },
+        { "code": "R5", "label": "Air-to-open, 55M (MK78TP)", "aliases": ["tp open 55m"] },
+        { "code": "R8", "label": "Air-to-open, 85M (MK78TP)", "aliases": ["tp open 85m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (13 and 14)", "position": 11, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "AR", "label": "Air regulator", "aliases": ["air regulator"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (15)", "position": 12, "required": true,
+      "options": [
+        { "code": "D", "label": "Air-to-close", "aliases": ["air to close"] },
+        { "code": "R", "label": "Air-to-open", "aliases": ["air to open"] }
+      ]
+    },
+    {
+      "id": "ip", "label": "I/P (16)", "position": 13, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no ip"] },
+        { "code": "3", "label": "I/P 35M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 35m"] },
+        { "code": "5", "label": "I/P 55M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 55m"] },
+        { "code": "8", "label": "I/P 85M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 85m"] }
+      ]
+    },
+    {
+      "id": "oring", "label": "O-ring (17)", "position": 14, "required": true,
+      "options": [
+        { "code": "E", "label": "EPDM", "aliases": ["epdm"] },
+        { "code": "V", "label": "Viton", "aliases": ["viton"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard o-ring"] }
+      ]
+    },
+    {
+      "id": "smp", "label": "SMP (18)", "position": 15, "required": true,
+      "options": [
+        { "code": "A", "label": "MK16SMP P/P DIR/REV 3-15", "aliases": ["smp 3-15"] },
+        { "code": "B", "label": "MK16SMP P/P DIR/REV 3-9", "aliases": ["smp 3-9"] },
+        { "code": "C", "label": "MK16SMP P/P DIR/REV 9-15", "aliases": ["smp 9-15"] },
+        { "code": "D", "label": "MK16SMP I/P DIR/REV 4-20", "aliases": ["smp ip 4-20"] },
+        { "code": "E", "label": "MK16SMP I/P DIR/REV 4-12", "aliases": ["smp ip 4-12"] },
+        { "code": "F", "label": "MK16SMP I/P DIR/REV 12-20", "aliases": ["smp ip 12-20"] },
+        { "code": "G", "label": "MK16IQ-S 4-20 DIR/REV", "aliases": ["mk16iq-s"] },
+        { "code": "H", "label": "MK16IQ-B 4-20 DIR/REV", "aliases": ["mk16iq-b"] },
+        { "code": "J", "label": "MK16IQ-FF DIR/REV", "aliases": ["mk16iq-ff"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (19)", "position": 16, "required": true,
+      "options": [
+        { "code": "0", "label": "Not required", "aliases": ["not required"] },
+        { "code": "F", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "model": "78SP" }, "forbid": { "actuatorRange": ["C3", "C5", "C8", "D3", "D5", "D8", "E3", "E5", "E8", "F3", "F5", "F8", "G3", "G5", "G8", "H3", "H5", "H8"] },
+      "reason": "the side positioner table prints the direct and reverse rows alone" },
+    { "when": { "model": "78" }, "forbid": { "actuator": ["S3", "S5", "S8", "D3", "D5", "D8", "R3", "R5", "R8"] },
+      "reason": "the actuator type letter belongs to its model, A for the standard 78" },
+    { "when": { "model": "78SP" }, "forbid": { "actuator": ["A3", "A5", "A8", "D3", "D5", "D8", "R3", "R5", "R8"] },
+      "reason": "the actuator type letter belongs to its model, S for the side positioner" },
+    { "when": { "model": "78TP" }, "forbid": { "actuator": ["A3", "A5", "A8", "S3", "S5", "S8"] },
+      "reason": "the actuator type letter belongs to its model, D or R for the top positioner" },
+    { "when": { "actuatorRange": ["A3", "B3", "C3", "D3", "E3", "F3", "G3", "H3"] }, "forbid": { "diaphragm": ["B5", "B8"], "actuator": ["A5", "A8", "S5", "S8", "D5", "D8", "R5", "R8"] },
+      "reason": "the sheet's own line: the actuator size choice must match across boxes 7 and 8, 9 and 10 and 11 and 12, here 35M" },
+    { "when": { "actuatorRange": ["A5", "B5", "C5", "D5", "E5", "F5", "G5", "H5"] }, "forbid": { "diaphragm": ["B3", "B8"], "actuator": ["A3", "A8", "S3", "S8", "D3", "D8", "R3", "R8"] },
+      "reason": "the sheet's own line: the actuator size choice must match across boxes 7 and 8, 9 and 10 and 11 and 12, here 55M" },
+    { "when": { "actuatorRange": ["A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"] }, "forbid": { "diaphragm": ["B3", "B5"], "actuator": ["A3", "A5", "S3", "S5", "D3", "D5", "R3", "R5"] },
+      "reason": "the sheet's own line: the actuator size choice must match across boxes 7 and 8, 9 and 10 and 11 and 12, here 85M" }
+  ],
+  "cautions": []
+}
