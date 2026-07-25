@@ -73,6 +73,10 @@ const mk695lg = JSON.parse(readFileSync(join(here, 'models', 'mk695lg.json'), 'u
 const mk695x = JSON.parse(readFileSync(join(here, 'models', 'mk695x.json'), 'utf8'));
 const mk608lg = JSON.parse(readFileSync(join(here, 'models', 'mk608lg.json'), 'utf8'));
 const mk608is = JSON.parse(readFileSync(join(here, 'models', 'mk608is.json'), 'utf8'));
+const mk501 = JSON.parse(readFileSync(join(here, 'models', 'mk501.json'), 'utf8'));
+const mk52 = JSON.parse(readFileSync(join(here, 'models', 'mk52.json'), 'utf8'));
+const mk508 = JSON.parse(readFileSync(join(here, 'models', 'mk508.json'), 'utf8'));
+const mk508lg = JSON.parse(readFileSync(join(here, 'models', 'mk508lg.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1113,6 +1117,31 @@ check('the four variants round-trip and the shared printed model codes stay unam
   assert.equal(checkCautions(mk608lg, { range: '08' }).length, 1, 'the inverted mounting note rides the low set points');
   assert.equal(checkCautions(mk608lg, { range: '11' }).length, 0, 'and stays off the higher ones');
   assert.ok(/695/.test(mk695lg.note) && /registry name/.test(mk695lg.note), 'the shared printed 695 code is explained');
+});
+
+console.log('\nThe back pressure shelf opens: 501/502, 52, 508 and 508 large:');
+
+check('the four round-trip and the 501 end asterisk holds', () => {
+  roundTrip(mk501, {
+    model: '502', size: '200', body: 'S6', ends: 'I8', trim: 'I6', seat: 'W', cv: 'E',
+    range: '95', diaphragm: 'JL', actuator: 'MD', bolting: '00', accessories: '7',
+  }, '502-200-S6/I8I6WE95JLMD007');
+  roundTrip(mk52, {
+    model: '52', size: '125', body: 'BR', ends: 'F5', trim: 'L4', seat: 'R', cv: '9',
+    range: '51', diaphragm: 'S6', actuator: 'MD', accessories: 'B7',
+  }, '52-125-BR/F5L4R951S6MDB7');
+  roundTrip(mk508, {
+    model: '508', size: '100', body: 'CS', ends: 'SW', range: '02', actuator: 'SD', accessory: '03',
+  }, '508100CSSW02SD03');
+  roundTrip(mk508lg, {
+    model: '508', size: '200', body: 'BR', ends: 'I3', seatDiaphragm: 'VN', range: '15',
+    actuator: 'SD', bushing: 'TF', ped: 'FF',
+  }, '508200BRI3VN15SDTFFF');
+  assert.ok(checkConstraints(mk501, { ends: 'I5', size: '150' }).length > 0, 'IFE on the 501 is the 2 inch alone');
+  assert.ok(checkConstraints(mk501, { ends: 'I5', body: 'BR' }).length > 0, 'and carbon or stainless alone');
+  assert.ok(checkConstraints(mk501, { ends: 'F5', body: 'CS' }).length > 0, 'FE stays with ductile iron or bronze');
+  assert.ok(/registry name/.test(mk508lg.note), 'the shared printed 508 code is explained');
+  assert.equal(applyValue(mk508, {}, 'size', '150').accepted, false, 'the small 508 stops at 1-1/4 inch');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

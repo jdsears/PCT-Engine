@@ -1,0 +1,68 @@
+{
+  "model": "MK508",
+  "line": "jordan",
+  "displayName": "Jordan Mark 508 gas back pressure regulator",
+  "match": ["mk508", "mark 508", "jordan 508"],
+  "source": { "doc": "mk508.pdf", "page": 3, "section": "Ordering Schematic (3/4\" to 1-1/4\")" },
+  "note": "Extracted by hand from the small-size schematic; the 1-1/2 and 2 inch sizes carry their own schematic on the same sheet and their own model file, since every position past the size differs.",
+  "assembly": "{model}{size}{body}{ends}{range}{actuator}{accessory}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "508", "label": "Standard", "aliases": ["mk508", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "F5", "label": "150# FE", "aliases": ["150 flanged"] },
+        { "code": "F3", "label": "300# FE", "aliases": ["300 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "01", "label": "2-6\" w.c. (5.0-15.0 mbar)", "aliases": ["2-6 wc"] },
+        { "code": "02", "label": "3-11\" w.c. (7.5-27.4 mbar)", "aliases": ["3-11 wc"] },
+        { "code": "03", "label": "5-35\" w.c. (12.5-87.2 mbar)", "aliases": ["5-35 wc"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (5 and 6)", "position": 6, "required": true,
+      "options": [
+        { "code": "SD", "label": "Standard", "aliases": ["standard"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessory", "label": "Accessory feature (7 and 8)", "position": 7, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "03", "label": "Clean for oil-free service", "aliases": ["oil free"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessory"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

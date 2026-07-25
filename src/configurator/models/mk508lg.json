@@ -1,0 +1,87 @@
+{
+  "model": "MK508LG",
+  "line": "jordan",
+  "displayName": "Jordan Mark 508 large gas back pressure regulator",
+  "match": ["mk508lg", "mark 508 large", "508 large"],
+  "source": { "doc": "mk508.pdf", "page": 7, "section": "Ordering Schematic (1-1/2\" and 2\")" },
+  "note": "Extracted by hand from the large-size schematic on the same sheet as the small 508; the printed model code is the same 508, so this file carries its own registry name with the printed code in the slot. The 150# and 300# ends print FE against the I codes, carried as printed.",
+  "assembly": "{model}{size}{body}{ends}{seatDiaphragm}{range}{actuator}{bushing}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "508", "label": "Standard, large", "aliases": ["508 large", "mk508lg"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "I5", "label": "150# (printed FE, see note)", "aliases": ["150"] },
+        { "code": "I3", "label": "300# (printed FE, see note)", "aliases": ["300"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "seatDiaphragm", "label": "Seat and diaphragm (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna"] },
+        { "code": "VN", "label": "Viton", "aliases": ["viton"] },
+        { "code": "EN", "label": "EPDM", "aliases": ["epdm"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (5 and 6)", "position": 6, "required": true,
+      "options": [
+        { "code": "07", "label": "2-5\" w.c. (5.0-12.5 mbar)", "aliases": ["2-5 wc"] },
+        { "code": "08", "label": "4-8\" w.c. (10.0-19.9 mbar)", "aliases": ["4-8 wc"] },
+        { "code": "09", "label": "8-28\" w.c. (19.9-70.0 mbar)", "aliases": ["8-28 wc"] },
+        { "code": "10", "label": "10-17\" w.c. (24.9-42.3 mbar)", "aliases": ["10-17 wc"] },
+        { "code": "11", "label": "14-28\" w.c. (34.9-70.0 mbar)", "aliases": ["14-28 wc"] },
+        { "code": "12", "label": "0.75-1 psi (51.7-69.0 mbar)", "aliases": ["0.75-1"] },
+        { "code": "13", "label": "1-2 psi (69.0-137.9 mbar)", "aliases": ["1-2"] },
+        { "code": "14", "label": "1.5-3 psi (0.10-0.21 bar)", "aliases": ["1.5-3"] },
+        { "code": "15", "label": "3-5 psi (0.21-0.34 bar)", "aliases": ["3-5"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (7 and 8)", "position": 7, "required": true,
+      "options": [
+        { "code": "SD", "label": "Standard", "aliases": ["standard"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "bushing", "label": "Bushing (9 and 10)", "position": 8, "required": true,
+      "options": [
+        { "code": "TF", "label": "Teflon", "aliases": ["teflon"] },
+        { "code": "CG", "label": "Carbon graphite", "aliases": ["carbon graphite"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard bushing"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (11 and 12)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "Not required", "aliases": ["not required"] },
+        { "code": "FF", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
