@@ -1,0 +1,161 @@
+{
+  "model": "MK4046",
+  "line": "jordan",
+  "displayName": "Jordan Mark 40/46 float and lever operated valve",
+  "match": ["mk40", "mark 40", "mk46", "mark 46", "float operated", "lever operated"],
+  "source": { "doc": "mk40_46.pdf", "page": "3 and 4", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash. The float operated 40 and lever operated 46 share one grammar; the float arm and float positions carry real codes on the 40 and the single 00 on the 46, enforced per model, and the lever and float sizes keep their printed size brackets.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{cv}{yoke}{lever}{floatArm}{float}{action}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "40", "label": "Float operated", "aliases": ["mk40", "float"] },
+        { "code": "46", "label": "Lever operated", "aliases": ["mk46", "lever"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN10)", "aliases": ["3/8\"", "DN10"] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\" (DN65)", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\" (DN80)", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\" (DN100)", "aliases": ["4\"", "DN100"] },
+        { "code": "600", "label": "6\" (DN150)", "aliases": ["6\"", "DN150"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] },
+        { "code": "CI", "label": "Cast iron", "aliases": ["cast iron"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I1", "label": "125# IFE", "aliases": ["125 ife"] },
+        { "code": "F1", "label": "125# FE (except IFE)", "aliases": ["125 flanged"] },
+        { "code": "I5", "label": "150# IFE", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "I2", "label": "250# IFE", "aliases": ["250 ife"] },
+        { "code": "F2", "label": "250# FE (except IFE)", "aliases": ["250 flanged"] },
+        { "code": "I3", "label": "300# IFE", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE (except IFE)", "aliases": ["300 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "T6", "label": "316SS/Teflon packing", "aliases": ["316 teflon"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.18 Kv)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.38 Kv)", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.16 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.79 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.52 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.19 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15.0 (12.93 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25.0 (21.55 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30.0 (25.86 Kv)", "aliases": ["30"] },
+        { "code": "F", "label": "85.0 (72.65 Kv)", "aliases": ["85"] },
+        { "code": "H", "label": "130.0 (111.11 Kv)", "aliases": ["130"] },
+        { "code": "I", "label": "200 (170.94 Kv)", "aliases": ["200"] },
+        { "code": "J", "label": "395 (337.61 Kv)", "aliases": ["395"] }
+      ]
+    },
+    {
+      "id": "yoke", "label": "Yoke", "position": 8, "required": true,
+      "options": [
+        { "code": "SD", "label": "Standard", "aliases": ["standard yoke"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard yoke"] }
+      ]
+    },
+    {
+      "id": "lever", "label": "Lever", "position": 9, "required": true,
+      "options": [
+        { "code": "15", "label": "15\" (1/4\" to 2\")", "aliases": ["15 inch lever"] },
+        { "code": "24", "label": "24\" (1/4\" to 2\")", "aliases": ["24 inch lever"] },
+        { "code": "26", "label": "26\" (2-1/2\" to 6\")", "aliases": ["26 inch lever"] },
+        { "code": "42", "label": "42\" (2-1/2\" to 6\")", "aliases": ["42 inch lever"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard lever"] }
+      ]
+    },
+    {
+      "id": "floatArm", "label": "Float arm", "position": 10, "required": true,
+      "options": [
+        { "code": "CS", "label": "Steel pipe (MK40)", "aliases": ["steel arm"] },
+        { "code": "S6", "label": "316SS pipe (MK40)", "aliases": ["stainless arm"] },
+        { "code": "BR", "label": "Brass pipe (MK40)", "aliases": ["brass arm"] },
+        { "code": "00", "label": "None (MK46)", "aliases": ["no float arm"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard float arm"] }
+      ]
+    },
+    {
+      "id": "float", "label": "Float", "position": 11, "required": true,
+      "options": [
+        { "code": "6C", "label": "6\" Cu (1/4\" to 3/4\") (MK40)", "aliases": ["6 inch cu float"] },
+        { "code": "6S", "label": "6\" SST (1/4\" to 3/4\") (MK40)", "aliases": ["6 inch sst float"] },
+        { "code": "8C", "label": "8\" Cu (1\" to 2\") (MK40)", "aliases": ["8 inch cu float"] },
+        { "code": "8S", "label": "8\" SST (1\" to 2\") (MK40)", "aliases": ["8 inch sst float"] },
+        { "code": "2C", "label": "12\" Cu (2-1/2\" to 6\") (MK40)", "aliases": ["12 inch cu float"] },
+        { "code": "2S", "label": "12\" SST (2-1/2\" to 6\") (MK40)", "aliases": ["12 inch sst float"] },
+        { "code": "00", "label": "None (MK46)", "aliases": ["no float"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard float"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action", "position": 12, "required": true,
+      "options": [
+        { "code": "D", "label": "Direct", "aliases": ["direct"] },
+        { "code": "R", "label": "Reverse", "aliases": ["reverse"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "model": "46" }, "forbid": { "floatArm": ["CS", "S6", "BR"], "float": ["6C", "6S", "8C", "8S", "2C", "2S"] },
+      "reason": "the lever operated 46 takes the 00 none codes in the float arm and float positions, per its own rows" },
+    { "when": { "model": "40" }, "forbid": { "floatArm": ["00"], "float": ["00"] },
+      "reason": "the float operated 40 chooses a real arm and float, per its own rows" },
+    { "when": { "lever": ["15", "24"] }, "forbid": { "size": ["250", "300", "400", "600"] },
+      "reason": "the 15 and 24 inch levers are printed for 1/4 to 2 inch" },
+    { "when": { "lever": ["26", "42"] }, "forbid": { "size": ["025", "038", "050", "075", "100", "125", "150", "200"] },
+      "reason": "the 26 and 42 inch levers are printed for 2-1/2 to 6 inch" },
+    { "when": { "float": ["6C", "6S"] }, "forbid": { "size": ["100", "125", "150", "200", "250", "300", "400", "600"] },
+      "reason": "the 6 inch floats are printed for 1/4 to 3/4 inch" },
+    { "when": { "float": ["8C", "8S"] }, "forbid": { "size": ["025", "038", "050", "075", "250", "300", "400", "600"] },
+      "reason": "the 8 inch floats are printed for 1 to 2 inch" },
+    { "when": { "float": ["2C", "2S"] }, "forbid": { "size": ["025", "038", "050", "075", "100", "125", "150", "200"] },
+      "reason": "the 12 inch floats are printed for 2-1/2 to 6 inch" }
+  ],
+  "cautions": []
+}

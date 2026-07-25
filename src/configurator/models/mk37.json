@@ -1,0 +1,734 @@
+{
+  "model": "MK37",
+  "line": "jordan",
+  "displayName": "Jordan Mark 37/377 motor operated final control element",
+  "match": [
+    "mk37",
+    "mark 37",
+    "mk377",
+    "mark 377",
+    "jordan 37"
+  ],
+  "source": {
+    "doc": "mk37.pdf",
+    "page": "4 and 5",
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash. The seat Cv column splits between the 37 and the equal percentage 377, and the shared digits mean different flows on each side, 2 is 0.42 or 80 and 3 is 0.84 or 230, so the labels carry both readings and the exclusive codes refuse the other model, the Mark 70 device. The range and actuator columns carry the sheet's consult-factory line for 2-1/2 to 6 inch, held as a caution on those sizes rather than a refusal, since the codes themselves print unbanded. The trim splits by signal, the on-off trims with the on-off range and the mA and volt trims with the signal ranges, per the trims' own labels. The accessories column prints no none row, held for the PDF.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{cv}{range}{actuator}{accessories}{action}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "37",
+          "label": "Standard",
+          "aliases": [
+            "mk37",
+            "standard"
+          ]
+        },
+        {
+          "code": "377",
+          "label": "Equal percentage version",
+          "aliases": [
+            "mk377",
+            "equal percentage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "1/4\"",
+            "DN8"
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\" (DN10)",
+          "aliases": [
+            "3/8\"",
+            "DN10"
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\"",
+            "DN15"
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\"",
+            "DN20"
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\"",
+            "DN25"
+          ]
+        },
+        {
+          "code": "125",
+          "label": "1-1/4\" (DN34 as printed)",
+          "aliases": [
+            "1-1/4\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\"",
+            "DN40"
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\"",
+            "DN50"
+          ]
+        },
+        {
+          "code": "250",
+          "label": "2-1/2\" (DN65)",
+          "aliases": [
+            "2-1/2\"",
+            "DN65"
+          ]
+        },
+        {
+          "code": "300",
+          "label": "3\" (DN80)",
+          "aliases": [
+            "3\"",
+            "DN80"
+          ]
+        },
+        {
+          "code": "400",
+          "label": "4\" (DN100)",
+          "aliases": [
+            "4\"",
+            "DN100"
+          ]
+        },
+        {
+          "code": "600",
+          "label": "6\" (DN150)",
+          "aliases": [
+            "6\"",
+            "DN150"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "DI",
+          "label": "Ductile iron",
+          "aliases": [
+            "ductile iron"
+          ]
+        },
+        {
+          "code": "BR",
+          "label": "Bronze",
+          "aliases": [
+            "bronze"
+          ]
+        },
+        {
+          "code": "CS",
+          "label": "Carbon steel (WCB)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "Stainless steel (CF8M)",
+          "aliases": [
+            "stainless"
+          ]
+        },
+        {
+          "code": "CI",
+          "label": "Cast iron",
+          "aliases": [
+            "cast iron"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "PT",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "BT",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "BP",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        },
+        {
+          "code": "SW",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "I1",
+          "label": "125# FE (as the sheet prints it)",
+          "aliases": [
+            "125 ife"
+          ]
+        },
+        {
+          "code": "F1",
+          "label": "125# FE (except IFE)",
+          "aliases": [
+            "125 flanged"
+          ]
+        },
+        {
+          "code": "I5",
+          "label": "150# IFE",
+          "aliases": [
+            "150 ife"
+          ]
+        },
+        {
+          "code": "F5",
+          "label": "150# FE (except IFE)",
+          "aliases": [
+            "150 flanged"
+          ]
+        },
+        {
+          "code": "I2",
+          "label": "250# IFE",
+          "aliases": [
+            "250 ife"
+          ]
+        },
+        {
+          "code": "F2",
+          "label": "250# FE (except IFE)",
+          "aliases": [
+            "250 flanged"
+          ]
+        },
+        {
+          "code": "I3",
+          "label": "300# IFE",
+          "aliases": [
+            "300 ife"
+          ]
+        },
+        {
+          "code": "F3",
+          "label": "300# FE (except IFE)",
+          "aliases": [
+            "300 flanged"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "T3",
+          "label": "303SS/Teflon packing, on-off",
+          "aliases": [
+            "303 on off"
+          ]
+        },
+        {
+          "code": "T6",
+          "label": "316SS/Teflon packing, on-off",
+          "aliases": [
+            "316 on off"
+          ]
+        },
+        {
+          "code": "V3",
+          "label": "303SS/Teflon packing, mA/Volt",
+          "aliases": [
+            "303 signal"
+          ]
+        },
+        {
+          "code": "V6",
+          "label": "316SS/Teflon packing, mA/Volt",
+          "aliases": [
+            "316 signal"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat material",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "V",
+          "label": "303SS/Jorcote",
+          "aliases": [
+            "303 jorcote"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "316SS/Jorcote",
+          "aliases": [
+            "316 jorcote"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cv",
+      "label": "Seat Cv",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "0.21, MK37",
+          "aliases": [
+            "0.21"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "0.42 on the MK37, 80 on the MK377",
+          "aliases": [
+            "0.42",
+            "80"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "0.84 on the MK37, 230 on the MK377",
+          "aliases": [
+            "0.84",
+            "230"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1.6, MK37",
+          "aliases": [
+            "1.6"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "2.5, both models",
+          "aliases": [
+            "2.5"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "4.4, both models",
+          "aliases": [
+            "4.4"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "6.4, MK37",
+          "aliases": [
+            "6.4"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "9.5, MK37",
+          "aliases": [
+            "9.5"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "15, MK37",
+          "aliases": [
+            "15"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "25, MK37",
+          "aliases": [
+            "25"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "30, MK37",
+          "aliases": [
+            "30"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "85, MK37",
+          "aliases": [
+            "85"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "130, both models",
+          "aliases": [
+            "130"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "200 on the MK37, 60 on the MK377",
+          "aliases": [
+            "200",
+            "60"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "395, MK37",
+          "aliases": [
+            "395"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "11.5, MK377",
+          "aliases": [
+            "11.5"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "13, MK377",
+          "aliases": [
+            "13"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "22, MK377",
+          "aliases": [
+            "22"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "34, MK377",
+          "aliases": [
+            "34"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "range",
+      "label": "Range",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "NF",
+          "label": "On-off",
+          "aliases": [
+            "on off"
+          ]
+        },
+        {
+          "code": "42",
+          "label": "4-20mA",
+          "aliases": [
+            "4-20ma"
+          ]
+        },
+        {
+          "code": "41",
+          "label": "4-12mA",
+          "aliases": [
+            "4-12ma"
+          ]
+        },
+        {
+          "code": "12",
+          "label": "12-20mA",
+          "aliases": [
+            "12-20ma"
+          ]
+        },
+        {
+          "code": "V5",
+          "label": "0-5V",
+          "aliases": [
+            "0-5v"
+          ]
+        },
+        {
+          "code": "V1",
+          "label": "0-10V",
+          "aliases": [
+            "0-10v"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "C1",
+          "label": "Act/yoke CML100 AC, all range",
+          "aliases": [
+            "cml100"
+          ]
+        },
+        {
+          "code": "C2",
+          "label": "Act/yoke CML250 AC, all range",
+          "aliases": [
+            "cml250"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "SC",
+          "label": "Clean for oil free service",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "XC",
+          "label": "Clean for oxygen service",
+          "aliases": [
+            "oxygen"
+          ]
+        },
+        {
+          "code": "02",
+          "label": "Set motor for 240 VAC",
+          "aliases": [
+            "240 vac"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "label": "Action",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "DD",
+          "label": "Direct",
+          "aliases": [
+            "direct"
+          ]
+        },
+        {
+          "code": "RR",
+          "label": "Reverse",
+          "aliases": [
+            "reverse"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "cv": [
+          "1",
+          "4",
+          "7",
+          "8",
+          "9",
+          "A",
+          "B",
+          "F",
+          "J"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "377"
+        ]
+      },
+      "reason": "these Cvs are printed in the MK37 column"
+    },
+    {
+      "when": {
+        "cv": [
+          "N",
+          "P",
+          "S",
+          "U"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "37"
+        ]
+      },
+      "reason": "these Cvs are printed in the MK377 column"
+    },
+    {
+      "when": {
+        "trim": [
+          "T3",
+          "T6"
+        ]
+      },
+      "forbid": {
+        "range": [
+          "42",
+          "41",
+          "12",
+          "V5",
+          "V1"
+        ]
+      },
+      "reason": "the on-off trims pair with the on-off range, per the trims' own labels"
+    },
+    {
+      "when": {
+        "trim": [
+          "V3",
+          "V6"
+        ]
+      },
+      "forbid": {
+        "range": [
+          "NF"
+        ]
+      },
+      "reason": "the mA and volt trims pair with the signal ranges, per the trims' own labels"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "size": [
+          "250",
+          "300",
+          "400",
+          "600"
+        ]
+      },
+      "note": "The sheet's own asterisk on the range and actuator columns: consult the factory for 2-1/2 to 6 inch sizes."
+    }
+  ]
+}
