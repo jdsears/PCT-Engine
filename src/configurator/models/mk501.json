@@ -1,0 +1,135 @@
+{
+  "model": "MK501",
+  "line": "jordan",
+  "displayName": "Jordan Mark 501/502 high flow back pressure regulator",
+  "match": ["mk501", "mark 501", "mk502", "mark 502", "jordan 501"],
+  "source": { "doc": "mk501.pdf", "page": 3, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash. The high flow and super high flow share one grammar with no printed Cv split, so none is enforced. The end column's own asterisk couples the IFE codes to carbon or stainless valves in the 2 inch alone, and the FE codes to ductile iron or bronze, enforced as printed.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{cv}{range}{diaphragm}{actuator}{bolting}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "501", "label": "High flow", "aliases": ["mk501", "high flow"] },
+        { "code": "502", "label": "Super high flow", "aliases": ["mk502", "super high flow"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE, CS or SST, 2\" only", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE, DI or BR", "aliases": ["150 flanged"] },
+        { "code": "I7", "label": "PN10 IFE, CS or SST, 2\" only", "aliases": ["pn10 ife"] },
+        { "code": "F7", "label": "PN10 FE, DI or BR", "aliases": ["pn10 flanged"] },
+        { "code": "I6", "label": "PN16 IFE, CS or SST, 2\" only", "aliases": ["pn16 ife"] },
+        { "code": "F6", "label": "PN16 FE, DI or BR", "aliases": ["pn16 flanged"] },
+        { "code": "I3", "label": "300# IFE, CS or SST, 2\" only", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE, DI or BR", "aliases": ["300 flanged"] },
+        { "code": "I8", "label": "PN25 IFE, CS or SST, 2\" only", "aliases": ["pn25 ife"] },
+        { "code": "F8", "label": "PN25 FE, DI or BR", "aliases": ["pn25 flanged"] },
+        { "code": "I4", "label": "PN40 IFE, CS or SST, 2\" only", "aliases": ["pn40 ife"] },
+        { "code": "F4", "label": "PN40 FE, DI or BR", "aliases": ["pn40 flanged"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316"] },
+        { "code": "I3", "label": "303SS F/IFE", "aliases": ["303 ife trim"] },
+        { "code": "I6", "label": "316SS F/IFE", "aliases": ["316 ife trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv", "position": 7, "required": true,
+      "options": [
+        { "code": "A", "label": "25 (22 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (26 Kv)", "aliases": ["30"] },
+        { "code": "V", "label": "35 (30 Kv)", "aliases": ["35"] },
+        { "code": "W", "label": "45 (39 Kv)", "aliases": ["45"] },
+        { "code": "C", "label": "50 (43 Kv)", "aliases": ["50"] },
+        { "code": "Y", "label": "65 (56 Kv)", "aliases": ["65"] },
+        { "code": "E", "label": "70 (60 Kv)", "aliases": ["70"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range", "position": 8, "required": true,
+      "options": [
+        { "code": "03", "label": "0.5-4 psi (0.03-0.28 bar)", "aliases": ["0.5-4"] },
+        { "code": "06", "label": "2-6 psi (0.14-0.41 bar)", "aliases": ["2-6"] },
+        { "code": "21", "label": "4-13 psi (0.28-0.90 bar)", "aliases": ["4-13"] },
+        { "code": "31", "label": "8-20 psi (0.55-1.38 bar)", "aliases": ["8-20"] },
+        { "code": "50", "label": "15-80 psi (1.03-5.52 bar)", "aliases": ["15-80"] },
+        { "code": "95", "label": "45-150 psi (3.10-10.34 bar)", "aliases": ["45-150"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm", "position": 9, "required": true,
+      "options": [
+        { "code": "S6", "label": "316 SST", "aliases": ["316 diaphragm"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna-n"] },
+        { "code": "JL", "label": "Jorlon", "aliases": ["jorlon"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator", "position": 10, "required": true,
+      "options": [
+        { "code": "MD", "label": "For metal diaphragm", "aliases": ["metal diaphragm actuator"] },
+        { "code": "ED", "label": "For elastomer diaphragm", "aliases": ["elastomer diaphragm actuator"] }
+      ]
+    },
+    {
+      "id": "bolting", "label": "Double bolting", "position": 11, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard bolting"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none"] },
+        { "code": "6", "label": "316 SS bolting", "aliases": ["316 bolting"] },
+        { "code": "7", "label": "Hi-temperature bolting", "aliases": ["hi-temp bolting"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "ends": ["I5", "I7", "I6", "I3", "I8", "I4"] }, "forbid": { "body": ["DI", "BR"], "size": ["150"] },
+      "reason": "the end column's asterisk: IFE is for carbon or stainless valves in the 2 inch alone" },
+    { "when": { "ends": ["F5", "F7", "F6", "F3", "F8", "F4"] }, "forbid": { "body": ["CS", "S6"] },
+      "reason": "the FE rows are printed for ductile iron or bronze" }
+  ],
+  "cautions": []
+}
