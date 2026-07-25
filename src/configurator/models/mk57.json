@@ -1,0 +1,134 @@
+{
+  "model": "MK57",
+  "line": "jordan",
+  "displayName": "Jordan Mark 57 pilot operated back pressure regulator",
+  "match": ["mk57", "mark 57", "jordan 57"],
+  "source": { "doc": "mk57.pdf", "page": 3, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic. Held for the PDF: the end connection column prints BP against both BSPT and BSPP, so BSPT is carried as BT, the family's code, with a caution to verify, the 6769 precedent. The end connections split by size band with the IFE rows carrying their own body glosses, enforced. The seats add the Jordanic rows and the diaphragm and actuator positions print single codes. The header numbers positions to 15 with nothing printed past the actuator, carried as the sections read.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seat}{cv}{range}{diaphragm}{actuator}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "57", "label": "Standard", "aliases": ["mk57", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\" (DN65)", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\" (DN80)", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\" (DN100)", "aliases": ["4\"", "DN100"] },
+        { "code": "600", "label": "6\" (DN150)", "aliases": ["6\"", "DN150"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] },
+        { "code": "CI", "label": "Cast iron", "aliases": ["cast iron"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT (1/2\" to 2\")", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT (1/2\" to 2\") (printed BP on the sheet, see note)", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP (1/2\" to 2\")", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW (1/2\" to 2\")", "aliases": ["fsw"] },
+        { "code": "F5", "label": "150# FE (1/2\" to 2\")", "aliases": ["150 flanged"] },
+        { "code": "F3", "label": "300# FE (1/2\" to 2\")", "aliases": ["300 flanged"] },
+        { "code": "F1", "label": "125# FE (1/2\" to 2\")", "aliases": ["125 flanged"] },
+        { "code": "F2", "label": "250# FE (1/2\" to 2\")", "aliases": ["250 flanged"] },
+        { "code": "I5", "label": "150# IFE, CS, S6 or DI (2-1/2\" to 6\")", "aliases": ["150 ife"] },
+        { "code": "I3", "label": "300# IFE, CS, S6 or DI (2-1/2\" to 6\")", "aliases": ["300 ife"] },
+        { "code": "I1", "label": "125# IFE, CI (2-1/2\" to 6\")", "aliases": ["125 ife"] },
+        { "code": "I2", "label": "250# IFE, CI (2-1/2\" to 6\")", "aliases": ["250 ife"] },
+        { "code": "I7", "label": "IFE PN10, all materials (2-1/2\" to 6\")", "aliases": ["pn10 ife"] },
+        { "code": "I6", "label": "IFE PN16, all materials (2-1/2\" to 6\")", "aliases": ["pn16 ife"] },
+        { "code": "I8", "label": "IFE PN25, all materials (2-1/2\" to 6\")", "aliases": ["pn25 ife"] },
+        { "code": "I4", "label": "IFE PN40, all materials (2-1/2\" to 6\")", "aliases": ["pn40 ife"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316"] },
+        { "code": "L3", "label": "303SS LO-DP 15", "aliases": ["303 low dp 15"] },
+        { "code": "L4", "label": "316SS LO-DP 15", "aliases": ["316 low dp 15"] },
+        { "code": "L5", "label": "303SS LO-DP 20", "aliases": ["303 low dp 20"] },
+        { "code": "L6", "label": "316SS LO-DP 20", "aliases": ["316 low dp 20"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seats (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "X", "label": "303SS/Jorcote/Jordanic", "aliases": ["303 jordanic"] },
+        { "code": "Y", "label": "316SS/Jorcote/Jordanic", "aliases": ["316 jordanic"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "K", "label": "5.0 (4.3 Kv)", "aliases": ["5.0"] },
+        { "code": "8", "label": "9.5 (8.2 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (21.6 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.9 Kv)", "aliases": ["30"] },
+        { "code": "V", "label": "35 (30.2 Kv)", "aliases": ["35"] },
+        { "code": "C", "label": "50 (43.1 Kv)", "aliases": ["50"] },
+        { "code": "D", "label": "55 (47.4 Kv)", "aliases": ["55"] },
+        { "code": "G", "label": "115 (99.1 Kv)", "aliases": ["115"] },
+        { "code": "I", "label": "200 (172.4 Kv)", "aliases": ["200"] },
+        { "code": "J", "label": "395 (340.5 Kv)", "aliases": ["395"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "34", "label": "10-30 psi (0.7-2.1 bar)", "aliases": ["10-30"] },
+        { "code": "53", "label": "20-45 psi (1.4-3.1 bar)", "aliases": ["20-45"] },
+        { "code": "76", "label": "30-135 psi (2.1-9.3 bar)", "aliases": ["30-135"] },
+        { "code": "A4", "label": "80-185 psi (5.5-12.8 bar)", "aliases": ["80-185"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (9 and 10)", "position": 9, "required": true,
+      "options": [ { "code": "S6", "label": "316SST", "aliases": ["316 diaphragm"] } ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (11 and 12)", "position": 10, "required": true,
+      "options": [ { "code": "MD", "label": "For metal diaphragm", "aliases": ["metal diaphragm actuator"] } ]
+    }
+  ],
+  "constraints": [
+    { "when": { "size": ["250", "300", "400", "600"] }, "forbid": { "ends": ["PT", "BT", "BP", "SW", "F5", "F3", "F1", "F2"] },
+      "reason": "the threaded, socket weld and FE ends are printed for the 1/2 to 2 inch size range" },
+    { "when": { "size": ["050", "075", "100", "125", "150", "200"] }, "forbid": { "ends": ["I5", "I3", "I1", "I2", "I7", "I6", "I8", "I4"] },
+      "reason": "the IFE ends are printed for the 2-1/2 to 6 inch size range" },
+    { "when": { "ends": ["I5", "I3"] }, "forbid": { "body": ["CI"] },
+      "reason": "the 150# and 300# IFE ends are printed for carbon steel, stainless or ductile iron" },
+    { "when": { "ends": ["I1", "I2"] }, "forbid": { "body": ["DI", "CS", "S6"] },
+      "reason": "the 125# and 250# IFE ends are printed for cast iron" }
+  ],
+  "cautions": [
+    { "when": { "ends": "BT" },
+      "note": "The sheet prints BP against both BSPT and BSPP. BSPT is carried here as BT, the code every sibling Jordan sheet gives it; verify against the PDF before ordering." }
+  ]
+}

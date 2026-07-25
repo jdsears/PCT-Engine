@@ -80,6 +80,9 @@ const mk508lg = JSON.parse(readFileSync(join(here, 'models', 'mk508lg.json'), 'u
 const mk518 = JSON.parse(readFileSync(join(here, 'models', 'mk518.json'), 'utf8'));
 const mk53 = JSON.parse(readFileSync(join(here, 'models', 'mk53.json'), 'utf8'));
 const mk55 = JSON.parse(readFileSync(join(here, 'models', 'mk55.json'), 'utf8'));
+const mk56 = JSON.parse(readFileSync(join(here, 'models', 'mk56.json'), 'utf8'));
+const mk560 = JSON.parse(readFileSync(join(here, 'models', 'mk560.json'), 'utf8'));
+const mk57 = JSON.parse(readFileSync(join(here, 'models', 'mk57.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1171,6 +1174,28 @@ check('the three round-trip, variable widths and empty options included', () => 
   assert.ok(checkConstraints(mk53, { spring: 'A3', options: '' }).length > 0, 'the HP ranges need the HP build');
   assert.ok(/A3/.test(mk53.note) && /A1/.test(mk53.note), 'the A3-for-A1 divergence against the 63 sheet is confessed');
   assert.ok(checkConstraints(mk55, { ends: 'F7', body: 'S6' }).length > 0, 'the 55 FE ends stay with ductile or bronze');
+});
+
+console.log('\nThe air loaded 56 and 560 and the pilot operated 57:');
+
+check('the three round-trip and the printed bands hold', () => {
+  roundTrip(mk56, {
+    model: '56', size: '600', body: 'CI', ends: 'I1', trim: 'S6', seat: 'W', cv: 'J',
+    range: '00', diaphragm: 'DD', actuator: 'ED', bolting: 'DZ', accessories: '7',
+  }, '56-600-CI/I1S6WJ00DDEDDZ7');
+  roundTrip(mk560, {
+    model: '560', size: '200', body: 'CI', ends: 'F8', trim: 'A2', seat: 'T', cv: 'C',
+    diaphragm: 'HC', actuator: 'ED',
+  }, '560200CIF8A2TCHCED');
+  roundTrip(mk57, {
+    model: '57', size: '400', body: 'DI', ends: 'I5', trim: 'L6', seat: 'Y', cv: 'J',
+    range: 'A4', diaphragm: 'S6', actuator: 'MD',
+  }, '57400DII5L6YJA4S6MD');
+  assert.ok(checkConstraints(mk57, { ends: 'PT', size: '300' }).length > 0, 'threaded 57 ends stop at 2 inch');
+  assert.ok(checkConstraints(mk57, { ends: 'I2', body: 'S6' }).length > 0, 'the cast iron IFE rows keep their gloss');
+  assert.equal(checkCautions(mk57, { ends: 'BT' }).length, 1, 'the BSPT collision cautions, the 6769 precedent');
+  assert.ok(mk56.slots.find(s => s.id === 'bolting').options.some(o => o.code === 'DZ'), 'the 56 prints DZ for double bolting, carried');
+  assert.ok(/15/.test(mk560.note) && /actuator/i.test(mk560.note), 'the 560 header truncation is held for the PDF');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

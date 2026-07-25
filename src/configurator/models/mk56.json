@@ -1,0 +1,142 @@
+{
+  "model": "MK56",
+  "line": "jordan",
+  "displayName": "Jordan Mark 56 air loaded back pressure regulator",
+  "match": ["mk56", "mark 56", "jordan 56"],
+  "source": { "doc": "mk56.pdf", "page": 3, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash, the back pressure mirror of the air loaded 66. The range position carries the single 00 code, the diaphragm column adds the separate double diaphragm row, and the double bolting position prints DZ rather than the 66's ZZ, carried exactly.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{cv}{range}{diaphragm}{actuator}{bolting}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "56", "label": "Standard", "aliases": ["mk56", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\" (DN65)", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\" (DN80)", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\" (DN100)", "aliases": ["4\"", "DN100"] },
+        { "code": "600", "label": "6\" (DN150)", "aliases": ["6\"", "DN150"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] },
+        { "code": "CI", "label": "Cast iron", "aliases": ["cast iron"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I1", "label": "125# IFE", "aliases": ["125 ife"] },
+        { "code": "F1", "label": "125# FE (except IFE)", "aliases": ["125 flanged"] },
+        { "code": "I5", "label": "150# IFE", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "I2", "label": "250# IFE", "aliases": ["250 ife"] },
+        { "code": "F2", "label": "250# FE (except IFE)", "aliases": ["250 flanged"] },
+        { "code": "I3", "label": "300# IFE", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE (except IFE)", "aliases": ["300 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316"] },
+        { "code": "I3", "label": "303SS F/IFE", "aliases": ["303 ife trim"] },
+        { "code": "I6", "label": "316SS F/IFE", "aliases": ["316 ife trim"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.18 Kv)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.4 Kv)", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.2 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.8 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.5 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.2 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (21.5 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.8 Kv)", "aliases": ["30"] },
+        { "code": "D", "label": "55 (47.4 Kv)", "aliases": ["55"] },
+        { "code": "F", "label": "85 (73.3 Kv)", "aliases": ["85"] },
+        { "code": "G", "label": "115 (99.1 Kv)", "aliases": ["115"] },
+        { "code": "H", "label": "130 (112.1 Kv)", "aliases": ["130"] },
+        { "code": "I", "label": "200 (172.4 Kv)", "aliases": ["200"] },
+        { "code": "J", "label": "395 (340.5 Kv)", "aliases": ["395"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range", "position": 8, "required": true,
+      "options": [ { "code": "00", "label": "None (air loaded, no spring)", "aliases": ["none", "air loaded"] } ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm", "position": 9, "required": true,
+      "options": [
+        { "code": "S6", "label": "316SST", "aliases": ["316 diaphragm"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna-n"] },
+        { "code": "JL", "label": "Jorlon", "aliases": ["jorlon"] },
+        { "code": "DD", "label": "Separate double diaphragm", "aliases": ["double diaphragm"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator", "position": 10, "required": true,
+      "options": [
+        { "code": "MD", "label": "For metal diaphragm", "aliases": ["metal diaphragm actuator"] },
+        { "code": "ED", "label": "For elastomer diaphragm", "aliases": ["elastomer diaphragm actuator"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "bolting", "label": "Double bolting", "position": 11, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "DZ", "label": "Double bolting", "aliases": ["double bolting"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none"] },
+        { "code": "6", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "7", "label": "Hi temperature bolting", "aliases": ["hi-temp bolting"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
