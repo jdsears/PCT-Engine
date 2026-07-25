@@ -131,6 +131,11 @@ const jsrhf = JSON.parse(readFileSync(join(here, 'models', 'jsrhf.json'), 'utf8'
 const mk96a = JSON.parse(readFileSync(join(here, 'models', 'mk96a.json'), 'utf8'));
 const mark96aa = JSON.parse(readFileSync(join(here, 'models', 'mark96aa.json'), 'utf8'));
 const mark96c = JSON.parse(readFileSync(join(here, 'models', 'mark96c.json'), 'utf8'));
+const jshm = JSON.parse(readFileSync(join(here, 'models', 'jshm.json'), 'utf8'));
+const mk978eor = JSON.parse(readFileSync(join(here, 'models', 'mk978eor.json'), 'utf8'));
+const mk978or = JSON.parse(readFileSync(join(here, 'models', 'mk978or.json'), 'utf8'));
+const mk978lf = JSON.parse(readFileSync(join(here, 'models', 'mk978lf.json'), 'utf8'));
+const mk978lfjd = JSON.parse(readFileSync(join(here, 'models', 'mk978lfjd.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1746,6 +1751,70 @@ check('the Mark 96 variants round-trip and their webs hold', () => {
   assert.ok(checkConstraints(mark96aa, { range: 'A', diaphragm: 'JL' }).length > 0, 'the starred range refuses plain Jorlon');
   assert.equal(checkConstraints(mark96aa, { trimSeat: 'V', size: '15' }).length, 0, 'the DN15 rows sit outside the inch brackets, held');
   assert.ok(checkConstraints(mark96aa, { bodyCv: 'K', trimSeat: 'P' }).length > 0, 'the body Cv matches the trim Cv, flagged inferred');
+});
+
+console.log('\nThe control valve shelf: JSHM and the four 978 variants:');
+
+check('the JSHM round-trips and its brackets hold', () => {
+  roundTrip(jshm, {
+    model: 'JSHM', size: '050', material: '6L', bodyFeature: 'TC', trim: '1S', seat: 'TF',
+    range: '00', diaphragm: 'JL', actuator: 'SK', sep: '0G', accessories: '0',
+  }, 'JSHM-050-6LTC1STF00JLSK0G0');
+  roundTrip(jshm, {
+    model: 'JSHM', size: '150', material: '6L', bodyFeature: 'AB', trim: '4S', seat: 'PK',
+    range: '00', diaphragm: 'ZZ', actuator: 'TP', sep: '0F', accessories: 'X',
+  }, 'JSHM-150-6LAB4SPK00ZZTP0FX');
+  assert.ok(checkConstraints(jshm, { trim: '1S', size: '100' }).length > 0, 'the small trims stop at 3/4 inch');
+  assert.ok(checkConstraints(jshm, { sep: '0F', size: '050' }).length > 0, 'PED is the 1-1/2 inch alone');
+  assert.ok(/repair kit/i.test(jshm.note), 'the kit schematic is excluded by name');
+});
+
+check('the o-ring 978 pair mirrors the JD grammar with its own seals', () => {
+  roundTrip(mk978eor, {
+    model: '978E', size: '050', stemSealSeat: 'OR', block: 'AALN1A', stemSeal: 'BN',
+    actuatorRange: '3D', action: 'DD', accessories: '00', smp: 'N',
+  }, '978E050ORAALN1ABN3DDD00N');
+  roundTrip(mk978eor, {
+    model: '978EMV', size: '100', stemSealSeat: 'ORT', block: 'DALN1A', stemSeal: 'VI',
+    actuatorRange: '4D', action: 'RR', accessories: '2A', smp: 'G',
+  }, '978EMV100ORTDALN1AVI4DRR2AG');
+  assert.ok(checkConstraints(mk978eor, { stemSealSeat: 'ORP', block: 'AALN1A' }).length > 0, 'the PEEK seat keeps its Cv 3.5 bracket');
+  assert.ok(checkConstraints(mk978eor, { model: '978EMV', actuatorRange: '5D' }).length > 0, 'the motor valve takes the CML rows alone');
+  assert.ok(checkConstraints(mk978eor, { model: '978EMV', actuatorRange: '3D', block: 'EALN3A' }).length > 0, 'the CML100 stops at 5 Cv');
+  assert.ok(/prints DIR on this reverse row/.test(mk978eor.slots.find(s => s.id === 'actuatorRange').options.find(o => o.code === '4R').label), 'the CML250 reverse slip is held');
+  roundTrip(mk978or, {
+    model: '978', size: '150', stemSeal: 'OR', seat: '', block: 'F2LN10', stemSealDetail: 'EP',
+    actuatorRange: '5D', action: 'DD', accessories: '00', smp: 'N',
+  }, '978150ORF2LN10EP5DDD00N');
+  roundTrip(mk978or, {
+    model: '978SP', size: '400', stemSeal: 'OR', seat: 'T', block: 'KALN2A', stemSealDetail: 'ZZ',
+    actuatorRange: 'RM', action: 'ZZ', accessories: 'ZZ', smp: 'ZZ',
+  }, '978SP400ORTKALN2AZZRMZZZZZZ');
+  assert.ok(checkConstraints(mk978or, { size: '400', model: '978' }).length > 0, 'the 4 inch page is the side positioner\'s alone');
+  assert.ok(checkConstraints(mk978or, { actuatorRange: 'RM', size: '150' }).length > 0, 'the 745M rows stay on the 4 inch page');
+  assert.ok(checkConstraints(mk978or, { model: '978MV', actuatorRange: '5D' }).length > 0, 'the motor valve takes the MV1020 rows alone');
+  assert.ok(checkConstraints(mk978or, { block: 'HALN1A', size: '150' }).length > 0, 'the blocks keep their size headings');
+  assert.equal(checkCautions(mk978or, { block: 'JAML7A' }).length, 1, 'the modified linear rows carry their contact-factory line');
+});
+
+check('the low flow pair keeps the micro Cv ladders and their glyphs', () => {
+  roundTrip(mk978lf, {
+    model: '978', size: '050', lf: 'LF', block: 'CALN3A', stemSeal: 'EP',
+    actuatorRange: 'D1', action: 'DD', accessories: '00', positioner: 'N',
+  }, '978-050-LFCALN3AEPD1DD00N');
+  roundTrip(mk978lf, {
+    model: '978MV', size: '075', lf: 'LF', block: 'FALN5A', stemSeal: 'ZZ',
+    actuatorRange: '1D', action: 'RR', accessories: '3A', positioner: 'Z',
+  }, '978MV-075-LFFALN5AZZ1DRR3AZ');
+  assert.ok(checkConstraints(mk978lf, { block: 'CALN3A', size: '075' }).length > 0, 'the half inch blocks hold their heading');
+  assert.ok(checkConstraints(mk978lf, { model: '978MV', actuatorRange: 'D1' }).length > 0, 'the motor valve takes the MV1010 rows alone');
+  roundTrip(mk978lfjd, {
+    model: '978TP', size: '075', lf: 'LF', jd: 'JD', block: 'D2LNIC', stemSeal: 'JH',
+    actuatorRange: 'D4', action: 'DD', accessories: '1A', positioner: 'G',
+  }, '978TP-075-LF-JD/D2LNICJHD4DD1AG');
+  assert.ok(/letter I here where its siblings print 1/.test(mk978lfjd.slots.find(s => s.id === 'block').options.find(o => o.code === 'D2LNIC').label), 'the 1 versus I glyph rows are confessed');
+  assert.equal(mk978lfjd.slots.find(s => s.id === 'model').options.length, 3, 'the JD low flow prints no plain 978 row');
+  assert.ok(checkConstraints(mk978lfjd, { model: '978MV', actuatorRange: 'D1' }).length > 0, 'its motor valve actuator row prints only ZZ');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

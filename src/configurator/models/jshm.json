@@ -1,0 +1,413 @@
+{
+  "model": "JSHM",
+  "line": "steriflow",
+  "displayName": "Steriflow JSHM J series hand metering valve",
+  "match": [
+    "jshm",
+    "hand metering"
+  ],
+  "source": {
+    "doc": "jshmseries.pdf",
+    "page": 5,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic. The trims carry their printed size brackets, the small three to 1/2 and 3/4 inch and the 4S to 1 and 1-1/2 inch, and the SEP and PED rows their printed only-sizes. The range position prints the single 00. The repair kit schematic beneath is a kit and takes no model, the standing exclusion.",
+  "assembly": "{model}-{size}-{material}{bodyFeature}{trim}{seat}{range}{diaphragm}{actuator}{sep}{accessories}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "JSHM",
+          "label": "J series hand metering valve",
+          "aliases": [
+            "jshm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "ASTM A479, 316L",
+          "aliases": [
+            "316l"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyFeature",
+      "label": "Body feature (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "AT",
+          "label": "Angle body ASME BPE tri-clamp",
+          "aliases": [
+            "angle tri-clamp"
+          ]
+        },
+        {
+          "code": "AB",
+          "label": "Angle body ASME BPE tube weld",
+          "aliases": [
+            "angle tube weld"
+          ]
+        },
+        {
+          "code": "PT",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        },
+        {
+          "code": "TC",
+          "label": "ASME BPE tri-clamp",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "TE",
+          "label": "ASME BPE tube weld",
+          "aliases": [
+            "tube weld"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim, FDA and USP Class V (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1S",
+          "label": "Cv 0-0.4 (1/2\"-3/4\" only)",
+          "aliases": [
+            "cv 0-0.4"
+          ]
+        },
+        {
+          "code": "2S",
+          "label": "Cv 0.2-0.7 (1/2\"-3/4\" only)",
+          "aliases": [
+            "cv 0.2-0.7"
+          ]
+        },
+        {
+          "code": "3S",
+          "label": "Cv 0.5-1.5 (1/2\"-3/4\" only)",
+          "aliases": [
+            "cv 0.5-1.5"
+          ]
+        },
+        {
+          "code": "4S",
+          "label": "Cv 1.0-3.5 (1\"-1-1/2\" only)",
+          "aliases": [
+            "cv 1.0-3.5"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat material, FDA and USP Class VI (5 and 6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "TF",
+          "label": "PTFE",
+          "aliases": [
+            "ptfe"
+          ]
+        },
+        {
+          "code": "PK",
+          "label": "PEEK",
+          "aliases": [
+            "peek"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "range",
+      "label": "Range (7 and 8)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm material (9 and 10)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "JL",
+          "label": "Jorlon PTFE, FDA and USP Class VI",
+          "aliases": [
+            "jorlon"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (11 and 12)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "SK",
+          "label": "Standard actuator",
+          "aliases": [
+            "standard"
+          ]
+        },
+        {
+          "code": "AK",
+          "label": "Standard actuator / autoclavable anodised aluminium knob",
+          "aliases": [
+            "autoclavable knob"
+          ]
+        },
+        {
+          "code": "TP",
+          "label": "Tamper-proof actuator",
+          "aliases": [
+            "tamper proof"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sep",
+      "label": "SEP compliance (13 and 14)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "0G",
+          "label": "SEP compliant (1/2\"-1\" only)",
+          "aliases": [
+            "sep"
+          ]
+        },
+        {
+          "code": "0F",
+          "label": "PED compliant (1-1/2\" only)",
+          "aliases": [
+            "ped"
+          ]
+        },
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "no sep"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard sep"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (15)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Clean for oil free",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Clean for oxygen (ASTM G-93 2011 and CGA G-4.1-2009)",
+          "aliases": [
+            "oxygen clean"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Clean for oxygen, assemble dry (ASTM G-93 2011 and CGA G-4.1-2009)",
+          "aliases": [
+            "oxygen dry"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "trim": [
+          "1S",
+          "2S",
+          "3S"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "100",
+          "150"
+        ]
+      },
+      "reason": "these trims print 1/2 and 3/4 inch only"
+    },
+    {
+      "when": {
+        "trim": "4S"
+      },
+      "forbid": {
+        "size": [
+          "050",
+          "075"
+        ]
+      },
+      "reason": "the 4S trim prints 1 and 1-1/2 inch only"
+    },
+    {
+      "when": {
+        "sep": "0G"
+      },
+      "forbid": {
+        "size": [
+          "150"
+        ]
+      },
+      "reason": "the SEP row prints 1/2 to 1 inch only"
+    },
+    {
+      "when": {
+        "sep": "0F"
+      },
+      "forbid": {
+        "size": [
+          "050",
+          "075",
+          "100"
+        ]
+      },
+      "reason": "the PED row prints 1-1/2 inch only"
+    }
+  ],
+  "cautions": []
+}
