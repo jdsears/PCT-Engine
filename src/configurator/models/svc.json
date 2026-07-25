@@ -1,0 +1,394 @@
+{
+  "model": "SVC",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow SVC vertical sanitary check valve",
+  "match": [
+    "svc",
+    "svc series",
+    "vertical check valve"
+  ],
+  "source": {
+    "doc": "svc_shcseries.pdf",
+    "page": 4,
+    "section": "SVC (vertical) series ordering schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic. The 2 to 3 inch sizes print bolted clamp only, enforced through the tri-clamp position, whose BC row also carries the sheet's own line that the bolted clamp is required for operation above 250F, left in the label. The 316L disc keeps its half to one inch bracket, the EPDM disc its half to two inch, and the polypropylene disc carries the sheet's vertical downflow drain gloss as a caution.",
+  "assembly": "{model}-{size}-{body}{inletBody}{outletBody}{disc}{gasket}{triClamp}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SVC",
+          "label": "Standard",
+          "aliases": [
+            "svc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50), bolted clamp only",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "250",
+          "label": "2-1/2\" (DN65), bolted clamp only",
+          "aliases": [
+            "2-1/2\""
+          ]
+        },
+        {
+          "code": "300",
+          "label": "3\" (DN80), bolted clamp only",
+          "aliases": [
+            "3\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "ASTM A479, 316L",
+          "aliases": [
+            "316l"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletBody",
+      "label": "Inlet body (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "TC",
+          "label": "Tri-clamp to ASME BPE",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "TE",
+          "label": "Tube end to ASME BPE",
+          "aliases": [
+            "tube end"
+          ]
+        },
+        {
+          "code": "TA",
+          "label": "Tube end to DIN 11866 row A",
+          "aliases": [
+            "din tube a"
+          ]
+        },
+        {
+          "code": "TB",
+          "label": "Tube end to DIN 11866 row B (ISO)",
+          "aliases": [
+            "din tube b"
+          ]
+        },
+        {
+          "code": "TD",
+          "label": "DIN tri-clamp to DIN 32676 row A",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "TS",
+          "label": "ISO tri-clamp to DIN 32676 row B",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletBody",
+      "label": "Outlet body (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "TC",
+          "label": "Tri-clamp to ASME BPE",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "TE",
+          "label": "Tube end to ASME BPE",
+          "aliases": [
+            "tube end"
+          ]
+        },
+        {
+          "code": "TA",
+          "label": "Tube end to DIN 11866 row A",
+          "aliases": [
+            "din tube a"
+          ]
+        },
+        {
+          "code": "TB",
+          "label": "Tube end to DIN 11866 row B (ISO)",
+          "aliases": [
+            "din tube b"
+          ]
+        },
+        {
+          "code": "TD",
+          "label": "DIN tri-clamp to DIN 32676 row A",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "TS",
+          "label": "ISO tri-clamp to DIN 32676 row B",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "disc",
+      "label": "Disc (5 and 6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "TF",
+          "label": "Teflon (FDA and USP Class VI)",
+          "aliases": [
+            "teflon disc"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "316L SST (1/2\" to 1\" valves only)",
+          "aliases": [
+            "316 disc"
+          ]
+        },
+        {
+          "code": "SE",
+          "label": "316L/EPDM (1/2\" to 2\" only) (FDA and USP Class VI)",
+          "aliases": [
+            "epdm disc"
+          ]
+        },
+        {
+          "code": "PK",
+          "label": "PEEK (FDA and USP Class VI)",
+          "aliases": [
+            "peek disc"
+          ]
+        },
+        {
+          "code": "PP",
+          "label": "Polypropylene (FDA and USP Class VI), for vertical downflow liquid drain applications",
+          "aliases": [
+            "polypropylene disc"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard disc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gasket",
+      "label": "Gasket (7 and 8)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "01",
+          "label": "Silverback (FDA and USP Class VI)",
+          "aliases": [
+            "silverback"
+          ]
+        },
+        {
+          "code": "02",
+          "label": "TFE/Viton (FDA and USP Class VI)",
+          "aliases": [
+            "tfe viton"
+          ]
+        },
+        {
+          "code": "03",
+          "label": "TFE/EPDM (FDA and USP Class VI)",
+          "aliases": [
+            "tfe epdm"
+          ]
+        },
+        {
+          "code": "04",
+          "label": "Viton-600S (FDA and USP Class VI)",
+          "aliases": [
+            "viton 600s"
+          ]
+        },
+        {
+          "code": "05",
+          "label": "TUF-Steel (FDA and USP Class VI)",
+          "aliases": [
+            "tuf-steel"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard gasket"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "triClamp",
+      "label": "Tri-clamp (9 and 10)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "2P",
+          "label": "2-piece",
+          "aliases": [
+            "2-piece"
+          ]
+        },
+        {
+          "code": "3P",
+          "label": "3-piece",
+          "aliases": [
+            "3-piece"
+          ]
+        },
+        {
+          "code": "BC",
+          "label": "Bolted clamp, required for operation above 250F (121C)",
+          "aliases": [
+            "bolted clamp"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard clamp"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": [
+          "200",
+          "250",
+          "300"
+        ]
+      },
+      "forbid": {
+        "triClamp": [
+          "2P",
+          "3P"
+        ]
+      },
+      "reason": "the 2 to 3 inch sizes print bolted clamp only"
+    },
+    {
+      "when": {
+        "disc": "S6"
+      },
+      "forbid": {
+        "size": [
+          "150",
+          "200",
+          "250",
+          "300"
+        ]
+      },
+      "reason": "the 316L disc is printed for half to one inch valves"
+    },
+    {
+      "when": {
+        "disc": "SE"
+      },
+      "forbid": {
+        "size": [
+          "250",
+          "300"
+        ]
+      },
+      "reason": "the EPDM disc is printed for half to two inch"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "disc": "PP"
+      },
+      "note": "The sheet's own gloss: polypropylene is for SVC vertical downflow, liquid drain applications; for SIP service it is rated to 275F at 30 psi."
+    }
+  ]
+}
