@@ -142,6 +142,12 @@ const sg = JSON.parse(readFileSync(join(here, 'models', 'sg.json'), 'utf8'));
 const scsamplevalve = JSON.parse(readFileSync(join(here, 'models', 'scsamplevalve.json'), 'utf8'));
 const scsamplehose = JSON.parse(readFileSync(join(here, 'models', 'scsamplehose.json'), 'utf8'));
 const scsampleadapter = JSON.parse(readFileSync(join(here, 'models', 'scsampleadapter.json'), 'utf8'));
+const fb5c = JSON.parse(readFileSync(join(here, 'models', 'fb5c.json'), 'utf8'));
+const fb6c = JSON.parse(readFileSync(join(here, 'models', 'fb6c.json'), 'utf8'));
+const fbcvor = JSON.parse(readFileSync(join(here, 'models', 'fbcvor.json'), 'utf8'));
+const ssrv81 = JSON.parse(readFileSync(join(here, 'models', 'ssrv81.json'), 'utf8'));
+const ssrv83 = JSON.parse(readFileSync(join(here, 'models', 'ssrv83.json'), 'utf8'));
+const ssrv88 = JSON.parse(readFileSync(join(here, 'models', 'ssrv88.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1852,6 +1858,59 @@ check('the sight glass and the three sample accessories round-trip', () => {
   roundTrip(scsamplevalve, { model: 'SV', inlet: '100', outlet: '050', accessory: 'K', finish: 'EP' }, 'SV-100-050-K-EP');
   roundTrip(scsamplehose, { model: 'SH', size: '050', length: '4m', finish: 'EP' }, 'SH-050-4m-EP');
   roundTrip(scsampleadapter, { model: 'SA', size: '050', accessory: 'KT', finish: 'EP' }, 'SA-050-KT-EP');
+});
+
+console.log('\nThe FB regulators, the FBCV control valve and the relief trio:');
+
+check('the FB5C and FB6C fold their 3A and high temp forms', () => {
+  roundTrip(fb5c, {
+    model: 'FB5C', size: '100', bodyMaterial: '6L', bodyFinish: 'A', bodyCv: 'D', trimFinish: 'A',
+    trimSeat: 'B', oRing: 'TY', screw: 'A', range: 'C', diaphragm: 'JL', actuator: 'AA',
+  }, 'FB5C-100-6LADABTYACJLAA');
+  roundTrip(fb6c, {
+    model: 'FB6CHT', size: '050', bodyMaterial: '6L', bodyFinish: 'A', bodyCv: 'B', trimFinish: 'A',
+    trimSeat: '4', oRing: 'VJ', screw: 'A', range: 'T', diaphragm: 'EP', actuator: 'AA',
+  }, 'FB6CHT-050-6LABA4VJATEPAA');
+  assert.ok(checkConstraints(fb5c, { model: 'FB5C', trimSeat: '8' }).length > 0, 'the 3A form prints hard seats alone');
+  assert.ok(checkConstraints(fb5c, { oRing: 'TY', size: '050' }).length > 0, 'the TY o-ring starts at 3/4 inch');
+  assert.ok(checkConstraints(fb5c, { bodyCv: 'D', trimSeat: '5' }).length > 0, 'the body Cv matches the trim, flagged inferred');
+  assert.equal(checkCautions(fb5c, { trimSeat: 'B' }).length, 1, 'the doubled B cautions');
+  assert.ok(checkConstraints(fb6c, { oRing: 'VJ', size: '100' }).length > 0, 'the VJ o-ring is the half inch alone');
+  assert.equal(checkCautions(fb6c, { trimSeat: '4' }).length, 1, 'the doubled 4 cautions');
+});
+
+check('the FBCV-OR folds its five pages', () => {
+  roundTrip(fbcvor, {
+    model: 'FBCVSP', size: '050', stemSealSeat: 'OR', block: 'AALN1A', stemSeal: 'EP',
+    actuatorRange: '3D', action: 'DD', accessories: '00', smp: '0',
+  }, 'FBCVSP-050-ORAALN1AEP3DDD000');
+  roundTrip(fbcvor, {
+    model: 'FBCVHT', size: '300', stemSealSeat: 'ORT', block: 'JALN4A', stemSeal: 'ZZ',
+    actuatorRange: 'BD', action: 'RR', accessories: '3A', smp: 'G',
+  }, 'FBCVHT-300-ORTJALN4AZZBDRR3AG');
+  assert.ok(checkConstraints(fbcvor, { stemSealSeat: 'ORP', model: 'FBCVSP' }).length > 0, 'the PEEK seat is the high temp form');
+  assert.ok(checkConstraints(fbcvor, { stemSealSeat: 'ORP', size: '050' }).length > 0, 'and stays off the plain o-ring pages');
+  assert.ok(checkConstraints(fbcvor, { block: 'JAML7A', size: '300' }).length > 0, 'the 2 inch mod linear stays on its page');
+  assert.ok(checkConstraints(fbcvor, { size: '400', actuatorRange: '3D' }).length > 0, 'the 4 inch page takes the 745M rows alone');
+});
+
+check('the relief trio splits by model as printed', () => {
+  roundTrip(ssrv81, {
+    model: '81V', material: '6L', size: 'A', finish: 'C', trim: 'DD', bonnet: 'H1', setpoint: '03', setting: 'GL',
+  }, '81V6LACDDH103GL');
+  roundTrip(ssrv83, {
+    model: '83X', material: 'HC', size: 'A', finish: 'D', trim: 'CC', bonnet: 'H5', setpoint: '07', setting: 'GL', special: 'LX',
+  }, '83XHCADCCH507GLLX');
+  roundTrip(ssrv88, {
+    model: '88-2', material: 'XN', size: 'B', finish: 'F', trim: 'VV', bonnet: 'H6', setpoint: '12', setting: 'ST', special: 'LX',
+  }, '88-2XNBFVVH612STLX');
+  assert.ok(checkConstraints(ssrv81, { trim: 'CC', model: '81V' }).length > 0, 'the Kalrez seat is the 81 alone');
+  assert.ok(checkConstraints(ssrv81, { setpoint: '11', model: '81V' }).length > 0, 'the o-ring setpoints stay with the 81');
+  assert.ok(checkConstraints(ssrv83, { size: 'C', model: '83X' }).length > 0, 'the 83 size row refuses the 83X');
+  assert.ok(checkConstraints(ssrv83, { setting: 'GL', model: '83' }).length > 0, 'the gas and liquids setting is the 83X\'s');
+  assert.ok(checkConstraints(ssrv88, { size: 'A', model: '88-3' }).length > 0, 'the 88 size rows name their models');
+  assert.ok(checkConstraints(ssrv88, { setpoint: '13', model: '88-1' }).length > 0, 'as do the setpoint columns');
+  assert.equal(checkCautions(ssrv88, { setting: 'ST' }).length, 1, 'the steam lifting device note rides the setting');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

@@ -1,0 +1,586 @@
+{
+  "model": "SSRV88",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow F&B 88 series sanitary safety relief valve",
+  "match": [
+    "ssrv 88",
+    "88 series relief",
+    "sanitary relief 88"
+  ],
+  "source": {
+    "doc": "SSRVSeries.pdf",
+    "page": 23,
+    "section": "88 Series Ordering Schematic"
+  },
+  "note": "Extracted by hand from the brochure's 88 series schematic. The model designators carry their orifice marks, 88-1 to 88-3, folding the header's model and orifice columns as printed. Each size row names its model and each setpoint column its model, both enforced. The special options position prints the lift indicator alone, no none row, held for John. The sizing worksheet is an order form, not a matrix.",
+  "assembly": "{model}{material}{size}{finish}{trim}{bonnet}{setpoint}{setting}{special}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model and seat type",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "88-1",
+          "label": "Orifice 0.906 in",
+          "aliases": [
+            "88-1"
+          ]
+        },
+        {
+          "code": "88-2",
+          "label": "Orifice 1.457 in",
+          "aliases": [
+            "88-2"
+          ]
+        },
+        {
+          "code": "88-3",
+          "label": "Orifice 1.811 in",
+          "aliases": [
+            "88-3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Body and wetted component material",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "316L / 316L",
+          "aliases": [
+            "316l"
+          ]
+        },
+        {
+          "code": "HC",
+          "label": "Hastelloy C22",
+          "aliases": [
+            "hastelloy"
+          ]
+        },
+        {
+          "code": "XN",
+          "label": "AL6XN",
+          "aliases": [
+            "al6xn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "End connections, size inlet x outlet (1)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "88-1: 1-1/2\" x 2\" BPE",
+          "aliases": [
+            "88-1 size"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "88-2: 2\" x 3\" BPE",
+          "aliases": [
+            "88-2 size"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "88-3: 2\" x 3\" BPE",
+          "aliases": [
+            "88-3 size"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across size and finish)",
+          "aliases": [
+            "non-standard size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Finish (2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "20Ra in / 40Ra out electropolish",
+          "aliases": [
+            "finish c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "20Ra in / 20Ra out electropolish",
+          "aliases": [
+            "finish d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "15Ra in / 40Ra out electropolish (15Ra always wetted surface only)",
+          "aliases": [
+            "finish e"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "15Ra in / 20Ra out electropolish (15Ra always wetted surface only)",
+          "aliases": [
+            "finish f"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across size and finish)",
+          "aliases": [
+            "non-standard finish"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "DD",
+          "label": "EPDM bellows, EPDM o-rings (FDA, USP Class VI)",
+          "aliases": [
+            "epdm bellows"
+          ]
+        },
+        {
+          "code": "CC",
+          "label": "EPDM bellows, Kalrez o-rings (FDA, USP Class VI)",
+          "aliases": [
+            "kalrez bellows"
+          ]
+        },
+        {
+          "code": "VV",
+          "label": "Viton bellows, Viton o-rings (FDA, USP Class VI)",
+          "aliases": [
+            "viton bellows"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonnet",
+      "label": "Bonnet (5 and 6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "H1",
+          "label": "Gas tight cap 40Ra electropolish",
+          "aliases": [
+            "bonnet h1"
+          ]
+        },
+        {
+          "code": "H2",
+          "label": "Gas tight cap 20Ra electropolish",
+          "aliases": [
+            "bonnet h2"
+          ]
+        },
+        {
+          "code": "H3",
+          "label": "Gas tight lifting knob 40Ra electropolish",
+          "aliases": [
+            "bonnet h3"
+          ]
+        },
+        {
+          "code": "H4",
+          "label": "Gas tight lifting knob 20Ra electropolish",
+          "aliases": [
+            "bonnet h4"
+          ]
+        },
+        {
+          "code": "H5",
+          "label": "Pneumatic lift 40Ra electropolish",
+          "aliases": [
+            "bonnet h5"
+          ]
+        },
+        {
+          "code": "H6",
+          "label": "Pneumatic lift 20Ra electropolish",
+          "aliases": [
+            "bonnet h6"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "setpoint",
+      "label": "Setpoint (7 and 8)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "53",
+          "label": "15-20 (88-1; contact factory below 15 psi)",
+          "aliases": [
+            "88-1 15-20"
+          ]
+        },
+        {
+          "code": "54",
+          "label": "20-26 (88-1)",
+          "aliases": [
+            "88-1 20-26"
+          ]
+        },
+        {
+          "code": "55",
+          "label": "26-33 (88-1)",
+          "aliases": [
+            "88-1 26-33"
+          ]
+        },
+        {
+          "code": "56",
+          "label": "33-51 (88-1)",
+          "aliases": [
+            "88-1 33-51"
+          ]
+        },
+        {
+          "code": "57",
+          "label": "51-73 (88-1)",
+          "aliases": [
+            "88-1 51-73"
+          ]
+        },
+        {
+          "code": "58",
+          "label": "73-123 (88-1)",
+          "aliases": [
+            "88-1 73-123"
+          ]
+        },
+        {
+          "code": "59",
+          "label": "123-181 (88-1)",
+          "aliases": [
+            "88-1 123-181"
+          ]
+        },
+        {
+          "code": "60",
+          "label": "181-232 (88-1)",
+          "aliases": [
+            "88-1 181-232"
+          ]
+        },
+        {
+          "code": "04",
+          "label": "15-17 (88-2; contact factory below 15 psi)",
+          "aliases": [
+            "88-2 15-17"
+          ]
+        },
+        {
+          "code": "05",
+          "label": "17-22 (88-2)",
+          "aliases": [
+            "88-2 17-22"
+          ]
+        },
+        {
+          "code": "06",
+          "label": "22-32 (88-2)",
+          "aliases": [
+            "88-2 22-32"
+          ]
+        },
+        {
+          "code": "07",
+          "label": "32-38 (88-2)",
+          "aliases": [
+            "88-2 32-38"
+          ]
+        },
+        {
+          "code": "08",
+          "label": "38-49 (88-2)",
+          "aliases": [
+            "88-2 38-49"
+          ]
+        },
+        {
+          "code": "09",
+          "label": "49-78 (88-2)",
+          "aliases": [
+            "88-2 49-78"
+          ]
+        },
+        {
+          "code": "10",
+          "label": "78-123 (88-2)",
+          "aliases": [
+            "88-2 78-123"
+          ]
+        },
+        {
+          "code": "11",
+          "label": "123-181 (88-2)",
+          "aliases": [
+            "88-2 123-181"
+          ]
+        },
+        {
+          "code": "12",
+          "label": "181-232 (88-2)",
+          "aliases": [
+            "88-2 181-232"
+          ]
+        },
+        {
+          "code": "13",
+          "label": "15-20 (88-3; contact factory below 15 psi)",
+          "aliases": [
+            "88-3 15-20"
+          ]
+        },
+        {
+          "code": "14",
+          "label": "20-28 (88-3)",
+          "aliases": [
+            "88-3 20-28"
+          ]
+        },
+        {
+          "code": "15",
+          "label": "28-39 (88-3)",
+          "aliases": [
+            "88-3 28-39"
+          ]
+        },
+        {
+          "code": "16",
+          "label": "39-53 (88-3)",
+          "aliases": [
+            "88-3 39-53"
+          ]
+        },
+        {
+          "code": "17",
+          "label": "53-77 (88-3)",
+          "aliases": [
+            "88-3 53-77"
+          ]
+        },
+        {
+          "code": "18",
+          "label": "77-114 (88-3)",
+          "aliases": [
+            "88-3 77-114"
+          ]
+        },
+        {
+          "code": "19",
+          "label": "114-150 (88-3)",
+          "aliases": [
+            "88-3 114-150"
+          ]
+        },
+        {
+          "code": "20",
+          "label": "150-232 (88-3)",
+          "aliases": [
+            "88-3 150-232"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard setpoint"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "setting",
+      "label": "SSRV setting (9 and 10)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "LL",
+          "label": "Liquids",
+          "aliases": [
+            "liquids"
+          ]
+        },
+        {
+          "code": "AG",
+          "label": "Air/gas",
+          "aliases": [
+            "air gas"
+          ]
+        },
+        {
+          "code": "ST",
+          "label": "Steam",
+          "aliases": [
+            "steam"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "special",
+      "label": "Special options (11 and 12)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "LX",
+          "label": "Lift indicator (the only printed row; no none row, held for John)",
+          "aliases": [
+            "lift indicator"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": "A"
+      },
+      "forbid": {
+        "model": [
+          "88-2",
+          "88-3"
+        ]
+      },
+      "reason": "this size row names the 88-1"
+    },
+    {
+      "when": {
+        "size": "B"
+      },
+      "forbid": {
+        "model": [
+          "88-1",
+          "88-3"
+        ]
+      },
+      "reason": "this size row names the 88-2"
+    },
+    {
+      "when": {
+        "size": "C"
+      },
+      "forbid": {
+        "model": [
+          "88-1",
+          "88-2"
+        ]
+      },
+      "reason": "this size row names the 88-3"
+    },
+    {
+      "when": {
+        "setpoint": [
+          "53",
+          "54",
+          "55",
+          "56",
+          "57",
+          "58",
+          "59",
+          "60"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "88-2",
+          "88-3"
+        ]
+      },
+      "reason": "these setpoint rows print in the 88-1 column"
+    },
+    {
+      "when": {
+        "setpoint": [
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "12"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "88-1",
+          "88-3"
+        ]
+      },
+      "reason": "these setpoint rows print in the 88-2 column"
+    },
+    {
+      "when": {
+        "setpoint": [
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "88-1",
+          "88-2"
+        ]
+      },
+      "reason": "these setpoint rows print in the 88-3 column"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "setting": "ST"
+      },
+      "note": "The sheet's own note: a lifting device is required for all steam valves and media over 140F (60C), and the maximum set pressure on steam is 90 psi (6 bar)."
+    }
+  ]
+}

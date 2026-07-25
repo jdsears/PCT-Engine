@@ -1,0 +1,487 @@
+{
+  "model": "SSRV81",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow F&B 81V/81 sanitary safety relief valve",
+  "match": [
+    "ssrv 81",
+    "81v",
+    "sanitary relief 81"
+  ],
+  "source": {
+    "doc": "SSRVSeries.pdf",
+    "page": 21,
+    "section": "81V / 81 Series Ordering Schematic"
+  },
+  "note": "Extracted by hand from the brochure's 81V/81 schematic. The header's model and model orifice columns fold into the printed designators, 81V for the elastomer plug set to 232 psi and 81 for the o-ring seat to 500 psi, both at the 0.394 inch orifice. The trim characters DD and VV read differently per model, plug forms on the 81V and o-ring forms on the 81, both readings in the labels; the Kalrez CC is the 81's alone. The setpoint ladder splits by model as printed, the 81 rows named 81-ORING on the sheet. The sizing worksheet pages are an order form, not a matrix, and take no slot.",
+  "assembly": "{model}{material}{size}{finish}{trim}{bonnet}{setpoint}{setting}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model and seat type",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "81V",
+          "label": "Elastomer plug set (set pressures up to 232 psi); orifice 0.394in",
+          "aliases": [
+            "81v plug"
+          ]
+        },
+        {
+          "code": "81",
+          "label": "Elastomer o-ring seat (set pressures 232-500 psi); orifice 0.394in",
+          "aliases": [
+            "81 o-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Body and wetted component material",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "316L / 316L",
+          "aliases": [
+            "316l"
+          ]
+        },
+        {
+          "code": "HC",
+          "label": "Hastelloy C22",
+          "aliases": [
+            "hastelloy"
+          ]
+        },
+        {
+          "code": "XN",
+          "label": "AL6XN",
+          "aliases": [
+            "al6xn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "End connections, size inlet x outlet (1)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "1\" BPE tri-c x 1\" BPE T/C",
+          "aliases": [
+            "size a"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "3/4\" BPE tri-c x 1\" BPE T/C",
+          "aliases": [
+            "size b"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "3/4\" BPE tri-c x 3/4\" BPE T/C",
+          "aliases": [
+            "size c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "1/2\" BPE tri-c x 3/4\" BPE T/C",
+          "aliases": [
+            "size d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "1/2\" BPE tri-c x 1/2\" BPE T/C",
+          "aliases": [
+            "size e"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "1\" FNPT x 1\" FNPT",
+          "aliases": [
+            "size f"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "3/4\" FNPT x 1\" FNPT",
+          "aliases": [
+            "size g"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "3/4\" FNPT x 3/4\" FNPT",
+          "aliases": [
+            "size h"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "1/2\" FNPT x 3/4\" FNPT",
+          "aliases": [
+            "size j"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "1/2\" FNPT x 1/2\" FNPT",
+          "aliases": [
+            "size k"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "1\" MNPT x 1\" FNPT",
+          "aliases": [
+            "size l"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "3/4\" MNPT x 1\" FNPT",
+          "aliases": [
+            "size m"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "3/4\" MNPT x 3/4\" FNPT",
+          "aliases": [
+            "size n"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "1/2\" MNPT x 3/4\" FNPT",
+          "aliases": [
+            "size p"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "1/2\" MNPT x 1/2\" FNPT",
+          "aliases": [
+            "size q"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "1\" BPE tri-c x 1\" FNPT",
+          "aliases": [
+            "size r"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "3/4\" BPE tri-c x 1\" FNPT",
+          "aliases": [
+            "size s"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "3/4\" BPE tri-c x 3/4\" FNPT",
+          "aliases": [
+            "size t"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "1/2\" BPE tri-c x 3/4\" FNPT",
+          "aliases": [
+            "size u"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "1/2\" BPE tri-c x 1/2\" FNPT",
+          "aliases": [
+            "size v"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Finish (2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "20Ra in / 40Ra out electropolish",
+          "aliases": [
+            "finish c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "20Ra in / 20Ra out electropolish",
+          "aliases": [
+            "finish d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "15Ra in / 40Ra out electropolish (15Ra always wetted surface only)",
+          "aliases": [
+            "finish e"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "15Ra in / 20Ra out electropolish (15Ra always wetted surface only)",
+          "aliases": [
+            "finish f"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "DD",
+          "label": "On the 81V, EPDM vulcanized soft seat; on the 81, EPDM o-ring seat (FDA, USP Class VI)",
+          "aliases": [
+            "epdm trim"
+          ]
+        },
+        {
+          "code": "VV",
+          "label": "On the 81V, Viton o-ring seat; on the 81, Viton o-ring seat (FDA, USP Class VI)",
+          "aliases": [
+            "viton trim"
+          ]
+        },
+        {
+          "code": "CC",
+          "label": "Kalrez o-ring seat (FDA, USP Class VI), the 81 alone",
+          "aliases": [
+            "kalrez trim"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonnet",
+      "label": "Bonnet (5 and 6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "H1",
+          "label": "Gas tight cap 40Ra electropolish",
+          "aliases": [
+            "bonnet h1"
+          ]
+        },
+        {
+          "code": "H2",
+          "label": "Gas tight cap 20Ra electropolish",
+          "aliases": [
+            "bonnet h2"
+          ]
+        },
+        {
+          "code": "H3",
+          "label": "Gas tight lifting knob 40Ra electropolish",
+          "aliases": [
+            "bonnet h3"
+          ]
+        },
+        {
+          "code": "H4",
+          "label": "Gas tight lifting knob 20Ra electropolish",
+          "aliases": [
+            "bonnet h4"
+          ]
+        },
+        {
+          "code": "H5",
+          "label": "Pneumatic lift 40Ra electropolish",
+          "aliases": [
+            "bonnet h5"
+          ]
+        },
+        {
+          "code": "H6",
+          "label": "Pneumatic lift 20Ra electropolish",
+          "aliases": [
+            "bonnet h6"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "setpoint",
+      "label": "Setpoint (7 and 8)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "03",
+          "label": "15-20 psi (81V; contact factory below 15 psi)",
+          "aliases": [
+            "15-20"
+          ]
+        },
+        {
+          "code": "04",
+          "label": "20-26 psi (81V)",
+          "aliases": [
+            "20-26"
+          ]
+        },
+        {
+          "code": "05",
+          "label": "26-45 psi (81V)",
+          "aliases": [
+            "26-45"
+          ]
+        },
+        {
+          "code": "06",
+          "label": "45-64 psi (81V)",
+          "aliases": [
+            "45-64"
+          ]
+        },
+        {
+          "code": "07",
+          "label": "64-102 psi (81V)",
+          "aliases": [
+            "64-102"
+          ]
+        },
+        {
+          "code": "08",
+          "label": "102-145 psi (81V)",
+          "aliases": [
+            "102-145"
+          ]
+        },
+        {
+          "code": "09",
+          "label": "145-232 psi (81V)",
+          "aliases": [
+            "145-232"
+          ]
+        },
+        {
+          "code": "11",
+          "label": "232-377 psi (81-ORING, as the sheet names it)",
+          "aliases": [
+            "232-377"
+          ]
+        },
+        {
+          "code": "16",
+          "label": "377-500 psi (81-ORING, as the sheet names it)",
+          "aliases": [
+            "377-500"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "setting",
+      "label": "SSRV setting (9 and 10)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "GL",
+          "label": "Gas/liquid",
+          "aliases": [
+            "gas liquid"
+          ]
+        },
+        {
+          "code": "ST",
+          "label": "Steam",
+          "aliases": [
+            "steam"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "trim": "CC"
+      },
+      "forbid": {
+        "model": [
+          "81V"
+        ]
+      },
+      "reason": "the Kalrez row prints under the 81 only heading"
+    },
+    {
+      "when": {
+        "setpoint": [
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "81"
+        ]
+      },
+      "reason": "these setpoint rows print for the 81V"
+    },
+    {
+      "when": {
+        "setpoint": [
+          "11",
+          "16"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "81V"
+        ]
+      },
+      "reason": "these setpoint rows print for the 81-ORING"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "setting": "ST"
+      },
+      "note": "The sheet's own note: a lifting device is required for all steam valves and media over 140F (60C), and the maximum set pressure on steam is 90 psi (6 bar)."
+    }
+  ]
+}
