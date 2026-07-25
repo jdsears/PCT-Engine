@@ -66,6 +66,8 @@ const mk76 = JSON.parse(readFileSync(join(here, 'models', 'mk76.json'), 'utf8'))
 const mk78 = JSON.parse(readFileSync(join(here, 'models', 'mk78.json'), 'utf8'));
 const mk4046 = JSON.parse(readFileSync(join(here, 'models', 'mk4046.json'), 'utf8'));
 const mk37 = JSON.parse(readFileSync(join(here, 'models', 'mk37.json'), 'utf8'));
+const mk33 = JSON.parse(readFileSync(join(here, 'models', 'mk33.json'), 'utf8'));
+const mk39 = JSON.parse(readFileSync(join(here, 'models', 'mk39.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -1037,6 +1039,24 @@ check('the printed must-match rule, model splits and size brackets hold', () => 
   assert.ok(checkConstraints(mk37, { trim: 'T6', range: '42' }).length > 0, 'an on-off trim refuses a signal range');
   assert.equal(checkCautions(mk37, { size: '300' }).length, 1, 'the consult-factory large sizes carry the caution');
   assert.ok(/no none row/.test(mk78.note) || /none row/.test(mk78.note), 'the 78 SMP missing none row is confessed');
+});
+
+console.log('\nThe electric 33/331/332 and the three-way electric 39, closing the control shelf:');
+
+check('both electric families round-trip and their starred splits hold', () => {
+  roundTrip(mk33, {
+    model: '332', size: '200', body: 'S6', ends: 'I2', trim: 'I6', seat: 'W', cv: 'E',
+    range: '42', actuator: 'R2', accessories: 'SR', action: 'RC', ped: 'F',
+  }, '332200S6I2I6WE42R2SRRCF');
+  roundTrip(mk39, {
+    model: '39MX', size: '150', body: 'CS', ends: 'F5', trim: 'T3', seat: 'A', cv: '9',
+    range: 'RE', actuator: '2L', accessories: 'FE', ped: '0',
+  }, '39MX150CSF5T3A9RE2LFE0');
+  assert.ok(checkConstraints(mk33, { size: '075', model: '331' }).length > 0, 'the starred sizes are Mark 33 only');
+  assert.ok(checkConstraints(mk33, { size: '125', body: 'S6' }).length > 0, 'the 1-1/4 inch keeps its DI and BR bracket');
+  assert.ok(checkConstraints(mk33, { cv: 'Y', model: '33' }).length > 0, 'the double-starred Cvs refuse the standard 33');
+  assert.ok(checkConstraints(mk33, { action: 'DP', actuator: '1L' }).length > 0, 'a fail action needs a spring return actuator');
+  assert.equal(applyValue(mk39, {}, 'actuator', '1L').accepted, false, 'the 39 prints no standard single limit switch row');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

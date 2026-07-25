@@ -1,0 +1,162 @@
+{
+  "model": "MK33",
+  "line": "jordan",
+  "displayName": "Jordan Mark 33 electric control valve",
+  "match": ["mk33", "mark 33", "mk331", "mk332", "jordan 33", "electric control valve"],
+  "source": { "doc": "mk33_39.pdf", "page": "3 and 4", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic. Three models, the standard 33 and the high flow 331 and 332. The sheet's own asterisks split the columns: the small sizes and the small Cvs are Mark 33 only, the large Cvs are Mark 331 and 332 only, and the 1-1/4 inch row carries its ductile iron and bronze bracket. The spring return fail actions pair with the spring return actuators, per the action column's own For Spring Return heading.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seat}{cv}{range}{actuator}{accessories}{action}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "33", "label": "Standard", "aliases": ["mk33", "standard"] },
+        { "code": "331", "label": "High flow", "aliases": ["mk331", "high flow"] },
+        { "code": "332", "label": "Super high flow", "aliases": ["mk332", "super high flow"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8), Mark 33 only", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN12), Mark 33 only", "aliases": ["3/8\""] },
+        { "code": "050", "label": "1/2\" (DN15), Mark 33 only", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20), Mark 33 only", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25), Mark 33 only", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32), Mark 33 only, DI and BR only", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I1", "label": "125# FE (as the sheet prints it)", "aliases": ["125 ife"] },
+        { "code": "F1", "label": "125# FE (except IFE)", "aliases": ["125 flanged"] },
+        { "code": "I5", "label": "150# IFE", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "I2", "label": "250# IFE", "aliases": ["250 ife"] },
+        { "code": "F2", "label": "250# FE (except IFE)", "aliases": ["250 flanged"] },
+        { "code": "I3", "label": "300# IFE", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE (except IFE)", "aliases": ["300 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T3", "label": "303SS/Teflon packing", "aliases": ["303 teflon"] },
+        { "code": "T6", "label": "316SS/Teflon packing", "aliases": ["316 teflon"] },
+        { "code": "I3", "label": "303SS/graphite packing", "aliases": ["303 graphite"] },
+        { "code": "I6", "label": "316SS/graphite packing", "aliases": ["316 graphite"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST", "aliases": ["316 seat"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.18 Kv), Mark 33 only", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv), Mark 33 only", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv), Mark 33 only", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.38 Kv), Mark 33 only", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.16 Kv), Mark 33 only", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.78 Kv), Mark 33 only", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.51 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.18 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (21.5 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.8 Kv)", "aliases": ["30"] },
+        { "code": "V", "label": "35 (30.2 Kv), Mark 331/332 only", "aliases": ["35"] },
+        { "code": "W", "label": "45 (38.8 Kv), Mark 331/332 only", "aliases": ["45"] },
+        { "code": "C", "label": "50 (43.1 Kv), Mark 331/332 only", "aliases": ["50"] },
+        { "code": "Y", "label": "65 (56.0 Kv), Mark 331/332 only", "aliases": ["65"] },
+        { "code": "E", "label": "70 (68.8 Kv), Mark 331/332 only", "aliases": ["70"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "RE", "label": "Resistance (0-135 ohm)", "aliases": ["resistance"] },
+        { "code": "NF", "label": "On-off", "aliases": ["on off"] },
+        { "code": "42", "label": "4-20 mA", "aliases": ["4-20ma"] },
+        { "code": "41", "label": "4-12 mA", "aliases": ["4-12ma"] },
+        { "code": "12", "label": "12-20 mA", "aliases": ["12-20ma"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "1L", "label": "Standard, 1 limit switch", "aliases": ["standard 1 ls"] },
+        { "code": "2L", "label": "Standard, 2 limit switches", "aliases": ["standard 2 ls"] },
+        { "code": "R1", "label": "Spring return, 1 limit switch", "aliases": ["spring return 1 ls"] },
+        { "code": "R2", "label": "Spring return, 2 limit switches", "aliases": ["spring return 2 ls"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "TS", "label": "Travel scale", "aliases": ["travel scale"] },
+        { "code": "TR", "label": "Transformer 120 VAC", "aliases": ["transformer"] },
+        { "code": "SR", "label": "Travel scale and 120V transformer", "aliases": ["scale and transformer"] },
+        { "code": "FE", "label": "Feedback pot 1-135 ohm", "aliases": ["feedback pot"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (13 and 14)", "position": 11, "required": true,
+      "options": [
+        { "code": "DD", "label": "Direct", "aliases": ["direct"] },
+        { "code": "RR", "label": "Reverse", "aliases": ["reverse"] },
+        { "code": "DP", "label": "Direct, fail open (spring return)", "aliases": ["direct fail open"] },
+        { "code": "DC", "label": "Direct, fail close (spring return)", "aliases": ["direct fail close"] },
+        { "code": "RP", "label": "Reverse, fail open (spring return)", "aliases": ["reverse fail open"] },
+        { "code": "RC", "label": "Reverse, fail close (spring return)", "aliases": ["reverse fail close"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (15)", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "Not required", "aliases": ["not required"] },
+        { "code": "F", "label": "CE category 1", "aliases": ["ce category 1"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "size": ["025", "038", "050", "075", "100", "125"] }, "forbid": { "model": ["331", "332"] },
+      "reason": "the starred sizes are Mark 33 only" },
+    { "when": { "size": "125" }, "forbid": { "body": ["CS", "S6"] },
+      "reason": "the 1-1/4 inch row is printed ductile iron and bronze only" },
+    { "when": { "cv": ["1", "2", "3", "4", "5", "6"] }, "forbid": { "model": ["331", "332"] },
+      "reason": "the starred Cvs are Mark 33 only" },
+    { "when": { "cv": ["V", "W", "C", "Y", "E"] }, "forbid": { "model": ["33"] },
+      "reason": "the double-starred Cvs are Mark 331 and 332 only" },
+    { "when": { "action": ["DP", "DC", "RP", "RC"] }, "forbid": { "actuator": ["1L", "2L"] },
+      "reason": "the fail actions sit under the action column's For Spring Return heading" }
+  ],
+  "cautions": []
+}
