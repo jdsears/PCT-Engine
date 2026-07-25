@@ -105,6 +105,7 @@ const jsrlflp = JSON.parse(readFileSync(join(here, 'models', 'jsrlflp.json'), 'u
 const jsrlflpe = JSON.parse(readFileSync(join(here, 'models', 'jsrlflpe.json'), 'utf8'));
 const mk708 = JSON.parse(readFileSync(join(here, 'models', 'mk708.json'), 'utf8'));
 const mk708tp = JSON.parse(readFileSync(join(here, 'models', 'mk708tp.json'), 'utf8'));
+const mk8000 = JSON.parse(readFileSync(join(here, 'models', 'mk8000.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1432,6 +1433,28 @@ check('both round-trip and the micro-Cv couplings hold', () => {
   assert.ok(checkConstraints(mk708tp, { rangeAction: 'A4', diaphragm: 'B3' }).length > 0, 'the size digit chain holds, flagged inferred');
   assert.ok(/3\.0 \(printed after 4\.0/.test(mk708.slots.find(s => s.id === 'plugCv').options.find(o => o.code === 'T').label), 'the out-of-order 3.0 row is carried as printed');
   assert.ok(/708BS/.test(mk708tp.note), 'the 708BS heading artefact is held for the PDF');
+});
+
+console.log('\nThe 8000 series closes the LowFlow estate:');
+
+check('the 8000 round-trips across its body worlds and the model splits hold', () => {
+  roundTrip(mk8000, {
+    model: '8000GTP', size: '200', body: 'HC', ends: 'J2', bonnet: 'BT', plugSeat: '5', cv: 'K',
+    actuator: 'D8', range: 'A8', limitSwitches: '8X', solenoidHardware: 'H8', accessories: 'D',
+    action: 'D', smp: 'G', ped: 'F',
+  }, '8000GTP200HCJ2BT5KD8A88XH8DDGF');
+  roundTrip(mk8000, {
+    model: '8000GMV', size: '050', body: 'PV', ends: 'BU', bonnet: 'BV', plugSeat: 'A', cv: 'A',
+    actuator: 'M4', range: '42', limitSwitches: '00', solenoidHardware: '00', accessories: '0',
+    action: 'R', smp: '0', ped: '0',
+  }, '8000GMV050PVBUBVAAM4420000 0R00'.replace(' ', ''));
+  assert.ok(checkConstraints(mk8000, { body: 'PV', bonnet: 'ST' }).length > 0, 'plastic bodies take the plastic bonnets');
+  assert.ok(checkConstraints(mk8000, { ends: 'BU', body: 'CB' }).length > 0, 'the bolt-thru end is Kynar and PVC only');
+  assert.ok(checkConstraints(mk8000, { model: '8000T', plugSeat: 'A' }).length > 0, 'the three-way prints a non-standard plug row alone');
+  assert.ok(checkConstraints(mk8000, { model: '8000GMV', range: 'A3' }).length > 0, 'the motor valve takes its own range table');
+  assert.ok(checkConstraints(mk8000, { actuator: 'D3', range: 'A8' }).length > 0, 'the size digit chain holds, flagged inferred');
+  assert.ok(checkConstraints(mk8000, { bonnet: 'BH', model: '8000G', smp: '0' }).length > 0, 'the bellows high temperature bonnet requires a positioner on a plain model');
+  assert.equal(checkCautions(mk8000, { bonnet: 'SH' }).length, 1, 'the recommended-positioner bonnets caution');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
