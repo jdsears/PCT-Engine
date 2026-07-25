@@ -1,0 +1,207 @@
+{
+  "model": "IB21V",
+  "line": "bestobell",
+  "displayName": "Bestobell IB21V/IB41V inverted bucket steam traps",
+  "match": [
+    "ib21v",
+    "ib41v"
+  ],
+  "source": {
+    "doc": "ib21v.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The size rows carry printed model brackets and each model keeps its own orifice table, enforced. The orifice joins with a dash, the part number form of the sibling sheets.",
+  "assembly": "{model}{size}{connections}-{orifice}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "IB21V",
+          "label": "IB21V",
+          "aliases": [
+            "ib21v"
+          ]
+        },
+        {
+          "code": "IB41V",
+          "label": "IB41V",
+          "aliases": [
+            "ib41v"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\" (21 and 41)",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" (21 and 41)",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" (41 only)",
+          "aliases": [
+            "one inch"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\" (41 only)",
+          "aliases": [
+            "one and a half"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\" (41 only)",
+          "aliases": [
+            "two inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "10",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orifice",
+      "label": "Orifice (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "Orifice number 6 (IB21V 1/2\")",
+          "aliases": [
+            "orifice 6"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "Orifice number 7 (IB21V 3/4\"; IB41V 1/2\")",
+          "aliases": [
+            "orifice 7"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "Orifice number 8 (IB41V 3/4\" and 1\")",
+          "aliases": [
+            "orifice 8"
+          ]
+        },
+        {
+          "code": "12",
+          "label": "Orifice number 12 (IB41V 1-1/2\")",
+          "aliases": [
+            "orifice 12"
+          ]
+        },
+        {
+          "code": "18",
+          "label": "Orifice number 18 (IB41V 2\")",
+          "aliases": [
+            "orifice 18"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": [
+          "4",
+          "6",
+          "7"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "IB21V"
+        ]
+      },
+      "reason": "these size rows print 41 only"
+    },
+    {
+      "when": {
+        "model": "IB21V"
+      },
+      "forbid": {
+        "orifice": [
+          "8",
+          "12",
+          "18"
+        ]
+      },
+      "reason": "the IB21V table prints 6 and 7"
+    },
+    {
+      "when": {
+        "model": "IB41V"
+      },
+      "forbid": {
+        "orifice": [
+          "6"
+        ]
+      },
+      "reason": "the IB41V table starts at 7"
+    },
+    {
+      "when": {
+        "size": "2",
+        "model": "IB21V"
+      },
+      "forbid": {
+        "orifice": [
+          "7"
+        ]
+      },
+      "reason": "the IB21V half inch row prints 6"
+    },
+    {
+      "when": {
+        "size": "3",
+        "model": "IB21V"
+      },
+      "forbid": {
+        "orifice": [
+          "6"
+        ]
+      },
+      "reason": "the IB21V three quarter row prints 7"
+    }
+  ],
+  "cautions": []
+}

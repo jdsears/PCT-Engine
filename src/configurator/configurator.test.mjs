@@ -172,6 +172,17 @@ const hgp = JSON.parse(readFileSync(join(here, 'models', 'hgp.json'), 'utf8'));
 const hgy = JSON.parse(readFileSync(join(here, 'models', 'hgy.json'), 'utf8'));
 const pmi = JSON.parse(readFileSync(join(here, 'models', 'pmi.json'), 'utf8'));
 const pbpg = JSON.parse(readFileSync(join(here, 'models', 'pbpg.json'), 'utf8'));
+const gm3 = JSON.parse(readFileSync(join(here, 'models', 'gm3.json'), 'utf8'));
+const m22 = JSON.parse(readFileSync(join(here, 'models', 'm22.json'), 'utf8'));
+const m40 = JSON.parse(readFileSync(join(here, 'models', 'm40.json'), 'utf8'));
+const dm40 = JSON.parse(readFileSync(join(here, 'models', 'dm40.json'), 'utf8'));
+const magnum = JSON.parse(readFileSync(join(here, 'models', 'magnum.json'), 'utf8'));
+const ib18v = JSON.parse(readFileSync(join(here, 'models', 'ib18v.json'), 'utf8'));
+const ib21v = JSON.parse(readFileSync(join(here, 'models', 'ib21v.json'), 'utf8'));
+const btcs = JSON.parse(readFileSync(join(here, 'models', 'btcs.json'), 'utf8'));
+const dt711 = JSON.parse(readFileSync(join(here, 'models', 'dt711.json'), 'utf8'));
+const totaltrap = JSON.parse(readFileSync(join(here, 'models', 'totaltrap.json'), 'utf8'));
+const pr3g = JSON.parse(readFileSync(join(here, 'models', 'pr3g.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -2051,6 +2062,37 @@ check('the pots, globes and power members round-trip', () => {
   assert.ok(checkConstraints(pmi, { inletSizeType: '99', model: 'PM45' }).length > 0, 'the flanged inlet is the PM54');
   assert.ok(checkConstraints(pbpg, { model: 'PG35', seat: '3' }).length > 0, 'the PG35 keeps its only-option rows');
   assert.ok(checkConstraints(pbpg, { outletSizeType: '37', model: 'PB59' }).length > 0, 'and its own MNPT outlets');
+});
+
+console.log('\nThe Bestobell folder closes the estate:');
+
+check('the delta traps keep their model brackets', () => {
+  roundTrip(gm3, { model: 'GM003', size: '7', connections: '4', specials: '0' }, 'GM003740');
+  assert.ok(checkConstraints(gm3, { size: '1', model: 'GM003' }).length > 0, 'the 3/8 row is the M3A');
+  assert.ok(checkConstraints(gm3, { size: '7', connections: '2' }).length > 0, 'the starred rows refuse the 2 inch');
+  assert.ok(checkConstraints(gm3, { connections: '4', model: 'M003A' }).length > 0, 'the 300 flange is the 2 inch GM3');
+  roundTrip(m22, { model: 'TM022', size: '1', connections: '1', specialities: '0' }, 'TM022110');
+  assert.ok(checkConstraints(m22, { connections: '3', model: 'TM022' }).length > 0, 'the flanges are the M22');
+  roundTrip(m40, { model: 'M0100', size: '7', connections: '7', specialities: '3' }, 'M0100773');
+  assert.ok(checkConstraints(m40, { connections: '7', model: 'M0064' }).length > 0, 'the 1500 flange is the M100');
+  roundTrip(dm40, { model: 'DM320', size: '4', connections: 'A', specialities: '0' }, 'DM3204A0');
+  assert.ok(checkConstraints(dm40, { connections: 'A', model: 'DM100' }).length > 0, 'the 2500 flange is the 160 and 320');
+  assert.ok(checkConstraints(dm40, { specialities: '1', model: 'DM160' }).length > 0, 'the starred specials stop at the DM100');
+  roundTrip(magnum, { model: 'MAG25', bodySize: '3', elements: '17', size: 'D', connections: '3', specials: 'C' }, 'MAG25317D3C');
+});
+
+check('the buckets, sanitary traps and stations round-trip', () => {
+  roundTrip(ib18v, { model: 'IB18V', size: '4', connections: '10', orifice: '12' }, 'IB18V410-12');
+  assert.ok(checkConstraints(ib18v, { size: '2', orifice: '32' }).length > 0, 'the orifice ladder follows the size table');
+  assert.equal(checkCautions(ib18v, { size: '5' }).length, 1, 'the doubled 5 cautions');
+  roundTrip(ib21v, { model: 'IB41V', size: '7', connections: '10', orifice: '18' }, 'IB41V710-18');
+  assert.ok(checkConstraints(ib21v, { model: 'IB21V', size: '4' }).length > 0, 'the large sizes are the 41');
+  assert.ok(checkConstraints(ib21v, { model: 'IB21V', orifice: '8' }).length > 0, 'each model keeps its own orifice table');
+  roundTrip(btcs, { model: 'BTCS', pressureRating: '0', size: '2', endConnection: 'T' }, 'BTCS02T');
+  roundTrip(dt711, { model: 'DT71', bodyType: 'S', size: '2', connections: '1', specials: '1' }, 'DT71S211');
+  assert.ok(checkConstraints(dt711, { specials: '1', bodyType: '1' }).length > 0, 'the DTC is the strainer body alone');
+  roundTrip(totaltrap, { model: 'TT3HP-4' }, 'TT3HP-4');
+  roundTrip(pr3g, { model: 'PR3G', material: 'S', size: '4', cv: 'F', range: 'M' }, 'PR3GS4FM');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

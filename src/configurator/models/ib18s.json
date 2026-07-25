@@ -1,0 +1,194 @@
+{
+  "model": "IB18S",
+  "line": "bestobell",
+  "displayName": "Bestobell IB18S inverted bucket steam trap",
+  "match": [
+    "ib18s"
+  ],
+  "source": {
+    "doc": "ib18s.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The orifice number follows a dash, the dimension tables' own part numbers printing the form, while the schematic example row spaces the digits without one, held for John. The orifice ladder is held to the sheet's per size table, dual pressure rows folded.",
+  "assembly": "{model}{size}{connections}-{orifice}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "IB18S",
+          "label": "Side inlet",
+          "aliases": [
+            "ib18s"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\"",
+          "aliases": [
+            "one inch"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1-1/4\"",
+          "aliases": [
+            "one and a quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "10",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orifice",
+      "label": "Orifice (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "Orifice number 6 (per size table)",
+          "aliases": [
+            "orifice 6"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "Orifice number 7 (per size table)",
+          "aliases": [
+            "orifice 7"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "Orifice number 8 (per size table)",
+          "aliases": [
+            "orifice 8"
+          ]
+        },
+        {
+          "code": "10",
+          "label": "Orifice number 10 (per size table)",
+          "aliases": [
+            "orifice 10"
+          ]
+        },
+        {
+          "code": "12",
+          "label": "Orifice number 12 (per size table)",
+          "aliases": [
+            "orifice 12"
+          ]
+        },
+        {
+          "code": "16",
+          "label": "Orifice number 16 (per size table)",
+          "aliases": [
+            "orifice 16"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": "2"
+      },
+      "forbid": {
+        "orifice": [
+          "7",
+          "8",
+          "10",
+          "12",
+          "16"
+        ]
+      },
+      "reason": "the orifice table prints its own numbers per size"
+    },
+    {
+      "when": {
+        "size": "3"
+      },
+      "forbid": {
+        "orifice": [
+          "6",
+          "10",
+          "12",
+          "16"
+        ]
+      },
+      "reason": "the orifice table prints its own numbers per size"
+    },
+    {
+      "when": {
+        "size": "4"
+      },
+      "forbid": {
+        "orifice": [
+          "6",
+          "7",
+          "8",
+          "16"
+        ]
+      },
+      "reason": "the orifice table prints its own numbers per size"
+    },
+    {
+      "when": {
+        "size": "5"
+      },
+      "forbid": {
+        "orifice": [
+          "6",
+          "7",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      "reason": "the orifice table prints its own numbers per size"
+    }
+  ],
+  "cautions": []
+}

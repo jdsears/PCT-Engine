@@ -1,0 +1,157 @@
+{
+  "model": "PR3G",
+  "line": "bestobell",
+  "displayName": "Bestobell PR3G pressure regulating valve",
+  "match": [
+    "pr3g"
+  ],
+  "source": {
+    "doc": "pr3g.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The Cv and range tables print per size values for the F and R selections and the L, M and H springs; additional springs are a consult-factory line.",
+  "assembly": "{model}{material}{size}{cv}{range}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "PR3G",
+          "label": "Pressure regulating valve",
+          "aliases": [
+            "pr3g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material (4)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "D",
+          "label": "Ductile iron",
+          "aliases": [
+            "ductile iron"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Carbon steel (WCB)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless steel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (5)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\"",
+          "aliases": [
+            "one inch"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\"",
+          "aliases": [
+            "one and a half"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\"",
+          "aliases": [
+            "two inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cv",
+      "label": "Cv/selection (6)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "F",
+          "label": "Full",
+          "aliases": [
+            "full port"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Reduced",
+          "aliases": [
+            "reduced port"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "range",
+      "label": "Range (7)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "L",
+          "label": "Low spring (per size table)",
+          "aliases": [
+            "low range"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Medium spring (per size table)",
+          "aliases": [
+            "medium range"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "High spring (per size table)",
+          "aliases": [
+            "high range"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

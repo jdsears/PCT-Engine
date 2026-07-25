@@ -1,0 +1,240 @@
+{
+  "model": "GM3",
+  "line": "bestobell",
+  "displayName": "Bestobell M3A/GM3 delta element steam traps",
+  "match": [
+    "m3a",
+    "gm3"
+  ],
+  "source": {
+    "doc": "GM3-M3a.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The size rows carry printed model brackets and the starred rows are not available on the 2 inch GM3, both enforced; the 300# flange prints for the 2 inch GM3 alone.",
+  "assembly": "{model}{size}{connections}{specials}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "M003A",
+          "label": "M3A",
+          "aliases": [
+            "m3a"
+          ]
+        },
+        {
+          "code": "GM003",
+          "label": "GM3",
+          "aliases": [
+            "gm3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "3/8\" (M3A)",
+          "aliases": [
+            "three eighths"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" (all)",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" (all)",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" (GM3)",
+          "aliases": [
+            "one inch"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1-1/4\" (GM3)",
+          "aliases": [
+            "one and a quarter"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\" (GM3)",
+          "aliases": [
+            "one and a half"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\" (GM3)",
+          "aliases": [
+            "two inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW (not on the 2 inch GM3)",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "150# flange",
+          "aliases": [
+            "150 flange"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "300# flange (2\" GM3)",
+          "aliases": [
+            "300 flange"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specials",
+      "label": "Specials (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "DTC (not on the 2 inch GM3)",
+          "aliases": [
+            "dtc"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Integral blowdown (not on the 2 inch GM3)",
+          "aliases": [
+            "integral blowdown"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": "1"
+      },
+      "forbid": {
+        "model": [
+          "GM003"
+        ]
+      },
+      "reason": "the 3/8 inch row prints M3A"
+    },
+    {
+      "when": {
+        "size": [
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "M003A"
+        ]
+      },
+      "reason": "these size rows print GM3"
+    },
+    {
+      "when": {
+        "size": "7"
+      },
+      "forbid": {
+        "connections": [
+          "2"
+        ],
+        "specials": [
+          "1",
+          "3"
+        ]
+      },
+      "reason": "the starred rows are not available on the 2 inch GM3"
+    },
+    {
+      "when": {
+        "connections": "4"
+      },
+      "forbid": {
+        "model": [
+          "M003A"
+        ],
+        "size": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "reason": "the 300# flange prints for the 2 inch GM3 alone"
+    }
+  ],
+  "cautions": []
+}

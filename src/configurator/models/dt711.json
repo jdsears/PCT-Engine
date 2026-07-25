@@ -1,0 +1,163 @@
+{
+  "model": "DT71",
+  "line": "bestobell",
+  "displayName": "Bestobell DT71 series disc steam trap",
+  "match": [
+    "dt711",
+    "dt71s"
+  ],
+  "source": {
+    "doc": "dt711.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The body type position makes the DT711 and DT71S forms, and the starred DTC special prints DT71S only, enforced.",
+  "assembly": "{model}{bodyType}{size}{connections}{specials}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "DT71",
+          "label": "DT71",
+          "aliases": [
+            "dt71"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyType",
+      "label": "Body type (5)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Standard",
+          "aliases": [
+            "standard body"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "With integral strainer",
+          "aliases": [
+            "strainer body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "3/8\"",
+          "aliases": [
+            "three eighths"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\"",
+          "aliases": [
+            "one inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT (all)",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specials",
+      "label": "Specials (8)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "DTC (DT71S only)",
+          "aliases": [
+            "dtc"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "specials": "1"
+      },
+      "forbid": {
+        "bodyType": [
+          "1"
+        ]
+      },
+      "reason": "the starred DTC prints DT71S only"
+    }
+  ],
+  "cautions": []
+}

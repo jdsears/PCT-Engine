@@ -1,0 +1,129 @@
+{
+  "model": "TOTALTRAP",
+  "line": "bestobell",
+  "displayName": "Bestobell Total Trap stations",
+  "match": [
+    "total trap",
+    "tt2",
+    "tt3",
+    "tt3hp",
+    "tt4"
+  ],
+  "source": {
+    "doc": "totaltrap3.pdf, totaltrap3HP.pdf and totaltrap4.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "The three total trap sheets print fixed station designators rather than positions, carried whole as a single ladder across the family. Optional end connections and sizes are consult-factory notes on each sheet.",
+  "assembly": "{model}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "TT2-1A",
+          "label": "1\" female socket-weld ends (non-modular)",
+          "aliases": [
+            "tt2-1a"
+          ]
+        },
+        {
+          "code": "TT2-2",
+          "label": "1\" FNPT ends",
+          "aliases": [
+            "tt2-2"
+          ]
+        },
+        {
+          "code": "TT-3",
+          "label": "1\" Grayloc-style attached hubs (modular)",
+          "aliases": [
+            "tt-3"
+          ]
+        },
+        {
+          "code": "TT3-1",
+          "label": "1\" Grayloc-style butt-weld end connections (modular), with seal rings and clamp assemblies",
+          "aliases": [
+            "tt3-1"
+          ]
+        },
+        {
+          "code": "TT3-2",
+          "label": "1\" Grayloc-style female socket weld end connections (modular), with seal rings and clamp assemblies",
+          "aliases": [
+            "tt3-2"
+          ]
+        },
+        {
+          "code": "TT3HP-1",
+          "label": "1\" Grayloc-style butt-weld end connections (modular), with seal rings and clamp assemblies",
+          "aliases": [
+            "tt3hp-1"
+          ]
+        },
+        {
+          "code": "TT3HP-2",
+          "label": "1\" Grayloc-style female socket-weld end connections (modular), with seal rings and clamp assemblies",
+          "aliases": [
+            "tt3hp-2"
+          ]
+        },
+        {
+          "code": "TT3HP-3",
+          "label": "1/2\" FNPT hub ends",
+          "aliases": [
+            "tt3hp-3"
+          ]
+        },
+        {
+          "code": "TT3HP-4",
+          "label": "3/4\" FNPT hub ends",
+          "aliases": [
+            "tt3hp-4"
+          ]
+        },
+        {
+          "code": "TT3HP-5",
+          "label": "1\" FNPT hub ends",
+          "aliases": [
+            "tt3hp-5"
+          ]
+        },
+        {
+          "code": "TT4-1",
+          "label": "1\" Cro-Moly female socket-weld ends (non-modular)",
+          "aliases": [
+            "tt4-1"
+          ]
+        },
+        {
+          "code": "TT4-2",
+          "label": "1-1/2\" Cro-Moly female socket-weld ends (non-modular)",
+          "aliases": [
+            "tt4-2"
+          ]
+        },
+        {
+          "code": "TT4-3",
+          "label": "1\" Grayloc-style FSW end connections (modular), with seal rings and clamp assemblies",
+          "aliases": [
+            "tt4-3"
+          ]
+        },
+        {
+          "code": "TT4-4",
+          "label": "1-1/2\" Grayloc-style FSW end connections (modular), with seal rings and clamp assemblies",
+          "aliases": [
+            "tt4-4"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
