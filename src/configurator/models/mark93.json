@@ -1,0 +1,617 @@
+{
+  "model": "9093",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 93 sanitary steam trap",
+  "match": [
+    "mark 93",
+    "mk93",
+    "93 trap",
+    "sanitary steam trap"
+  ],
+  "source": {
+    "doc": "mark93.pdf",
+    "page": 12,
+    "section": "Ordering schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic. The model column pairs the body and clamp with the flow orientation, ten forms. The special options position follows the sheet's own rule, combine up to two options in alphabetical order, so the slot enumerates every single and every alphabetical pair; a build with no options assembles with a trailing dash here, and whether the factory prints the bare form without it is held for John. The electropolish options keep their printed body pairings, and the sheet's reorder warning, that order codes and lay-in dimensions changed in 2014 and 2020, belongs with any replacement enquiry. The registry name is 9093 because the printed 93 codes carry their body letter in the model column itself.",
+  "assembly": "{model}-{size}-{ends}-{options}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model and body joint",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "93C",
+          "label": "Tri-clamp body, wingnut clamp, vertical in/out",
+          "aliases": [
+            "93c"
+          ]
+        },
+        {
+          "code": "93B",
+          "label": "Bolted body, vertical in/out",
+          "aliases": [
+            "93b"
+          ]
+        },
+        {
+          "code": "93K",
+          "label": "Tri-clamp body, bolted clamp",
+          "aliases": [
+            "93k"
+          ]
+        },
+        {
+          "code": "93W",
+          "label": "Compact welded body, vertical in/out",
+          "aliases": [
+            "93w"
+          ]
+        },
+        {
+          "code": "93HHC",
+          "label": "Tri-clamp body, wingnut clamp, horizontal in/out",
+          "aliases": [
+            "93hhc"
+          ]
+        },
+        {
+          "code": "93HVC",
+          "label": "Tri-clamp body, wingnut clamp, horizontal in, vertical out",
+          "aliases": [
+            "93hvc"
+          ]
+        },
+        {
+          "code": "93VHC",
+          "label": "Tri-clamp body, wingnut clamp, vertical in, horizontal out",
+          "aliases": [
+            "93vhc"
+          ]
+        },
+        {
+          "code": "93HHK",
+          "label": "Tri-clamp body, bolted clamp, horizontal in/out",
+          "aliases": [
+            "93hhk"
+          ]
+        },
+        {
+          "code": "93HVK",
+          "label": "Tri-clamp body, bolted clamp, horizontal in, vertical out",
+          "aliases": [
+            "93hvk"
+          ]
+        },
+        {
+          "code": "93VHK",
+          "label": "Tri-clamp body, bolted clamp, vertical in, horizontal out",
+          "aliases": [
+            "93vhk"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "Inch tri-clamp",
+          "aliases": [
+            "inch tri-clamp"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "ISO tri-clamp (DIN 32676 row B)",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "DIN tri-clamp (DIN 32676 row A)",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "NPT threaded vertical inlet/outlet",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "BSPT threaded vertical inlet/outlet",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Inch tube",
+          "aliases": [
+            "inch tube"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "DIN tube (DIN 1186, DIN 11850 row A)",
+          "aliases": [
+            "din tube"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "ISO tube (ISO DIN 1186 line B, ISO 1127)",
+          "aliases": [
+            "iso tube"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "options",
+      "label": "Special options (up to two, alphabetical)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (a TFE/Viton gasket is provided when none is requested)",
+          "aliases": [
+            "none",
+            "no options"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "20 Ra external finish, body only",
+          "aliases": [
+            "20 ra external finish"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "TFE/EPDM, FDA USP Class VI",
+          "aliases": [
+            "tfe/epdm"
+          ]
+        },
+        {
+          "code": "F7",
+          "label": "TFE/Viton FDA, USP Class VI at 250F (121C)",
+          "aliases": [
+            "tfe/viton fda"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Tuf-Steel, TFE/SST body gasket, FDA USP Class VI",
+          "aliases": [
+            "tuf-steel"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Electropolish, MK93C or K body",
+          "aliases": [
+            "electropolish"
+          ]
+        },
+        {
+          "code": "P1",
+          "label": "High pressure bellows (inlet pressure above 45 psi)",
+          "aliases": [
+            "high pressure bellows (inlet pressure above 45 psi)"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Electropolish, MK93B bolted body",
+          "aliases": [
+            "electropolish"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Silverback gasket, TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "silverback gasket"
+          ]
+        },
+        {
+          "code": "TF",
+          "label": "PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "ptfe"
+          ]
+        },
+        {
+          "code": "BE",
+          "label": "20 Ra external finish, body only + TFE/EPDM, FDA USP Class VI",
+          "aliases": [
+            "b and e"
+          ]
+        },
+        {
+          "code": "BF7",
+          "label": "20 Ra external finish, body only + TFE/Viton FDA, USP Class VI at 250F (121C)",
+          "aliases": [
+            "b and f7"
+          ]
+        },
+        {
+          "code": "BG",
+          "label": "20 Ra external finish, body only + Tuf-Steel, TFE/SST body gasket, FDA USP Class VI",
+          "aliases": [
+            "b and g"
+          ]
+        },
+        {
+          "code": "BL",
+          "label": "20 Ra external finish, body only + Electropolish, MK93C or K body",
+          "aliases": [
+            "b and l"
+          ]
+        },
+        {
+          "code": "BP1",
+          "label": "20 Ra external finish, body only + High pressure bellows (inlet pressure above 45 psi)",
+          "aliases": [
+            "b and p1"
+          ]
+        },
+        {
+          "code": "BR",
+          "label": "20 Ra external finish, body only + Electropolish, MK93B bolted body",
+          "aliases": [
+            "b and r"
+          ]
+        },
+        {
+          "code": "BS",
+          "label": "20 Ra external finish, body only + Silverback gasket, TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "b and s"
+          ]
+        },
+        {
+          "code": "BTF",
+          "label": "20 Ra external finish, body only + PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "b and tf"
+          ]
+        },
+        {
+          "code": "EF7",
+          "label": "TFE/EPDM, FDA USP Class VI + TFE/Viton FDA, USP Class VI at 250F (121C)",
+          "aliases": [
+            "e and f7"
+          ]
+        },
+        {
+          "code": "EG",
+          "label": "TFE/EPDM, FDA USP Class VI + Tuf-Steel, TFE/SST body gasket, FDA USP Class VI",
+          "aliases": [
+            "e and g"
+          ]
+        },
+        {
+          "code": "EL",
+          "label": "TFE/EPDM, FDA USP Class VI + Electropolish, MK93C or K body",
+          "aliases": [
+            "e and l"
+          ]
+        },
+        {
+          "code": "EP1",
+          "label": "TFE/EPDM, FDA USP Class VI + High pressure bellows (inlet pressure above 45 psi)",
+          "aliases": [
+            "e and p1"
+          ]
+        },
+        {
+          "code": "ER",
+          "label": "TFE/EPDM, FDA USP Class VI + Electropolish, MK93B bolted body",
+          "aliases": [
+            "e and r"
+          ]
+        },
+        {
+          "code": "ES",
+          "label": "TFE/EPDM, FDA USP Class VI + Silverback gasket, TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "e and s"
+          ]
+        },
+        {
+          "code": "ETF",
+          "label": "TFE/EPDM, FDA USP Class VI + PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "e and tf"
+          ]
+        },
+        {
+          "code": "F7G",
+          "label": "TFE/Viton FDA, USP Class VI at 250F (121C) + Tuf-Steel, TFE/SST body gasket, FDA USP Class VI",
+          "aliases": [
+            "f7 and g"
+          ]
+        },
+        {
+          "code": "F7L",
+          "label": "TFE/Viton FDA, USP Class VI at 250F (121C) + Electropolish, MK93C or K body",
+          "aliases": [
+            "f7 and l"
+          ]
+        },
+        {
+          "code": "F7P1",
+          "label": "TFE/Viton FDA, USP Class VI at 250F (121C) + High pressure bellows (inlet pressure above 45 psi)",
+          "aliases": [
+            "f7 and p1"
+          ]
+        },
+        {
+          "code": "F7R",
+          "label": "TFE/Viton FDA, USP Class VI at 250F (121C) + Electropolish, MK93B bolted body",
+          "aliases": [
+            "f7 and r"
+          ]
+        },
+        {
+          "code": "F7S",
+          "label": "TFE/Viton FDA, USP Class VI at 250F (121C) + Silverback gasket, TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "f7 and s"
+          ]
+        },
+        {
+          "code": "F7TF",
+          "label": "TFE/Viton FDA, USP Class VI at 250F (121C) + PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "f7 and tf"
+          ]
+        },
+        {
+          "code": "GL",
+          "label": "Tuf-Steel, TFE/SST body gasket, FDA USP Class VI + Electropolish, MK93C or K body",
+          "aliases": [
+            "g and l"
+          ]
+        },
+        {
+          "code": "GP1",
+          "label": "Tuf-Steel, TFE/SST body gasket, FDA USP Class VI + High pressure bellows (inlet pressure above 45 psi)",
+          "aliases": [
+            "g and p1"
+          ]
+        },
+        {
+          "code": "GR",
+          "label": "Tuf-Steel, TFE/SST body gasket, FDA USP Class VI + Electropolish, MK93B bolted body",
+          "aliases": [
+            "g and r"
+          ]
+        },
+        {
+          "code": "GS",
+          "label": "Tuf-Steel, TFE/SST body gasket, FDA USP Class VI + Silverback gasket, TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "g and s"
+          ]
+        },
+        {
+          "code": "GTF",
+          "label": "Tuf-Steel, TFE/SST body gasket, FDA USP Class VI + PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "g and tf"
+          ]
+        },
+        {
+          "code": "LP1",
+          "label": "Electropolish, MK93C or K body + High pressure bellows (inlet pressure above 45 psi)",
+          "aliases": [
+            "l and p1"
+          ]
+        },
+        {
+          "code": "LR",
+          "label": "Electropolish, MK93C or K body + Electropolish, MK93B bolted body",
+          "aliases": [
+            "l and r"
+          ]
+        },
+        {
+          "code": "LS",
+          "label": "Electropolish, MK93C or K body + Silverback gasket, TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "l and s"
+          ]
+        },
+        {
+          "code": "LTF",
+          "label": "Electropolish, MK93C or K body + PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "l and tf"
+          ]
+        },
+        {
+          "code": "P1R",
+          "label": "High pressure bellows (inlet pressure above 45 psi) + Electropolish, MK93B bolted body",
+          "aliases": [
+            "p1 and r"
+          ]
+        },
+        {
+          "code": "P1S",
+          "label": "High pressure bellows (inlet pressure above 45 psi) + Silverback gasket, TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "p1 and s"
+          ]
+        },
+        {
+          "code": "P1TF",
+          "label": "High pressure bellows (inlet pressure above 45 psi) + PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "p1 and tf"
+          ]
+        },
+        {
+          "code": "RS",
+          "label": "Electropolish, MK93B bolted body + Silverback gasket, TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "r and s"
+          ]
+        },
+        {
+          "code": "RTF",
+          "label": "Electropolish, MK93B bolted body + PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "r and tf"
+          ]
+        },
+        {
+          "code": "STF",
+          "label": "Silverback gasket, TFE/SST body gasket, USP Class VI + PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "s and tf"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "options": [
+          "L",
+          "BL",
+          "EL",
+          "F7L",
+          "GL",
+          "LP1",
+          "LR",
+          "LS",
+          "LTF"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "93B",
+          "93W"
+        ]
+      },
+      "reason": "the electropolish L row is printed for the MK93C or K body"
+    },
+    {
+      "when": {
+        "options": [
+          "R",
+          "BR",
+          "ER",
+          "F7R",
+          "GR",
+          "LR",
+          "P1R",
+          "RS",
+          "RTF"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "93C",
+          "93K",
+          "93W",
+          "93HHC",
+          "93HVC",
+          "93VHC",
+          "93HHK",
+          "93HVK",
+          "93VHK"
+        ]
+      },
+      "reason": "the electropolish R row is printed for the MK93B bolted body"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "options": [
+          "F7",
+          "TF",
+          "BF7",
+          "BTF",
+          "EF7",
+          "ETF",
+          "F7G",
+          "F7L",
+          "F7P1",
+          "F7R",
+          "F7S",
+          "F7TF",
+          "GTF",
+          "LTF",
+          "P1TF",
+          "RTF",
+          "STF"
+        ]
+      },
+      "note": "The sheet's own asterisk on the F7 and TF gaskets: document part #25384 is required when ordering."
+    },
+    {
+      "when": {
+        "size": [
+          "100",
+          "150"
+        ]
+      },
+      "note": "The sheet's own note: 1 and 1-1/2 inch tubing sizes are generally used in higher condensate load applications; check the capacity chart, and if the load is beyond the MK93 the MK94 or MK934 may be the more appropriate model."
+    }
+  ]
+}

@@ -93,6 +93,7 @@ const mk675 = JSON.parse(readFileSync(join(here, 'models', 'mk675.json'), 'utf8'
 const mk627 = JSON.parse(readFileSync(join(here, 'models', 'mk627.json'), 'utf8'));
 const mk630 = JSON.parse(readFileSync(join(here, 'models', 'mk630.json'), 'utf8'));
 const mark9020 = JSON.parse(readFileSync(join(here, 'models', 'mark9020.json'), 'utf8'));
+const mark93 = JSON.parse(readFileSync(join(here, 'models', 'mark93.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1285,6 +1286,23 @@ check('the 9020 round-trips in standard and CE forms and its UT couplings hold',
   assert.ok(checkConstraints(mark9020, { misc: '4', operation: 'P9' }).length > 0, 'the AFR keeps its UT-0 to 2.5 span');
   assert.ok(checkConstraints(mark9020, { sep: 'H', size: '400' }).length > 0, 'SEP stays with the small sizes');
   assert.ok(/cannot read it back/.test(mark9020.note), 'the seat-C ends-E decode limit is confessed');
+});
+
+console.log('\nThe Mark 93 sanitary steam trap and its combinable options:');
+
+check('the 93 round-trips the sheet\'s own example and the option pairs behave', () => {
+  roundTrip(mark93, {
+    model: '93C', size: '075', ends: 'C', options: 'LS',
+  }, '93C-075-C-LS');
+  roundTrip(mark93, {
+    model: '93HVK', size: '150', ends: 'M', options: 'F7G',
+  }, '93HVK-150-M-F7G');
+  assert.equal(applyValue(mark93, {}, 'options', 'SL').accepted, false, 'a pair out of alphabetical order is not a printed code');
+  assert.ok(checkConstraints(mark93, { options: 'LS', model: '93B' }).length > 0, 'the electropolish L stays with the C and K bodies');
+  assert.ok(checkConstraints(mark93, { options: 'RS', model: '93K' }).length > 0, 'the electropolish R stays with the bolted body');
+  assert.ok(checkConstraints(mark93, { options: 'LR', model: '93B' }).length > 0, 'the impossible LR pair refuses every body');
+  assert.equal(checkCautions(mark93, { options: 'BTF' }).length, 1, 'the document-required gaskets caution inside pairs too');
+  assert.equal(checkCautions(mark93, { options: 'BS' }).length, 0, 'an ordinary pair stays silent');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
