@@ -1,0 +1,278 @@
+{
+  "model": "MK93JR",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 93JR sanitary steam trap",
+  "match": [
+    "mk93jr",
+    "mark 93jr",
+    "93jr",
+    "93jrw"
+  ],
+  "source": {
+    "doc": "mark93jr.pdf",
+    "page": 4,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the Mark 93 pattern. The special options position follows the sheet's own rule, combine up to two options in alphabetical order, so the slot enumerates every single and every alphabetical pair; a build with no options assembles with a trailing dash here, and whether the factory prints the bare form without it is held for John. The metric sizes print their own footnote, specify end connection code X, enforced both ways. The X end's own footnote names size options D12 and D18 where the size rows print DN10 and DN15, a naming mismatch held for John. If no gasket is specified the sheet supplies TFE/Viton, and the welded body needs no gasket option, both by the sheet's own notes.",
+  "assembly": "{model}-{size}-{ends}-{options}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model/body joint (1)",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "93JR",
+          "label": "Tri-clamp body, standard",
+          "aliases": [
+            "tri-clamp body"
+          ]
+        },
+        {
+          "code": "93JRW",
+          "label": "Welded body",
+          "aliases": [
+            "welded body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (2)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "DN10",
+          "label": "12mm OD/1mm wall thickness, DIN 11850 (series 1)",
+          "aliases": [
+            "dn10"
+          ]
+        },
+        {
+          "code": "DN15",
+          "label": "18mm OD/1mm wall thickness, DIN 11850 (series 1)",
+          "aliases": [
+            "dn15 metric"
+          ]
+        },
+        {
+          "code": "S13",
+          "label": "13.5mm OD/1.6mm wall thickness, ISO 1127 (series 1)",
+          "aliases": [
+            "s13"
+          ]
+        },
+        {
+          "code": "S17",
+          "label": "17.2mm OD/1.6mm wall thickness, ISO 1127 (series 1)",
+          "aliases": [
+            "s17"
+          ]
+        },
+        {
+          "code": "S21",
+          "label": "21.3mm OD/1.6mm wall thickness, ISO 1127 (series 1)",
+          "aliases": [
+            "s21"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections, inlet/outlet (3)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "Tri-clamp",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "NPT threaded",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "BSPT threaded",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Tube weld",
+          "aliases": [
+            "tube weld"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Tube butt weld, for the metric size options",
+          "aliases": [
+            "tube butt weld"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "options",
+      "label": "Special options (4)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (TFE/Viton FDA/USP Class VI gasket provided)",
+          "aliases": [
+            "no options"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Tuf-Steel, TFE/SST body gasket, FDA USP Class VI",
+          "aliases": [
+            "tuf-steel gasket"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Electropolish",
+          "aliases": [
+            "electropolish"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Silverback gasket TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "silverback gasket"
+          ]
+        },
+        {
+          "code": "TF",
+          "label": "PTFE, USP Class VI at 250F (121C)",
+          "aliases": [
+            "ptfe gasket"
+          ]
+        },
+        {
+          "code": "GL",
+          "label": "Combined options GL, per the sheet's combine-two rule",
+          "aliases": [
+            "options gl"
+          ]
+        },
+        {
+          "code": "GS",
+          "label": "Combined options GS, per the sheet's combine-two rule",
+          "aliases": [
+            "options gs"
+          ]
+        },
+        {
+          "code": "GTF",
+          "label": "Combined options GTF, per the sheet's combine-two rule",
+          "aliases": [
+            "options gtf"
+          ]
+        },
+        {
+          "code": "LS",
+          "label": "Combined options LS, per the sheet's combine-two rule",
+          "aliases": [
+            "options ls"
+          ]
+        },
+        {
+          "code": "LTF",
+          "label": "Combined options LTF, per the sheet's combine-two rule",
+          "aliases": [
+            "options ltf"
+          ]
+        },
+        {
+          "code": "STF",
+          "label": "Combined options STF, per the sheet's combine-two rule",
+          "aliases": [
+            "options stf"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": [
+          "DN10",
+          "DN15",
+          "S13",
+          "S17",
+          "S21"
+        ]
+      },
+      "forbid": {
+        "ends": [
+          "C",
+          "N",
+          "B",
+          "T"
+        ]
+      },
+      "reason": "the metric size rows print specify end connection code X"
+    },
+    {
+      "when": {
+        "ends": "X"
+      },
+      "forbid": {
+        "size": [
+          "025",
+          "050",
+          "075",
+          "100"
+        ]
+      },
+      "reason": "the tube butt weld end is printed for the metric size options"
+    }
+  ],
+  "cautions": []
+}

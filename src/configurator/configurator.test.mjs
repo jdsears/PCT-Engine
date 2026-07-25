@@ -118,6 +118,13 @@ const jsblflp = JSON.parse(readFileSync(join(here, 'models', 'jsblflp.json'), 'u
 const mark95 = JSON.parse(readFileSync(join(here, 'models', 'mark95.json'), 'utf8'));
 const mark95aa = JSON.parse(readFileSync(join(here, 'models', 'mark95aa.json'), 'utf8'));
 const mk95a = JSON.parse(readFileSync(join(here, 'models', 'mk95a.json'), 'utf8'));
+const mark93jr = JSON.parse(readFileSync(join(here, 'models', 'mark93jr.json'), 'utf8'));
+const mark93th = JSON.parse(readFileSync(join(here, 'models', 'mark93th.json'), 'utf8'));
+const mark94 = JSON.parse(readFileSync(join(here, 'models', 'mark94.json'), 'utf8'));
+const mk934 = JSON.parse(readFileSync(join(here, 'models', 'mk934.json'), 'utf8'));
+const mk9020d = JSON.parse(readFileSync(join(here, 'models', 'mk9020d.json'), 'utf8'));
+const mk9020s = JSON.parse(readFileSync(join(here, 'models', 'mk9020s.json'), 'utf8'));
+const samplecoolers = JSON.parse(readFileSync(join(here, 'models', 'samplecoolers.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1617,6 +1624,51 @@ check('the 95AA and 95A close the family', () => {
   assert.ok(checkConstraints(mk95a, { oRing: 'TY', trimSeat: '8' }).length > 0, 'and TY starts above it');
   assert.ok(checkConstraints(mk95a, { bodyCv: 'A', trimSeat: 'F' }).length > 0, 'the body Cv matches the trim Cv, flagged inferred');
   assert.ok(/no non-standard row/.test(mk95a.note) || /prints no non-standard/.test(mk95a.note), 'the missing trim ZZ is confessed');
+});
+
+console.log('\nThe Mark 93 siblings, the 9020 DIN and ISO twins, and the sample coolers:');
+
+check('the trap variants round-trip with their option devices', () => {
+  roundTrip(mark93jr, { model: '93JR', size: '075', ends: 'C', options: '' }, '93JR-075-C-');
+  roundTrip(mark93jr, { model: '93JRW', size: 'S17', ends: 'X', options: 'GL' }, '93JRW-S17-X-GL');
+  assert.ok(checkConstraints(mark93jr, { size: 'DN10', ends: 'C' }).length > 0, 'the metric sizes demand the X end');
+  assert.ok(checkConstraints(mark93jr, { ends: 'X', size: '050' }).length > 0, 'and the X end refuses the inch sizes');
+  assert.ok(/D12 and D18/.test(mark93jr.note), 'the D12/D18 naming mismatch is held for John');
+  roundTrip(mark93th, { model: '93TH', size: '050', ends: 'N', options: 'PL' }, '93TH-050-N-PL');
+  assert.ok(/example prints 93TH-075-N-PL/.test(mark93th.note), 'the alphabetical rule conflict is confessed');
+  roundTrip(mark94, { model: '94C', size: '075', ends: 'CHCH', options: 'LS' }, '94C-075-CHCH-LS');
+  roundTrip(mark94, { model: '94C', size: '150', ends: 'M', options: '' }, '94C-150-M-');
+  assert.equal(mark94.slots.find(s => s.id === 'options').options.length, 16, 'the 94 enumerates its singles and alphabetical pairs');
+  roundTrip(mk934, { model: '934', size: '200', ends: 'P', options: 'S' }, '934-200-P-S');
+  assert.equal(mk934.slots.find(s => s.id === 'options').options.length, 3, 'the 934 prints no combine rule, so no pairs');
+});
+
+check('the 9020 twins keep the UT webs and their own quirks', () => {
+  roundTrip(mk9020d, {
+    model: '9020D', size: '40', bodyMat: 'LFCE', seat: 'T', ends: 'A', operation: 'S3',
+    actuatorPressure: '60', solenoid: '3A', limitSwitch: 'AA', fail: '01', positioner: 'AQ', misc: '1', sep: '0',
+  }, '9020D-40-LFCETAS3603AAA01AQ10');
+  roundTrip(mk9020s, {
+    model: '9020S1', size: '15', bodyMat: 'LF', seat: 'T', ends: 'D', operation: 'HL',
+    actuatorPressure: 'NN', solenoid: '00', limitSwitch: '00', fail: 'NN', positioner: '00', misc: '0', sep: 'G',
+  }, '9020S1-15-LFTDHLNN0000NN000G');
+  assert.ok(checkConstraints(mk9020d, { bodyMat: 'LFCE', size: '25' }).length > 0, 'the PED body keeps its DN40-100 bracket');
+  assert.ok(checkConstraints(mk9020d, { seat: 'E', size: '100' }).length > 0, 'the stem extension stops before DN100');
+  assert.ok(checkConstraints(mk9020d, { sep: 'G', size: '32' }).length > 0, 'the SEP rows stop at DN25');
+  assert.ok(checkConstraints(mk9020s, { model: '9020S', size: '50' }).length > 0, 'the S model split holds one way');
+  assert.ok(checkConstraints(mk9020s, { model: '9020S1', size: '80' }).length > 0, 'and the other');
+  assert.ok(checkConstraints(mk9020s, { solenoid: '3A', operation: 'P2' }).length > 0, 'the three-way solenoid wants spring return');
+  assert.ok(checkConstraints(mk9020s, { positioner: 'AE', operation: 'S1' }).length > 0, 'the DA positioner rows refuse SR builds');
+  assert.ok(/cannot be told apart on decode/.test(mk9020d.note), 'the LFCE decode limit is confessed');
+  assert.ok(/0Z/.test(mk9020s.slots.find(s => s.id === 'limitSwitch').options.find(o => o.code === '0Z').label), 'the 0Z non-standard row is carried as printed');
+});
+
+check('the sample coolers keep their per-series tables', () => {
+  roundTrip(samplecoolers, { model: 'SC30', connection: 'D', legs: 'FL', finish: 'EP' }, 'SC30-D-FL-EP');
+  roundTrip(samplecoolers, { model: 'SC60', connection: 'A', legs: '00', finish: 'EP' }, 'SC60-A-00-EP');
+  assert.ok(checkConstraints(samplecoolers, { model: 'SC50', connection: 'A' }).length > 0, 'the SC50 takes the 3/4 tri-clamp alone');
+  assert.ok(checkConstraints(samplecoolers, { model: 'SC30', legs: '00' }).length > 0, 'the SC30 takes legs');
+  assert.ok(checkConstraints(samplecoolers, { model: 'SC60', legs: 'SL' }).length > 0, 'the SC60 does not');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

@@ -1,0 +1,1220 @@
+{
+  "model": "MK9020D",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 9020D DIN series sanitary ball valve",
+  "match": [
+    "mk9020d",
+    "mark 9020d",
+    "9020d"
+  ],
+  "source": {
+    "doc": "mk9020d.pdf",
+    "page": "2 and 3",
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the Mark 9020 grammar in DIN 11866 part A sizes. The body material runs bare into the positions, so a build with the plain LF body, the cavity filler seat C and the E ends assembles the same letters as the LFCE body and cannot be told apart on decode, confessed as on the 9020's own PED segment. The stem extension seats keep their DN100 footnote and the PED/CE body its DN40 to DN100 bracket. The limit switch non-standard row prints 0Z, the sheet's own code. The actuator webs, solenoid act-type columns, positioner spans and AFR bracket are carried from the printed columns as on the 9020.",
+  "assembly": "{model}-{size}-{bodyMat}{seat}{ends}{operation}{actuatorPressure}{solenoid}{limitSwitch}{fail}{positioner}{misc}{sep}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "9020D",
+          "label": "3-pc sanitary ball valve (DIN)",
+          "aliases": [
+            "9020d"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (DN 11866 part A)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "15",
+          "label": "DN15",
+          "aliases": [
+            "dn15"
+          ]
+        },
+        {
+          "code": "20",
+          "label": "DN20",
+          "aliases": [
+            "dn20"
+          ]
+        },
+        {
+          "code": "25",
+          "label": "DN25",
+          "aliases": [
+            "dn25"
+          ]
+        },
+        {
+          "code": "32",
+          "label": "DN32",
+          "aliases": [
+            "dn32"
+          ]
+        },
+        {
+          "code": "40",
+          "label": "DN40",
+          "aliases": [
+            "dn40"
+          ]
+        },
+        {
+          "code": "50",
+          "label": "DN50",
+          "aliases": [
+            "dn50"
+          ]
+        },
+        {
+          "code": "65",
+          "label": "DN65",
+          "aliases": [
+            "dn65"
+          ]
+        },
+        {
+          "code": "80",
+          "label": "DN80",
+          "aliases": [
+            "dn80"
+          ]
+        },
+        {
+          "code": "100",
+          "label": "DN100",
+          "aliases": [
+            "dn100"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMat",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "LF",
+          "label": "CF3M 316L 1% ferrite",
+          "aliases": [
+            "316l ferrite"
+          ]
+        },
+        {
+          "code": "LFCE",
+          "label": "CF3M 316L 1% ferrite + PED/CE (DN40-DN100 only)",
+          "aliases": [
+            "ped ce"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat/stem extension (1)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "T",
+          "label": "TFM1600 enhanced Teflon (standard)",
+          "aliases": [
+            "tfm standard"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "TFM1600 cavity filler enhanced Teflon (consult factory)",
+          "aliases": [
+            "cavity filler"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "TFM1600 with enclosed stem extension (not available in DN100)",
+          "aliases": [
+            "stem extension"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "TFM1600 cavity filler with stem extension (consult factory; not available in DN100)",
+          "aliases": [
+            "cavity filler stem extension"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "Ends (2)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Tri-clamp / SF1 internal finish (standard)",
+          "aliases": [
+            "tri-clamp sf1"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Extended tube end / SF1 internal finish (standard)",
+          "aliases": [
+            "tube sf1"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Tri-clamp x extended tube end / SF1 internal finish",
+          "aliases": [
+            "tri-clamp x tube sf1"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Tri-clamp / SF4 internal finish",
+          "aliases": [
+            "tri-clamp sf4"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Extended tube end / SF4 internal finish",
+          "aliases": [
+            "tube sf4"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Tri-clamp x extended tube end / SF4 internal finish",
+          "aliases": [
+            "tri-clamp x tube sf4"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Extended tube x tri-clamp / SF4 internal finish",
+          "aliases": [
+            "tube x tri-clamp sf4"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Extended tube x Tri-Camp / SF1 internal finish (the sheet's own spelling)",
+          "aliases": [
+            "tube x tri-clamp sf1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operation",
+      "label": "Operation (3 and 4)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "HL",
+          "label": "Lever (standard)",
+          "aliases": [
+            "lever (standard)"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "P1",
+          "label": "UT-0A-DA STD",
+          "aliases": [
+            "ut-0a-da std"
+          ]
+        },
+        {
+          "code": "P2",
+          "label": "UT-0-DA STD",
+          "aliases": [
+            "ut-0-da std"
+          ]
+        },
+        {
+          "code": "P3",
+          "label": "UT-1-DA-STD",
+          "aliases": [
+            "ut-1-da-std"
+          ]
+        },
+        {
+          "code": "P4",
+          "label": "UT-2-DA STD",
+          "aliases": [
+            "ut-2-da std"
+          ]
+        },
+        {
+          "code": "P5",
+          "label": "UT-2.5-DA STD",
+          "aliases": [
+            "ut-2.5-da std"
+          ]
+        },
+        {
+          "code": "P6",
+          "label": "UT-3-DA-STD",
+          "aliases": [
+            "ut-3-da-std"
+          ]
+        },
+        {
+          "code": "P7",
+          "label": "UT-3.5-DA STD",
+          "aliases": [
+            "ut-3.5-da std"
+          ]
+        },
+        {
+          "code": "P8",
+          "label": "UT-4-DA STD",
+          "aliases": [
+            "ut-4-da std"
+          ]
+        },
+        {
+          "code": "PF",
+          "label": "UT-4.5-DA STD",
+          "aliases": [
+            "ut-4.5-da std"
+          ]
+        },
+        {
+          "code": "P9",
+          "label": "UT-5-DA STD",
+          "aliases": [
+            "ut-5-da std"
+          ]
+        },
+        {
+          "code": "S1",
+          "label": "UT-0-SR STD",
+          "aliases": [
+            "ut-0-sr std"
+          ]
+        },
+        {
+          "code": "S2",
+          "label": "UT-1-SR STD",
+          "aliases": [
+            "ut-1-sr std"
+          ]
+        },
+        {
+          "code": "S3",
+          "label": "UT-2-SR STD",
+          "aliases": [
+            "ut-2-sr std"
+          ]
+        },
+        {
+          "code": "S4",
+          "label": "UT-2.5-SR STD",
+          "aliases": [
+            "ut-2.5-sr std"
+          ]
+        },
+        {
+          "code": "S5",
+          "label": "UT-3-SR STD",
+          "aliases": [
+            "ut-3-sr std"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "UT-3.5-SR STD",
+          "aliases": [
+            "ut-3.5-sr std"
+          ]
+        },
+        {
+          "code": "S7",
+          "label": "UT-4-SR STD",
+          "aliases": [
+            "ut-4-sr std"
+          ]
+        },
+        {
+          "code": "SF",
+          "label": "UT-4.5-SR STD",
+          "aliases": [
+            "ut-4.5-sr std"
+          ]
+        },
+        {
+          "code": "S8",
+          "label": "UT-5-SR STD",
+          "aliases": [
+            "ut-5-sr std"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuatorPressure",
+      "label": "Actuator pressure (5 and 6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "40",
+          "label": "40 psi",
+          "aliases": [
+            "40 psi"
+          ]
+        },
+        {
+          "code": "60",
+          "label": "60 psi",
+          "aliases": [
+            "60 psi"
+          ]
+        },
+        {
+          "code": "80",
+          "label": "80 psi",
+          "aliases": [
+            "80 psi"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "N/A (no pneumatic actuator)",
+          "aliases": [
+            "no actuator pressure"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard pressure"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solenoid",
+      "label": "Solenoid feature (7 and 8)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "no solenoid"
+          ]
+        },
+        {
+          "code": "3A",
+          "label": "3W 8551-120VAC N4 UT-0/5, SR",
+          "aliases": [
+            "solenoid 3a"
+          ]
+        },
+        {
+          "code": "3C",
+          "label": "3W EF8551-120VAC N7 UT-0/5, SR",
+          "aliases": [
+            "solenoid 3c"
+          ]
+        },
+        {
+          "code": "3J",
+          "label": "3W 8317G35-120VAC N4 UT-0/2.5, SR",
+          "aliases": [
+            "solenoid 3j"
+          ]
+        },
+        {
+          "code": "3M",
+          "label": "3W 8321G1-120VAC N4 UT-3/5, SR",
+          "aliases": [
+            "solenoid 3m"
+          ]
+        },
+        {
+          "code": "3Q",
+          "label": "3W EF8317G35-120VAC N7 UT-0/2.5, SR",
+          "aliases": [
+            "solenoid 3q"
+          ]
+        },
+        {
+          "code": "3R",
+          "label": "3W EF8321G1-120VAC N7 UT-3/5, SR",
+          "aliases": [
+            "solenoid 3r"
+          ]
+        },
+        {
+          "code": "4A",
+          "label": "4W 8551-120VAC N4 UT-0A, DA",
+          "aliases": [
+            "solenoid 4a"
+          ]
+        },
+        {
+          "code": "4B",
+          "label": "4W 8551-120VAC N4 UT-0/5, DA",
+          "aliases": [
+            "solenoid 4b"
+          ]
+        },
+        {
+          "code": "4D",
+          "label": "4W EF8551-120VAC N7 UT-0A, DA",
+          "aliases": [
+            "solenoid 4d"
+          ]
+        },
+        {
+          "code": "4E",
+          "label": "4W EF8551-120VAC N7 UT0/5, DA (as the sheet prints it)",
+          "aliases": [
+            "solenoid 4e"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard solenoid"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "limitSwitch",
+      "label": "Limit switch (9 and 10)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "no limit switch"
+          ]
+        },
+        {
+          "code": "AA",
+          "label": "LS FMYB-5120-N4 to UT-0/3",
+          "aliases": [
+            "limit switch aa"
+          ]
+        },
+        {
+          "code": "AB",
+          "label": "LS FMYB-5120-N4 to UT-3.5/7",
+          "aliases": [
+            "limit switch ab"
+          ]
+        },
+        {
+          "code": "AC",
+          "label": "LS AMYB-5120-N7 to UT-0/3",
+          "aliases": [
+            "limit switch ac"
+          ]
+        },
+        {
+          "code": "AD",
+          "label": "LS AMYB-5120-N7 to UT-3.5/7",
+          "aliases": [
+            "limit switch ad"
+          ]
+        },
+        {
+          "code": "AE",
+          "label": "LS-AMYB-5120-N4 to valve",
+          "aliases": [
+            "limit switch ae"
+          ]
+        },
+        {
+          "code": "AF",
+          "label": "LS AMYB-5120-N7 to valve",
+          "aliases": [
+            "limit switch af"
+          ]
+        },
+        {
+          "code": "0Z",
+          "label": "Non-standard (the sheet's own 0Z)",
+          "aliases": [
+            "non-standard limit switch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fail",
+      "label": "Fail position (11 and 12)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "NN",
+          "label": "Fail position N/A (no SR actuator)",
+          "aliases": [
+            "no fail position"
+          ]
+        },
+        {
+          "code": "01",
+          "label": "Fail closed",
+          "aliases": [
+            "fail closed"
+          ]
+        },
+        {
+          "code": "02",
+          "label": "Fail open",
+          "aliases": [
+            "fail open"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "positioner",
+      "label": "Positioner (13 and 14)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "no positioner"
+          ]
+        },
+        {
+          "code": "AA",
+          "label": "Siemens 760P (3-15 psi), for UT-0/3",
+          "aliases": [
+            "positioner aa"
+          ]
+        },
+        {
+          "code": "AB",
+          "label": "Siemens 760P (3-15 psi), for UT-3.5/7",
+          "aliases": [
+            "positioner ab"
+          ]
+        },
+        {
+          "code": "AC",
+          "label": "Siemens 760E (4-20 mA), for UT-0/3",
+          "aliases": [
+            "positioner ac"
+          ]
+        },
+        {
+          "code": "AD",
+          "label": "Siemens 760E (4-20 mA), for UT-3.5/7",
+          "aliases": [
+            "positioner ad"
+          ]
+        },
+        {
+          "code": "AE",
+          "label": "Siemens 2-IQ (4-20 mA) for UT-0/3DA",
+          "aliases": [
+            "positioner ae"
+          ]
+        },
+        {
+          "code": "AF",
+          "label": "Siemens 2-IQ (4-20 mA) for UT-3.5/7DA",
+          "aliases": [
+            "positioner af"
+          ]
+        },
+        {
+          "code": "AQ",
+          "label": "Siemens 2-IQ (4-20 mA), for UT-0/3SR",
+          "aliases": [
+            "positioner aq"
+          ]
+        },
+        {
+          "code": "AR",
+          "label": "Siemens 2-IQ (4-20 mA), for UT-3.5/7SR",
+          "aliases": [
+            "positioner ar"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard positioner"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "misc",
+      "label": "Misc features (15)",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no misc"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "2-bug screen 1/8\" SST",
+          "aliases": [
+            "bug screen"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "2-speed control 1/8\" (4-way)",
+          "aliases": [
+            "speed control"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "SST tube and fittings F/automation",
+          "aliases": [
+            "sst tube fittings"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "AFR 4Z030A to UT-0-2.5 SST",
+          "aliases": [
+            "afr"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard misc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sep",
+      "label": "SEP option (16)",
+      "position": 13,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no sep"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "SEP with SF1 finish, DN15-DN25 only",
+          "aliases": [
+            "sep sf1"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "SEP with SF4 finish, DN15-DN25 only",
+          "aliases": [
+            "sep sf4"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "bodyMat": "LFCE"
+      },
+      "forbid": {
+        "size": [
+          "15",
+          "20",
+          "25",
+          "32"
+        ]
+      },
+      "reason": "the PED/CE body prints DN40 to DN100 only"
+    },
+    {
+      "when": {
+        "seat": [
+          "E",
+          "S"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "100"
+        ]
+      },
+      "reason": "the stem extension is not available in the DN100 size, the sheet's own footnote"
+    },
+    {
+      "when": {
+        "operation": [
+          "HL",
+          "NN"
+        ]
+      },
+      "forbid": {
+        "actuatorPressure": [
+          "40",
+          "60",
+          "80"
+        ]
+      },
+      "reason": "an air supply pressure applies only to a pneumatic actuator"
+    },
+    {
+      "when": {
+        "operation": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "P7",
+          "P8",
+          "PF",
+          "P9",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "SF",
+          "S8"
+        ]
+      },
+      "forbid": {
+        "actuatorPressure": [
+          "NN"
+        ]
+      },
+      "reason": "a pneumatic actuator needs its air supply pressure"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "3A",
+          "3C",
+          "3J",
+          "3M",
+          "3Q",
+          "3R"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "P7",
+          "P8",
+          "PF",
+          "P9"
+        ]
+      },
+      "reason": "a three-way solenoid pairs with a spring return actuator, as its own column marks"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "4A",
+          "4B",
+          "4D",
+          "4E"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "SF",
+          "S8"
+        ]
+      },
+      "reason": "a four-way solenoid pairs with a double acting actuator, as its own column marks"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "3J",
+          "3Q"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "S5",
+          "S6",
+          "S7",
+          "SF",
+          "S8"
+        ]
+      },
+      "reason": "the 8317 solenoids cover UT-0 to UT-2.5, per their printed span"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "3M",
+          "3R"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "S1",
+          "S2",
+          "S3",
+          "S4"
+        ]
+      },
+      "reason": "the 8321 solenoids cover UT-3 to UT-5, per their printed span"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "4A",
+          "4D"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "P7",
+          "P8",
+          "PF",
+          "P9"
+        ]
+      },
+      "reason": "these solenoids are marked for the UT-0A actuator alone"
+    },
+    {
+      "when": {
+        "limitSwitch": [
+          "AA",
+          "AC"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "P7",
+          "P8",
+          "PF",
+          "P9",
+          "S6",
+          "S7",
+          "SF",
+          "S8"
+        ]
+      },
+      "reason": "these limit switches mount to UT-0 through UT-3 actuators, per their printed span"
+    },
+    {
+      "when": {
+        "limitSwitch": [
+          "AB",
+          "AD"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ]
+      },
+      "reason": "these limit switches mount to UT-3.5 through UT-7 actuators, per their printed span"
+    },
+    {
+      "when": {
+        "fail": [
+          "01",
+          "02"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "P7",
+          "P8",
+          "PF",
+          "P9"
+        ]
+      },
+      "reason": "a fail position is the spring's doing; it belongs to spring return builds"
+    },
+    {
+      "when": {
+        "positioner": [
+          "AA",
+          "AC"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "P7",
+          "P8",
+          "PF",
+          "P9",
+          "S6",
+          "S7",
+          "SF",
+          "S8"
+        ]
+      },
+      "reason": "these positioners are printed for UT-0 through UT-3"
+    },
+    {
+      "when": {
+        "positioner": [
+          "AB",
+          "AD"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ]
+      },
+      "reason": "these positioners are printed for UT-3.5 through UT-7"
+    },
+    {
+      "when": {
+        "positioner": [
+          "AE",
+          "AQ"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "P7",
+          "P8",
+          "PF",
+          "P9",
+          "S6",
+          "S7",
+          "SF",
+          "S8"
+        ]
+      },
+      "reason": "these positioners are printed for UT-0 through UT-3"
+    },
+    {
+      "when": {
+        "positioner": [
+          "AF",
+          "AR"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ]
+      },
+      "reason": "these positioners are printed for UT-3.5 through UT-7"
+    },
+    {
+      "when": {
+        "positioner": [
+          "AE",
+          "AF"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "SF",
+          "S8"
+        ]
+      },
+      "reason": "these positioner rows are marked DA"
+    },
+    {
+      "when": {
+        "positioner": [
+          "AQ",
+          "AR"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6",
+          "P7",
+          "P8",
+          "PF",
+          "P9"
+        ]
+      },
+      "reason": "these positioner rows are marked SR"
+    },
+    {
+      "when": {
+        "misc": "4"
+      },
+      "forbid": {
+        "operation": [
+          "P6",
+          "P7",
+          "P8",
+          "PF",
+          "P9",
+          "S5",
+          "S6",
+          "S7",
+          "SF",
+          "S8"
+        ]
+      },
+      "reason": "the AFR row is printed to UT-0 through UT-2.5"
+    },
+    {
+      "when": {
+        "sep": [
+          "G",
+          "H"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "32",
+          "40",
+          "50",
+          "65",
+          "80",
+          "100"
+        ]
+      },
+      "reason": "the SEP options are printed DN15 to DN25 only"
+    }
+  ],
+  "cautions": []
+}

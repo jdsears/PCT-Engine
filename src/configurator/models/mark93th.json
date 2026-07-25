@@ -1,0 +1,144 @@
+{
+  "model": "MK93TH",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 93TH sanitary steam trap",
+  "match": [
+    "mk93th",
+    "mark 93th",
+    "93th"
+  ],
+  "source": {
+    "doc": "mark93th.pdf",
+    "page": 3,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the Mark 93 pattern. A blank options position means the standard bellows by the sheet's own note, so the empty code is carried; a build with no options assembles with a trailing dash, held for John as on the other 93 sheets. The sheet's combine rule says alphabetical order yet its own example prints 93TH-075-N-PL, P before L, so the pair is carried as the example prints it and the conflict is held for John. The BSPT and EN ISO 228-1 threaded ends are available upon request by their own footnote.",
+  "assembly": "{model}-{size}-{ends}-{options}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model/body joint (1)",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "93TH",
+          "label": "Threaded body, standard",
+          "aliases": [
+            "threaded body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (2)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\" (DN10)",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections, inlet/outlet (3)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "N",
+          "label": "NPT threaded inlet/outlet",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "BSPT threaded inlet/outlet, available upon request, consult factory",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "EN ISO 228-1 threaded inlet/outlet, available upon request, consult factory",
+          "aliases": [
+            "en iso 228-1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "options",
+      "label": "Special options (4)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (standard bellows)",
+          "aliases": [
+            "no options"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "High pressure bellows",
+          "aliases": [
+            "high pressure bellows"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Electropolish",
+          "aliases": [
+            "electropolish"
+          ]
+        },
+        {
+          "code": "PL",
+          "label": "High pressure bellows and electropolish (carried as the sheet's own example prints it)",
+          "aliases": [
+            "options pl"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

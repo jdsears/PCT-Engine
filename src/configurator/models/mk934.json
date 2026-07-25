@@ -1,0 +1,151 @@
+{
+  "model": "MK934",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 934 sanitary steam trap",
+  "match": [
+    "mk934",
+    "mark 934",
+    "934"
+  ],
+  "source": {
+    "doc": "mk934.pdf",
+    "page": 3,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the Mark 93 pattern with vertical forms alone; horizontal inlet and outlet connections are a contact-factory note, not code rows. The options position prints the Silverback gasket and non-standard alone, with no combine rule on this sheet, and a blank means the TFE/Viton gasket by the sheet's own note; the trailing dash on a bare build is held for John.",
+  "assembly": "{model}-{size}-{ends}-{options}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model (1)",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "934",
+          "label": "Standard",
+          "aliases": [
+            "standard"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (2)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (3)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "Inch tri-clamp vertical inlet/outlet",
+          "aliases": [
+            "tri-clamp vertical"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "ISO tri-clamp vertical inlet/outlet",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "DIN tri-clamp vertical inlet/outlet",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Inch tube vertical inlet/outlet",
+          "aliases": [
+            "inch tube"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "DIN tube vertical inlet/outlet (DIN 1186, DIN 11850 row A)",
+          "aliases": [
+            "din tube"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "ISO tube vertical inlet/outlet (ISO DIN 1186 line B, ISO 1127)",
+          "aliases": [
+            "iso tube"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "options",
+      "label": "Options (4)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (TFE/Viton gasket provided)",
+          "aliases": [
+            "no options"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Silverback gasket TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "silverback gasket"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard options"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
