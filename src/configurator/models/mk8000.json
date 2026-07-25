@@ -1,0 +1,1914 @@
+{
+  "model": "8000",
+  "line": "low_flow",
+  "displayName": "LowFlow Mark 8000 series control valve",
+  "match": [
+    "8000",
+    "mark 8000",
+    "mk8000",
+    "8000 series"
+  ],
+  "source": {
+    "doc": "8000series.pdf",
+    "page": "6 and 7",
+    "section": "Mark 8000 series ordering schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, ten models in one grammar. The bonnet column splits into its metal and plastic body lists, held to the Kynar and PVC bodies, whose own ends include the bolt-thru row and whose plug list is the plastic one; the angle and three-way models print a single non-standard plug row, so a plug choice on them refuses everything else, exactly as the sheet has it. The motor valve takes its own actuator and range tables. The starred bonnets carry their positioner recommendations, the double starred multi-ply bellows high temperature bonnet requires one, enforced on the plain models through the SMP position, and the actuator size digit runs through the range, limit switch, handwheel and I/P positions as an inferred coupling in the JR manner. The Cv ladder prints its second column out of numeric order, carried exactly.",
+  "assembly": "{model}{size}{body}{ends}{bonnet}{plugSeat}{cv}{actuator}{range}{limitSwitches}{solenoidHardware}{accessories}{action}{smp}{ped}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "8000G",
+          "label": "Two-way globe valve",
+          "aliases": [
+            "8000g"
+          ]
+        },
+        {
+          "code": "8000GTP",
+          "label": "Globe with top mounted positioner",
+          "aliases": [
+            "8000gtp"
+          ]
+        },
+        {
+          "code": "8000GSP",
+          "label": "Globe with side mounted positioner",
+          "aliases": [
+            "8000gsp"
+          ]
+        },
+        {
+          "code": "8000GMV",
+          "label": "Globe with motor actuator",
+          "aliases": [
+            "8000gmv"
+          ]
+        },
+        {
+          "code": "8000A",
+          "label": "Two-way angle valve",
+          "aliases": [
+            "8000a"
+          ]
+        },
+        {
+          "code": "8000ATP",
+          "label": "Angle with top mounted positioner",
+          "aliases": [
+            "8000atp"
+          ]
+        },
+        {
+          "code": "8000ASP",
+          "label": "Angle with side mounted positioner",
+          "aliases": [
+            "8000asp"
+          ]
+        },
+        {
+          "code": "8000T",
+          "label": "Three-way globe valve",
+          "aliases": [
+            "8000t"
+          ]
+        },
+        {
+          "code": "8000TTP",
+          "label": "Three-way with top mounted positioner",
+          "aliases": [
+            "8000ttp"
+          ]
+        },
+        {
+          "code": "8000TSP",
+          "label": "Three-way with side mounted positioner",
+          "aliases": [
+            "8000tsp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "125",
+          "label": "1-1/4\" (DN32)",
+          "aliases": [
+            "1-1/4\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "CB",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "SB",
+          "label": "316SS",
+          "aliases": [
+            "stainless"
+          ]
+        },
+        {
+          "code": "BR",
+          "label": "Brass",
+          "aliases": [
+            "brass"
+          ]
+        },
+        {
+          "code": "MN",
+          "label": "Monel",
+          "aliases": [
+            "monel"
+          ]
+        },
+        {
+          "code": "HC",
+          "label": "Hastelloy C",
+          "aliases": [
+            "hastelloy"
+          ]
+        },
+        {
+          "code": "A2",
+          "label": "Alloy 20",
+          "aliases": [
+            "alloy 20"
+          ]
+        },
+        {
+          "code": "KN",
+          "label": "Kynar",
+          "aliases": [
+            "kynar"
+          ]
+        },
+        {
+          "code": "PV",
+          "label": "PVC",
+          "aliases": [
+            "pvc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "PT",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        },
+        {
+          "code": "BT",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "BP",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        },
+        {
+          "code": "SW",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "R5",
+          "label": "150# RF",
+          "aliases": [
+            "150# rf"
+          ]
+        },
+        {
+          "code": "J5",
+          "label": "150# RTJ",
+          "aliases": [
+            "150# rtj"
+          ]
+        },
+        {
+          "code": "R3",
+          "label": "300# RF",
+          "aliases": [
+            "300# rf"
+          ]
+        },
+        {
+          "code": "J3",
+          "label": "300# RTJ",
+          "aliases": [
+            "300# rtj"
+          ]
+        },
+        {
+          "code": "R6",
+          "label": "600# RF",
+          "aliases": [
+            "600# rf"
+          ]
+        },
+        {
+          "code": "J6",
+          "label": "600# RTJ",
+          "aliases": [
+            "600# rtj"
+          ]
+        },
+        {
+          "code": "R9",
+          "label": "900# RF",
+          "aliases": [
+            "900# rf"
+          ]
+        },
+        {
+          "code": "J9",
+          "label": "900# RTJ",
+          "aliases": [
+            "900# rtj"
+          ]
+        },
+        {
+          "code": "R1",
+          "label": "1500# RF",
+          "aliases": [
+            "1500# rf"
+          ]
+        },
+        {
+          "code": "J1",
+          "label": "1500# RTJ",
+          "aliases": [
+            "1500# rtj"
+          ]
+        },
+        {
+          "code": "R2",
+          "label": "2500# RF",
+          "aliases": [
+            "2500# rf"
+          ]
+        },
+        {
+          "code": "J2",
+          "label": "2500# RTJ",
+          "aliases": [
+            "2500# rtj"
+          ]
+        },
+        {
+          "code": "B4",
+          "label": "BWE Sch 40",
+          "aliases": [
+            "bwe sch 40"
+          ]
+        },
+        {
+          "code": "B8",
+          "label": "BWE Sch 80",
+          "aliases": [
+            "bwe sch 80"
+          ]
+        },
+        {
+          "code": "B6",
+          "label": "BWE Sch 160",
+          "aliases": [
+            "bwe sch 160"
+          ]
+        },
+        {
+          "code": "BU",
+          "label": "Bolt-thru for KN/PV",
+          "aliases": [
+            "bolt-thru"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonnet",
+      "label": "Bonnet/packing (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "ST",
+          "label": "Standard/TFE (metal bodies)",
+          "aliases": [
+            "standard tfe"
+          ]
+        },
+        {
+          "code": "SH",
+          "label": "Standard/high temperature (metal bodies; positioner recommended for high temperature packing)",
+          "aliases": [
+            "standard high temp"
+          ]
+        },
+        {
+          "code": "ET",
+          "label": "8\" extended/TFE, cryogenic (metal bodies)",
+          "aliases": [
+            "extended tfe"
+          ]
+        },
+        {
+          "code": "EH",
+          "label": "8\" extended/high temperature (metal bodies; positioner recommended)",
+          "aliases": [
+            "extended high temp"
+          ]
+        },
+        {
+          "code": "BT",
+          "label": "Multi-ply bellows/TFE (metal bodies)",
+          "aliases": [
+            "bellows tfe"
+          ]
+        },
+        {
+          "code": "BH",
+          "label": "Multi-ply bellows/high temperature (metal bodies; positioner required)",
+          "aliases": [
+            "bellows high temp"
+          ]
+        },
+        {
+          "code": "SB",
+          "label": "Standard/TFE with Buna-N bonnet gasket (plastic bodies)",
+          "aliases": [
+            "plastic buna"
+          ]
+        },
+        {
+          "code": "SV",
+          "label": "Standard/TFE with Viton bonnet gasket (plastic bodies)",
+          "aliases": [
+            "plastic viton"
+          ]
+        },
+        {
+          "code": "BB",
+          "label": "Bolt-thru body/TFE with Buna (plastic bodies)",
+          "aliases": [
+            "bolt-thru buna"
+          ]
+        },
+        {
+          "code": "BV",
+          "label": "Bolt-thru body/TFE with Viton (plastic bodies)",
+          "aliases": [
+            "bolt-thru viton"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard bonnet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plugSeat",
+      "label": "Plug and seat (5)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Standard, linear, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug a"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Standard, equal percentage, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug b"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Standard, quick open, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Standard, linear, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Standard, equal percentage, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug e"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Standard, quick open, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug f"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "316/Stellite/Stellite, linear, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug g"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "316/Stellite/Stellite, equal percentage, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug h"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "316/Stellite/Stellite, quick open, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug i"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Alloy 20, linear, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug m"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Alloy 20, equal percentage, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug n"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Alloy 20, quick open, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug p"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "Alloy 20, linear, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug q"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Alloy 20, equal percentage, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug r"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Alloy 20, quick open, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug s"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Monel, linear, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug t"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Monel, equal percentage, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug u"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "Monel, quick open, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug v"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "Monel, linear, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug w"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Monel, equal percentage, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug x"
+          ]
+        },
+        {
+          "code": "Y",
+          "label": "Monel, quick open, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug y"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "Hastelloy C, linear, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug 1"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Hastelloy C, equal percentage, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug 2"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Hastelloy C, quick open, hard (metal bodies, globe models)",
+          "aliases": [
+            "plug 3"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "Hastelloy C, linear, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug 4"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Hastelloy C, equal percentage, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug 5"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Hastelloy C, quick open, soft (RPTFE) (metal bodies, globe models)",
+          "aliases": [
+            "plug 6"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "plug z"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cv",
+      "label": "Cv (6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "0.05 Cv",
+          "aliases": [
+            "0.05"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "0.1 Cv",
+          "aliases": [
+            "0.1"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "0.2 Cv",
+          "aliases": [
+            "0.2"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "0.5 Cv",
+          "aliases": [
+            "0.5"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "1.0 Cv",
+          "aliases": [
+            "1.0"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "2.0 Cv",
+          "aliases": [
+            "2.0"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "4.0 Cv",
+          "aliases": [
+            "4.0"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "6.5 Cv",
+          "aliases": [
+            "6.5"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "9.0 Cv",
+          "aliases": [
+            "9.0"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "16.0 Cv",
+          "aliases": [
+            "16.0"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "25 Cv",
+          "aliases": [
+            "25"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "1.5 Cv",
+          "aliases": [
+            "1.5"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "1.8 Cv",
+          "aliases": [
+            "1.8"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "3.0 Cv",
+          "aliases": [
+            "3.0"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "3.5 Cv",
+          "aliases": [
+            "3.5"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "4.3 Cv",
+          "aliases": [
+            "4.3"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "7.1 Cv",
+          "aliases": [
+            "7.1"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "12.5 Cv",
+          "aliases": [
+            "12.5"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "17 Cv",
+          "aliases": [
+            "17"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (7 and 8)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "D3",
+          "label": "Air-to-close, 35M",
+          "aliases": [
+            "atc 35m"
+          ]
+        },
+        {
+          "code": "D5",
+          "label": "Air-to-close, 55M",
+          "aliases": [
+            "atc 55m"
+          ]
+        },
+        {
+          "code": "D8",
+          "label": "Air-to-close, 85M",
+          "aliases": [
+            "atc 85m"
+          ]
+        },
+        {
+          "code": "R3",
+          "label": "Air-to-open, 35M",
+          "aliases": [
+            "ato 35m"
+          ]
+        },
+        {
+          "code": "R5",
+          "label": "Air-to-open, 55M",
+          "aliases": [
+            "ato 55m"
+          ]
+        },
+        {
+          "code": "R8",
+          "label": "Air-to-open, 85M",
+          "aliases": [
+            "ato 85m"
+          ]
+        },
+        {
+          "code": "S3",
+          "label": "With SMP, 35M (SP models)",
+          "aliases": [
+            "smp 35m"
+          ]
+        },
+        {
+          "code": "S5",
+          "label": "With SMP, 55M (SP models)",
+          "aliases": [
+            "smp 55m"
+          ]
+        },
+        {
+          "code": "S8",
+          "label": "With SMP, 85M (SP models)",
+          "aliases": [
+            "smp 85m"
+          ]
+        },
+        {
+          "code": "N2",
+          "label": "On-off, NEMA 12 (8000GMV)",
+          "aliases": [
+            "gmv nema 12"
+          ]
+        },
+        {
+          "code": "N4",
+          "label": "On-off, NEMA 4 and X-P (8000GMV)",
+          "aliases": [
+            "gmv on-off nema 4"
+          ]
+        },
+        {
+          "code": "M2",
+          "label": "mA/voltage, NEMA 12 (8000GMV)",
+          "aliases": [
+            "gmv ma nema 12"
+          ]
+        },
+        {
+          "code": "M4",
+          "label": "mA/voltage, NEMA 4 and X-P (8000GMV)",
+          "aliases": [
+            "gmv ma nema 4"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "range",
+      "label": "Range (9 and 10)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "A3",
+          "label": "3-15 direct, 35M",
+          "aliases": [
+            "3-15 dir 35m"
+          ]
+        },
+        {
+          "code": "A5",
+          "label": "3-15 direct, 55M",
+          "aliases": [
+            "3-15 dir 55m"
+          ]
+        },
+        {
+          "code": "A8",
+          "label": "3-15 direct, 85M",
+          "aliases": [
+            "3-15 dir 85m"
+          ]
+        },
+        {
+          "code": "B3",
+          "label": "3-15 reverse, 35M",
+          "aliases": [
+            "3-15 rev 35m"
+          ]
+        },
+        {
+          "code": "B5",
+          "label": "3-15 reverse, 55M",
+          "aliases": [
+            "3-15 rev 55m"
+          ]
+        },
+        {
+          "code": "B8",
+          "label": "3-15 reverse, 85M",
+          "aliases": [
+            "3-15 rev 85m"
+          ]
+        },
+        {
+          "code": "G3",
+          "label": "6-30 direct, 35M",
+          "aliases": [
+            "6-30 dir 35m"
+          ]
+        },
+        {
+          "code": "G5",
+          "label": "6-30 direct, 55M",
+          "aliases": [
+            "6-30 dir 55m"
+          ]
+        },
+        {
+          "code": "G8",
+          "label": "6-30 direct, 85M",
+          "aliases": [
+            "6-30 dir 85m"
+          ]
+        },
+        {
+          "code": "H3",
+          "label": "6-30 reverse, 35M",
+          "aliases": [
+            "6-30 rev 35m"
+          ]
+        },
+        {
+          "code": "H5",
+          "label": "6-30 reverse, 55M",
+          "aliases": [
+            "6-30 rev 55m"
+          ]
+        },
+        {
+          "code": "H8",
+          "label": "6-30 reverse, 85M",
+          "aliases": [
+            "6-30 rev 85m"
+          ]
+        },
+        {
+          "code": "NF",
+          "label": "On-off (8000GMV)",
+          "aliases": [
+            "on off"
+          ]
+        },
+        {
+          "code": "42",
+          "label": "4-20 mA (8000GMV)",
+          "aliases": [
+            "4-20ma"
+          ]
+        },
+        {
+          "code": "41",
+          "label": "4-12 mA (8000GMV)",
+          "aliases": [
+            "4-12ma"
+          ]
+        },
+        {
+          "code": "12",
+          "label": "12-20 mA (8000GMV)",
+          "aliases": [
+            "12-20ma"
+          ]
+        },
+        {
+          "code": "V5",
+          "label": "0-5V (8000GMV)",
+          "aliases": [
+            "0-5v"
+          ]
+        },
+        {
+          "code": "V1",
+          "label": "0-10V (8000GMV)",
+          "aliases": [
+            "0-10v"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard (the GMV table's own row)",
+          "aliases": [
+            "gmv non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "limitSwitches",
+      "label": "Limit switches, 2LS (11 and 12)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "3D",
+          "label": "35M, direct/standard",
+          "aliases": [
+            "ls 35m direct"
+          ]
+        },
+        {
+          "code": "3X",
+          "label": "35M, direct/X-P",
+          "aliases": [
+            "ls 35m xp"
+          ]
+        },
+        {
+          "code": "3R",
+          "label": "35M, reverse/standard",
+          "aliases": [
+            "ls 35m reverse"
+          ]
+        },
+        {
+          "code": "3P",
+          "label": "35M, reverse/X-P",
+          "aliases": [
+            "ls 35m reverse xp"
+          ]
+        },
+        {
+          "code": "5D",
+          "label": "55M, direct/standard",
+          "aliases": [
+            "ls 55m direct"
+          ]
+        },
+        {
+          "code": "5X",
+          "label": "55M, direct/X-P",
+          "aliases": [
+            "ls 55m xp"
+          ]
+        },
+        {
+          "code": "5R",
+          "label": "55M, reverse/standard",
+          "aliases": [
+            "ls 55m reverse"
+          ]
+        },
+        {
+          "code": "5P",
+          "label": "55M, reverse/X-P",
+          "aliases": [
+            "ls 55m reverse xp"
+          ]
+        },
+        {
+          "code": "8D",
+          "label": "85M, direct/standard",
+          "aliases": [
+            "ls 85m direct"
+          ]
+        },
+        {
+          "code": "8X",
+          "label": "85M, direct/X-P",
+          "aliases": [
+            "ls 85m xp"
+          ]
+        },
+        {
+          "code": "8R",
+          "label": "85M, reverse/standard",
+          "aliases": [
+            "ls 85m reverse"
+          ]
+        },
+        {
+          "code": "8P",
+          "label": "85M, reverse/X-P",
+          "aliases": [
+            "ls 85m reverse xp"
+          ]
+        },
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "no limit switches"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard limit switches"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solenoidHardware",
+      "label": "Solenoid and hardware (13 and 14)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "SD",
+          "label": "Standard solenoid",
+          "aliases": [
+            "standard solenoid"
+          ]
+        },
+        {
+          "code": "WT",
+          "label": "Water-tight solenoid",
+          "aliases": [
+            "water-tight"
+          ]
+        },
+        {
+          "code": "XP",
+          "label": "X-proof solenoid",
+          "aliases": [
+            "x-proof"
+          ]
+        },
+        {
+          "code": "H3",
+          "label": "Handwheel 35M direct",
+          "aliases": [
+            "handwheel 35m"
+          ]
+        },
+        {
+          "code": "H5",
+          "label": "Handwheel 55M direct",
+          "aliases": [
+            "handwheel 55m"
+          ]
+        },
+        {
+          "code": "H8",
+          "label": "Handwheel 85M direct",
+          "aliases": [
+            "handwheel 85m"
+          ]
+        },
+        {
+          "code": "R3",
+          "label": "Handwheel 35M reverse",
+          "aliases": [
+            "handwheel 35m reverse"
+          ]
+        },
+        {
+          "code": "R5",
+          "label": "Handwheel 55M reverse (the sheet prints 55MK)",
+          "aliases": [
+            "handwheel 55m reverse"
+          ]
+        },
+        {
+          "code": "R8",
+          "label": "Handwheel 85M reverse",
+          "aliases": [
+            "handwheel 85m reverse"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard solenoid"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (15)",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "Air regulator",
+          "aliases": [
+            "air regulator"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "I/P 35M actuator, 4-20mA / 3-15 psi",
+          "aliases": [
+            "ip 35m"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "I/P 55M actuator, 4-20mA / 3-15 psi",
+          "aliases": [
+            "ip 55m"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "I/P 85M actuator, 4-20mA / 3-15 psi",
+          "aliases": [
+            "ip 85m"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "I/P 35M/55M/85M actuator, 4-20mA / 6-30 psi",
+          "aliases": [
+            "ip 6-30"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "1 gauge for TMP",
+          "aliases": [
+            "one gauge"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "2 gauges for TMP",
+          "aliases": [
+            "two gauges"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3 gauges for TMP",
+          "aliases": [
+            "three gauges"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Oxygen clean",
+          "aliases": [
+            "oxygen clean"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "label": "Action (16)",
+      "position": 13,
+      "required": true,
+      "options": [
+        {
+          "code": "D",
+          "label": "Direct, air-to-close",
+          "aliases": [
+            "direct"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Reverse, air-to-open",
+          "aliases": [
+            "reverse"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smp",
+      "label": "SMP (17)",
+      "position": 14,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no smp"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "SMP direct/reverse 3-15",
+          "aliases": [
+            "smp 3-15"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "SMP-IP direct/reverse 4-20",
+          "aliases": [
+            "smp ip 4-20"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "SMP 16IQ-S direct/reverse",
+          "aliases": [
+            "16iq-s"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "SMP 16IQ-B direct/reverse",
+          "aliases": [
+            "16iq-b"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard smp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ped",
+      "label": "PED compliance (18)",
+      "position": 15,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Not required",
+          "aliases": [
+            "not required"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "CE category 1",
+          "aliases": [
+            "ce category 1"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ped"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "body": [
+          "KN",
+          "PV"
+        ]
+      },
+      "forbid": {
+        "bonnet": [
+          "ST",
+          "SH",
+          "ET",
+          "EH",
+          "BT",
+          "BH"
+        ]
+      },
+      "reason": "the plastic bodies take the plastic bonnet list"
+    },
+    {
+      "when": {
+        "body": [
+          "CB",
+          "SB",
+          "BR",
+          "MN",
+          "HC",
+          "A2"
+        ]
+      },
+      "forbid": {
+        "bonnet": [
+          "SB",
+          "SV",
+          "BB",
+          "BV"
+        ]
+      },
+      "reason": "the metal bodies take the metal bonnet list"
+    },
+    {
+      "when": {
+        "body": [
+          "KN",
+          "PV"
+        ]
+      },
+      "forbid": {
+        "plugSeat": [
+          "G",
+          "H",
+          "I",
+          "M",
+          "N",
+          "P",
+          "Q",
+          "R",
+          "S",
+          "T",
+          "U",
+          "V",
+          "W",
+          "X",
+          "Y",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "reason": "the plastic bodies take the plastic plug list, standard and bolt-thru forms alone"
+    },
+    {
+      "when": {
+        "ends": "BU"
+      },
+      "forbid": {
+        "body": [
+          "CB",
+          "SB",
+          "BR",
+          "MN",
+          "HC",
+          "A2"
+        ]
+      },
+      "reason": "the bolt-thru end is printed for the Kynar and PVC bodies"
+    },
+    {
+      "when": {
+        "model": [
+          "8000A",
+          "8000ATP",
+          "8000ASP",
+          "8000T",
+          "8000TTP",
+          "8000TSP"
+        ]
+      },
+      "forbid": {
+        "plugSeat": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "F",
+          "G",
+          "H",
+          "I",
+          "M",
+          "N",
+          "P",
+          "Q",
+          "R",
+          "S",
+          "T",
+          "U",
+          "V",
+          "W",
+          "X",
+          "Y",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "reason": "the angle and three-way models print a single non-standard plug row"
+    },
+    {
+      "when": {
+        "model": [
+          "8000G",
+          "8000GTP",
+          "8000A",
+          "8000ATP",
+          "8000T",
+          "8000TTP"
+        ]
+      },
+      "forbid": {
+        "actuator": [
+          "S3",
+          "S5",
+          "S8",
+          "N2",
+          "N4",
+          "M2",
+          "M4"
+        ]
+      },
+      "reason": "the SMP actuator rows belong to the SP models and the motor rows to the GMV"
+    },
+    {
+      "when": {
+        "model": [
+          "8000GSP",
+          "8000ASP",
+          "8000TSP"
+        ]
+      },
+      "forbid": {
+        "actuator": [
+          "D3",
+          "D5",
+          "D8",
+          "R3",
+          "R5",
+          "R8",
+          "N2",
+          "N4",
+          "M2",
+          "M4"
+        ]
+      },
+      "reason": "the SP models take the SMP actuator rows"
+    },
+    {
+      "when": {
+        "model": "8000GMV"
+      },
+      "forbid": {
+        "actuator": [
+          "D3",
+          "D5",
+          "D8",
+          "R3",
+          "R5",
+          "R8",
+          "S3",
+          "S5",
+          "S8"
+        ]
+      },
+      "reason": "the motor valve takes its own actuator table"
+    },
+    {
+      "when": {
+        "model": "8000GMV"
+      },
+      "forbid": {
+        "range": [
+          "A3",
+          "A5",
+          "A8",
+          "B3",
+          "B5",
+          "B8",
+          "G3",
+          "G5",
+          "G8",
+          "H3",
+          "H5",
+          "H8"
+        ]
+      },
+      "reason": "the motor valve takes its own range table"
+    },
+    {
+      "when": {
+        "range": [
+          "NF",
+          "42",
+          "41",
+          "12",
+          "V5",
+          "V1"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "8000G",
+          "8000GTP",
+          "8000GSP",
+          "8000A",
+          "8000ATP",
+          "8000ASP",
+          "8000T",
+          "8000TTP",
+          "8000TSP"
+        ]
+      },
+      "reason": "the signal ranges are printed in the 8000GMV table"
+    },
+    {
+      "when": {
+        "actuator": [
+          "D3",
+          "R3",
+          "S3"
+        ]
+      },
+      "forbid": {
+        "range": [
+          "A5",
+          "A8",
+          "B5",
+          "B8",
+          "G5",
+          "G8",
+          "H5",
+          "H8"
+        ],
+        "limitSwitches": [
+          "5D",
+          "5X",
+          "5R",
+          "5P",
+          "8D",
+          "8X",
+          "8R",
+          "8P"
+        ]
+      },
+      "reason": "the actuator size digit runs through the range and limit switch positions, here 35M (held as an inferred coupling for John)"
+    },
+    {
+      "when": {
+        "actuator": [
+          "D5",
+          "R5",
+          "S5"
+        ]
+      },
+      "forbid": {
+        "range": [
+          "A3",
+          "A8",
+          "B3",
+          "B8",
+          "G3",
+          "G8",
+          "H3",
+          "H8"
+        ],
+        "limitSwitches": [
+          "3D",
+          "3X",
+          "3R",
+          "3P",
+          "8D",
+          "8X",
+          "8R",
+          "8P"
+        ]
+      },
+      "reason": "the actuator size digit runs through the range and limit switch positions, here 55M (held as an inferred coupling for John)"
+    },
+    {
+      "when": {
+        "actuator": [
+          "D8",
+          "R8",
+          "S8"
+        ]
+      },
+      "forbid": {
+        "range": [
+          "A3",
+          "A5",
+          "B3",
+          "B5",
+          "G3",
+          "G5",
+          "H3",
+          "H5"
+        ],
+        "limitSwitches": [
+          "3D",
+          "3X",
+          "3R",
+          "3P",
+          "5D",
+          "5X",
+          "5R",
+          "5P"
+        ]
+      },
+      "reason": "the actuator size digit runs through the range and limit switch positions, here 85M (held as an inferred coupling for John)"
+    },
+    {
+      "when": {
+        "solenoidHardware": [
+          "H3",
+          "R3"
+        ]
+      },
+      "forbid": {
+        "actuator": [
+          "D5",
+          "R5",
+          "S5",
+          "D8",
+          "R8",
+          "S8"
+        ]
+      },
+      "reason": "the handwheel names its actuator, 35M"
+    },
+    {
+      "when": {
+        "solenoidHardware": [
+          "H5",
+          "R5"
+        ]
+      },
+      "forbid": {
+        "actuator": [
+          "D3",
+          "R3",
+          "S3",
+          "D8",
+          "R8",
+          "S8"
+        ]
+      },
+      "reason": "the handwheel names its actuator, 55M"
+    },
+    {
+      "when": {
+        "solenoidHardware": [
+          "H8",
+          "R8"
+        ]
+      },
+      "forbid": {
+        "actuator": [
+          "D3",
+          "R3",
+          "S3",
+          "D5",
+          "R5",
+          "S5"
+        ]
+      },
+      "reason": "the handwheel names its actuator, 85M"
+    },
+    {
+      "when": {
+        "accessories": "B"
+      },
+      "forbid": {
+        "actuator": [
+          "D5",
+          "R5",
+          "S5",
+          "D8",
+          "R8",
+          "S8"
+        ]
+      },
+      "reason": "the I/P names its actuator, 35M"
+    },
+    {
+      "when": {
+        "accessories": "C"
+      },
+      "forbid": {
+        "actuator": [
+          "D3",
+          "R3",
+          "S3",
+          "D8",
+          "R8",
+          "S8"
+        ]
+      },
+      "reason": "the I/P names its actuator, 55M"
+    },
+    {
+      "when": {
+        "accessories": "D"
+      },
+      "forbid": {
+        "actuator": [
+          "D3",
+          "R3",
+          "S3",
+          "D5",
+          "R5",
+          "S5"
+        ]
+      },
+      "reason": "the I/P names its actuator, 85M"
+    },
+    {
+      "when": {
+        "bonnet": "BH",
+        "model": [
+          "8000G",
+          "8000A",
+          "8000T"
+        ]
+      },
+      "forbid": {
+        "smp": [
+          "0"
+        ]
+      },
+      "reason": "the double starred bellows high temperature bonnet requires a positioner; a plain model needs the SMP position filled"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "bonnet": [
+          "SH",
+          "EH"
+        ]
+      },
+      "note": "The sheet's own asterisk: a positioner is recommended for high temperature packing."
+    }
+  ]
+}
