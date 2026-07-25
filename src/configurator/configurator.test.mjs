@@ -112,6 +112,12 @@ const ytype = JSON.parse(readFileSync(join(here, 'models', 'ytype.json'), 'utf8'
 const mk708hp = JSON.parse(readFileSync(join(here, 'models', 'mk708hp.json'), 'utf8'));
 const mk5800hp = JSON.parse(readFileSync(join(here, 'models', 'mk5800hp.json'), 'utf8'));
 const jrhl = JSON.parse(readFileSync(join(here, 'models', 'jrhl.json'), 'utf8'));
+const jsb = JSON.parse(readFileSync(join(here, 'models', 'jsb.json'), 'utf8'));
+const jsblf = JSON.parse(readFileSync(join(here, 'models', 'jsblf.json'), 'utf8'));
+const jsblflp = JSON.parse(readFileSync(join(here, 'models', 'jsblflp.json'), 'utf8'));
+const mark95 = JSON.parse(readFileSync(join(here, 'models', 'mark95.json'), 'utf8'));
+const mark95aa = JSON.parse(readFileSync(join(here, 'models', 'mark95aa.json'), 'utf8'));
+const mk95a = JSON.parse(readFileSync(join(here, 'models', 'mk95a.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1534,6 +1540,83 @@ check('the JRHL rounds out the JR family', () => {
   assert.ok(checkConstraints(jrhl, { endConnection: 'C', size: '075' }).length > 0, 'the FNPT ends match their sizes, flagged inferred');
   assert.ok(checkConstraints(jrhl, { endConnection: 'D', size: '050' }).length > 0, 'both ways');
   assert.ok(/slashed zero/.test(jrhl.note), 'the slashed zero glyphs are confessed');
+});
+
+console.log('\nThe Steriflow back pressure shelf, JSB family and Mark 95 family:');
+
+check('the three JSB models round-trip with their printed quirks', () => {
+  roundTrip(jsb, {
+    model: 'JSB', size: '050', material: '6L', endConnection: 'C', portConfig: 'A', trim: '1S', seat: 'TF',
+    springRange: '08', diaphragm: 'JL', actuator: 'SK', inletGauge: '0B', outletGauge: 'B', sep: '0', accessories: '0',
+  }, 'JSB-050-6LCA1STF08JLSK0BB00');
+  roundTrip(jsb, {
+    model: 'JSB', size: '075', material: '30', endConnection: 'ZZ', portConfig: 'E', trim: '2S', seat: 'PK',
+    springRange: '50', diaphragm: 'ZZ', actuator: 'AK', inletGauge: '0N', outletGauge: 'ZZ', sep: 'G', accessories: 'J',
+  }, 'JSB-075-30ZZE2SPK50ZZAK0NZZGJ');
+  roundTrip(jsblf, {
+    model: 'JSBLF', size: '038', ends: '6C', seat: 'T', cv: '1', portConfig: 'A', trim: '1S',
+    springRange: 'E1', diaphragm: 'JL', actuator: 'SK', inletGauge: '0B', outletGauge: 'B', sep: '0', accessories: '0',
+  }, 'JSBLF-038-6C-T1A1SE1JLSK0BB00');
+  roundTrip(jsblflp, {
+    model: 'JSBLFLP', size: '050', ends: '6P', seat: 'P', cv: '4', portConfig: 'E', trim: '1S',
+    springRange: 'E3', diaphragm: 'ZZ', actuator: 'AA', inletGauge: '0F', outletGauge: 'N', sep: 'G', accessories: 'S',
+  }, 'JSBLFLP-050-6PP4E1SE3ZZAA0FNGS');
+  assert.ok(checkConstraints(jsblf, { springRange: 'E4', ends: '6C' }).length > 0, 'the starred JSBLF ranges are NPT only');
+  assert.equal(checkConstraints(jsblf, { springRange: 'E4', ends: '6P' }).length, 0, 'and NPT passes');
+  assert.equal(jsblflp.constraints.length, 0, 'the JSBLFLP prints the footnote but stars no row, so nothing is enforced');
+  assert.ok(/orphan/.test(jsblflp.note), 'the orphan footnote is confessed');
+  assert.ok(/End Connection/.test(jsblflp.note), 'as is the misprinted column heading');
+  assert.equal(checkCautions(jsb, { inletGauge: '0B' }).length, 1, 'the gauge span responsibility line rides the gauge codes');
+});
+
+check('the Mark 95 round-trips and its webs hold', () => {
+  roundTrip(mark95, {
+    model: '95', llOption: '', size: '050', bodyMaterial: '6L', gaugePort: '', bodyFinish: 'A', bodyCv: 'A',
+    trimFinish: 'A', trimSeat: '5', oRing: 'BS', screw: 'A', spring: 'D', diaphragm: 'JL', actuator: 'AA',
+    ped: '0G', options: '08',
+  }, '95-050-6L-AAA5BSADJLAA0G08');
+  roundTrip(mark95, {
+    model: '95D', llOption: 'LL', size: '20N', bodyMaterial: '6E', gaugePort: '180', bodyFinish: 'C', bodyCv: 'A',
+    trimFinish: 'C', trimSeat: 'A', oRing: 'ES', screw: 'B', spring: 'A', diaphragm: 'UJ', actuator: 'BA',
+    ped: '00', options: 'ZZ',
+  }, '95DLL-20N-6E-180CACAESBAUJBA00ZZ');
+  assert.ok(checkConstraints(mark95, { size: '15N', model: '95T' }).length > 0, 'the DN15 face is for the D and S models');
+  assert.ok(checkConstraints(mark95, { trimSeat: '8', llOption: 'LL' }).length > 0, 'the lift lever refuses the small soft seats');
+  assert.ok(checkConstraints(mark95, { trimFinish: 'C', llOption: '' }).length > 0, 'and the LL finishes require it');
+  assert.ok(checkConstraints(mark95, { oRing: 'BS', trimSeat: 'P' }).length > 0, 'the o-ring tables split at Cv 3');
+  assert.ok(checkConstraints(mark95, { spring: 'B', diaphragm: 'JL' }).length > 0, 'the 3-25 spring is EPDM only');
+  assert.ok(checkConstraints(mark95, { spring: 'F', size: '050' }).length > 0, 'the spring bands follow the size columns');
+  assert.ok(checkConstraints(mark95, { ped: '0F', size: '050' }).length > 0, 'the CE row keeps its printed sizes');
+  assert.ok(checkConstraints(mark95, { bodyCv: 'G', trimSeat: '5' }).length > 0, 'the body Cv matches the trim Cv, flagged inferred');
+  assert.ok(checkConstraints(mark95, { actuator: 'DA', size: '100' }).length > 0, 'the electro-polished actuator is for 2 and 3 inch');
+  assert.ok(/0620/.test(mark95.note), 'the two revision story is confessed');
+});
+
+check('the 95AA and 95A close the family', () => {
+  roundTrip(mark95aa, {
+    model: '95AA', size: '100', bodyMaterial: '6L', bodyFinish: 'A', bodyCv: 'G', trimFinish: 'A', trimSeat: 'E',
+    oRing: 'EE', screw: 'A', range: 'D', diaphragm: 'EP', actuator: 'AA', ped: '00', ipFeature: '0',
+  }, '95AA-100-6LAGAEEEADEPAA000');
+  roundTrip(mark95aa, {
+    model: '95DAA', size: '20N', bodyMaterial: '6E', bodyFinish: 'B', bodyCv: 'A', trimFinish: 'B', trimSeat: 'A',
+    oRing: 'JE', screw: 'Z', range: 'B', diaphragm: 'UJ', actuator: 'BA', ped: '0G', ipFeature: '4',
+  }, '95DAA-20N-6EBABAJEZBUJBA0G4');
+  assert.equal(checkCautions(mark95aa, { trimSeat: '2' }).length, 1, 'the do-not-use row carries its caution');
+  assert.ok(checkConstraints(mark95aa, { range: 'A', diaphragm: 'JL' }).length > 0, 'the starred ranges refuse plain Jorlon');
+  assert.ok(checkConstraints(mark95aa, { oRing: 'JY', size: '050' }).length > 0, 'the JY o-ring keeps its size bracket');
+  assert.ok(checkConstraints(mark95aa, { size: '20N', model: '95SAA' }).length > 0, 'the DN20 face is the DAA alone');
+  roundTrip(mk95a, {
+    model: '95A', size: '050', material: '6L', bodyFinish: 'A', bodyCv: 'A', trimFinish: 'A', trimSeat: '8',
+    oRing: 'TG', airLoad: '00', diaphragm: 'JL', actuator: 'AA',
+  }, '95A-050-6LAAA8TG00JLAA');
+  roundTrip(mk95a, {
+    model: '95A', size: '300', material: '6L', bodyFinish: 'F', bodyCv: 'N', trimFinish: 'B', trimSeat: 'T',
+    oRing: 'TY', airLoad: 'AH', diaphragm: 'JL', actuator: 'DA',
+  }, '95A-300-6LFNBTTYAHJLDA');
+  assert.ok(checkConstraints(mk95a, { oRing: 'TG', trimSeat: 'J' }).length > 0, 'the TG o-ring stops at Cv 3');
+  assert.ok(checkConstraints(mk95a, { oRing: 'TY', trimSeat: '8' }).length > 0, 'and TY starts above it');
+  assert.ok(checkConstraints(mk95a, { bodyCv: 'A', trimSeat: 'F' }).length > 0, 'the body Cv matches the trim Cv, flagged inferred');
+  assert.ok(/no non-standard row/.test(mk95a.note) || /prints no non-standard/.test(mk95a.note), 'the missing trim ZZ is confessed');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
