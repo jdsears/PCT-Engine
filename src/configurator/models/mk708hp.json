@@ -1,0 +1,490 @@
+{
+  "model": "MK708HP",
+  "line": "lowflow",
+  "displayName": "LowFlow Mark 708HP high pressure fractional control valve",
+  "match": [
+    "mk708hp",
+    "mark 708hp",
+    "708hp"
+  ],
+  "source": {
+    "doc": "708HP.pdf",
+    "page": 4,
+    "section": "MK708HP Series Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, seventeen positions assembled bare after model, size and body. One size, half inch. The plug seat pairs a material letter with a Cv letter and prints one ZZ across the pair. The equal percentage plug prints the sheet's own =% abbreviation and is carried as printed. The range, diaphragm and actuator pairs each couple their letter with the 35M size digit 3, the only size printed. The I/P position prints none alone.",
+  "assembly": "{model}{size}{body}{ends}{trim}{plugMaterial}{plugCv}{rangeAction}{diaphragm}{actuator}{accessories}{action}{ip}{smp}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "708HP",
+          "label": "Standard",
+          "aliases": [
+            "708hp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "SB",
+          "label": "Stainless steel (316/316L)",
+          "aliases": [
+            "316 bar"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "Stainless steel (316F)",
+          "aliases": [
+            "316f"
+          ]
+        },
+        {
+          "code": "HC",
+          "label": "Hastelloy C",
+          "aliases": [
+            "hastelloy"
+          ]
+        },
+        {
+          "code": "MN",
+          "label": "Monel",
+          "aliases": [
+            "monel"
+          ]
+        },
+        {
+          "code": "A2",
+          "label": "Alloy 20",
+          "aliases": [
+            "alloy 20"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "PT",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "SW",
+          "label": "Socket weld",
+          "aliases": [
+            "socket weld"
+          ]
+        },
+        {
+          "code": "AC",
+          "label": "Autoclave AE",
+          "aliases": [
+            "autoclave"
+          ]
+        },
+        {
+          "code": "TN",
+          "label": "Integral tube nuts",
+          "aliases": [
+            "tube nuts"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "T6",
+          "label": "Teflon packing",
+          "aliases": [
+            "teflon packing"
+          ]
+        },
+        {
+          "code": "G6",
+          "label": "Graphite/Graphoil",
+          "aliases": [
+            "graphite"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plugMaterial",
+      "label": "Plug seat material (5)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "M",
+          "label": "316/Stellite/Stell-Lin. Hard",
+          "aliases": [
+            "stellite linear"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "316/Stellite/Stell =% Hard (equal percentage, as the sheet abbreviates it)",
+          "aliases": [
+            "stellite equal percentage"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across material and Cv)",
+          "aliases": [
+            "non-standard plug"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plugCv",
+      "label": "Plug seat Cv (6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "L",
+          "label": "Cv 0.05",
+          "aliases": [
+            "0.05"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Cv 0.10",
+          "aliases": [
+            "0.10"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Cv 0.20",
+          "aliases": [
+            "0.20"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Cv 0.50",
+          "aliases": [
+            "0.50"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "Cv 1.0",
+          "aliases": [
+            "1.0"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "Cv 1.25",
+          "aliases": [
+            "1.25"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across material and Cv)",
+          "aliases": [
+            "non-standard cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rangeAction",
+      "label": "Range (7 and 8)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "A3",
+          "label": "Direct, 35M actuator",
+          "aliases": [
+            "direct"
+          ]
+        },
+        {
+          "code": "B3",
+          "label": "Reverse, 35M actuator",
+          "aliases": [
+            "reverse"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (9 and 10)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "B3",
+          "label": "Buna-N, 35M",
+          "aliases": [
+            "buna-n"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (11 and 12)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "S3",
+          "label": "With SMP, 35M",
+          "aliases": [
+            "with smp"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (13 and 14)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "AR",
+          "label": "Air regulator",
+          "aliases": [
+            "air regulator"
+          ]
+        },
+        {
+          "code": "S2",
+          "label": "3-way solenoid energize to open",
+          "aliases": [
+            "solenoid open"
+          ]
+        },
+        {
+          "code": "S3",
+          "label": "3-way solenoid energize to close",
+          "aliases": [
+            "solenoid close"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "label": "Action (15)",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "D",
+          "label": "Air-to-close",
+          "aliases": [
+            "air to close"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Air-to-open",
+          "aliases": [
+            "air to open"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ip",
+      "label": "I/P (16)",
+      "position": 13,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no ip"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smp",
+      "label": "SMP (17)",
+      "position": 14,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no smp"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "MK16 SMP Dir/Rev 3-15",
+          "aliases": [
+            "smp 3-15"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "MK16 SMP Dir/Rev 3-9",
+          "aliases": [
+            "smp 3-9"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "MK16 SMP Dir/Rev 9-15",
+          "aliases": [
+            "smp 9-15"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "MK16 SMP/IP Dir/Rev 4-20",
+          "aliases": [
+            "smp ip 4-20"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "MK16 SMP/IP Dir/Rev 4-12",
+          "aliases": [
+            "smp ip 4-12"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "MK16 SMP/IP Dir/Rev 12-20",
+          "aliases": [
+            "smp ip 12-20"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "MK 16IQ-S Dir/Rev 4-20 (the sheet prints the space)",
+          "aliases": [
+            "16iq-s"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "MK16IQ-B Dir/Rev 4-20",
+          "aliases": [
+            "16iq-b"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "MK16IQ-FF Dir/Rev 4-20",
+          "aliases": [
+            "16iq-ff"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard smp"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

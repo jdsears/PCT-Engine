@@ -108,6 +108,10 @@ const mk708tp = JSON.parse(readFileSync(join(here, 'models', 'mk708tp.json'), 'u
 const mk8000 = JSON.parse(readFileSync(join(here, 'models', 'mk8000.json'), 'utf8'));
 const shc = JSON.parse(readFileSync(join(here, 'models', 'shc.json'), 'utf8'));
 const svc = JSON.parse(readFileSync(join(here, 'models', 'svc.json'), 'utf8'));
+const ytype = JSON.parse(readFileSync(join(here, 'models', 'ytype.json'), 'utf8'));
+const mk708hp = JSON.parse(readFileSync(join(here, 'models', 'mk708hp.json'), 'utf8'));
+const mk5800hp = JSON.parse(readFileSync(join(here, 'models', 'mk5800hp.json'), 'utf8'));
+const jrhl = JSON.parse(readFileSync(join(here, 'models', 'jrhl.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1481,6 +1485,55 @@ check('both check valves round-trip and the size brackets hold', () => {
   assert.equal(checkConstraints(svc, { disc: 'SE', size: '200' }).length, 0, 'but two inch itself is printed');
   assert.equal(checkCautions(svc, { disc: 'PP' }).length, 1, 'the polypropylene disc carries the downflow drain gloss');
   assert.ok(/above 250F/.test(svc.slots.find(s => s.id === 'triClamp').options.find(o => o.code === 'BC').label), 'the bolted clamp keeps its own temperature line');
+});
+
+console.log('\nThe stragglers the folder audit surfaced:');
+
+check('the Y-type strainer round-trips and its rating brackets hold', () => {
+  roundTrip(ytype, {
+    model: 'Y', rating: '150', body: 'CS', size: '7', connection: '3', screen: '0',
+  }, 'Y150CS730');
+  roundTrip(ytype, {
+    model: 'Y', rating: '600', body: 'SS', size: '4', connection: '5', screen: 'Z',
+  }, 'Y600SS45Z');
+  assert.ok(checkConstraints(ytype, { rating: '600', body: 'CI' }).length > 0, 'the 600 row prints carbon and stainless');
+  assert.ok(checkConstraints(ytype, { rating: '125', body: 'SS' }).length > 0, 'the 125 row prints cast iron and bronze');
+  assert.ok(checkConstraints(ytype, { connection: '2', body: 'BR' }).length > 0, 'the SWE row is CS/SS only');
+  assert.ok(checkConstraints(ytype, { connection: 'J', rating: '150' }).length > 0, 'the flange codes match their ratings, flagged inferred');
+});
+
+check('the 708HP and 5800HP round-trip and keep their printed quirks', () => {
+  roundTrip(mk708hp, {
+    model: '708HP', size: '050', body: 'SB', ends: 'PT', trim: 'T6', plugMaterial: 'M', plugCv: 'L',
+    rangeAction: 'A3', diaphragm: 'B3', actuator: 'S3', accessories: '00', action: 'D', ip: '0', smp: 'A',
+  }, '708HP050SBPTT6MLA3B3S300D0A');
+  roundTrip(mk708hp, {
+    model: '708HP', size: '050', body: 'HC', ends: 'AC', trim: 'G6', plugMaterial: 'N', plugCv: 'W',
+    rangeAction: 'B3', diaphragm: 'ZZ', actuator: 'ZZ', accessories: 'S2', action: 'R', ip: '0', smp: 'G',
+  }, '708HP050HCACG6NWB3ZZZZS2R0G');
+  assert.ok(/=% Hard/.test(mk708hp.slots.find(s => s.id === 'plugMaterial').options.find(o => o.code === 'N').label), 'the sheet\'s =% abbreviation is carried as printed');
+  roundTrip(mk5800hp, {
+    model: '5800HP', body: '316', oRing: 'B', size: 'A', endConn: 'C', trim: 'EE', range: 'R4', accessory: 'SC',
+  }, '5800HP316BACEER4SC');
+  roundTrip(mk5800hp, {
+    model: '5800HP', body: '316', oRing: 'V', size: 'C', endConn: 'G', trim: 'ZZ', range: 'R9', accessory: 'ZZ',
+  }, '5800HP316VCGZZR9ZZ');
+  assert.equal(mk5800hp.slots.find(s => s.id === 'accessory').options.length, 2, 'the accessory section prints no none row, only SC and ZZ');
+  assert.ok(/5850HP/.test(mk5800hp.note), 'the manual-only 5850HP is held for the PDF');
+});
+
+check('the JRHL rounds out the JR family', () => {
+  roundTrip(jrhl, {
+    model: 'JRHL', size: '050', material: '6L', endConnection: 'C', portConfig: 'A', trim: '1S', seat: 'TF',
+    rangeSpring: '01', diaphragm: 'JL', actuator: 'SK', inletGauge: 'AA', outletGauge: 'A', sep: 'G', accessories: '0',
+  }, 'JRHL-050-6L/CA1STF01JLSKAAAG0');
+  roundTrip(jrhl, {
+    model: 'JRHL', size: '075', material: '6L', endConnection: 'D', portConfig: 'V', trim: '2R', seat: 'EP',
+    rangeSpring: '25', diaphragm: 'ZZ', actuator: 'TP', inletGauge: 'NN', outletGauge: 'N', sep: '0', accessories: 'X',
+  }, 'JRHL-075-6L/DV2REP25ZZTPNNN0X');
+  assert.ok(checkConstraints(jrhl, { endConnection: 'C', size: '075' }).length > 0, 'the FNPT ends match their sizes, flagged inferred');
+  assert.ok(checkConstraints(jrhl, { endConnection: 'D', size: '050' }).length > 0, 'both ways');
+  assert.ok(/slashed zero/.test(jrhl.note), 'the slashed zero glyphs are confessed');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
