@@ -1,0 +1,228 @@
+{
+  "model": "MK60",
+  "line": "jordan",
+  "displayName": "Jordan Mark 60 Series pressure reducing regulator",
+  "match": ["mk60", "mark 60", "mk60hp", "mk61", "mark 61", "jordan 60"],
+  "source": { "doc": "mk60.pdf", "page": "9 and 10", "section": "Ordering Schematic with the spring ranges and Cv tables" },
+  "note": "Extracted by hand from the ordering schematic. Four models on one sheet: 60 standard, 60HP high pressure, 60QC quick change and 61 large diaphragm. Held for John, three extraction points: (1) the schematic header row in this extraction prints no separators, where the Mark 50 sheet prints model dash size dash body slash, so this code assembles bare and wants checking against the PDF; (2) the F1 end prints 125# IFE against its own except-IFE bracket, an artefact read as 125# FE to match the F series pattern and the Mark 50 sheet; (3) the DIN end rows sit between the two end-connection lists in the extraction with their own DN15-150 span, so they are carried once, from 1/2 inch up, for carbon and stainless bodies as their bracket says. The spring tables are printed for 60 and 60QC together, for 60HP and for 61, banded by size; the 60QC column is not separately distinguished, so it rides the 60 table, held for John. The Cv ladder is constrained per size from the Cv values and maximum differential pressures table, downward only, per the low flow note. The prose options, grain processing and cryogenic housing, have no schematic position and so no place in the code.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seat}{cv}{spring}{diaphragm}{actuator}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "60", "label": "Standard", "aliases": ["mk60", "mark 60", "standard"] },
+        { "code": "60HP", "label": "High pressure", "aliases": ["mk60hp", "high pressure"] },
+        { "code": "60QC", "label": "Quick change", "aliases": ["mk60qc", "quick change"] },
+        { "code": "61", "label": "Large diaphragm", "aliases": ["mk61", "mark 61", "large diaphragm"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "quarter inch", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN10)", "aliases": ["3/8\"", "DN10"] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "half inch", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "one inch", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "1.25\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "1.5\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "two inch", "DN50"] },
+        { "code": "250", "label": "2-1/2\" (DN65)", "aliases": ["2-1/2\"", "2.5\"", "DN65"] },
+        { "code": "300", "label": "3\" (DN80)", "aliases": ["3\"", "three inch", "DN80"] },
+        { "code": "400", "label": "4\" (DN100)", "aliases": ["4\"", "four inch", "DN100"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron", "ductile"] },
+        { "code": "BR", "label": "Bronze (1/4\" to 2\")", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel", "aliases": ["stainless", "stainless steel", "316"] },
+        { "code": "CI", "label": "Cast iron (2-1/2\" to 4\")", "aliases": ["cast iron"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt", "threaded"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw", "socket weld"] },
+        { "code": "F1", "label": "125# FE (except IFE)", "aliases": ["125 flanged"] },
+        { "code": "I5", "label": "150# IFE", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "F2", "label": "250# FE (except IFE)", "aliases": ["250 flanged"] },
+        { "code": "I3", "label": "300# IFE", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE (except IFE)", "aliases": ["300 flanged"] },
+        { "code": "I1", "label": "125# IFE (2-1/2\" to 4\")", "aliases": ["125 ife"] },
+        { "code": "I2", "label": "250# IFE (2-1/2\" to 4\")", "aliases": ["250 ife"] },
+        { "code": "I7", "label": "PN10 DIN IFE (CS/S6)", "aliases": ["pn10", "pn10 din"] },
+        { "code": "I6", "label": "PN16 DIN IFE (CS/S6)", "aliases": ["pn16", "pn16 din"] },
+        { "code": "I8", "label": "PN25 DIN IFE (CS/S6)", "aliases": ["pn25", "pn25 din"] },
+        { "code": "I4", "label": "PN40 DIN IFE (CS/S6)", "aliases": ["pn40", "pn40 din"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303", "303ss"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316", "316ss"] },
+        { "code": "I3", "label": "303SS IFE (1/2\" to 2\")", "aliases": ["303 ife trim"] },
+        { "code": "I6", "label": "316SS IFE (1/2\" to 2\")", "aliases": ["316 ife trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST (1/4\" to 2\")", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST (1/4\" to 2\")", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote", "jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.28 Kv)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.4 Kv)", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.2 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.8 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.5 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.2 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (21.6 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.9 Kv)", "aliases": ["30"] },
+        { "code": "D", "label": "55 (47.4 Kv), 2-1/2\" to 4\" only", "aliases": ["55"] },
+        { "code": "F", "label": "85 (73.3 Kv), 2-1/2\" to 4\" only", "aliases": ["85"] },
+        { "code": "G", "label": "115 (99.1 Kv), 2-1/2\" to 4\" only", "aliases": ["115"] },
+        { "code": "I", "label": "200 (172 Kv), 2-1/2\" to 4\" only", "aliases": ["200"] }
+      ]
+    },
+    {
+      "id": "spring", "label": "Spring range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "15", "label": "2-20 psi, MK60/60QC 1/4\" to 3/4\"", "aliases": ["2-20"] },
+        { "code": "16", "label": "2-23 psi, MK60/60QC 1/4\" to 3/4\"", "aliases": ["2-23"] },
+        { "code": "37", "label": "10-38 psi, MK60/60QC 1/4\" to 3/4\"", "aliases": ["10-38"] },
+        { "code": "56", "label": "20-55 psi, MK60/60QC 1/4\" to 3/4\" and MK61", "aliases": ["20-55"] },
+        { "code": "81", "label": "35-160 psi, MK60/60QC 1/4\" to 3/4\"", "aliases": ["35-160"] },
+        { "code": "A6", "label": "95-220 psi, MK60/60QC 1/4\" to 3/4\"", "aliases": ["95-220"] },
+        { "code": "D8", "label": "30-85 psi, MK60/60QC 1/4\" to 3/4\"", "aliases": ["30-85"] },
+        { "code": "05", "label": "1-5 psi, MK60/60QC 1\" to 2\" and MK61", "aliases": ["1-5"] },
+        { "code": "20", "label": "3-8 psi, MK60/60QC 1\" to 2\"", "aliases": ["3-8"] },
+        { "code": "28", "label": "5-20 psi, MK60/60QC 1\" to 2\"", "aliases": ["5-20"] },
+        { "code": "34", "label": "10-30 psi, MK60/60QC 1\" to 2\"", "aliases": ["10-30"] },
+        { "code": "53", "label": "20-45 psi, MK60/60QC 1\" to 2\"", "aliases": ["20-45"] },
+        { "code": "75", "label": "30-95 psi, MK60/60QC 1\" to 2\"", "aliases": ["30-95"] },
+        { "code": "97", "label": "60-160 psi, MK60/60QC 1\" to 2\"", "aliases": ["60-160"] },
+        { "code": "29", "label": "7-18 psi, MK60/60QC 2-1/2\" to 4\"", "aliases": ["7-18"] },
+        { "code": "32", "label": "10-25 psi, MK60/60QC 2-1/2\" to 4\"", "aliases": ["10-25"] },
+        { "code": "42", "label": "15-35 psi, MK60/60QC 2-1/2\" to 4\"", "aliases": ["15-35"] },
+        { "code": "A1", "label": "75-190 psi, MK60HP 1/2\" to 2\"", "aliases": ["75-190"] },
+        { "code": "A7", "label": "100-320 psi, MK60HP 1/2\" to 2\"", "aliases": ["100-320"] },
+        { "code": "A9", "label": "150-450 psi, MK60HP 1/2\" to 2\"", "aliases": ["150-450"] },
+        { "code": "71", "label": "30-75 psi, MK60HP 2-1/2\" to 4\"", "aliases": ["30-75"] },
+        { "code": "98", "label": "65-110 psi, MK60HP 2-1/2\" to 4\"", "aliases": ["65-110"] },
+        { "code": "10", "label": "2-12 psi, MK61", "aliases": ["2-12"] },
+        { "code": "17", "label": "2-25 psi, MK61", "aliases": ["2-25"] },
+        { "code": "36", "label": "10-35 psi, MK61", "aliases": ["10-35"] },
+        { "code": "63", "label": "20-80 psi, MK61", "aliases": ["20-80"] },
+        { "code": "87", "label": "40-115 psi, MK61", "aliases": ["40-115"] },
+        { "code": "70", "label": "25-160 psi, MK61", "aliases": ["25-160"] },
+        { "code": "80", "label": "30-180 psi, MK61", "aliases": ["30-180"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "S6", "label": "316SST", "aliases": ["316 diaphragm", "metal diaphragm"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "BN", "label": "Buna-N (standard above 2\")", "aliases": ["buna-n", "buna"] },
+        { "code": "JL", "label": "Jorlon", "aliases": ["jorlon"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "MD", "label": "DI for metal diaphragm", "aliases": ["di metal"] },
+        { "code": "ED", "label": "DI for elastomer diaphragm", "aliases": ["di elastomer"] },
+        { "code": "SM", "label": "316 for metal diaphragm", "aliases": ["316 metal"] },
+        { "code": "SE", "label": "316 for elastomer diaphragm", "aliases": ["316 elastomer"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "model": "61" }, "forbid": { "size": ["100", "125", "150", "200", "250", "300", "400"] },
+      "reason": "MK61 is available in 1/4 through 3/4 inch only, per the sheet's own line" },
+    { "when": { "model": "60QC" }, "forbid": { "size": ["250", "300", "400"] },
+      "reason": "the 2-1/2 to 4 inch rows are marked MK60 and MK60HP only" },
+    { "when": { "body": "BR" }, "forbid": { "size": ["250", "300", "400"] },
+      "reason": "bronze is printed 1/4 to 2 inch" },
+    { "when": { "body": "CI" }, "forbid": { "size": ["025", "038", "050", "075", "100", "125", "150", "200"] },
+      "reason": "cast iron is printed 2-1/2 to 4 inch" },
+    { "when": { "size": ["250", "300", "400"] }, "forbid": { "ends": ["PT", "BT", "BP", "SW", "F1", "F5", "F2", "F3"] },
+      "reason": "the threaded, socket weld and FE ends belong to the 1/4 to 2 inch list; the 2-1/2 to 4 inch list is IFE only" },
+    { "when": { "size": ["025", "038", "050", "075", "100", "125", "150", "200"] }, "forbid": { "ends": ["I1", "I2"] },
+      "reason": "the 125# and 250# IFE codes are printed in the 2-1/2 to 4 inch list only" },
+    { "when": { "body": ["DI", "BR", "CI"] }, "forbid": { "ends": ["I7", "I6", "I8", "I4"] },
+      "reason": "the DIN ends are printed for carbon and stainless bodies alone" },
+    { "when": { "size": ["025", "038"] }, "forbid": { "ends": ["I7", "I6", "I8", "I4"] },
+      "reason": "the DIN rows carry their own DN15 up span" },
+    { "when": { "trim": ["I3", "I6"] }, "forbid": { "size": ["025", "038", "250", "300", "400"] },
+      "reason": "the IFE trims are printed 1/2 to 2 inch" },
+    { "when": { "size": ["250", "300", "400"] }, "forbid": { "seat": ["A", "B"] },
+      "reason": "the plain SST seats are printed 1/4 to 2 inch" },
+    { "when": { "size": "025" }, "forbid": { "cv": ["4", "5", "6", "7", "8", "9", "A", "B", "D", "F", "G", "I"] },
+      "reason": "the Cv table tops the 1/4 inch at 0.84; the low flow note allows a smaller Cv in a larger valve, never the reverse" },
+    { "when": { "size": "038" }, "forbid": { "cv": ["5", "6", "7", "8", "9", "A", "B", "D", "F", "G", "I"] },
+      "reason": "the Cv table tops the 3/8 inch at 1.6" },
+    { "when": { "size": ["050", "075"] }, "forbid": { "cv": ["7", "8", "9", "A", "B", "D", "F", "G", "I"] },
+      "reason": "the Cv table tops the 1/2 and 3/4 inch at 4.4" },
+    { "when": { "size": ["100", "125"] }, "forbid": { "cv": ["9", "A", "B", "D", "F", "G", "I"] },
+      "reason": "the Cv table tops the 1 and 1-1/4 inch at 9.5" },
+    { "when": { "size": "150" }, "forbid": { "cv": ["A", "B", "D", "F", "G", "I"] },
+      "reason": "the Cv table tops the 1-1/2 inch at 15" },
+    { "when": { "size": "200" }, "forbid": { "cv": ["D", "F", "G", "I"] },
+      "reason": "the Cv table tops the 2 inch at 30, and the starred Cvs are 2-1/2 to 4 inch only" },
+    { "when": { "size": "250" }, "forbid": { "cv": ["F", "G", "I"] },
+      "reason": "the Cv table tops the 2-1/2 inch at 55" },
+    { "when": { "size": "300" }, "forbid": { "cv": ["I"] },
+      "reason": "the Cv table tops the 3 inch at 115" },
+    { "when": { "spring": ["15", "16", "37", "81", "A6", "D8"] }, "forbid": { "model": ["60HP", "61"] },
+      "reason": "these ranges are printed in the MK60/60QC table" },
+    { "when": { "spring": ["15", "16", "37", "81", "A6", "D8"] }, "forbid": { "size": ["100", "125", "150", "200", "250", "300", "400"] },
+      "reason": "these ranges are printed for 1/4 to 3/4 inch" },
+    { "when": { "spring": "56" }, "forbid": { "model": ["60HP"] },
+      "reason": "the 20-55 range is printed in the MK60/60QC and MK61 tables, not the high pressure one" },
+    { "when": { "spring": "56", "model": ["60", "60QC"] }, "forbid": { "size": ["100", "125", "150", "200", "250", "300", "400"] },
+      "reason": "on the MK60 and 60QC the 20-55 range is printed for 1/4 to 3/4 inch" },
+    { "when": { "spring": ["20", "28", "34", "53", "75", "97"] }, "forbid": { "model": ["60HP", "61"] },
+      "reason": "these ranges are printed in the MK60/60QC table" },
+    { "when": { "spring": ["20", "28", "34", "53", "75", "97"] }, "forbid": { "size": ["025", "038", "050", "075", "250", "300", "400"] },
+      "reason": "these ranges are printed for 1 to 2 inch" },
+    { "when": { "spring": "05" }, "forbid": { "model": ["60HP"] },
+      "reason": "the 1-5 range is printed in the MK60/60QC and MK61 tables, not the high pressure one" },
+    { "when": { "spring": "05", "model": ["60", "60QC"] }, "forbid": { "size": ["025", "038", "050", "075", "250", "300", "400"] },
+      "reason": "on the MK60 and 60QC the 1-5 range is printed for 1 to 2 inch" },
+    { "when": { "spring": ["29", "32", "42"] }, "forbid": { "model": ["60HP", "61"] },
+      "reason": "these ranges are printed in the MK60/60QC table" },
+    { "when": { "spring": ["29", "32", "42"] }, "forbid": { "size": ["025", "038", "050", "075", "100", "125", "150", "200"] },
+      "reason": "these ranges are printed for 2-1/2 to 4 inch" },
+    { "when": { "spring": ["A1", "A7", "A9"] }, "forbid": { "model": ["60", "60QC", "61"] },
+      "reason": "these ranges are printed in the MK60HP table" },
+    { "when": { "spring": ["A1", "A7", "A9"] }, "forbid": { "size": ["025", "038", "250", "300", "400"] },
+      "reason": "these high pressure ranges are printed for 1/2 to 2 inch" },
+    { "when": { "spring": ["71", "98"] }, "forbid": { "model": ["60", "60QC", "61"] },
+      "reason": "these ranges are printed in the MK60HP table" },
+    { "when": { "spring": ["71", "98"] }, "forbid": { "size": ["025", "038", "050", "075", "100", "125", "150", "200"] },
+      "reason": "these ranges are printed for 2-1/2 to 4 inch" },
+    { "when": { "spring": ["10", "17", "36", "63", "87", "70", "80"] }, "forbid": { "model": ["60", "60QC", "60HP"] },
+      "reason": "these ranges are printed in the MK61 table" }
+  ],
+  "cautions": []
+}

@@ -37,6 +37,8 @@ const jrdl = JSON.parse(readFileSync(join(here, 'models', 'jrdl.json'), 'utf8'))
 const jb = JSON.parse(readFileSync(join(here, 'models', 'jb.json'), 'utf8'));
 const jbdl = JSON.parse(readFileSync(join(here, 'models', 'jbdl.json'), 'utf8'));
 const jrpl = JSON.parse(readFileSync(join(here, 'models', 'jrpl.json'), 'utf8'));
+const mk50 = JSON.parse(readFileSync(join(here, 'models', 'mk50.json'), 'utf8'));
+const mk60 = JSON.parse(readFileSync(join(here, 'models', 'mk60.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -649,6 +651,69 @@ check('the extraction artefacts are confessed in the notes, held rather than cor
   assert.ok(/page boundary/i.test(jrh.note), 'the JRH missing ZZ rows are flagged as a page-boundary suspicion');
   assert.ok(/JRPH/.test(jrpl.note) && /PDF/.test(jrpl.note), 'the unbuilt JRPH sister is named, with why');
   assert.ok(/LL/.test(jbdl.note), 'the JBDL private gauge ladder is called out against the family');
+});
+
+console.log('\nThe Jordan sliding gate flagships, Mark 50 and Mark 60 families:');
+
+check('all eight family models round-trip, the 50 with its printed separators and the 60 bare', () => {
+  roundTrip(mk50, {
+    model: '50', size: '050', body: 'S6', ends: 'PT', trim: 'S6', seat: 'A',
+    cv: '5', spring: '14', diaphragm: 'JL', actuator: 'MD',
+  }, '50-050-S6/PTS6A514JLMD');
+  roundTrip(mk50, {
+    model: '50HP', size: '300', body: 'CI', ends: 'I2', trim: 'S3', seat: 'Q',
+    cv: 'G', spring: '82', diaphragm: 'BN', actuator: 'ED',
+  }, '50HP-300-CI/I2S3QG82BNED');
+  roundTrip(mk50, {
+    model: '51', size: '025', body: 'BR', ends: 'BP', trim: 'S3', seat: 'V',
+    cv: '1', spring: '04', diaphragm: 'VI', actuator: 'ED',
+  }, '51-025-BR/BPS3V104VIED');
+  roundTrip(mk60, {
+    model: '60', size: '125', body: 'S6', ends: 'I6', trim: 'I6', seat: 'W',
+    cv: '8', spring: '34', diaphragm: 'JL', actuator: 'SM',
+  }, '60125S6I6I6W834JLSM');
+  roundTrip(mk60, {
+    model: '60HP', size: '050', body: 'CS', ends: 'F2', trim: 'S3', seat: 'B',
+    cv: '4', spring: 'A1', diaphragm: 'VI', actuator: 'ED',
+  }, '60HP050CSF2S3B4A1VIED');
+  roundTrip(mk60, {
+    model: '61', size: '075', body: 'DI', ends: 'SW', trim: 'S6', seat: 'R',
+    cv: '3', spring: '80', diaphragm: 'BN', actuator: 'MD',
+  }, '61075DISWS6R380BNMD');
+});
+
+check('the spring tables hold their models and their size bands', () => {
+  assert.ok(checkConstraints(mk50, { spring: 'A1', model: '50' }).length > 0, 'a high pressure range refuses the standard model');
+  assert.ok(checkConstraints(mk50, { spring: '03', size: '050' }).length > 0, 'a 1 to 2 inch range refuses a small valve');
+  assert.ok(checkConstraints(mk50, { spring: '22', size: '200' }).length > 0, 'a large-valve range refuses a 2 inch');
+  assert.ok(checkConstraints(mk60, { spring: '56', model: '60', size: '100' }).length > 0, 'on the MK60 the shared 20-55 range stays in the small band');
+  assert.equal(checkConstraints(mk60, { spring: '56', model: '61', size: '050' }).length, 0, 'on the MK61 the same range is its own row');
+  assert.ok(checkConstraints(mk60, { spring: '80', model: '60' }).length > 0, 'an MK61 range refuses the standard model');
+});
+
+check('the Cv ladder refuses above the size, never below, per the low flow note', () => {
+  assert.ok(checkConstraints(mk50, { size: '200', cv: 'D' }).length > 0, '55 Cv refuses a 2 inch');
+  assert.equal(checkConstraints(mk50, { size: '400', cv: '1' }).length, 0, 'a low flow Cv rides in a large valve');
+  assert.ok(checkConstraints(mk60, { size: '300', cv: 'I' }).length > 0, '200 Cv refuses a 3 inch');
+  assert.equal(checkConstraints(mk60, { size: '400', cv: 'I' }).length, 0, '200 Cv is the 4 inch top');
+});
+
+check('sizes, bodies, ends and diaphragms keep their printed bands', () => {
+  assert.ok(checkConstraints(mk50, { model: '51', size: '100' }).length > 0, 'the large diaphragm stops at 3/4 inch');
+  assert.ok(checkConstraints(mk60, { model: '60QC', size: '250' }).length > 0, 'quick change stops at 2 inch');
+  assert.ok(checkConstraints(mk50, { body: 'DI', ends: 'I7' }).length > 0, 'DIN ends are carbon and stainless only');
+  assert.ok(checkConstraints(mk60, { size: '038', ends: 'I7' }).length > 0, 'the DIN rows carry their own DN15 up span');
+  assert.ok(checkConstraints(mk50, { spring: '04', diaphragm: 'S6' }).length > 0, 'the 1/2-5 spring must use an elastomer diaphragm');
+  assert.ok(checkConstraints(mk50, { size: '250', actuator: 'MD' }).length > 0, 'the metal diaphragm actuator stops at 2 inch on the 50');
+  assert.equal(applyValue(mk50, {}, 'size', '125').accepted, false, 'the 50 sheet prints no 1-1/4 inch row');
+  assert.ok(applyValue(mk60, {}, 'size', '125').accepted, 'the 60 sheet does');
+});
+
+check('the 60 sheet extraction artefacts are confessed, not corrected', () => {
+  assert.ok(/separator/i.test(mk60.note) && /PDF/.test(mk60.note), 'the missing separator row is flagged against the 50 sheet');
+  assert.ok(/F1/.test(mk60.note), 'the F1 label artefact is named');
+  assert.ok(/DIN/.test(mk60.note), 'the DIN row placement is named');
+  assert.ok(/60QC/.test(mk60.note) && /50QC/.test(mk50.note), 'the quick change spring-table assumption is held for John on both sheets');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
