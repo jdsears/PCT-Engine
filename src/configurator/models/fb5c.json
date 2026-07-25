@@ -1,0 +1,881 @@
+{
+  "model": "FB5C",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow F&B FB5C sanitary back pressure regulator",
+  "match": [
+    "fb5c",
+    "fb5cht",
+    "fb back pressure"
+  ],
+  "source": {
+    "doc": "fb5c.pdf",
+    "page": "6 and 7",
+    "section": "Ordering Schematic FB5C (3A) and FB5CHT (High Temp)"
+  },
+  "note": "Extracted by hand from the two schematics on one sheet, folded into one grammar: the FB5C 3A form prints the hard seats alone and the FB5CHT high temp form, not 3A, the full seat ladder. The high temp ladder prints the character B twice, first at the 3.0 hard seat and again at the 3.0 PEEK seat, so the first printing is carried and choosing B raises a caution, the 4700 precedent; the 3.0 PEEK row is left uncoded. The body pairs a finish letter with a Cv letter and the range pairs the standard screw with a range letter, one ZZ across each pair. The TY o-ring and EPDM diaphragm keep their printed size brackets. The body Cv letters are matched to the trim rows as an inferred coupling.",
+  "assembly": "{model}-{size}-{bodyMaterial}{bodyFinish}{bodyCv}{trimFinish}{trimSeat}{oRing}{screw}{range}{diaphragm}{actuator}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "FB5C",
+          "label": "Sanitary back pressure regulator (3A)",
+          "aliases": [
+            "fb5c 3a"
+          ]
+        },
+        {
+          "code": "FB5CHT",
+          "label": "Sanitary back pressure high temp regulator (not 3A)",
+          "aliases": [
+            "fb5c high temp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "300",
+          "label": "3\" (DN80)",
+          "aliases": [
+            "3\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "316L SST",
+          "aliases": [
+            "316l"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyFinish",
+      "label": "Body finish (1)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "32 Ra (.81 Ra \u03bcm) interior / cast exterior (standard)",
+          "aliases": [
+            "standard finish"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across finish and Cv)",
+          "aliases": [
+            "non-standard body finish"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyCv",
+      "label": "Body Cv (2)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "B",
+          "label": "Cv 0.5 (0,4)",
+          "aliases": [
+            "cv 0.5"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "Cv 1.5 (1,3)",
+          "aliases": [
+            "cv 1.5"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Cv 3.0 (2,6)",
+          "aliases": [
+            "cv 3.0"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Cv 5.5 (4,6)",
+          "aliases": [
+            "cv 5.5"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Cv 10 (8,7)",
+          "aliases": [
+            "cv 10"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Cv 19 (16,4)",
+          "aliases": [
+            "cv 19"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Cv 28 (24,2)",
+          "aliases": [
+            "cv 28"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across finish and Cv)",
+          "aliases": [
+            "non-standard body cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trimFinish",
+      "label": "Trim finish (3)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "32 Ra (.81 Ra \u03bcm) (standard)",
+          "aliases": [
+            "standard trim finish"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across finish and seat)",
+          "aliases": [
+            "non-standard trim finish"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trimSeat",
+      "label": "Trim Cv and seat (4)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "5",
+          "label": "Cv 0.5 (0,4) hard seat",
+          "aliases": [
+            "cv 0.5"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "Cv 0.5 (0,4) Teflon seat",
+          "aliases": [
+            "cv 0.5"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Cv 0.5 (0,4) PEEK seat",
+          "aliases": [
+            "cv 0.5"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "Cv 1.5 (1,3) hard seat",
+          "aliases": [
+            "cv 1.5"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "Cv 1.5 (1,3) Teflon seat",
+          "aliases": [
+            "cv 1.5"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "Cv 1.5 (1,3) PEEK seat",
+          "aliases": [
+            "cv 1.5"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Cv 3.0 (2,6) hard seat (printed again as the 3.0 PEEK seat later in the ladder, see note)",
+          "aliases": [
+            "cv 3.0"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Cv 3.0 (2,6) Teflon seat",
+          "aliases": [
+            "cv 3.0"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Cv 3.0 (2,6) Jorlon seat",
+          "aliases": [
+            "cv 3.0"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Cv 5.5 (4,6) hard seat",
+          "aliases": [
+            "cv 5.5"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Cv 5.5 (4,6) Teflon seat",
+          "aliases": [
+            "cv 5.5"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Cv 5.5 (4,6) Jorlon seat",
+          "aliases": [
+            "cv 5.5"
+          ]
+        },
+        {
+          "code": "O",
+          "label": "Cv 5.5 (4,6) PEEK seat",
+          "aliases": [
+            "cv 5.5"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Cv 10 (8,7) hard seat",
+          "aliases": [
+            "cv 10"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "Cv 10 (8,7) Teflon seat",
+          "aliases": [
+            "cv 10"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Cv 10 (8,7) Jorlon seat",
+          "aliases": [
+            "cv 10"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Cv 10 (8,7) PEEK seat",
+          "aliases": [
+            "cv 10"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Cv 19 (16,4) hard seat",
+          "aliases": [
+            "cv 19"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Cv 19 (16,4) Teflon seat",
+          "aliases": [
+            "cv 19"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Cv 19 (16,4) Jorlon seat",
+          "aliases": [
+            "cv 19"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "Cv 19 (16,4) PEEK seat",
+          "aliases": [
+            "cv 19"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "Cv 28 (24,2) hard seat",
+          "aliases": [
+            "cv 28"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "Cv 28 (24,2) Teflon seat",
+          "aliases": [
+            "cv 28"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Cv 28 (24,2) Jorlon seat",
+          "aliases": [
+            "cv 28"
+          ]
+        },
+        {
+          "code": "Y",
+          "label": "Cv 28 (24,2) PEEK seat",
+          "aliases": [
+            "cv 28"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across finish and seat)",
+          "aliases": [
+            "non-standard seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oRing",
+      "label": "O-ring / diaphragm (5 and 6)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "EE",
+          "label": "EPDM / EPDM diaphragm",
+          "aliases": [
+            "epdm epdm"
+          ]
+        },
+        {
+          "code": "TY",
+          "label": "Teflon encapsulated Viton / Jorlon diaphragm (3/4\"-3\" only)",
+          "aliases": [
+            "teflon viton jorlon"
+          ]
+        },
+        {
+          "code": "EJ",
+          "label": "EPDM / Jorlon diaphragm",
+          "aliases": [
+            "epdm jorlon"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard o-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screw",
+      "label": "Adjusting screw finish (7)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Standard",
+          "aliases": [
+            "standard screw"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across screw and range)",
+          "aliases": [
+            "non-standard screw"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "range",
+      "label": "Range psi/bar (8)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "3-8 (0,2-0,6)",
+          "aliases": [
+            "3-8"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "5-25 (0,3-1,7)",
+          "aliases": [
+            "5-25"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "5-30 (0,3-2,1)",
+          "aliases": [
+            "5-30"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "10-25 (0,7-1,7)",
+          "aliases": [
+            "10-25"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "5-25 (0,3-1,7) (the second 5-25 row, as the sheet prints it)",
+          "aliases": [
+            "5-25 second"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "15-40 (0,3-2,8)",
+          "aliases": [
+            "15-40"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "15-50 (0,3-3,4)",
+          "aliases": [
+            "15-50"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "15-60 (0,3-4,1)",
+          "aliases": [
+            "15-60"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "35-85 (2,4-5,9)",
+          "aliases": [
+            "35-85"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "35-90 (2,4-6,2)",
+          "aliases": [
+            "35-90"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "50-105 (0,3-7,2)",
+          "aliases": [
+            "50-105"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across screw and range)",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (9 and 10)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "EP",
+          "label": "EPDM (3/4\" and 1\" only)",
+          "aliases": [
+            "epdm diaphragm"
+          ]
+        },
+        {
+          "code": "JL",
+          "label": "Jorlon",
+          "aliases": [
+            "jorlon diaphragm"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (11 and 12)",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "AA",
+          "label": "Standard",
+          "aliases": [
+            "standard actuator"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "model": "FB5C"
+      },
+      "forbid": {
+        "trimSeat": [
+          "8",
+          "6",
+          "9",
+          "7",
+          "F",
+          "G",
+          "M",
+          "N",
+          "O",
+          "Q",
+          "R",
+          "3",
+          "T",
+          "U",
+          "4",
+          "W",
+          "X",
+          "Y"
+        ]
+      },
+      "reason": "the 3A schematic prints the hard seats alone"
+    },
+    {
+      "when": {
+        "oRing": "TY"
+      },
+      "forbid": {
+        "size": [
+          "050"
+        ]
+      },
+      "reason": "the TY row prints 3/4 to 3 inch only"
+    },
+    {
+      "when": {
+        "diaphragm": "EP"
+      },
+      "forbid": {
+        "size": [
+          "050",
+          "150",
+          "200",
+          "300"
+        ]
+      },
+      "reason": "the EPDM diaphragm prints 3/4 and 1 inch only"
+    },
+    {
+      "when": {
+        "bodyCv": "B"
+      },
+      "forbid": {
+        "trimSeat": [
+          "A",
+          "9",
+          "7",
+          "B",
+          "F",
+          "G",
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "Q",
+          "R",
+          "3",
+          "S",
+          "T",
+          "U",
+          "4",
+          "V",
+          "W",
+          "X",
+          "Y"
+        ]
+      },
+      "reason": "the body Cv 0.5 pairs with its own trim rows, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "A"
+      },
+      "forbid": {
+        "trimSeat": [
+          "5",
+          "8",
+          "6",
+          "B",
+          "F",
+          "G",
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "Q",
+          "R",
+          "3",
+          "S",
+          "T",
+          "U",
+          "4",
+          "V",
+          "W",
+          "X",
+          "Y"
+        ]
+      },
+      "reason": "the body Cv 1.5 pairs with its own trim rows, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "D"
+      },
+      "forbid": {
+        "trimSeat": [
+          "5",
+          "8",
+          "6",
+          "A",
+          "9",
+          "7",
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "Q",
+          "R",
+          "3",
+          "S",
+          "T",
+          "U",
+          "4",
+          "V",
+          "W",
+          "X",
+          "Y"
+        ]
+      },
+      "reason": "the body Cv 3.0 pairs with its own trim rows, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "K"
+      },
+      "forbid": {
+        "trimSeat": [
+          "5",
+          "8",
+          "6",
+          "A",
+          "9",
+          "7",
+          "B",
+          "F",
+          "G",
+          "P",
+          "Q",
+          "R",
+          "3",
+          "S",
+          "T",
+          "U",
+          "4",
+          "V",
+          "W",
+          "X",
+          "Y"
+        ]
+      },
+      "reason": "the body Cv 5.5 pairs with its own trim rows, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "M"
+      },
+      "forbid": {
+        "trimSeat": [
+          "5",
+          "8",
+          "6",
+          "A",
+          "9",
+          "7",
+          "B",
+          "F",
+          "G",
+          "L",
+          "M",
+          "N",
+          "O",
+          "S",
+          "T",
+          "U",
+          "4",
+          "V",
+          "W",
+          "X",
+          "Y"
+        ]
+      },
+      "reason": "the body Cv 10 pairs with its own trim rows, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "N"
+      },
+      "forbid": {
+        "trimSeat": [
+          "5",
+          "8",
+          "6",
+          "A",
+          "9",
+          "7",
+          "B",
+          "F",
+          "G",
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "Q",
+          "R",
+          "3",
+          "V",
+          "W",
+          "X",
+          "Y"
+        ]
+      },
+      "reason": "the body Cv 19 pairs with its own trim rows, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "P"
+      },
+      "forbid": {
+        "trimSeat": [
+          "5",
+          "8",
+          "6",
+          "A",
+          "9",
+          "7",
+          "B",
+          "F",
+          "G",
+          "L",
+          "M",
+          "N",
+          "O",
+          "P",
+          "Q",
+          "R",
+          "3",
+          "S",
+          "T",
+          "U",
+          "4"
+        ]
+      },
+      "reason": "the body Cv 28 pairs with its own trim rows, held as an inferred coupling for John"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "trimSeat": "B"
+      },
+      "note": "The high temp ladder prints B twice, at the 3.0 hard seat and again at the 3.0 PEEK seat. The first printing is carried here; verify against the PDF before ordering."
+    }
+  ]
+}
