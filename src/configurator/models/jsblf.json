@@ -1,0 +1,577 @@
+{
+  "model": "JSBLF",
+  "line": "steriflow",
+  "displayName": "Steriflow JSBLF compact high purity low flow back pressure regulator",
+  "match": [
+    "jsblf",
+    "jsblf series"
+  ],
+  "source": {
+    "doc": "jsblfseries.pdf",
+    "page": 5,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash ends dash seat then the positions bare. The body feature pairs a Cv digit with a port letter and prints one ZZ across the pair; there is no port C on this sheet. The starred spring ranges are NPT only by the sheet's own footnote. The inlet gauge codes print slashed zero glyphs, carried as plain zeros, and the outlet gauge non-standard row prints ZZ though the position is single width, carried as printed.",
+  "assembly": "{model}-{size}-{ends}-{seat}{cv}{portConfig}{trim}{springRange}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "JSBLF",
+          "label": "Compact, high purity back pressure regulator",
+          "aliases": [
+            "jsblf"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "038",
+          "label": "3/8\" (DN10)",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6C",
+          "label": "316L tri-clamp",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "6P",
+          "label": "316L FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        },
+        {
+          "code": "6T",
+          "label": "316L ASME BPE BWE",
+          "aliases": [
+            "bwe"
+          ]
+        },
+        {
+          "code": "6D",
+          "label": "316L DIN tri-clamp (DIN 32676 row A)",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "6S",
+          "label": "316L ISO tri-clamp (DIN 32676 row B)",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Soft seat",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "T",
+          "label": "TFM",
+          "aliases": [
+            "tfm"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "PEEK",
+          "aliases": [
+            "peek"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cv",
+      "label": "Body feature Cv (1)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "0.05 Cv",
+          "aliases": [
+            "0.05"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "0.15 Cv",
+          "aliases": [
+            "0.15"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "0.25 Cv",
+          "aliases": [
+            "0.25"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "0.35 Cv",
+          "aliases": [
+            "0.35"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across Cv and port)",
+          "aliases": [
+            "non-standard cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portConfig",
+      "label": "Port configuration (2)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Port A",
+          "aliases": [
+            "port a"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Port B",
+          "aliases": [
+            "port b"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Port D",
+          "aliases": [
+            "port d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Port E",
+          "aliases": [
+            "port e"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across Cv and port)",
+          "aliases": [
+            "non-standard port"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim (3 and 4)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1S",
+          "label": "All Cv's",
+          "aliases": [
+            "all cvs"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "springRange",
+      "label": "Spring range (5 and 6)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "E1",
+          "label": "5-50",
+          "aliases": [
+            "5-50"
+          ]
+        },
+        {
+          "code": "E2",
+          "label": "25-100",
+          "aliases": [
+            "25-100"
+          ]
+        },
+        {
+          "code": "E3",
+          "label": "50-150",
+          "aliases": [
+            "50-150"
+          ]
+        },
+        {
+          "code": "E4",
+          "label": "75-250, NPT connections only",
+          "aliases": [
+            "75-250"
+          ]
+        },
+        {
+          "code": "E5",
+          "label": "100-450, NPT connections only",
+          "aliases": [
+            "100-450"
+          ]
+        },
+        {
+          "code": "E6",
+          "label": "200-450, NPT connections only",
+          "aliases": [
+            "200-450"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm material (7 and 8)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "JL",
+          "label": "Jorlon",
+          "aliases": [
+            "jorlon"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (9 and 10)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "SK",
+          "label": "Standard actuator",
+          "aliases": [
+            "standard"
+          ]
+        },
+        {
+          "code": "PM",
+          "label": "Panel mount",
+          "aliases": [
+            "panel mount"
+          ]
+        },
+        {
+          "code": "CV",
+          "label": "Captured vent",
+          "aliases": [
+            "captured vent"
+          ]
+        },
+        {
+          "code": "TP",
+          "label": "Tamper proof",
+          "aliases": [
+            "tamper proof"
+          ]
+        },
+        {
+          "code": "AA",
+          "label": "Air augment",
+          "aliases": [
+            "air augment"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletGauge",
+      "label": "Inlet gauge (11 and 12)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "0B",
+          "label": "0-30 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-30 gauge"
+          ]
+        },
+        {
+          "code": "0C",
+          "label": "0-60 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-60 gauge"
+          ]
+        },
+        {
+          "code": "0D",
+          "label": "0-100 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-100 gauge"
+          ]
+        },
+        {
+          "code": "0E",
+          "label": "0-160 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-160 gauge"
+          ]
+        },
+        {
+          "code": "0F",
+          "label": "0-200 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-200 gauge"
+          ]
+        },
+        {
+          "code": "0N",
+          "label": "None (the sheet prints a slashed zero)",
+          "aliases": [
+            "no inlet gauge"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard inlet gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletGauge",
+      "label": "Outlet gauge (13)",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "B",
+          "label": "0-30 psig/bar (dual)",
+          "aliases": [
+            "0-30 outlet"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "0-60 psig/bar (dual)",
+          "aliases": [
+            "0-60 outlet"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "0-100 psig/bar (dual)",
+          "aliases": [
+            "0-100 outlet"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "0-160 psig/bar (dual)",
+          "aliases": [
+            "0-160 outlet"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "None",
+          "aliases": [
+            "no outlet gauge"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard (printed two characters wide in a single position, as the sheet has it)",
+          "aliases": [
+            "non-standard outlet gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sep",
+      "label": "SEP compliance (14)",
+      "position": 13,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None required",
+          "aliases": [
+            "no sep"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "SEP compliant",
+          "aliases": [
+            "sep"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard sep"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (15)",
+      "position": 14,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None required",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Clean for oil free",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Clean for oxygen (ASTM G-93 2011 and CGA G-4.1-2009)",
+          "aliases": [
+            "oxygen clean"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Clean for oxygen, assemble dry (ASTM G-93 2011 and CGA G-4.1-2009)",
+          "aliases": [
+            "oxygen dry"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "springRange": [
+          "E4",
+          "E5",
+          "E6"
+        ]
+      },
+      "forbid": {
+        "ends": [
+          "6C",
+          "6T",
+          "6D",
+          "6S"
+        ]
+      },
+      "reason": "the sheet's footnote: these spring ranges can only be selected if the valve has NPT connections"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "inletGauge": [
+          "0B",
+          "0C",
+          "0D",
+          "0E",
+          "0F"
+        ]
+      },
+      "note": "The sheet's own line: the customer assumes all responsibility for possible damage or injury if the selected gauge span does not fully cover the range spring / outlet pressure option."
+    }
+  ]
+}

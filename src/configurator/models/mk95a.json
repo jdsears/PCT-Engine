@@ -1,0 +1,535 @@
+{
+  "model": "MK95A",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 95A sanitary air-loaded pressure regulator",
+  "match": [
+    "mk95a",
+    "mark 95a",
+    "95a",
+    "air loaded",
+    "air-loaded"
+  ],
+  "source": {
+    "doc": "mk95a.pdf",
+    "page": 6,
+    "section": "Order Schematic"
+  },
+  "note": "Extracted by hand from the order schematic, model dash size dash material then the positions bare. The trim section prints no non-standard row, carried as the sheet has it. The o-ring rows carry their own Cv brackets, over 3 and 0.5 to 3, enforced against the trim ladder. The 3 inch size prints contact factory for availability in its own row. The body Cv letters are matched to the trim Cv rows as an inferred coupling, held for John.",
+  "assembly": "{model}-{size}-{material}{bodyFinish}{bodyCv}{trimFinish}{trimSeat}{oRing}{airLoad}{diaphragm}{actuator}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "95A",
+          "label": "Standard",
+          "aliases": [
+            "95a"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "300",
+          "label": "3\" (DN80): contact factory for availability",
+          "aliases": [
+            "3\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "316L stainless steel",
+          "aliases": [
+            "316l"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyFinish",
+      "label": "Body finish (1)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "20Ra interior / 40rms exterior (standard)",
+          "aliases": [
+            "standard finish"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "20Ra interior / 20Ra exterior",
+          "aliases": [
+            "20ra exterior"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "8Ra interior / 63rms exterior",
+          "aliases": [
+            "8ra interior"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "20Ra interior / 8Ra exterior",
+          "aliases": [
+            "8ra exterior"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "8Ra interior / 8Ra exterior",
+          "aliases": [
+            "8ra both"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "8Ra interior / 20Ra exterior",
+          "aliases": [
+            "8ra in 20ra out"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across finish and Cv)",
+          "aliases": [
+            "non-standard body finish"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyCv",
+      "label": "Body Cv (2)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Cv 0.5-1.5",
+          "aliases": [
+            "cv 0.5-1.5"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Cv 3.0",
+          "aliases": [
+            "cv 3.0"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Cv 4.5",
+          "aliases": [
+            "cv 4.5"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Cv 5.5",
+          "aliases": [
+            "cv 5.5"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Cv 10",
+          "aliases": [
+            "cv 10"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Cv 19",
+          "aliases": [
+            "cv 19"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across finish and Cv)",
+          "aliases": [
+            "non-standard body cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trimFinish",
+      "label": "Trim finish (3)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "20ra (standard, as the sheet prints it)",
+          "aliases": [
+            "20ra trim"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "8ra",
+          "aliases": [
+            "8ra trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trimSeat",
+      "label": "Trim Cv and seat (4)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "8",
+          "label": "Cv 0.5 TFE",
+          "aliases": [
+            "cv 0.5 tfe"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "Cv 1.5 TFE",
+          "aliases": [
+            "cv 1.5 tfe"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Cv 3.0 TFE",
+          "aliases": [
+            "cv 3.0 tfe"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Cv 4.5 TFE",
+          "aliases": [
+            "cv 4.5 tfe"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Cv 5.5 TFE",
+          "aliases": [
+            "cv 5.5 tfe"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "Cv 10 TFE",
+          "aliases": [
+            "cv 10 tfe"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Cv 19 TFE",
+          "aliases": [
+            "cv 19 tfe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oRing",
+      "label": "O-ring/diaphragm (5 and 6)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "TY",
+          "label": "TFE encapsulated Viton/Jorlon diaphragm, over 3 Cv",
+          "aliases": [
+            "ty over 3"
+          ]
+        },
+        {
+          "code": "TG",
+          "label": "TFE encapsulated Viton/Jorlon diaphragm, 0.5-3 Cv",
+          "aliases": [
+            "tg 0.5-3"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard o-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "airLoad",
+      "label": "Air loading I/P transducer option (7 and 8)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "no loader"
+          ]
+        },
+        {
+          "code": "AP",
+          "label": "I/P transducer, 4/20 MA / 60 psi output",
+          "aliases": [
+            "ip 60"
+          ]
+        },
+        {
+          "code": "AH",
+          "label": "I/P transducer, 4/20 MA / 120 psi output",
+          "aliases": [
+            "ip 120"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (9 and 10)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "JL",
+          "label": "Jorlon",
+          "aliases": [
+            "jorlon"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (11 and 12)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "AA",
+          "label": "Anodised aluminium",
+          "aliases": [
+            "anodised aluminium"
+          ]
+        },
+        {
+          "code": "BA",
+          "label": "63rms electropolished SST",
+          "aliases": [
+            "63rms sst"
+          ]
+        },
+        {
+          "code": "CA",
+          "label": "20ra electropolished SST",
+          "aliases": [
+            "20ra sst"
+          ]
+        },
+        {
+          "code": "DA",
+          "label": "8ra electropolished SST",
+          "aliases": [
+            "8ra sst"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "oRing": "TY"
+      },
+      "forbid": {
+        "trimSeat": [
+          "8",
+          "9",
+          "F"
+        ]
+      },
+      "reason": "the TY row prints over 3 Cv"
+    },
+    {
+      "when": {
+        "oRing": "TG"
+      },
+      "forbid": {
+        "trimSeat": [
+          "J",
+          "M",
+          "Q",
+          "T"
+        ]
+      },
+      "reason": "the TG row prints 0.5 to 3 Cv"
+    },
+    {
+      "when": {
+        "bodyCv": "A"
+      },
+      "forbid": {
+        "trimSeat": [
+          "F",
+          "J",
+          "M",
+          "Q",
+          "T"
+        ]
+      },
+      "reason": "the body Cv 0.5-1.5 pairs with its own trim rows, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "G"
+      },
+      "forbid": {
+        "trimSeat": [
+          "8",
+          "9",
+          "J",
+          "M",
+          "Q",
+          "T"
+        ]
+      },
+      "reason": "the body Cv 3.0 pairs with its own trim row, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "H"
+      },
+      "forbid": {
+        "trimSeat": [
+          "8",
+          "9",
+          "F",
+          "M",
+          "Q",
+          "T"
+        ]
+      },
+      "reason": "the body Cv 4.5 pairs with its own trim row, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "K"
+      },
+      "forbid": {
+        "trimSeat": [
+          "8",
+          "9",
+          "F",
+          "J",
+          "Q",
+          "T"
+        ]
+      },
+      "reason": "the body Cv 5.5 pairs with its own trim row, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "M"
+      },
+      "forbid": {
+        "trimSeat": [
+          "8",
+          "9",
+          "F",
+          "J",
+          "M",
+          "T"
+        ]
+      },
+      "reason": "the body Cv 10 pairs with its own trim row, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": "N"
+      },
+      "forbid": {
+        "trimSeat": [
+          "8",
+          "9",
+          "F",
+          "J",
+          "M",
+          "Q"
+        ]
+      },
+      "reason": "the body Cv 19 pairs with its own trim row, held as an inferred coupling for John"
+    }
+  ],
+  "cautions": []
+}
