@@ -1,0 +1,263 @@
+{
+  "model": "MK94",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 94 sanitary steam trap",
+  "match": [
+    "mk94",
+    "mark 94",
+    "94c"
+  ],
+  "source": {
+    "doc": "mark94.pdf",
+    "page": 3,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the Mark 93 pattern. The end connections mix single letters for the vertical forms with the printed four character orientation blocks CHCH, CHCV and CVCH for the horizontal tri-clamp forms, decoded longest first. The special options position follows the sheet's combine-two rule, so the slot enumerates every single and every alphabetical pair, the trailing dash on a bare build held for John. If no gasket is requested the sheet supplies TFE/Viton. The ISO tube row prints TUbe, the sheet's own case slip.",
+  "assembly": "{model}-{size}-{ends}-{options}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model/body joint (1)",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "94C",
+          "label": "Tri-clamp standard",
+          "aliases": [
+            "tri-clamp standard"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (2)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (3)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "Inch tri-clamp vertical inlet/outlet",
+          "aliases": [
+            "tri-clamp vertical"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "ISO tri-clamp vertical inlet/outlet",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "DIN tri-clamp vertical inlet/outlet",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Inch tube vertical inlet/outlet",
+          "aliases": [
+            "inch tube"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "DIN tube vertical inlet/outlet (DIN 1186, DIN 11850 row A)",
+          "aliases": [
+            "din tube"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "ISO tube vertical inlet/outlet (ISO DIN 1186 line B, ISO 1127)",
+          "aliases": [
+            "iso tube"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        },
+        {
+          "code": "CHCH",
+          "label": "Inch tri-clamp horizontal inlet/outlet",
+          "aliases": [
+            "horizontal inlet outlet"
+          ]
+        },
+        {
+          "code": "CHCV",
+          "label": "Inch tri-clamp horizontal inlet/vertical outlet",
+          "aliases": [
+            "horizontal inlet vertical outlet"
+          ]
+        },
+        {
+          "code": "CVCH",
+          "label": "Inch tri-clamp vertical inlet/horizontal outlet",
+          "aliases": [
+            "vertical inlet horizontal outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "options",
+      "label": "Special options (4)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (TFE/Viton gasket provided)",
+          "aliases": [
+            "no options"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Tuf-Steel, TFE/SST body gasket, FDA USP Class VI",
+          "aliases": [
+            "tuf-steel gasket"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Bolted clamp",
+          "aliases": [
+            "bolted clamp"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Electropolish",
+          "aliases": [
+            "electropolish"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Silverback gasket TFE/SST body gasket, USP Class VI",
+          "aliases": [
+            "silverback gasket"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard options"
+          ]
+        },
+        {
+          "code": "GK",
+          "label": "Combined options GK, per the sheet's combine-two rule",
+          "aliases": [
+            "options gk"
+          ]
+        },
+        {
+          "code": "GL",
+          "label": "Combined options GL, per the sheet's combine-two rule",
+          "aliases": [
+            "options gl"
+          ]
+        },
+        {
+          "code": "GS",
+          "label": "Combined options GS, per the sheet's combine-two rule",
+          "aliases": [
+            "options gs"
+          ]
+        },
+        {
+          "code": "GZ",
+          "label": "Combined options GZ, per the sheet's combine-two rule",
+          "aliases": [
+            "options gz"
+          ]
+        },
+        {
+          "code": "KL",
+          "label": "Combined options KL, per the sheet's combine-two rule",
+          "aliases": [
+            "options kl"
+          ]
+        },
+        {
+          "code": "KS",
+          "label": "Combined options KS, per the sheet's combine-two rule",
+          "aliases": [
+            "options ks"
+          ]
+        },
+        {
+          "code": "KZ",
+          "label": "Combined options KZ, per the sheet's combine-two rule",
+          "aliases": [
+            "options kz"
+          ]
+        },
+        {
+          "code": "LS",
+          "label": "Combined options LS, per the sheet's combine-two rule",
+          "aliases": [
+            "options ls"
+          ]
+        },
+        {
+          "code": "LZ",
+          "label": "Combined options LZ, per the sheet's combine-two rule",
+          "aliases": [
+            "options lz"
+          ]
+        },
+        {
+          "code": "SZ",
+          "label": "Combined options SZ, per the sheet's combine-two rule",
+          "aliases": [
+            "options sz"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

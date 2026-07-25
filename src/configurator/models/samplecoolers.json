@@ -1,0 +1,182 @@
+{
+  "model": "SC",
+  "line": "steriflow",
+  "displayName": "Steriflow SC30, SC50 and SC60 sample coolers",
+  "match": [
+    "sample cooler",
+    "sc30",
+    "sc50",
+    "sc60"
+  ],
+  "source": {
+    "doc": "samplecoolers.pdf",
+    "page": 6,
+    "section": "Ordering Schematic, SC30/SC50/SC60 series"
+  },
+  "note": "Extracted by hand from the ordering schematic. The cooling water connection and legs sections are printed per series and enforced: the SC30 and SC50 take the 3/4 inch tri-clamp connection alone, the SC60 the full ladder; the SC30 takes the leg options, the SC50 and SC60 the 00 none row. One finish, electro-polish. The sheet's accessory pointers, sample valve, hose, outlet adapter and carrying case, live on the accessories data sheet, not in this code.",
+  "assembly": "{model}-{connection}-{legs}-{finish}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SC30",
+          "label": "Sealed body portable unit with 1/2\" tri-clamp sample inlet, outlet",
+          "aliases": [
+            "sc30 portable"
+          ]
+        },
+        {
+          "code": "SC50",
+          "label": "Tri-clamp body unit with 1/2\" tri-clamp sample inlet, outlet",
+          "aliases": [
+            "sc50"
+          ]
+        },
+        {
+          "code": "SC60",
+          "label": "Sealed body unit with 1/2\" tri-clamp sample inlet, outlet",
+          "aliases": [
+            "sc60"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connection",
+      "label": "Cooling water connection",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "1/2\" tri-clamp (SC60 series)",
+          "aliases": [
+            "1/2 tri-clamp"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "1/2\" NPT female (SC60 series)",
+          "aliases": [
+            "1/2 npt"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "1/2\" BSP female (SC60 series)",
+          "aliases": [
+            "1/2 bsp"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "3/4\" tri-clamp",
+          "aliases": [
+            "3/4 tri-clamp"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "1\" tri-clamp (SC60 series)",
+          "aliases": [
+            "1 tri-clamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "legs",
+      "label": "Legs",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "SL",
+          "label": "Standard legs (SC30 series)",
+          "aliases": [
+            "standard legs"
+          ]
+        },
+        {
+          "code": "FL",
+          "label": "Extended legs with floor pads (SC30 series)",
+          "aliases": [
+            "extended legs"
+          ]
+        },
+        {
+          "code": "00",
+          "label": "None (SC50/SC60 series)",
+          "aliases": [
+            "no legs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Finish",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "EP",
+          "label": "SF5, 20 Ra \u03bcin (0,5 \u03bcm Ra), electro-polish",
+          "aliases": [
+            "electro-polish"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "model": [
+          "SC30",
+          "SC50"
+        ]
+      },
+      "forbid": {
+        "connection": [
+          "A",
+          "B",
+          "C",
+          "E"
+        ]
+      },
+      "reason": "the SC30/SC50 connection table prints the 3/4 inch tri-clamp alone"
+    },
+    {
+      "when": {
+        "model": "SC30"
+      },
+      "forbid": {
+        "legs": [
+          "00"
+        ]
+      },
+      "reason": "the SC30 legs table prints the standard and extended legs"
+    },
+    {
+      "when": {
+        "model": [
+          "SC50",
+          "SC60"
+        ]
+      },
+      "forbid": {
+        "legs": [
+          "SL",
+          "FL"
+        ]
+      },
+      "reason": "the SC50/SC60 legs table prints the 00 none row alone"
+    }
+  ],
+  "cautions": []
+}
