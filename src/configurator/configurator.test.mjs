@@ -68,6 +68,10 @@ const mk4046 = JSON.parse(readFileSync(join(here, 'models', 'mk4046.json'), 'utf
 const mk37 = JSON.parse(readFileSync(join(here, 'models', 'mk37.json'), 'utf8'));
 const mk33 = JSON.parse(readFileSync(join(here, 'models', 'mk33.json'), 'utf8'));
 const mk39 = JSON.parse(readFileSync(join(here, 'models', 'mk39.json'), 'utf8'));
+const mk687 = JSON.parse(readFileSync(join(here, 'models', 'mk687.json'), 'utf8'));
+const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
+const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
+const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -1057,6 +1061,29 @@ check('both electric families round-trip and their starred splits hold', () => {
   assert.ok(checkConstraints(mk33, { cv: 'Y', model: '33' }).length > 0, 'the double-starred Cvs refuse the standard 33');
   assert.ok(checkConstraints(mk33, { action: 'DP', actuator: '1L' }).length > 0, 'a fail action needs a spring return actuator');
   assert.equal(applyValue(mk39, {}, 'actuator', '1L').accepted, false, 'the 39 prints no standard single limit switch row');
+});
+
+console.log('\nThe blanketing four: 687, 688, 695 and 608BP:');
+
+check('the four blanketing sheets round-trip and their couplings hold', () => {
+  roundTrip(mk687, {
+    model: '687', size: '200', body: 'S6', ends: 'I3', trim: 'HW', range: '99', accessories: 'S6',
+  }, '687200S6I3HW99S6');
+  roundTrip(mk688, {
+    model: '688', size: '100', body: 'CS', ends: 'I5', trim: 'V2', range: '04',
+  }, '688100CSI5V204');
+  roundTrip(mk695, {
+    model: '695', size: '100', body: 'SB', endsCv: 'PC', seatOring: 'VC', cv: 'A7',
+    range: 'B1', actuator: 'S1', accessory: '22',
+  }, '695-100-SBPCVCA7B1S122');
+  roundTrip(mk608bp, {
+    model: '608BP', size: '075', body: 'CS', ends: 'F6', orifice: '03', range: '02',
+    actuator: 'SD', bushing: '00', ped: '0G',
+  }, '608BP075CSF60302SD000G');
+  assert.ok(checkConstraints(mk695, { endsCv: 'PA', cv: 'A4' }).length > 0, 'the 695 Cv letter runs through its three positions');
+  assert.ok(checkConstraints(mk695, { cv: 'A9', size: '075' }).length > 0, 'the starred large Cvs are 1 inch only');
+  assert.ok(checkConstraints(mk608bp, { range: '02', orifice: '05' }).length > 0, 'the starred water column ranges keep the 1/4 inch orifice');
+  assert.equal(checkCautions(mk695, { model: '695' }).length, 1, "the 695 carries the sheet's own check-with-factory caution on every build");
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

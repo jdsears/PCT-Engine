@@ -1,0 +1,92 @@
+{
+  "model": "MK608BP",
+  "line": "jordan",
+  "displayName": "Jordan Mark 608BP back pressure blanketing regulator",
+  "match": ["mk608bp", "mark 608bp", "jordan 608bp", "608bp"],
+  "source": { "doc": "mk608bp.pdf", "page": 6, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, twelve positions assembled bare. The starred water column ranges carry the sheet's own 1/4 inch orifice bracket, enforced. The bushing position is the single printed 00 and PED prints two characters including the SEP compliant row.",
+  "assembly": "{model}{size}{body}{ends}{orifice}{range}{actuator}{bushing}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "608BP", "label": "Standard", "aliases": ["mk608bp", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "F1", "label": "125# FE", "aliases": ["125 flanged"] },
+        { "code": "F5", "label": "150# FE", "aliases": ["150 flanged"] },
+        { "code": "F2", "label": "250# FE", "aliases": ["250 flanged"] },
+        { "code": "F3", "label": "300# FE", "aliases": ["300 flanged"] },
+        { "code": "F7", "label": "PN10 DIN FE", "aliases": ["pn10 flanged"] },
+        { "code": "F6", "label": "PN16 DIN FE", "aliases": ["pn16 flanged"] },
+        { "code": "F8", "label": "PN25 DIN FE", "aliases": ["pn25 flanged"] },
+        { "code": "F4", "label": "PN40 DIN FE", "aliases": ["pn40 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "orifice", "label": "Orifice (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "03", "label": "1/4\" (6mm)", "aliases": ["1/4 orifice"] },
+        { "code": "04", "label": "5/16\" (8mm)", "aliases": ["5/16 orifice"] },
+        { "code": "05", "label": "3/8\" (10mm)", "aliases": ["3/8 orifice"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard orifice"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (5 and 6)", "position": 6, "required": true,
+      "options": [
+        { "code": "02", "label": "2-5.5\" w.c. (5.0-13.7 mbar), 1/4\" orifice only", "aliases": ["2-5.5 wc"] },
+        { "code": "03", "label": "4-10\" w.c. (10.0-24.9 mbar), 1/4\" orifice only", "aliases": ["4-10 wc"] },
+        { "code": "04", "label": "5-30\" w.c. (12.4-74.7 mbar)", "aliases": ["5-30 wc"] },
+        { "code": "05", "label": "0.5-1.75 psi", "aliases": ["0.5-1.75"] },
+        { "code": "06", "label": "1-3.5 psi", "aliases": ["1-3.5"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (7 and 8)", "position": 7, "required": true,
+      "options": [
+        { "code": "SD", "label": "Standard", "aliases": ["standard"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "bushing", "label": "Bushing (9 and 10)", "position": 8, "required": true,
+      "options": [ { "code": "00", "label": "None", "aliases": ["none"] } ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (11 and 12)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "Not required", "aliases": ["not required"] },
+        { "code": "0F", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "0G", "label": "SEP compliant", "aliases": ["sep"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "range": ["02", "03"] }, "forbid": { "orifice": ["04", "05"] },
+      "reason": "the starred water column ranges are printed 1/4 inch orifice only" }
+  ],
+  "cautions": []
+}
