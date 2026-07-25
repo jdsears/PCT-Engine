@@ -83,6 +83,9 @@ const mk55 = JSON.parse(readFileSync(join(here, 'models', 'mk55.json'), 'utf8'))
 const mk56 = JSON.parse(readFileSync(join(here, 'models', 'mk56.json'), 'utf8'));
 const mk560 = JSON.parse(readFileSync(join(here, 'models', 'mk560.json'), 'utf8'));
 const mk57 = JSON.parse(readFileSync(join(here, 'models', 'mk57.json'), 'utf8'));
+const mk575 = JSON.parse(readFileSync(join(here, 'models', 'mk575.json'), 'utf8'));
+const mk586 = JSON.parse(readFileSync(join(here, 'models', 'mk586.json'), 'utf8'));
+const mk58 = JSON.parse(readFileSync(join(here, 'models', 'mk58.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1196,6 +1199,31 @@ check('the three round-trip and the printed bands hold', () => {
   assert.equal(checkCautions(mk57, { ends: 'BT' }).length, 1, 'the BSPT collision cautions, the 6769 precedent');
   assert.ok(mk56.slots.find(s => s.id === 'bolting').options.some(o => o.code === 'DZ'), 'the 56 prints DZ for double bolting, carried');
   assert.ok(/15/.test(mk560.note) && /actuator/i.test(mk560.note), 'the 560 header truncation is held for the PDF');
+});
+
+console.log('\nThe wafer 575 and the cage trim 586 and 58 close the back pressure shelf:');
+
+check('the three round-trip and the doubled Cv characters caution rather than vanish', () => {
+  roundTrip(mk575, {
+    model: '575', size: '600', body: 'S6', ends: 'C3', trim: 'HC', seatMaterial: 'W', cv: 'J',
+    range: '52', diaphragm: 'NN', actuator: 'ED', bolting: '00', accessories: '5', ped: 'F',
+  }, '575600S6C3HCWJ52NNED005F');
+  roundTrip(mk586, {
+    model: '586A', size: '200', body: 'BR', ends: 'JC', seatMaterial: 'H', cv: 'Y',
+    range: '00', diaphragm: 'S6', actuator: 'MD', accessories: 'F8', ped: '0G',
+  }, '586A200BRJCHY00S6MDF80G');
+  roundTrip(mk58, {
+    model: '58FT', size: '075', body: 'DI', ends: 'F6', seatMaterial: 'F', cv: 'X',
+    range: 'CD', diaphragm: 'JL', actuator: 'E2', accessories: 'XC',
+  }, '58FT075DIF6FXCDJLE2XC');
+  assert.ok(checkConstraints(mk575, { ends: 'C5', size: '300' }).length > 0, 'bolt thru stays with the 6 inch');
+  assert.ok(checkConstraints(mk586, { actuator: 'MD', diaphragm: 'VI' }).length > 0, 'the 586 metal actuator names its diaphragm');
+  assert.ok(checkConstraints(mk58, { range: 'C2', size: '100' }).length > 0, 'the 58 ranges keep their size bands');
+  assert.ok(checkConstraints(mk58, { actuator: 'M1', range: 'CJ' }).length > 0, 'M1 names its low ranges');
+  assert.ok(checkConstraints(mk58, { actuator: 'ED', size: '050' }).length > 0, 'ED sits under the large band heading');
+  assert.equal(checkCautions(mk58, { cv: '2' }).length, 1, 'the doubled Cv character cautions on the 58');
+  assert.equal(checkCautions(mk586, { cv: '3' }).length, 1, 'and on the 586');
+  assert.equal(checkCautions(mk586, { cv: '4' }).length, 0, 'a single-printed character stays silent');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

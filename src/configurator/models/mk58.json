@@ -1,0 +1,189 @@
+{
+  "model": "MK58",
+  "line": "jordan",
+  "displayName": "Jordan Mark 58FT/58A cage trim back pressure regulator",
+  "match": ["mk58", "mark 58", "58ft", "58a"],
+  "source": { "doc": "mk58ft_a.pdf", "page": "2 and 3", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic. Flow thru or angle flow installation. The range and actuator columns split into three size bands, quarter to half inch, three quarter to one inch, and one and a quarter to two inch, with the actuator rows naming their diaphragm class and their range bands; all of it is enforced as printed. The plug seat Cv column prints 1, 2 and 3 twice, first at 0.21, 0.42 and 0.84 and again at 24.0, 24.7 and 32.4; the first printing is carried and choosing one of the three raises a caution, the 4700 precedent. The sheet's own note on the bottom bypass port sizes stays in this note: 1/2 inch for 025 to 050, 1 inch for 075 to 100, 2 inch for 125 to 200, matching the valve line size if flanged.",
+  "assembly": "{model}{size}{body}{ends}{seatMaterial}{cv}{range}{diaphragm}{actuator}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "58FT", "label": "Flow thru installation", "aliases": ["58ft", "flow thru"] },
+        { "code": "58A", "label": "Angle flow installation", "aliases": ["58a", "angle flow"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN10)", "aliases": ["3/8\"", "DN10"] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "F5", "label": "150# FE", "aliases": ["150 flanged"] },
+        { "code": "F3", "label": "300# FE", "aliases": ["300 flanged"] },
+        { "code": "F7", "label": "PN10 DIN FE", "aliases": ["pn10 flanged"] },
+        { "code": "F6", "label": "PN16 DIN FE", "aliases": ["pn16 flanged"] },
+        { "code": "F8", "label": "PN25 DIN FE", "aliases": ["pn25 flanged"] },
+        { "code": "F4", "label": "PN40 DIN FE", "aliases": ["pn40 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "seatMaterial", "label": "Plug seat material (3)", "position": 5, "required": true,
+      "options": [
+        { "code": "B", "label": "Buna-N", "aliases": ["buna"] },
+        { "code": "V", "label": "Viton", "aliases": ["viton"] },
+        { "code": "J", "label": "EPDM", "aliases": ["epdm"] },
+        { "code": "H", "label": "Hard/EPDM", "aliases": ["hard epdm"] },
+        { "code": "F", "label": "Hard/Viton", "aliases": ["hard viton"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Plug seat Cv (4)", "position": 6, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (printed again as 24.0 later in the column, see note)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (printed again as 24.7 later in the column, see note)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (printed again as 32.4 later in the column, see note)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.4 Kv)", "aliases": ["1.6"] },
+        { "code": "6", "label": "2.6 (2.2 Kv)", "aliases": ["2.6"] },
+        { "code": "7", "label": "2.9 (2.5 Kv)", "aliases": ["2.9"] },
+        { "code": "8", "label": "4.4 (3.8 Kv)", "aliases": ["4.4"] },
+        { "code": "A", "label": "5.5 (4.7 Kv)", "aliases": ["5.5"] },
+        { "code": "B", "label": "5.6 (4.8 Kv)", "aliases": ["5.6"] },
+        { "code": "C", "label": "5.7 (4.9 Kv)", "aliases": ["5.7"] },
+        { "code": "D", "label": "6.5 (5.6 Kv)", "aliases": ["6.5"] },
+        { "code": "E", "label": "6.8 (5.9 Kv)", "aliases": ["6.8"] },
+        { "code": "G", "label": "7.7 (6.6 Kv)", "aliases": ["7.7"] },
+        { "code": "H", "label": "7.9 (6.8 Kv)", "aliases": ["7.9"] },
+        { "code": "I", "label": "8.9 (7.7 Kv)", "aliases": ["8.9"] },
+        { "code": "J", "label": "9.4 (8.1 Kv)", "aliases": ["9.4"] },
+        { "code": "K", "label": "11.3 (9.7 Kv)", "aliases": ["11.3"] },
+        { "code": "L", "label": "13.4 (11.5 Kv)", "aliases": ["13.4"] },
+        { "code": "M", "label": "13.5 (11.6 Kv)", "aliases": ["13.5"] },
+        { "code": "N", "label": "14.2 (12.2 Kv)", "aliases": ["14.2"] },
+        { "code": "P", "label": "15.5 (13.3 Kv)", "aliases": ["15.5"] },
+        { "code": "R", "label": "16.9 (14.5 Kv)", "aliases": ["16.9"] },
+        { "code": "T", "label": "17.4 (15.0 Kv)", "aliases": ["17.4"] },
+        { "code": "U", "label": "17.6 (15.1 Kv)", "aliases": ["17.6"] },
+        { "code": "V", "label": "18.8 (16.2 Kv)", "aliases": ["18.8"] },
+        { "code": "X", "label": "21.7 (18.7 Kv)", "aliases": ["21.7"] },
+        { "code": "Y", "label": "22.3 (19.2 Kv)", "aliases": ["22.3"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (5 and 6)", "position": 7, "required": true,
+      "options": [
+        { "code": "C2", "label": "1-10 psi, 1/4\" to 1/2\"", "aliases": ["1-10"] },
+        { "code": "C8", "label": "5-25 psi, 1/4\" to 1/2\"", "aliases": ["5-25"] },
+        { "code": "54", "label": "20-50 psi, 1/4\" to 1/2\"", "aliases": ["20-50"] },
+        { "code": "CJ", "label": "40-200 psi, 1/4\" to 1/2\"", "aliases": ["40-200"] },
+        { "code": "CW", "label": "175-275 psi, 1/4\" to 1/2\"", "aliases": ["175-275"] },
+        { "code": "C1", "label": "1-7 psi, 3/4\" to 1\"", "aliases": ["1-7"] },
+        { "code": "C7", "label": "5-22 psi, 3/4\" to 1\"", "aliases": ["5-22"] },
+        { "code": "CD", "label": "15-105 psi, 3/4\" to 1\"", "aliases": ["15-105"] },
+        { "code": "CR", "label": "95-145 psi, 3/4\" to 1\"", "aliases": ["95-145"] },
+        { "code": "CU", "label": "135-215 psi, 3/4\" to 1\"", "aliases": ["135-215"] },
+        { "code": "C3", "label": "1-20 psi, 1-1/4\" to 2\"", "aliases": ["1-20"] },
+        { "code": "CC", "label": "15-70 psi, 1-1/4\" to 2\"", "aliases": ["15-70"] },
+        { "code": "CN", "label": "60-105 psi, 1-1/4\" to 2\"", "aliases": ["60-105"] },
+        { "code": "CS", "label": "95-150 psi, 1-1/4\" to 2\"", "aliases": ["95-150"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna-n"] },
+        { "code": "EP", "label": "EPDM", "aliases": ["epdm"] },
+        { "code": "JL", "label": "Jorlon", "aliases": ["jorlon"] },
+        { "code": "S6", "label": "316SST", "aliases": ["316 diaphragm"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "M1", "label": "S6 diaphragm, ranges 20-50 and below (1/4\" to 1/2\")", "aliases": ["m1"] },
+        { "code": "E1", "label": "VI, BN and JL diaphragm, low ranges (1/4\" to 1\")", "aliases": ["e1"] },
+        { "code": "M2", "label": "S6 diaphragm, ranges 40-200 and above (1/4\" to 1/2\")", "aliases": ["m2"] },
+        { "code": "E2", "label": "VI, BN and JL diaphragm, high ranges (1/4\" to 1\")", "aliases": ["e2"] },
+        { "code": "MD", "label": "For metal diaphragm (S6), all ranges (3/4\" to 2\")", "aliases": ["md"] },
+        { "code": "ED", "label": "For elastomer diaphragm (VI, BN, JL), all ranges (1-1/4\" to 2\")", "aliases": ["ed"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "S6", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "SC", "label": "Oil-free clean", "aliases": ["oil free"] },
+        { "code": "XC", "label": "Oxygen clean", "aliases": ["oxygen clean"] },
+        { "code": "BP", "label": "BSPP bottom/bypass", "aliases": ["bspp bypass"] },
+        { "code": "BT", "label": "BSPT bottom/bypass", "aliases": ["bspt bypass"] },
+        { "code": "F1", "label": "125# FE bottom/bypass", "aliases": ["125 bypass"] },
+        { "code": "F5", "label": "150# FE bottom/bypass", "aliases": ["150 bypass"] },
+        { "code": "F2", "label": "250# FE bottom/bypass", "aliases": ["250 bypass"] },
+        { "code": "F3", "label": "300# FE bottom/bypass", "aliases": ["300 bypass"] },
+        { "code": "F7", "label": "PN10 DIN FE bottom/bypass", "aliases": ["pn10 bypass"] },
+        { "code": "F6", "label": "PN16 DIN FE bottom/bypass", "aliases": ["pn16 bypass"] },
+        { "code": "F8", "label": "PN25 DIN FE bottom/bypass", "aliases": ["pn25 bypass"] },
+        { "code": "F4", "label": "PN40 DIN FE bottom/bypass", "aliases": ["pn40 bypass"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "range": ["C2", "C8", "54", "CJ", "CW"] }, "forbid": { "size": ["075", "100", "125", "150", "200"] },
+      "reason": "these ranges are printed for 1/4 to 1/2 inch" },
+    { "when": { "range": ["C1", "C7", "CD", "CR", "CU"] }, "forbid": { "size": ["025", "038", "050", "125", "150", "200"] },
+      "reason": "these ranges are printed for 3/4 to 1 inch" },
+    { "when": { "range": ["C3", "CC", "CN", "CS"] }, "forbid": { "size": ["025", "038", "050", "075", "100"] },
+      "reason": "these ranges are printed for 1-1/4 to 2 inch" },
+    { "when": { "actuator": ["M1", "M2"] }, "forbid": { "size": ["075", "100", "125", "150", "200"], "diaphragm": ["BN", "EP", "JL", "VI"] },
+      "reason": "these actuator rows sit under the 1/4 to 1/2 inch heading and name the 316 diaphragm" },
+    { "when": { "actuator": "M1" }, "forbid": { "range": ["CJ", "CW", "C1", "C7", "CD", "CR", "CU", "C3", "CC", "CN", "CS"] },
+      "reason": "the M1 row names ranges 20-50 and below" },
+    { "when": { "actuator": "M2" }, "forbid": { "range": ["C2", "C8", "54", "C1", "C7", "CD", "CR", "CU", "C3", "CC", "CN", "CS"] },
+      "reason": "the M2 row names ranges 40-200 and above" },
+    { "when": { "actuator": "E1" }, "forbid": { "size": ["125", "150", "200"], "diaphragm": ["S6", "EP"], "range": ["CJ", "CW", "CD", "CR", "CU", "C3", "CC", "CN", "CS"] },
+      "reason": "the E1 rows name the elastomer diaphragms and the low ranges of the small and mid bands" },
+    { "when": { "actuator": "E2" }, "forbid": { "size": ["125", "150", "200"], "diaphragm": ["S6", "EP"], "range": ["C2", "C8", "54", "C1", "C7", "C3", "CC", "CN", "CS"] },
+      "reason": "the E2 rows name the elastomer diaphragms and the high ranges of the small and mid bands" },
+    { "when": { "actuator": "MD" }, "forbid": { "size": ["025", "038", "050"], "diaphragm": ["BN", "EP", "JL", "VI"] },
+      "reason": "the MD rows sit under the 3/4 inch and larger headings and name the 316 diaphragm" },
+    { "when": { "actuator": "ED" }, "forbid": { "size": ["025", "038", "050", "075", "100"], "diaphragm": ["S6", "EP"] },
+      "reason": "the ED row sits under the 1-1/4 to 2 inch heading and names the elastomer diaphragms" }
+  ],
+  "cautions": [
+    { "when": { "cv": ["1", "2", "3"] },
+      "note": "The sheet prints the characters 1, 2 and 3 twice in the plug seat Cv column, first at 0.21, 0.42 and 0.84 and again at 24.0, 24.7 and 32.4. The first printing is carried here; verify against the PDF before ordering." }
+  ]
+}

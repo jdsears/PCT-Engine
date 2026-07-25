@@ -1,0 +1,165 @@
+{
+  "model": "MK586",
+  "line": "jordan",
+  "displayName": "Jordan Mark 586FT/586A dome loaded cage trim back pressure regulator",
+  "match": ["mk586", "mark 586", "586ft", "586a"],
+  "source": { "doc": "mk586ft_a.pdf", "page": "2 and 3", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic. Flow thru or angle flow installation, dome loaded so the range position is the single 00. The plug seat position pairs a material letter with a Cv character; the sheet prints the characters 1, 2 and 3 twice in that Cv ladder, first at 0.21, 0.42 and 0.84 and again at 24.0, 24.7 and 32.4, so the first printing is carried and choosing one of those three raises a caution to verify against the PDF, the 4700 precedent. The actuator labels name their diaphragm class and are enforced; the EPDM diaphragm names no actuator of its own and is left to the 316 actuator or non-standard, held for John.",
+  "assembly": "{model}{size}{body}{ends}{seatMaterial}{cv}{range}{diaphragm}{actuator}{accessories}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "586FT", "label": "Flow thru installation", "aliases": ["586ft", "flow thru"] },
+        { "code": "586A", "label": "Angle flow installation", "aliases": ["586a", "angle flow"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN10)", "aliases": ["3/8\"", "DN10"] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "F1", "label": "125# FE", "aliases": ["125 flanged"] },
+        { "code": "F5", "label": "150# FE", "aliases": ["150 flanged"] },
+        { "code": "F2", "label": "250# FE", "aliases": ["250 flanged"] },
+        { "code": "F3", "label": "300# FE", "aliases": ["300 flanged"] },
+        { "code": "F7", "label": "PN 10 DIN FE", "aliases": ["pn10 flanged"] },
+        { "code": "F6", "label": "PN 16 DIN FE", "aliases": ["pn16 flanged"] },
+        { "code": "F8", "label": "PN 25 DIN FE", "aliases": ["pn25 flanged"] },
+        { "code": "F4", "label": "PN 40 DIN FE", "aliases": ["pn40 flanged"] },
+        { "code": "JC", "label": "FNPT F/JCC", "aliases": ["fnpt jcc"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "seatMaterial", "label": "Plug seat and body o-ring (3)", "position": 5, "required": true,
+      "options": [
+        { "code": "B", "label": "Buna-N", "aliases": ["buna"] },
+        { "code": "V", "label": "Viton", "aliases": ["viton"] },
+        { "code": "J", "label": "EPDM", "aliases": ["epdm"] },
+        { "code": "H", "label": "Hard/EPDM", "aliases": ["hard epdm"] },
+        { "code": "F", "label": "Hard/Viton", "aliases": ["hard viton"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Plug seat Cv (4)", "position": 6, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (printed again as 24.0 later in the column, see note)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (printed again as 24.7 later in the column, see note)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (printed again as 32.4 later in the column, see note)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6", "aliases": ["1.6"] },
+        { "code": "6", "label": "2.6", "aliases": ["2.6"] },
+        { "code": "7", "label": "2.9", "aliases": ["2.9"] },
+        { "code": "8", "label": "4.4", "aliases": ["4.4"] },
+        { "code": "A", "label": "5.5", "aliases": ["5.5"] },
+        { "code": "B", "label": "5.6", "aliases": ["5.6"] },
+        { "code": "C", "label": "5.7", "aliases": ["5.7"] },
+        { "code": "D", "label": "6.5", "aliases": ["6.5"] },
+        { "code": "E", "label": "6.8", "aliases": ["6.8"] },
+        { "code": "G", "label": "7.7", "aliases": ["7.7"] },
+        { "code": "H", "label": "7.9", "aliases": ["7.9"] },
+        { "code": "I", "label": "8.9", "aliases": ["8.9"] },
+        { "code": "J", "label": "9.4", "aliases": ["9.4"] },
+        { "code": "K", "label": "11.3", "aliases": ["11.3"] },
+        { "code": "L", "label": "13.4", "aliases": ["13.4"] },
+        { "code": "M", "label": "13.5", "aliases": ["13.5"] },
+        { "code": "N", "label": "14.2", "aliases": ["14.2"] },
+        { "code": "P", "label": "15.5", "aliases": ["15.5"] },
+        { "code": "R", "label": "16.9", "aliases": ["16.9"] },
+        { "code": "T", "label": "17.4", "aliases": ["17.4"] },
+        { "code": "U", "label": "17.6", "aliases": ["17.6"] },
+        { "code": "V", "label": "18.8", "aliases": ["18.8"] },
+        { "code": "X", "label": "21.7", "aliases": ["21.7"] },
+        { "code": "Y", "label": "22.3", "aliases": ["22.3"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (5 and 6)", "position": 7, "required": true,
+      "options": [ { "code": "00", "label": "None (dome loaded)", "aliases": ["none", "dome loaded"] } ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna-n"] },
+        { "code": "EP", "label": "EPDM", "aliases": ["epdm"] },
+        { "code": "JL", "label": "Jorlon", "aliases": ["jorlon"] },
+        { "code": "S6", "label": "316SST", "aliases": ["316 diaphragm"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "MD", "label": "For metal diaphragm (S6), all ranges", "aliases": ["metal diaphragm actuator"] },
+        { "code": "ED", "label": "For elastomer diaphragm (VI, BN, JL), all ranges", "aliases": ["elastomer diaphragm actuator"] },
+        { "code": "E6", "label": "316 actuator, all diaphragms", "aliases": ["316 actuator"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "S6", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "SC", "label": "Oil-free clean", "aliases": ["oil free"] },
+        { "code": "XC", "label": "Oxygen clean", "aliases": ["oxygen clean"] },
+        { "code": "BP", "label": "BSPP bottom/bypass", "aliases": ["bspp bypass"] },
+        { "code": "BT", "label": "BSPT bottom/bypass", "aliases": ["bspt bypass"] },
+        { "code": "F1", "label": "125# FE bottom/bypass", "aliases": ["125 bypass"] },
+        { "code": "F5", "label": "150# FE bottom/bypass", "aliases": ["150 bypass"] },
+        { "code": "F2", "label": "250# FE bottom/bypass", "aliases": ["250 bypass"] },
+        { "code": "F3", "label": "300# FE bottom/bypass", "aliases": ["300 bypass"] },
+        { "code": "F7", "label": "PN10 DIN FE bottom/bypass", "aliases": ["pn10 bypass"] },
+        { "code": "F6", "label": "PN16 DIN FE bottom/bypass", "aliases": ["pn16 bypass"] },
+        { "code": "F8", "label": "PN25 DIN FE bottom/bypass", "aliases": ["pn25 bypass"] },
+        { "code": "F4", "label": "PN40 DIN FE bottom/bypass", "aliases": ["pn40 bypass"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (13 and 14)", "position": 11, "required": true,
+      "options": [
+        { "code": "00", "label": "Not required", "aliases": ["not required"] },
+        { "code": "0F", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "0G", "label": "SEP", "aliases": ["sep"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "actuator": "MD" }, "forbid": { "diaphragm": ["BN", "EP", "JL", "VI"] },
+      "reason": "the metal diaphragm actuator names 316 in its own label" },
+    { "when": { "actuator": "ED" }, "forbid": { "diaphragm": ["S6", "EP"] },
+      "reason": "the elastomer actuator names Viton, Buna-N and Jorlon in its own label; EPDM is not among them, held for John" }
+  ],
+  "cautions": [
+    { "when": { "cv": ["1", "2", "3"] },
+      "note": "The sheet prints the characters 1, 2 and 3 twice in the plug seat Cv column, first at 0.21, 0.42 and 0.84 and again at 24.0, 24.7 and 32.4. The first printing is carried here; verify against the PDF before ordering." }
+  ]
+}
