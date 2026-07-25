@@ -1,0 +1,332 @@
+{
+  "model": "HM46",
+  "line": "hex",
+  "displayName": "Hex HM46 series manifold valve",
+  "match": [
+    "hm46"
+  ],
+  "source": {
+    "doc": "hm46.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}{option1}{option2}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HM46",
+          "label": "HM46",
+          "aliases": [
+            "hm46"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat/body configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard (6000 psi)",
+          "aliases": [
+            "hard seat config"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Soft (3000 psi)",
+          "aliases": [
+            "soft seat config"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Soft/o-ring (3000 psi)",
+          "aliases": [
+            "soft o-ring config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless steel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half inch inlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "1/2\" single ferrule integral tube nut",
+          "aliases": [
+            "single ferrule inlet"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "1/2\" double ferrule integral tube nut",
+          "aliases": [
+            "double ferrule inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "Tube nut",
+          "aliases": [
+            "tube nut inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half inch outlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "1/2\" single ferrule integral tube nut",
+          "aliases": [
+            "single ferrule outlet"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "1/2\" double ferrule integral tube nut",
+          "aliases": [
+            "double ferrule outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "Tube nut",
+          "aliases": [
+            "tube nut outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316SS needle/plug (soft seat only)",
+          "aliases": [
+            "needle plug stem"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "316/316SS NRT",
+          "aliases": [
+            "nrt stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral (hard)",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "PPS",
+          "aliases": [
+            "pps seat"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "KEL-F",
+          "aliases": [
+            "kel-f seat"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "TFE",
+          "aliases": [
+            "tfe seat"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "PEEK",
+          "aliases": [
+            "peek seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "TFE - chevron",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite/Grafoil/Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Buna-N o-ring",
+          "aliases": [
+            "buna o-ring"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Viton o-ring",
+          "aliases": [
+            "viton o-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "option1",
+      "label": "Options",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "No selection",
+          "aliases": [
+            "no option"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Safety handle",
+          "aliases": [
+            "safety handle"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "option2",
+      "label": "Options",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "K",
+          "label": "1/8\" test ports",
+          "aliases": [
+            "test ports"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "1/8\" purge ports",
+          "aliases": [
+            "purge ports"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

@@ -1,0 +1,344 @@
+{
+  "model": "HM10",
+  "line": "hex",
+  "displayName": "Hex HM10 series manifold valve",
+  "match": [
+    "hm10",
+    "hm13",
+    "hm14",
+    "hm16",
+    "hm18"
+  ],
+  "source": {
+    "doc": "hm10.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The extraction squashes this sheet's inlet and outlet columns together, so the middle positions are read from the sample row against the HM45 and HM50 family pattern: body size, inlet type, then outlet size and outlet type, both printing 9 for flanged; the fuller ferrule and Swagelok wordings are carried on the inlet type letters. Held for the PDF. The options columns print no none row, so only the printed codes are carried, held for John.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{bodySize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}{option1}{option2}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HM10",
+          "label": "HM10",
+          "aliases": [
+            "hm10"
+          ]
+        },
+        {
+          "code": "HM13",
+          "label": "HM13",
+          "aliases": [
+            "hm13"
+          ]
+        },
+        {
+          "code": "HM14",
+          "label": "HM14",
+          "aliases": [
+            "hm14"
+          ]
+        },
+        {
+          "code": "HM16",
+          "label": "HM16",
+          "aliases": [
+            "hm16"
+          ]
+        },
+        {
+          "code": "HM18",
+          "label": "HM18",
+          "aliases": [
+            "hm18"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat/body configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard (6000 psi)",
+          "aliases": [
+            "hard seat config"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Soft (3000 psi)",
+          "aliases": [
+            "soft seat config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless steel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodySize",
+      "label": "Body size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half inch body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "1/2\" single ferrule integral tube nut or fitting",
+          "aliases": [
+            "single ferrule inlet"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "1/2\" double ferrule integral tube nut or fitting",
+          "aliases": [
+            "double ferrule inlet"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Swagelok tube fitting/flange",
+          "aliases": [
+            "swagelok inlet"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "Flanged (HM14)",
+          "aliases": [
+            "flanged inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316SS needle/plug (soft seat only)",
+          "aliases": [
+            "needle plug stem"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "316/316SS NRT",
+          "aliases": [
+            "nrt stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral (hard)",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "PPS",
+          "aliases": [
+            "pps seat"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "KEL-F",
+          "aliases": [
+            "kel-f seat"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "TFE",
+          "aliases": [
+            "tfe seat"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "PEEK",
+          "aliases": [
+            "peek seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "TFE",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "option1",
+      "label": "Options",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "N",
+          "label": "Steam trace block",
+          "aliases": [
+            "steam trace block"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Grafoil flange gasket",
+          "aliases": [
+            "grafoil gasket"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "option2",
+      "label": "Options",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "K",
+          "label": "1/8\" test ports",
+          "aliases": [
+            "test ports"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "1/8\" purge ports",
+          "aliases": [
+            "purge ports"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "inletType": "9"
+      },
+      "forbid": {
+        "model": [
+          "HM10",
+          "HM13",
+          "HM16",
+          "HM18"
+        ]
+      },
+      "reason": "the flanged inlet row prints HM14"
+    }
+  ],
+  "cautions": []
+}

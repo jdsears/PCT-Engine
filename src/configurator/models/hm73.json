@@ -1,0 +1,183 @@
+{
+  "model": "HM73",
+  "line": "hex",
+  "displayName": "Hex HM73 series manifold valve",
+  "match": [
+    "hm73"
+  ],
+  "source": {
+    "doc": "hm73series.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic.",
+  "assembly": "{model}{valveSeat}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HM73",
+          "label": "HM73",
+          "aliases": [
+            "hm73"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "valveSeat",
+      "label": "Valve seat",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "G",
+          "label": "O-ring bonnet/soft seat",
+          "aliases": [
+            "o-ring bonnet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel (A105)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel 316",
+          "aliases": [
+            "stainless steel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Instrument flange",
+          "aliases": [
+            "instrument flange inlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Instrument flange",
+          "aliases": [
+            "instrument flange inlet type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Instrument flange",
+          "aliases": [
+            "instrument flange outlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Instrument flange",
+          "aliases": [
+            "instrument flange outlet type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 stem",
+          "aliases": [
+            "316 stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "Teflon",
+          "aliases": [
+            "teflon seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "5",
+          "label": "Buna-N o-ring",
+          "aliases": [
+            "buna o-ring"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Viton o-ring",
+          "aliases": [
+            "viton o-ring"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

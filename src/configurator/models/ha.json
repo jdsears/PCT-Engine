@@ -1,0 +1,305 @@
+{
+  "model": "HA",
+  "line": "hex",
+  "displayName": "Hex HA series manifold valve",
+  "match": [
+    "ha06",
+    "ha12",
+    "ha162",
+    "ha series"
+  ],
+  "source": {
+    "doc": "ha_series.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The sample row prints the bare stem HA without its model digits, the sheet's own shorthand, noted. The bracketed rows are enforced: the 2 soft seat, the 3/4 inch body, the 31 outlet and the 1, 2 and 3 packings to the HA162, and the Viton o-ring packing to the HA06 and HA12, whose row prints H12 for the HA12, the sheet's own slip.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{bodySize}{inletType}{outletSizeType}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HA06",
+          "label": "HA06",
+          "aliases": [
+            "ha06"
+          ]
+        },
+        {
+          "code": "HA12",
+          "label": "HA12",
+          "aliases": [
+            "ha12"
+          ]
+        },
+        {
+          "code": "HA162",
+          "label": "HA162",
+          "aliases": [
+            "ha162"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat/body configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "G",
+          "label": "Soft seat/o-ring",
+          "aliases": [
+            "soft o-ring config"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Soft seat (HA162)",
+          "aliases": [
+            "soft seat config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless steel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodySize",
+      "label": "Body size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half inch body"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" (HA162)",
+          "aliases": [
+            "three quarter body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSizeType",
+      "label": "Outlet size/type",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "11",
+          "label": "1/4\" FNPT",
+          "aliases": [
+            "quarter fnpt outlet"
+          ]
+        },
+        {
+          "code": "31",
+          "label": "1/2\" FNPT (HA162)",
+          "aliases": [
+            "half fnpt outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316/316SS needle",
+          "aliases": [
+            "needle stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "4",
+          "label": "PPS",
+          "aliases": [
+            "pps seat"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "KEL-F",
+          "aliases": [
+            "kel-f seat"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "TFE",
+          "aliases": [
+            "tfe seat"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "PEEK",
+          "aliases": [
+            "peek seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Braided (HA162)",
+          "aliases": [
+            "braided packing"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "TFE-chevron (HA162)",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite (HA162)",
+          "aliases": [
+            "graphite packing"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Viton o-ring (HA06 and HA12, printed H12)",
+          "aliases": [
+            "viton o-ring"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "seatConfig": "2"
+      },
+      "forbid": {
+        "model": [
+          "HA06",
+          "HA12"
+        ]
+      },
+      "reason": "the soft seat row prints HA162"
+    },
+    {
+      "when": {
+        "bodySize": "4"
+      },
+      "forbid": {
+        "model": [
+          "HA06",
+          "HA12"
+        ]
+      },
+      "reason": "the 3/4 inch row prints HA162"
+    },
+    {
+      "when": {
+        "outletSizeType": "31"
+      },
+      "forbid": {
+        "model": [
+          "HA06",
+          "HA12"
+        ]
+      },
+      "reason": "the 31 outlet row prints HA162"
+    },
+    {
+      "when": {
+        "packing": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "HA06",
+          "HA12"
+        ]
+      },
+      "reason": "these packing rows print HA162"
+    },
+    {
+      "when": {
+        "packing": "6"
+      },
+      "forbid": {
+        "model": [
+          "HA162"
+        ]
+      },
+      "reason": "the Viton o-ring row prints HA06 and HA12"
+    }
+  ],
+  "cautions": []
+}
