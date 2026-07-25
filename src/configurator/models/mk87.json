@@ -1,0 +1,217 @@
+{
+  "model": "MK87",
+  "line": "jordan",
+  "displayName": "Jordan Mark 87 externally piloted temperature regulator",
+  "match": ["mk87", "mark 87", "jordan 87"],
+  "source": { "doc": "mk87.pdf", "page": "3 to 6", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, seventeen positions assembled bare as the header prints them. The thermowell and bulb positions pair type and size characters, coupled by the size-for-bulb heading and the type words, held as inferred couplings for John; the 1 by 17 inch bulb prints no matching well size, so it refuses whenever a well is chosen and stays open with a tank fitting or none. The type column's own stray N none row is not offered, since the tank list's NN is the complete none code, held for the PDF. The 395 Cv carries the sheet's own 6 inch bracket. The reinforced actuator row says required below 0°F, so the one range that dips below zero refuses the standard actuator.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seat}{cv}{range}{thermowell}{bulb}{capillaryArmor}{actuator}{action}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "87", "label": "Standard", "aliases": ["mk87", "mark 87", "standard"] },
+        { "code": "87T", "label": "With temperature gauge", "aliases": ["mk87t", "temperature gauge"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\" (DN65)", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\" (DN80)", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\" (DN100)", "aliases": ["4\"", "DN100"] },
+        { "code": "600", "label": "6\" (DN150)", "aliases": ["6\"", "DN150"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] },
+        { "code": "CI", "label": "Cast iron", "aliases": ["cast iron"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE, CS or SST valves", "aliases": ["150 ife"] },
+        { "code": "I3", "label": "300# IFE, CS or SST valves", "aliases": ["300 ife"] },
+        { "code": "I7", "label": "IFE PN10, CS or SST valves", "aliases": ["pn10 ife"] },
+        { "code": "I6", "label": "IFE PN16, CS or SST valves", "aliases": ["pn16 ife"] },
+        { "code": "I8", "label": "IFE PN25, CS or SST valves", "aliases": ["pn25 ife"] },
+        { "code": "I4", "label": "IFE PN40, CS or SST valves", "aliases": ["pn40 ife"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim material (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "C3", "label": "303SS / Cu tubing", "aliases": ["303 cu tubing"] },
+        { "code": "S3", "label": "303SS", "aliases": ["303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316"] },
+        { "code": "L1", "label": "303SS 5-10 ∆P", "aliases": ["303 low dp 5-10"] },
+        { "code": "L2", "label": "316SS 5-10 ∆P", "aliases": ["316 low dp 5-10"] },
+        { "code": "L3", "label": "303SS 10-15 ∆P", "aliases": ["303 low dp 10-15"] },
+        { "code": "L4", "label": "316SS 10-15 ∆P", "aliases": ["316 low dp 10-15"] },
+        { "code": "L5", "label": "303SS 15-20 ∆P", "aliases": ["303 low dp 15-20"] },
+        { "code": "L6", "label": "316SS 15-20 ∆P", "aliases": ["316 low dp 15-20"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "A", "label": "303 SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316 SST", "aliases": ["316 seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "K", "label": "5.0 (4.3 Kv)", "aliases": ["5.0"] },
+        { "code": "8", "label": "9.5 (8.2 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (21.5 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.8 Kv)", "aliases": ["30"] },
+        { "code": "V", "label": "35 (30.1 Kv)", "aliases": ["35"] },
+        { "code": "C", "label": "50 (43.0 Kv)", "aliases": ["50"] },
+        { "code": "D", "label": "55 (47.3 Kv)", "aliases": ["55"] },
+        { "code": "G", "label": "115 (98.9 Kv)", "aliases": ["115"] },
+        { "code": "I", "label": "200 (172 Kv)", "aliases": ["200"] },
+        { "code": "J", "label": "395 (340 Kv), 6\" only", "aliases": ["395"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "06", "label": "-20 to 20°F (reinforced actuator required below 0°F)", "aliases": ["-20 to 20"] },
+        { "code": "12", "label": "10 to 55°F", "aliases": ["10 to 55"] },
+        { "code": "19", "label": "35 to 90°F", "aliases": ["35 to 90"] },
+        { "code": "27", "label": "55 to 115°F", "aliases": ["55 to 115"] },
+        { "code": "35", "label": "80 to 140°F", "aliases": ["80 to 140"] },
+        { "code": "42", "label": "110 to 165°F", "aliases": ["110 to 165"] },
+        { "code": "49", "label": "120 to 185°F", "aliases": ["120 to 185"] },
+        { "code": "58", "label": "160 to 225°F", "aliases": ["160 to 225"] },
+        { "code": "66", "label": "205 to 260°F", "aliases": ["205 to 260"] },
+        { "code": "72", "label": "230 to 290°F", "aliases": ["230 to 290"] },
+        { "code": "81", "label": "265 to 325°F", "aliases": ["265 to 325"] },
+        { "code": "88", "label": "315 to 400°F", "aliases": ["315 to 400"] },
+        { "code": "93", "label": "380 to 450°F", "aliases": ["380 to 450"] }
+      ]
+    },
+    {
+      "id": "thermowell", "label": "Thermowell (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "AA", "label": "Type A 1\" NPT Cu well, for 1\" x 12\" bulb", "aliases": ["cu well 12"] },
+        { "code": "AB", "label": "Type A 1\" NPT Cu well, for 1\" x 14\" bulb", "aliases": ["cu well 14"] },
+        { "code": "BA", "label": "Type A 1\" NPT SST well, for 1\" x 12\" bulb", "aliases": ["sst well 12"] },
+        { "code": "BB", "label": "Type A 1\" NPT SST well, for 1\" x 14\" bulb", "aliases": ["sst well 14"] },
+        { "code": "EA", "label": "Type B 1-1/2\" x 150# SST well, for 1\" x 12\" bulb", "aliases": ["type b 150 well 12"] },
+        { "code": "EB", "label": "Type B 1-1/2\" x 150# SST well, for 1\" x 14\" bulb", "aliases": ["type b 150 well 14"] },
+        { "code": "FA", "label": "Type B 1-1/2\" x 300# SST well, for 1\" x 12\" bulb", "aliases": ["type b 300 well 12"] },
+        { "code": "FB", "label": "Type B 1-1/2\" x 300# SST well, for 1\" x 14\" bulb", "aliases": ["type b 300 well 14"] },
+        { "code": "GA", "label": "Type B 2\" x 150# SST well, for 1\" x 12\" bulb", "aliases": ["type b 2 150 well 12"] },
+        { "code": "GB", "label": "Type B 2\" x 150# SST well, for 1\" x 14\" bulb", "aliases": ["type b 2 150 well 14"] },
+        { "code": "HA", "label": "Type B 2\" x 300# SST well, for 1\" x 12\" bulb", "aliases": ["type b 2 300 well 12"] },
+        { "code": "HB", "label": "Type B 2\" x 300# SST well, for 1\" x 14\" bulb", "aliases": ["type b 2 300 well 14"] },
+        { "code": "11", "label": "Tank fitting only, 1\" NPT brass for 1\" bulb", "aliases": ["tank fitting brass"] },
+        { "code": "12", "label": "Tank fitting only, 1\" NPT SST for 1\" bulb", "aliases": ["tank fitting sst"] },
+        { "code": "NN", "label": "None", "aliases": ["no thermowell"] }
+      ]
+    },
+    {
+      "id": "bulb", "label": "Bulb (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "A1", "label": "Type A Cu, 1\" x 12\"", "aliases": ["cu bulb 12"] },
+        { "code": "A2", "label": "Type A Cu, 1\" x 14\"", "aliases": ["cu bulb 14"] },
+        { "code": "A3", "label": "Type A Cu, 1\" x 17\"", "aliases": ["cu bulb 17"] },
+        { "code": "G1", "label": "Type A SST, 1\" x 12\"", "aliases": ["sst bulb 12"] },
+        { "code": "G2", "label": "Type A SST, 1\" x 14\"", "aliases": ["sst bulb 14"] },
+        { "code": "G3", "label": "Type A SST, 1\" x 17\"", "aliases": ["sst bulb 17"] },
+        { "code": "H1", "label": "Type B SST, 1\" x 12\"", "aliases": ["type b bulb 12"] },
+        { "code": "H2", "label": "Type B SST, 1\" x 14\"", "aliases": ["type b bulb 14"] },
+        { "code": "H3", "label": "Type B SST, 1\" x 17\"", "aliases": ["type b bulb 17"] }
+      ]
+    },
+    {
+      "id": "capillaryArmor", "label": "Capillary/armor (13 and 14)", "position": 11, "required": true,
+      "options": [
+        { "code": "A1", "label": "Copper, 8 ft", "aliases": ["copper 8"] },
+        { "code": "A2", "label": "Copper, 10 ft", "aliases": ["copper 10"] },
+        { "code": "A3", "label": "Copper, 12 ft", "aliases": ["copper 12"] },
+        { "code": "A4", "label": "Copper, 15 ft", "aliases": ["copper 15"] },
+        { "code": "A5", "label": "Copper, 20 ft", "aliases": ["copper 20"] },
+        { "code": "B1", "label": "SST, 8 ft", "aliases": ["sst 8"] },
+        { "code": "B2", "label": "SST, 10 ft", "aliases": ["sst 10"] },
+        { "code": "B3", "label": "SST, 12 ft", "aliases": ["sst 12"] },
+        { "code": "B4", "label": "SST, 15 ft", "aliases": ["sst 15"] },
+        { "code": "B5", "label": "SST, 20 ft", "aliases": ["sst 20"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (15)", "position": 12, "required": true,
+      "options": [
+        { "code": "A", "label": "Standard", "aliases": ["standard"] },
+        { "code": "R", "label": "SWA/reinforced (required below 0°F)", "aliases": ["reinforced"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (16)", "position": 13, "required": true,
+      "options": [
+        { "code": "D", "label": "Direct", "aliases": ["direct"] },
+        { "code": "R", "label": "Reverse", "aliases": ["reverse"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (17)", "position": 14, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none"] },
+        { "code": "2", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "6", "label": "Mounting flange, Cu C bulb", "aliases": ["mounting flange cu"] },
+        { "code": "7", "label": "Mounting flange, SST C bulb", "aliases": ["mounting flange sst"] },
+        { "code": "8", "label": "Yoke cover (flexible neoprene)", "aliases": ["yoke cover"] },
+        { "code": "P", "label": "Thermometer in position 1", "aliases": ["thermometer 1"] },
+        { "code": "Q", "label": "Thermometer in position 2", "aliases": ["thermometer 2"] },
+        { "code": "R", "label": "Thermometer in position 3", "aliases": ["thermometer 3"] },
+        { "code": "S", "label": "Thermometer in position 4", "aliases": ["thermometer 4"] },
+        { "code": "T", "label": "Thermometer in position 5", "aliases": ["thermometer 5"] },
+        { "code": "U", "label": "Thermometer in position 6", "aliases": ["thermometer 6"] },
+        { "code": "V", "label": "Thermometer in position 7", "aliases": ["thermometer 7"] },
+        { "code": "W", "label": "Thermometer in position 8", "aliases": ["thermometer 8"] },
+        { "code": "X", "label": "Oxygen clean", "aliases": ["oxygen clean"] },
+        { "code": "Y", "label": "Oil-free clean", "aliases": ["oil free clean"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"] }, "forbid": { "body": ["DI", "CI"] },
+      "reason": "the IFE rows are printed for carbon or stainless valves" },
+    { "when": { "cv": "J" }, "forbid": { "size": ["050", "075", "100", "125", "150", "200", "250", "300", "400"] },
+      "reason": "the 395 Cv carries the sheet's own 6 inch bracket" },
+    { "when": { "range": "06" }, "forbid": { "actuator": ["A"] },
+      "reason": "the reinforced actuator is required below 0°F, per the actuator row's own bracket, and this is the one range that dips below zero" },
+    { "when": { "thermowell": ["AA", "BA", "EA", "FA", "GA", "HA"] }, "forbid": { "bulb": ["A2", "A3", "G2", "G3", "H2", "H3"] },
+      "reason": "the well's size code is headed for the bulb it takes, here 1 x 12 (held as an inferred coupling for John)" },
+    { "when": { "thermowell": ["AB", "BB", "EB", "FB", "GB", "HB"] }, "forbid": { "bulb": ["A1", "A3", "G1", "G3", "H1", "H3"] },
+      "reason": "the well's size code is headed for the bulb it takes, here 1 x 14 (held as an inferred coupling for John)" },
+    { "when": { "thermowell": ["AA", "AB", "BA", "BB"] }, "forbid": { "bulb": ["H1", "H2", "H3"] },
+      "reason": "a Type A well houses a Type A bulb, per the type words on both columns (held as an inferred coupling for John)" },
+    { "when": { "thermowell": ["EA", "EB", "FA", "FB", "GA", "GB", "HA", "HB"] }, "forbid": { "bulb": ["A1", "A2", "A3", "G1", "G2", "G3"] },
+      "reason": "a Type B well houses a Type B bulb, per the type words on both columns (held as an inferred coupling for John)" }
+  ],
+  "cautions": []
+}
