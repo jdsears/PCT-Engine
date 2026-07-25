@@ -1,0 +1,641 @@
+{
+  "model": "JSRLP",
+  "line": "steriflow",
+  "displayName": "Steriflow JSRLP high purity gas pressure reducing valve",
+  "match": [
+    "jsrlp",
+    "jsrlp series",
+    "high purity gas reducing"
+  ],
+  "source": {
+    "doc": "jsrlpseries.pdf",
+    "page": "13 and 14",
+    "section": "Ordering schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the JR family shape assembled bare. The end connection column mixes single letter BPE codes with two character ISO and DIN codes, carried exactly as printed with their standards in the labels. The sheet's own rule, you cannot self-relieve and air-load at the same time, is enforced between the trim and the actuator, and the gauge-span liability note rides the one range the printed gauges do not cover. The repair kit schematic on the same page is an accessory grammar and stays out, the kits precedent.",
+  "assembly": "{model}{size}{material}{endConnection}{portConfig}{trim}{seat}{rangeSpring}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "JSRLP",
+          "label": "High purity gas pressure reducing valve",
+          "aliases": [
+            "jsrlp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "Stainless steel 316L",
+          "aliases": [
+            "316l"
+          ]
+        },
+        {
+          "code": "30",
+          "label": "Stainless steel 316L, 30 Ra or better, EP",
+          "aliases": [
+            "30 ra"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endConnection",
+      "label": "End connection",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "Tri-clamp 20 Ra EP (ASME BPE)",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "FNPT 20 Ra EP (ASME BPE)",
+          "aliases": [
+            "fnpt"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Tube weld end 20 Ra EP (ASME BPE)",
+          "aliases": [
+            "tube weld"
+          ]
+        },
+        {
+          "code": "S1",
+          "label": "ISO tri-clamp, DN15",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        },
+        {
+          "code": "V1",
+          "label": "ISO with 34.0mm face T-clamp, DN15",
+          "aliases": [
+            "iso 34mm"
+          ]
+        },
+        {
+          "code": "R1",
+          "label": "ISO T-clamp, DN20",
+          "aliases": [
+            "iso dn20"
+          ]
+        },
+        {
+          "code": "H4",
+          "label": "ISO tube weld, DN15",
+          "aliases": [
+            "iso tube weld"
+          ]
+        },
+        {
+          "code": "D2",
+          "label": "DIN tri-clamp, DN15",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "N2",
+          "label": "DIN T-clamp, DN15 with 50.5mm face",
+          "aliases": [
+            "din 50.5"
+          ]
+        },
+        {
+          "code": "U2",
+          "label": "DIN T-clamp, DN20",
+          "aliases": [
+            "din dn20"
+          ]
+        },
+        {
+          "code": "X2",
+          "label": "DIN T-clamp, DN20 with 50.5mm face",
+          "aliases": [
+            "din dn20 50.5"
+          ]
+        },
+        {
+          "code": "M3",
+          "label": "DIN tube weld, DN15",
+          "aliases": [
+            "din tube weld"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard end"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portConfig",
+      "label": "Port configuration",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Port A",
+          "aliases": [
+            "port a"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Port B",
+          "aliases": [
+            "port b"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Port C",
+          "aliases": [
+            "port c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Port D",
+          "aliases": [
+            "port d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Port E",
+          "aliases": [
+            "port e"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1S",
+          "label": "0.8 Cv",
+          "aliases": [
+            "0.8"
+          ]
+        },
+        {
+          "code": "2S",
+          "label": "0.5 Cv",
+          "aliases": [
+            "0.5"
+          ]
+        },
+        {
+          "code": "1R",
+          "label": "Cv 0.8 self-relieving",
+          "aliases": [
+            "0.8 self relieving"
+          ]
+        },
+        {
+          "code": "2R",
+          "label": "Cv 0.5 self-relieving",
+          "aliases": [
+            "0.5 self relieving"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat material",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "TF",
+          "label": "PTFE",
+          "aliases": [
+            "ptfe"
+          ]
+        },
+        {
+          "code": "PK",
+          "label": "PEEK",
+          "aliases": [
+            "peek"
+          ]
+        },
+        {
+          "code": "EP",
+          "label": "EPDM",
+          "aliases": [
+            "epdm"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rangeSpring",
+      "label": "Range spring / outlet pressure",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "01",
+          "label": "1-5 psi",
+          "aliases": [
+            "1-5"
+          ]
+        },
+        {
+          "code": "05",
+          "label": "5-15 psi",
+          "aliases": [
+            "5-15"
+          ]
+        },
+        {
+          "code": "15",
+          "label": "15-25 psi",
+          "aliases": [
+            "15-25"
+          ]
+        },
+        {
+          "code": "25",
+          "label": "25-50 psi",
+          "aliases": [
+            "25-50"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "JL",
+          "label": "Jorlon",
+          "aliases": [
+            "jorlon"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "SK",
+          "label": "Standard actuator",
+          "aliases": [
+            "standard"
+          ]
+        },
+        {
+          "code": "AK",
+          "label": "Standard actuator, autoclavable anodised aluminium knob",
+          "aliases": [
+            "autoclavable"
+          ]
+        },
+        {
+          "code": "PM",
+          "label": "Panel mount",
+          "aliases": [
+            "panel mount"
+          ]
+        },
+        {
+          "code": "CV1",
+          "label": "Captured vent, fitting on spring housing for venting self-relieved gas",
+          "aliases": [
+            "captured vent"
+          ]
+        },
+        {
+          "code": "AA1",
+          "label": "Air loading, fitting for air input on spring housing and a stem seat nut",
+          "aliases": [
+            "air loading"
+          ]
+        },
+        {
+          "code": "TP",
+          "label": "Anti-tamper feature",
+          "aliases": [
+            "anti-tamper"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletGauge",
+      "label": "Inlet gauge",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "AA",
+          "label": "0-30 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-30"
+          ]
+        },
+        {
+          "code": "BB",
+          "label": "0-60 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-60"
+          ]
+        },
+        {
+          "code": "CC",
+          "label": "0-100 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-100"
+          ]
+        },
+        {
+          "code": "DD",
+          "label": "0-160 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-160"
+          ]
+        },
+        {
+          "code": "EE",
+          "label": "0-200 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-200"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "None",
+          "aliases": [
+            "no inlet gauge"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard inlet gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletGauge",
+      "label": "Outlet gauge",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "0-30 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-30"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "0-60 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-60"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "0-100 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-100"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "0-160 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-160"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "None",
+          "aliases": [
+            "no outlet gauge"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard outlet gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sep",
+      "label": "SEP compliance",
+      "position": 13,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None required",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "SEP compliant",
+          "aliases": [
+            "sep"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard sep"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories",
+      "position": 14,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None required",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Clean for oil free",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Clean for oxygen",
+          "aliases": [
+            "oxygen"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Clean for oxygen, assemble dry (ASTM G-93 2011 and CGA G-4.1-2009)",
+          "aliases": [
+            "oxygen dry"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "EN10204 3.1 cert for wetted parts",
+          "aliases": [
+            "en10204"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "actuator": "AA1"
+      },
+      "forbid": {
+        "trim": [
+          "1R",
+          "2R"
+        ]
+      },
+      "reason": "the sheet's own note: you cannot self-relieve and air-load at the same time"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "rangeSpring": "25",
+        "outletGauge": [
+          "A"
+        ]
+      },
+      "note": "The selected outlet gauge does not fully cover the 25-50 psi range; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    },
+    {
+      "when": {
+        "rangeSpring": "25",
+        "inletGauge": [
+          "AA"
+        ]
+      },
+      "note": "The selected inlet gauge span is below the top of the 25-50 psi range; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    }
+  ]
+}

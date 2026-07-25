@@ -97,6 +97,8 @@ const mark93 = JSON.parse(readFileSync(join(here, 'models', 'mark93.json'), 'utf
 const mk978e = JSON.parse(readFileSync(join(here, 'models', 'mk978e.json'), 'utf8'));
 const mk978 = JSON.parse(readFileSync(join(here, 'models', 'mk978.json'), 'utf8'));
 const mk978m = JSON.parse(readFileSync(join(here, 'models', 'mk978m.json'), 'utf8'));
+const jsrlp = JSON.parse(readFileSync(join(here, 'models', 'jsrlp.json'), 'utf8'));
+const ssc = JSON.parse(readFileSync(join(here, 'models', 'ssc.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1352,6 +1354,25 @@ check('the 978M round-trips in both bands and its page splits hold', () => {
   assert.ok(checkConstraints(mk978m, { block: 'FALN1A', size: '100' }).length > 0, 'the blocks keep their printed sizes');
   assert.equal(checkCautions(mk978m, { block: 'J3ML71' }).length, 1, 'the modified linear rows carry their line');
   assert.ok(/no hard seat row/.test(mk978m.note), 'the missing hard seat row is confessed against the 978');
+});
+
+console.log('\nThe JSRLP high purity valve and the SSC assembly:');
+
+check('both round-trip and the no-airload-with-self-relieve rule holds', () => {
+  roundTrip(jsrlp, {
+    model: 'JSRLP', size: '075', material: '30', endConnection: 'X2', portConfig: 'E',
+    trim: '1R', seat: 'PK', rangeSpring: '25', diaphragm: 'JL', actuator: 'CV1',
+    inletGauge: 'EE', outletGauge: 'B', sep: 'G', accessories: 'J',
+  }, 'JSRLP07530X2E1RPK25JLCV1EEBGJ');
+  roundTrip(ssc, {
+    model: 'SSC', size: '075', orientation: 'H', sensor: 'S', bodySegment: 'J',
+    gasket: 'S', acc1: 'S', acc2: 'F', acc3: '0',
+  }, 'SSC-075-HSJSSF0');
+  assert.ok(checkConstraints(jsrlp, { actuator: 'AA1', trim: '1R' }).length > 0, 'self-relieve and air-load refuse each other');
+  assert.equal(checkConstraints(jsrlp, { actuator: 'CV1', trim: '1R' }).length, 0, 'the captured vent serves the self-relieved build');
+  assert.equal(checkCautions(jsrlp, { rangeSpring: '25', outletGauge: 'A' }).length, 1, 'the one uncovered range cautions');
+  assert.equal(checkCautions(ssc, { acc2: 'F' }).length, 1, 'the document-required gasket cautions');
+  assert.ok(/Mark 93/.test(ssc.note), 'the trap grid points at the existing 93 builder');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
