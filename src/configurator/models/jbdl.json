@@ -1,0 +1,144 @@
+{
+  "model": "JBDL",
+  "line": "low_flow",
+  "displayName": "LowFlow JBDL Series low range back pressure regulator",
+  "match": ["jbdl series", "jbdl-series", "jbdlseries", "lowflow jbdl", "jbdl regulator", "jbdl back pressure"],
+  "source": { "doc": "jbdlseries.pdf", "page": "3 and 4", "section": "JBDL Series ordering schematic" },
+  "note": "Extracted by hand from the ordering schematic on pages 3 and 4, the JR family shape assembled without separators. Half inch only, FNPT or BSPP. The inlet gauge column runs its own letter ladder, LL for 0-60 up to VV for 0-2000, unlike the AA-to-MM ladder every sibling sheet uses; transcribed exactly as printed, LL here means 0-60 where the JR sheet's LL means 0-3000. The outlet gauge column offers none and non-standard alone, so no outlet gauge caution can arise. The accessories column carries the sheet's three preset packages, captured vent, standard and panel mount, each with anti-tamper. The gauge-span liability note is encoded as cautions, stated plainly and never blocking.",
+  "assembly": "{model}{size}{material}{endConnection}{portConfig}{trim}{seat}{rangeSpring}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "JBDL", "label": "Low range back pressure regulating valve", "aliases": ["jbdl", "low range back pressure", "back pressure"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\"", "aliases": ["1/2\"", "0.5\"", "half inch", "DN15"] }
+      ]
+    },
+    {
+      "id": "material", "label": "Material", "position": 3, "required": true,
+      "options": [
+        { "code": "6L", "label": "Stainless steel 316L", "aliases": ["316l", "stainless", "stainless steel", "sst"] }
+      ]
+    },
+    {
+      "id": "endConnection", "label": "End connection", "position": 4, "required": true,
+      "options": [
+        { "code": "C", "label": "FNPT 1/2\"", "aliases": ["fnpt 1/2", "1/2 npt", "fnpt"] },
+        { "code": "F", "label": "BSPP 1/2\"", "aliases": ["bspp 1/2", "bspp"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard end connection"] }
+      ]
+    },
+    {
+      "id": "portConfig", "label": "Port configuration", "position": 5, "required": true,
+      "options": [
+        { "code": "A", "label": "Port A", "aliases": ["port a"] },
+        { "code": "B", "label": "Port B", "aliases": ["port b"] },
+        { "code": "C", "label": "Port C", "aliases": ["port c"] },
+        { "code": "D", "label": "Port D", "aliases": ["port d"] },
+        { "code": "E", "label": "Port E", "aliases": ["port e"] },
+        { "code": "F", "label": "Port F", "aliases": ["port f"] },
+        { "code": "G", "label": "Port G", "aliases": ["port g"] },
+        { "code": "L", "label": "Port L", "aliases": ["port l"] },
+        { "code": "V", "label": "Port V", "aliases": ["port v"] },
+        { "code": "S", "label": "Port S", "aliases": ["port s"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 6, "required": true,
+      "options": [
+        { "code": "BB", "label": "Buna-N", "aliases": ["buna-n", "buna"] },
+        { "code": "EE", "label": "EPDM", "aliases": ["epdm"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat", "position": 7, "required": true,
+      "options": [
+        { "code": "K5", "label": "KEL-F, Cv 1.95 (1.69 Kv)", "aliases": ["kel-f", "kelf"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "rangeSpring", "label": "Range spring", "position": 8, "required": true,
+      "options": [
+        { "code": "E1", "label": "0-50 psi (0-3.45 bar)", "aliases": ["0-50", "0 to 50"] },
+        { "code": "E2", "label": "0-100 psi (0-6.9 bar)", "aliases": ["0-100", "0 to 100"] },
+        { "code": "E3", "label": "0-200 psi (0-13.8 bar)", "aliases": ["0-200", "0 to 200"] },
+        { "code": "E4", "label": "0-400 psi (0-27.6 bar)", "aliases": ["0-400", "0 to 400"] },
+        { "code": "E5", "label": "0-730 psi (0-50.3 bar)", "aliases": ["0-730", "0 to 730"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm", "position": 9, "required": true,
+      "options": [
+        { "code": "BB", "label": "Buna-N", "aliases": ["buna-n diaphragm"] },
+        { "code": "EE", "label": "EPDM", "aliases": ["epdm diaphragm"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator", "position": 10, "required": true,
+      "options": [
+        { "code": "SK", "label": "Standard", "aliases": ["standard", "standard knob"] },
+        { "code": "CV", "label": "Captured vent", "aliases": ["captured vent"] },
+        { "code": "PM", "label": "Panel mount", "aliases": ["panel mount"] },
+        { "code": "TP", "label": "Tamper proof", "aliases": ["tamper proof"] },
+        { "code": "LW", "label": "Locking wire", "aliases": ["locking wire"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "inletGauge", "label": "Inlet gauge", "position": 11, "required": true,
+      "options": [
+        { "code": "LL", "label": "0-60 psig/bar (dual)", "aliases": ["inlet 0-60"] },
+        { "code": "MM", "label": "0-160 psig/bar (dual)", "aliases": ["inlet 0-160"] },
+        { "code": "PP", "label": "0-300 psig/bar (dual)", "aliases": ["inlet 0-300"] },
+        { "code": "SS", "label": "0-600 psig/bar (dual)", "aliases": ["inlet 0-600"] },
+        { "code": "TT", "label": "0-1000 psig/bar (dual)", "aliases": ["inlet 0-1000"] },
+        { "code": "VV", "label": "0-2000 psig/bar (dual)", "aliases": ["inlet 0-2000"] },
+        { "code": "NN", "label": "None", "aliases": ["no inlet gauge"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard inlet gauge"] }
+      ]
+    },
+    {
+      "id": "outletGauge", "label": "Outlet gauge", "position": 12, "required": true,
+      "options": [
+        { "code": "N", "label": "None", "aliases": ["no outlet gauge"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard outlet gauge"] }
+      ]
+    },
+    {
+      "id": "sep", "label": "SEP compliance", "position": 13, "required": true,
+      "options": [
+        { "code": "G", "label": "SEP compliant", "aliases": ["sep", "sep compliant"] },
+        { "code": "0", "label": "None", "aliases": ["none", "no sep"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard sep"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories", "position": 14, "required": true,
+      "options": [
+        { "code": "A", "label": "Captured vent preset with anti-tamper", "aliases": ["captured vent preset"] },
+        { "code": "B", "label": "Standard preset with anti-tamper", "aliases": ["standard preset"] },
+        { "code": "C", "label": "Panel mount preset with anti-tamper", "aliases": ["panel mount preset"] },
+        { "code": "S", "label": "Clean for oil free (consult factory for compatible gauges)", "aliases": ["oil free", "clean for oil free"] },
+        { "code": "X", "label": "Clean for oxygen (consult factory for compatible gauges)", "aliases": ["oxygen", "clean for oxygen"] },
+        { "code": "0", "label": "None", "aliases": ["none", "no accessories"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": [
+    { "when": { "rangeSpring": "E2", "inletGauge": ["LL"] }, "note": "The selected inlet gauge span is below the top of the 0-100 psi range spring, so it cannot cover the working pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection." },
+    { "when": { "rangeSpring": "E3", "inletGauge": ["LL", "MM"] }, "note": "The selected inlet gauge span is below the top of the 0-200 psi range spring, so it cannot cover the working pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection." },
+    { "when": { "rangeSpring": "E4", "inletGauge": ["LL", "MM", "PP"] }, "note": "The selected inlet gauge span is below the top of the 0-400 psi range spring, so it cannot cover the working pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection." },
+    { "when": { "rangeSpring": "E5", "inletGauge": ["LL", "MM", "PP", "SS"] }, "note": "The selected inlet gauge span is below the top of the 0-730 psi range spring, so it cannot cover the working pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection." }
+  ]
+}
