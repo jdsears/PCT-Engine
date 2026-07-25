@@ -1,0 +1,171 @@
+{
+  "model": "MK74",
+  "line": "jordan",
+  "displayName": "Jordan Mark 74 bellows stem seal control valve",
+  "match": ["mk74", "mark 74", "jordan 74", "bellows seal"],
+  "source": { "doc": "mk74.pdf", "page": "3 and 4", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, the Mark 70 shape with bellows trims. The 35M table prints its 3-15 spans under the N and Q codes alone, with no A3B3A3 or B3B3A3 rows, exactly as carried. The I/P accessories name their actuator class and refuse a system from another class. The end connection glosses couple body and size as printed.",
+  "assembly": "{model}{size}{body}/{ends}{trim}{seat}{cv}{system}{accessories}{action}{ip}{smp}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "74", "label": "Bellows seal", "aliases": ["mk74", "mark 74"] },
+        { "code": "74TP", "label": "Bellows seal with top positioner", "aliases": ["74tp"] },
+        { "code": "74SP", "label": "Bellows seal with side positioner", "aliases": ["74sp"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE, DI above 2\" or CS or SST valves", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE, DI below 2-1/2\" or BR", "aliases": ["150 flanged"] },
+        { "code": "I3", "label": "300# IFE, DI above 2\" or CS or SST valves", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE, DI below 2-1/2\" or BR", "aliases": ["300 flanged"] },
+        { "code": "I7", "label": "PN10 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn10 ife"] },
+        { "code": "I6", "label": "PN16 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn16 ife"] },
+        { "code": "I8", "label": "PN25 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn25 ife"] },
+        { "code": "I4", "label": "PN40 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn40 ife"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "B3", "label": "303SS / TFE packing / 316 bellows", "aliases": ["303 bellows"] },
+        { "code": "B6", "label": "316SS / TFE packing / 316 bellows", "aliases": ["316 bellows"] },
+        { "code": "BH", "label": "Hastelloy C / TFE packing / Hastelloy C bellows", "aliases": ["hastelloy bellows"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.28 Kv)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.4 Kv)", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.2 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.8 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.5 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.2 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (13 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (22 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (26 Kv)", "aliases": ["30"] }
+      ]
+    },
+    {
+      "id": "system", "label": "Range and actuator (7 to 12)", "position": 8, "required": true,
+      "options": [
+        { "code": "N3Q3N3", "label": "3-15 direct, 35M", "aliases": ["n3q3n3"] },
+        { "code": "Q3Q3N3", "label": "3-15 reverse, 35M", "aliases": ["q3q3n3"] },
+        { "code": "C3B3A3", "label": "3-9 direct, 35M", "aliases": ["c3b3a3"] },
+        { "code": "D3B3A3", "label": "3-9 reverse, 35M", "aliases": ["d3b3a3"] },
+        { "code": "E3B3A3", "label": "9-15 direct, 35M", "aliases": ["e3b3a3"] },
+        { "code": "F3B3A3", "label": "9-15 reverse, 35M", "aliases": ["f3b3a3"] },
+        { "code": "G3B3A3", "label": "6-30 direct, 35M", "aliases": ["g3b3a3"] },
+        { "code": "H3B3A3", "label": "6-30 reverse, 35M", "aliases": ["h3b3a3"] },
+        { "code": "A5B5A5", "label": "3-15 direct, 55M", "aliases": ["a5b5a5"] },
+        { "code": "B5B5A5", "label": "3-15 reverse, 55M", "aliases": ["b5b5a5"] },
+        { "code": "C5B5A5", "label": "3-9 direct, 55M", "aliases": ["c5b5a5"] },
+        { "code": "D5B5A5", "label": "3-9 reverse, 55M", "aliases": ["d5b5a5"] },
+        { "code": "E5B5A5", "label": "9-15 direct, 55M", "aliases": ["e5b5a5"] },
+        { "code": "F5B5A5", "label": "9-15 reverse, 55M", "aliases": ["f5b5a5"] },
+        { "code": "G5B5A5", "label": "6-30 direct, 55M", "aliases": ["g5b5a5"] },
+        { "code": "H5B5A5", "label": "6-30 reverse, 55M", "aliases": ["h5b5a5"] },
+        { "code": "A8B8A8", "label": "3-15 direct, 85M", "aliases": ["a8b8a8"] },
+        { "code": "B8B8A8", "label": "3-15 reverse, 85M", "aliases": ["b8b8a8"] },
+        { "code": "C8B8A8", "label": "3-9 direct, 85M", "aliases": ["c8b8a8"] },
+        { "code": "D8B8A8", "label": "3-9 reverse, 85M", "aliases": ["d8b8a8"] },
+        { "code": "E8B8A8", "label": "9-15 direct, 85M", "aliases": ["e8b8a8"] },
+        { "code": "F8B8A8", "label": "9-15 reverse, 85M", "aliases": ["f8b8a8"] },
+        { "code": "G8B8A8", "label": "6-30 direct, 85M", "aliases": ["g8b8a8"] },
+        { "code": "H8B8A8", "label": "6-30 reverse, 85M", "aliases": ["h8b8a8"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (13 and 14)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "AR", "label": "Air regulator", "aliases": ["air regulator"] },
+        { "code": "S6", "label": "316SS bolting", "aliases": ["316 bolting"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (15)", "position": 10, "required": true,
+      "options": [
+        { "code": "D", "label": "Air-to-close", "aliases": ["air to close"] },
+        { "code": "R", "label": "Air-to-open", "aliases": ["air to open"] }
+      ]
+    },
+    {
+      "id": "ip", "label": "I/P (16)", "position": 11, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no ip"] },
+        { "code": "3", "label": "I/P, 35M actuator", "aliases": ["ip 35m"] },
+        { "code": "5", "label": "I/P, 55M actuator", "aliases": ["ip 55m"] },
+        { "code": "8", "label": "I/P, 85M actuator", "aliases": ["ip 85m"] }
+      ]
+    },
+    {
+      "id": "smp", "label": "SMP (17)", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no smp"] },
+        { "code": "A", "label": "SMP DIR/REV 3-15", "aliases": ["smp 3-15"] },
+        { "code": "B", "label": "SMP DIR/REV 3-9", "aliases": ["smp 3-9"] },
+        { "code": "C", "label": "SMP DIR/REV 9-15", "aliases": ["smp 9-15"] },
+        { "code": "D", "label": "SMP/IP DIR/REV 4-20", "aliases": ["smp ip 4-20"] },
+        { "code": "E", "label": "SMP/IP DIR/REV 4-12", "aliases": ["smp ip 4-12"] },
+        { "code": "F", "label": "SMP/IP DIR/REV 12-20", "aliases": ["smp ip 12-20"] },
+        { "code": "G", "label": "MK16IQ-S DIR/REV 4-20 (Hart and FM approved)", "aliases": ["mk16iq-s"] },
+        { "code": "H", "label": "MK16IQ-B DIR/REV 4-20 (with gauges)", "aliases": ["mk16iq-b"] },
+        { "code": "J", "label": "MK16IQ-FF DIR/REV 4-20 (Fieldbus with gauges)", "aliases": ["mk16iq-ff"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard smp"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"] }, "forbid": { "body": ["BR"] },
+      "reason": "the IFE glosses name ductile iron above 2 inch or carbon or stainless valves" },
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"], "body": "DI" }, "forbid": { "size": ["050", "075", "100", "125", "150", "200"] },
+      "reason": "on ductile iron the IFE ends are printed above 2 inch, and this sheet stops at 2 inch" },
+    { "when": { "ends": ["F5", "F3"] }, "forbid": { "body": ["CS", "S6"] },
+      "reason": "the FE glosses name ductile iron below 2-1/2 inch or bronze" },
+    { "when": { "ip": "3" }, "forbid": { "system": ["A5B5A5", "B5B5A5", "C5B5A5", "D5B5A5", "E5B5A5", "F5B5A5", "G5B5A5", "H5B5A5", "A8B8A8", "B8B8A8", "C8B8A8", "D8B8A8", "E8B8A8", "F8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the I/P names its actuator, 35M" },
+    { "when": { "ip": "5" }, "forbid": { "system": ["N3Q3N3", "Q3Q3N3", "C3B3A3", "D3B3A3", "E3B3A3", "F3B3A3", "G3B3A3", "H3B3A3", "A8B8A8", "B8B8A8", "C8B8A8", "D8B8A8", "E8B8A8", "F8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the I/P names its actuator, 55M" },
+    { "when": { "ip": "8" }, "forbid": { "system": ["N3Q3N3", "Q3Q3N3", "C3B3A3", "D3B3A3", "E3B3A3", "F3B3A3", "G3B3A3", "H3B3A3", "A5B5A5", "B5B5A5", "C5B5A5", "D5B5A5", "E5B5A5", "F5B5A5", "G5B5A5", "H5B5A5"] },
+      "reason": "the I/P names its actuator, 85M" }
+  ],
+  "cautions": []
+}

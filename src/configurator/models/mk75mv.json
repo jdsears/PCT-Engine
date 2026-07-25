@@ -1,0 +1,119 @@
+{
+  "model": "MK75MV",
+  "line": "jordan",
+  "displayName": "Jordan Mark 75MV motor operated wafer control valve",
+  "match": ["mk75mv", "mark 75mv", "jordan 75mv", "motor valve"],
+  "source": { "doc": "mk75mv.pdf", "page": 4, "section": "Ordering Schematic MK75MV" },
+  "note": "Extracted by hand from the ordering schematic, fifteen positions assembled bare. Motor operated: the range position carries the control signal, the actuator position the CML motor with its supply voltage, and the action position the sheet's four codes including the fail modes on loss of signal. The sheet's own line, consult factory for the 6 inch, is carried as a note; no 6 inch row prints, so none is offered. The seats section prints one ZZ spanning material and Cv.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seatMaterial}{cv}{range}{actuator}{accessory1}{action}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "75MV", "label": "With motor valve", "aliases": ["mk75mv", "motor valve"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "100", "label": "1\"", "aliases": ["1\"", "DN25"] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\"", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\"", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\"", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\"", "aliases": ["4\"", "DN100"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CB", "label": "Carbon steel bar", "aliases": ["carbon steel bar"] },
+        { "code": "SB", "label": "Stainless steel bar", "aliases": ["stainless bar"] },
+        { "code": "CS", "label": "Carbon steel cast", "aliases": ["carbon steel cast"] },
+        { "code": "S6", "label": "Stainless steel cast", "aliases": ["stainless cast"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "I3", "label": "150# / 300# IFE", "aliases": ["ife"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T6", "label": "316SS / TEF packing", "aliases": ["316 tef"] },
+        { "code": "I6", "label": "316SS / 287-I packing", "aliases": ["316 287-i"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seatMaterial", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "W", "label": "316SS / Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "8", "label": "9.5", "aliases": ["9.5"] },
+        { "code": "A", "label": "33", "aliases": ["33"] },
+        { "code": "B", "label": "38", "aliases": ["38"] },
+        { "code": "E", "label": "72", "aliases": ["72"] },
+        { "code": "F", "label": "76", "aliases": ["76"] },
+        { "code": "H", "label": "103", "aliases": ["103"] },
+        { "code": "I", "label": "180", "aliases": ["180"] },
+        { "code": "J", "label": "400", "aliases": ["400"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "42", "label": "4-20mA", "aliases": ["4-20ma"] },
+        { "code": "41", "label": "4-12mA", "aliases": ["4-12ma"] },
+        { "code": "12", "label": "12-20mA", "aliases": ["12-20ma"] },
+        { "code": "NN", "label": "No motor", "aliases": ["no motor"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator/yoke feature (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "A3", "label": "CML100, 120/240 VAC", "aliases": ["cml100"] },
+        { "code": "A4", "label": "CML250, 120/240 VAC", "aliases": ["cml250"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessory1", "label": "Accessory 1 (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "SC", "label": "Clean for oil free", "aliases": ["oil free"] },
+        { "code": "XC", "label": "Oxygen clean", "aliases": ["oxygen clean"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (13 and 14)", "position": 11, "required": true,
+      "options": [
+        { "code": "DD", "label": "Direct", "aliases": ["direct"] },
+        { "code": "RR", "label": "Reverse", "aliases": ["reverse"] },
+        { "code": "DP", "label": "Direct, fail open on loss of signal", "aliases": ["fail open"] },
+        { "code": "RC", "label": "Reverse, fail closed on loss of signal", "aliases": ["fail closed"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (15)", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "Not required", "aliases": ["not required"] },
+        { "code": "F", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": [
+    { "when": { "size": "400" },
+      "note": "The sheet's own line: consult factory for a 6 inch MK75MV; this sheet stops at 4 inch." }
+  ]
+}
