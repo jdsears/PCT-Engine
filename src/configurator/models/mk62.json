@@ -1,0 +1,110 @@
+{
+  "model": "MK62",
+  "line": "jordan",
+  "displayName": "Jordan Mark 62 internally piloted pressure regulator",
+  "match": ["mk62", "mark 62", "jordan 62"],
+  "source": { "doc": "mk62.pdf", "page": 3, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash and the code characters, separators as the header prints them. The low differential trims carry their own printed size bands, 5-10 for 1 to 1-1/4 inch and 10-15 for 1-1/2 to 2 inch, enforced as constraints. No Cv by size table is printed on this sheet, so the Cv column stands unconstrained.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{cv}{range}{diaphragm}{actuator}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "62", "label": "Standard", "aliases": ["mk62", "mark 62", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "half inch", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "one inch", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "two inch", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt", "threaded"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "F5", "label": "150# FE", "aliases": ["150 flanged"] },
+        { "code": "F3", "label": "300# FE", "aliases": ["300 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316"] },
+        { "code": "L1", "label": "303SS low ∆P 5-10 (1\" to 1-1/4\" only)", "aliases": ["303 low dp 5-10"] },
+        { "code": "L2", "label": "316SS low ∆P 5-10 (1\" to 1-1/4\" only)", "aliases": ["316 low dp 5-10"] },
+        { "code": "L3", "label": "303SS low ∆P 10-15 (1-1/2\" to 2\" only)", "aliases": ["303 low dp 10-15"] },
+        { "code": "L4", "label": "316SS low ∆P 10-15 (1-1/2\" to 2\" only)", "aliases": ["316 low dp 10-15"] },
+        { "code": "L5", "label": "303SS low ∆P 15-20", "aliases": ["303 low dp 15-20"] },
+        { "code": "L6", "label": "316SS low ∆P 15-20", "aliases": ["316 low dp 15-20"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv", "position": 7, "required": true,
+      "options": [
+        { "code": "5", "label": "2.5 (2.15 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.78 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.50 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.17 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (21.5 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.8 Kv)", "aliases": ["30"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range", "position": 8, "required": true,
+      "options": [
+        { "code": "19", "label": "2-50 psi", "aliases": ["2-50"] },
+        { "code": "38", "label": "10-200 psi", "aliases": ["10-200"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm", "position": 9, "required": true,
+      "options": [
+        { "code": "S6", "label": "316SST", "aliases": ["316 diaphragm"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator", "position": 10, "required": true,
+      "options": [
+        { "code": "MD", "label": "Standard", "aliases": ["standard"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "trim": ["L1", "L2"] }, "forbid": { "size": ["050", "075", "150", "200"] },
+      "reason": "the 5-10 low differential trims are printed for 1 and 1-1/4 inch only" },
+    { "when": { "trim": ["L3", "L4"] }, "forbid": { "size": ["050", "075", "100", "125"] },
+      "reason": "the 10-15 low differential trims are printed for 1-1/2 and 2 inch only" }
+  ],
+  "cautions": []
+}

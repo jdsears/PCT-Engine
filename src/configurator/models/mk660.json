@@ -1,0 +1,106 @@
+{
+  "model": "MK660",
+  "line": "jordan",
+  "displayName": "Jordan Mark 660 high flow air loaded regulator",
+  "match": ["mk660", "mark 660", "jordan 660"],
+  "source": { "doc": "mk660.pdf", "page": 2, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, which prints no separators. Held for John: the header row numbers positions to 15, but the extraction prints no sections past the actuator at 9 and 10, so the code here stops at the actuator and wants checking against the PDF; the Mark 66 sheet carries double bolting and accessories in those positions. Exotic trims and diaphragms, Monel, Alloy 20 and Hastelloy C, are printed plainly and carried. The end column is FE and threaded only, no IFE rows. No Cv by size table is printed.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seat}{cv}{diaphragm}{actuator}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "660", "label": "Standard", "aliases": ["mk660", "mark 660", "high flow air loaded"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] },
+        { "code": "CI", "label": "Cast iron", "aliases": ["cast iron"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "F1", "label": "125# FE", "aliases": ["125 flanged"] },
+        { "code": "F5", "label": "150# FE", "aliases": ["150 flanged"] },
+        { "code": "F2", "label": "250# FE", "aliases": ["250 flanged"] },
+        { "code": "F3", "label": "300# FE", "aliases": ["300 flanged"] },
+        { "code": "F7", "label": "PN10 DIN FE", "aliases": ["pn10 flanged"] },
+        { "code": "F6", "label": "PN16 DIN FE", "aliases": ["pn16 flanged"] },
+        { "code": "F8", "label": "PN25 DIN FE", "aliases": ["pn25 flanged"] },
+        { "code": "F4", "label": "PN40 DIN FE", "aliases": ["pn40 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316"] },
+        { "code": "MN", "label": "Monel", "aliases": ["monel"] },
+        { "code": "A2", "label": "Alloy 20", "aliases": ["alloy 20"] },
+        { "code": "HC", "label": "Hastelloy C", "aliases": ["hastelloy"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seats (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "Q", "label": "303/Teflon", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316/Teflon", "aliases": ["316 teflon"] },
+        { "code": "S", "label": "Monel/Teflon", "aliases": ["monel teflon"] },
+        { "code": "T", "label": "Alloy 20/Teflon", "aliases": ["alloy 20 teflon"] },
+        { "code": "U", "label": "Hastelloy C/Teflon", "aliases": ["hastelloy teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "A", "label": "25 (21.5 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.8 Kv)", "aliases": ["30"] },
+        { "code": "V", "label": "35 (30.1 Kv)", "aliases": ["35"] },
+        { "code": "W", "label": "45 (38.7 Kv)", "aliases": ["45"] },
+        { "code": "C", "label": "50 (43.0 Kv)", "aliases": ["50"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "S6", "label": "316SST", "aliases": ["316 diaphragm"] },
+        { "code": "JL", "label": "Jorlon", "aliases": ["jorlon"] },
+        { "code": "NN", "label": "Neoprene/Nylon", "aliases": ["neoprene"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "MN", "label": "Monel", "aliases": ["monel diaphragm"] },
+        { "code": "A2", "label": "Alloy 20", "aliases": ["alloy 20 diaphragm"] },
+        { "code": "HC", "label": "Hastelloy C", "aliases": ["hastelloy diaphragm"] },
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna-n"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "MD", "label": "For metal diaphragm", "aliases": ["metal diaphragm actuator"] },
+        { "code": "ED", "label": "For elastomer diaphragm", "aliases": ["elastomer diaphragm actuator"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
