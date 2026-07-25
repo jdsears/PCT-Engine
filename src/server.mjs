@@ -126,7 +126,7 @@ app.post('/search', async (req, res) => {
 
 app.post('/ask', async (req, res) => {
   try {
-    const { question, history, configState } = req.body || {};
+    const { question, history, configState, quoteState } = req.body || {};
     if (!question) return res.status(400).json({ error: 'question is required' });
     if (String(question).length > 2000) {
       return res.status(400).json({ error: 'the question is too long; please ask it in a shorter form' });
@@ -134,13 +134,14 @@ app.post('/ask', async (req, res) => {
     const result = await ask(question, {
       history: Array.isArray(history) ? history : [],
       configState: configState || null,
+      quoteState: quoteState || null,
     });
     // Log before replying, so the reply can carry the row id and the answer's
     // feedback chips have something to attach to. The insert is a few
     // milliseconds on the internal network; a logging failure still never fails
     // the answer, the id is simply null and the chips do not show. A
     // configurator turn is not a retrieval query, so it is not logged here.
-    const isConfigTurn = !!(result.configState || result.configOptions || result.configurator || result.configLog);
+    const isConfigTurn = !!(result.configState || result.configOptions || result.configurator || result.configLog || result.quoteHandled);
     let queryLogId = null;
     if (!isConfigTurn) try {
       const ins = await pool.query(
