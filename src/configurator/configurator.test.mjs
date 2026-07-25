@@ -60,6 +60,9 @@ const mk75e = JSON.parse(readFileSync(join(here, 'models', 'mk75e.json'), 'utf8'
 const mk75hw = JSON.parse(readFileSync(join(here, 'models', 'mk75hw.json'), 'utf8'));
 const mk75mv = JSON.parse(readFileSync(join(here, 'models', 'mk75mv.json'), 'utf8'));
 const mk75ptp = JSON.parse(readFileSync(join(here, 'models', 'mk75ptp.json'), 'utf8'));
+const mk79 = JSON.parse(readFileSync(join(here, 'models', 'mk79.json'), 'utf8'));
+const mk701 = JSON.parse(readFileSync(join(here, 'models', 'mk701.json'), 'utf8'));
+const mk76 = JSON.parse(readFileSync(join(here, 'models', 'mk76.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -972,6 +975,34 @@ check('the piston classes, bellows glosses and fail modes hold', () => {
   assert.ok(mk75mv.slots.find(s => s.id === 'action').options.some(o => o.code === 'RC'), 'the motor fail modes are carried');
   assert.equal(checkCautions(mk75mv, { size: '400' }).length, 1, 'the consult-factory 6 inch line rides the largest size');
   assert.ok(/slashed/.test(mk75ptp.note), 'the slashed-zero glyphs are confessed on the PTP');
+});
+
+console.log('\nThe three-way 79, the high flow 701/702 and the on/off 76:');
+
+check('the three sheets round-trip with their own separators', () => {
+  roundTrip(mk79, {
+    model: '79MXSP', size: '200', body: 'S6', ends: 'F8', trim: 'T6', seat: 'W', cv: 'B',
+    system: 'H5B5A5', accessories: 'TS', action: '0', ip: '5', smp: 'J',
+  }, '79MXSP-200-S6/F8T6WBH5B5A5TS05J');
+  roundTrip(mk701, {
+    model: '702TP', size: '125', body: 'DI', ends: 'F7', trim: 'T6', seat: 'W', cv: 'E',
+    system: 'G3B3A3', accessories: 'H3', action: 'D', ip: '3', smp: 'A',
+  }, '702TP125DI/F7T6WEG3B3A3H3D3A');
+  roundTrip(mk76, {
+    model: '76', size: '600', body: 'S6', ends: 'I2', trim: 'TH', seat: 'U', cv: 'J',
+    range: '00', diaphragm: 'B3', actuator: 'A3', accessories: 'X3', action: 'R', ped: 'F',
+  }, '76-600-S6/I2THUJ00B3A3X3RF');
+});
+
+check('the class couplings, actuator brackets and artefact confessions hold', () => {
+  assert.ok(checkConstraints(mk79, { ip: '8', system: 'A3B3A3' }).length > 0, 'the 79 I/P names its class');
+  assert.ok(checkConstraints(mk701, { ends: 'F8', body: 'S6' }).length > 0, 'the F8 constraint follows the F family, not the printed SST slip');
+  assert.ok(/F8/.test(mk701.note) && /SST/.test(mk701.note), 'the 701 F8 gloss artefact is confessed');
+  assert.ok(/7 and L/.test(mk701.note), 'the doubled 6.4 Cv codes are confessed');
+  assert.ok(checkConstraints(mk76, { actuator: 'A6', size: '300' }).length > 0, 'the 506 actuator stops at 2 inch');
+  assert.ok(checkConstraints(mk76, { diaphragm: 'B3', actuator: 'A6' }).length > 0, 'the diaphragm size digit matches the actuator');
+  assert.ok(/I5/.test(mk76.note) || /FE/.test(mk76.note), 'the 76 I5 label oddity is noted');
+  assert.equal(applyValue(mk79, {}, 'size', '300').accepted, false, 'the 79 sheet stops at 2 inch, 3 inch per its own contact-factory line');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

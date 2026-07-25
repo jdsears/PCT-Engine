@@ -1,0 +1,181 @@
+{
+  "model": "MK701",
+  "line": "jordan",
+  "displayName": "Jordan Mark 701/702 high flow control valve",
+  "match": ["mk701", "mark 701", "mk702", "mark 702", "jordan 701", "jordan 702"],
+  "source": { "doc": "mk701.pdf", "page": "12 and 13", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic. Six models, the high flow and super high flow each plain or with a side or top positioner; the sheet prints no Cv split between 701 and 702, so none is enforced, and the codes 7 and L both print 6.4, carried exactly as the sheet has them. Held for the PDF: the F8 end's gloss prints DI below 2-1/2 inch or SST valves where every sibling F row says bronze; the constraint follows the F family and the oddity is confessed here. The I/P accessories name their actuator class and refuse a system from another class.",
+  "assembly": "{model}{size}{body}/{ends}{trim}{seat}{cv}{system}{accessories}{action}{ip}{smp}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "701", "label": "High flow", "aliases": ["mk701", "high flow"] },
+        { "code": "701SP", "label": "High flow with side positioner", "aliases": ["701sp"] },
+        { "code": "701TP", "label": "High flow with top positioner", "aliases": ["701tp"] },
+        { "code": "702", "label": "Super high flow", "aliases": ["mk702", "super high flow"] },
+        { "code": "702SP", "label": "Super high flow with side positioner", "aliases": ["702sp"] },
+        { "code": "702TP", "label": "Super high flow with top positioner", "aliases": ["702tp"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE, DI above 2\" or CS or SST valves", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE, DI below 2-1/2\" or BR", "aliases": ["150 flanged"] },
+        { "code": "I3", "label": "300# IFE, DI above 2\" or CS or SST valves", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE, DI below 2-1/2\" or BR", "aliases": ["300 flanged"] },
+        { "code": "I7", "label": "PN10 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn10 ife"] },
+        { "code": "F7", "label": "PN10 FE, DI below 2-1/2\" or BR", "aliases": ["pn10 flanged"] },
+        { "code": "I6", "label": "PN16 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn16 ife"] },
+        { "code": "F6", "label": "PN16 FE, DI below 2-1/2\" or BR", "aliases": ["pn16 flanged"] },
+        { "code": "I8", "label": "PN25 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn25 ife"] },
+        { "code": "F8", "label": "PN25 FE, DI below 2-1/2\" or BR (the sheet's gloss prints SST here, see note)", "aliases": ["pn25 flanged"] },
+        { "code": "I4", "label": "PN40 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn40 ife"] },
+        { "code": "F4", "label": "PN40 FE, DI below 2-1/2\" or BR", "aliases": ["pn40 flanged"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T3", "label": "303SS / TFE packing", "aliases": ["303 tfe"] },
+        { "code": "T6", "label": "316SS / TFE packing", "aliases": ["316 tfe"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "7", "label": "6.4 (5.5 Kv)", "aliases": ["6.4"] },
+        { "code": "L", "label": "6.4 (5.5 Kv), printed alongside code 7 at the same flow", "aliases": ["6.4 l"] },
+        { "code": "M", "label": "9.0 (7.8 Kv)", "aliases": ["9.0"] },
+        { "code": "8", "label": "9.5 (8.2 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (13 Kv)", "aliases": ["15"] },
+        { "code": "R", "label": "18 (15.5 Kv)", "aliases": ["18"] },
+        { "code": "T", "label": "24 (21 Kv)", "aliases": ["24"] },
+        { "code": "A", "label": "25 (22 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (26 Kv)", "aliases": ["30"] },
+        { "code": "V", "label": "35 (31 Kv)", "aliases": ["35"] },
+        { "code": "W", "label": "45 (39 Kv)", "aliases": ["45"] },
+        { "code": "C", "label": "50 (43 Kv)", "aliases": ["50"] },
+        { "code": "Y", "label": "65 (56 Kv)", "aliases": ["65"] },
+        { "code": "E", "label": "70 (60 Kv)", "aliases": ["70"] }
+      ]
+    },
+    {
+      "id": "system", "label": "Range and actuator (7 to 12)", "position": 8, "required": true,
+      "options": [
+        { "code": "A3B3A3", "label": "3-15 direct, 35M", "aliases": ["a3b3a3"] },
+        { "code": "B3B3A3", "label": "3-15 reverse, 35M", "aliases": ["b3b3a3"] },
+        { "code": "G3B3A3", "label": "6-30 direct, 35M", "aliases": ["g3b3a3"] },
+        { "code": "H3B3A3", "label": "6-30 reverse, 35M", "aliases": ["h3b3a3"] },
+        { "code": "A5B5A5", "label": "3-15 direct, 55M", "aliases": ["a5b5a5"] },
+        { "code": "B5B5A5", "label": "3-15 reverse, 55M", "aliases": ["b5b5a5"] },
+        { "code": "G5B5A5", "label": "6-30 direct, 55M", "aliases": ["g5b5a5"] },
+        { "code": "H5B5A5", "label": "6-30 reverse, 55M", "aliases": ["h5b5a5"] },
+        { "code": "A8B8A8", "label": "3-15 direct, 85M", "aliases": ["a8b8a8"] },
+        { "code": "B8B8A8", "label": "3-15 reverse, 85M", "aliases": ["b8b8a8"] },
+        { "code": "G8B8A8", "label": "6-30 direct, 85M", "aliases": ["g8b8a8"] },
+        { "code": "H8B8A8", "label": "6-30 reverse, 85M", "aliases": ["h8b8a8"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (13 and 14)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "AR", "label": "Air regulator", "aliases": ["air regulator"] },
+        { "code": "H3", "label": "Handwheel, 35M actuator", "aliases": ["handwheel 35m"] },
+        { "code": "H5", "label": "Handwheel, 55M actuator", "aliases": ["handwheel 55m"] },
+        { "code": "H8", "label": "Handwheel, 85M actuator", "aliases": ["handwheel 85m"] },
+        { "code": "S6", "label": "316SS bolting", "aliases": ["316 bolting"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (15)", "position": 10, "required": true,
+      "options": [
+        { "code": "D", "label": "Air-to-close", "aliases": ["air to close"] },
+        { "code": "R", "label": "Air-to-open", "aliases": ["air to open"] }
+      ]
+    },
+    {
+      "id": "ip", "label": "I/P (16)", "position": 11, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no ip"] },
+        { "code": "3", "label": "I/P, 35M actuator", "aliases": ["ip 35m"] },
+        { "code": "5", "label": "I/P, 55M actuator", "aliases": ["ip 55m"] },
+        { "code": "8", "label": "I/P, 85M actuator", "aliases": ["ip 85m"] }
+      ]
+    },
+    {
+      "id": "smp", "label": "SMP (17)", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no smp"] },
+        { "code": "A", "label": "SMP DIR/REV 3-15", "aliases": ["smp 3-15"] },
+        { "code": "B", "label": "SMP DIR/REV 3-9", "aliases": ["smp 3-9"] },
+        { "code": "C", "label": "SMP DIR/REV 9-15", "aliases": ["smp 9-15"] },
+        { "code": "D", "label": "SMP/IP DIR/REV 4-20", "aliases": ["smp ip 4-20"] },
+        { "code": "E", "label": "SMP/IP DIR/REV 4-12", "aliases": ["smp ip 4-12"] },
+        { "code": "F", "label": "SMP/IP DIR/REV 12-20", "aliases": ["smp ip 12-20"] },
+        { "code": "G", "label": "MK16IQ-S DIR/REV 4-20 (Hart and FM approved)", "aliases": ["mk16iq-s"] },
+        { "code": "H", "label": "MK16IQ-B DIR/REV 4-20 (with gauges)", "aliases": ["mk16iq-b"] },
+        { "code": "J", "label": "MK16IQ-FF DIR/REV 4-20 (Fieldbus with gauges)", "aliases": ["mk16iq-ff"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard smp"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"] }, "forbid": { "body": ["BR"] },
+      "reason": "the IFE glosses name ductile iron above 2 inch or carbon or stainless valves" },
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"], "body": "DI" }, "forbid": { "size": ["050", "075", "100", "125", "150", "200"] },
+      "reason": "on ductile iron the IFE ends are printed above 2 inch, and this sheet stops at 2 inch" },
+    { "when": { "ends": ["F5", "F3", "F7", "F6", "F8", "F4"] }, "forbid": { "body": ["CS", "S6"] },
+      "reason": "the FE glosses name ductile iron below 2-1/2 inch or bronze (the F8 row's printed SST gloss is held as an artefact, see note)" },
+    { "when": { "accessories": "H3" }, "forbid": { "system": ["A5B5A5", "B5B5A5", "G5B5A5", "H5B5A5", "A8B8A8", "B8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the handwheel names its actuator, 35M" },
+    { "when": { "accessories": "H5" }, "forbid": { "system": ["A3B3A3", "B3B3A3", "G3B3A3", "H3B3A3", "A8B8A8", "B8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the handwheel names its actuator, 55M" },
+    { "when": { "accessories": "H8" }, "forbid": { "system": ["A3B3A3", "B3B3A3", "G3B3A3", "H3B3A3", "A5B5A5", "B5B5A5", "G5B5A5", "H5B5A5"] },
+      "reason": "the handwheel names its actuator, 85M" },
+    { "when": { "ip": "3" }, "forbid": { "system": ["A5B5A5", "B5B5A5", "G5B5A5", "H5B5A5", "A8B8A8", "B8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the I/P names its actuator, 35M" },
+    { "when": { "ip": "5" }, "forbid": { "system": ["A3B3A3", "B3B3A3", "G3B3A3", "H3B3A3", "A8B8A8", "B8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the I/P names its actuator, 55M" },
+    { "when": { "ip": "8" }, "forbid": { "system": ["A3B3A3", "B3B3A3", "G3B3A3", "H3B3A3", "A5B5A5", "B5B5A5", "G5B5A5", "H5B5A5"] },
+      "reason": "the I/P names its actuator, 85M" }
+  ],
+  "cautions": []
+}
