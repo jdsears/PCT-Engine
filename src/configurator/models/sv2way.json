@@ -1,0 +1,464 @@
+{
+  "model": "SV2WAY",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow F&B forged 2-way sanitary diaphragm valve",
+  "match": [
+    "forged diaphragm valve",
+    "2-way diaphragm",
+    "sv diaphragm"
+  ],
+  "source": {
+    "doc": "SFB_2way_diaphragmvalves.pdf",
+    "page": 6,
+    "section": "Ordering Schematic (standard and compact forged 2 way valves)"
+  },
+  "note": "Extracted by hand from the ordering schematic, model SV then eight bare digits. The compact sizes name themselves in their own rows and are held to the compact type. The actuator rows carry their printed size brackets, the spring actuators to the 2-1/2 to 4 inch and compact forms and the Eclipse rows to the 1/2 to 2 inch standard forms. The accessories section prints no none row; the cast sheet's own example leaves that position blank, so the blank is carried here as well, held for John. The CE/PED rows keep their printed size spans.",
+  "assembly": "{model}{type}{size}{connection}{finish}{actuation}{diaphragm}{accessories}{pedCe}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SV",
+          "label": "Sanitary diaphragm valve",
+          "aliases": [
+            "sv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "type",
+      "label": "Type (1)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Standard forged 2-way",
+          "aliases": [
+            "standard forged"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Compact forged 2-way",
+          "aliases": [
+            "compact forged"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (2)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" compact",
+          "aliases": [
+            "1/4 compact"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "3/8\" compact",
+          "aliases": [
+            "3/8 compact"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1/2\" compact",
+          "aliases": [
+            "1/2 compact"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1/2\"",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "5",
+          "label": "3/4\"",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1\"",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1-1/2\"",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "8",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "9",
+          "label": "2-1/2\"",
+          "aliases": [
+            "2-1/2\""
+          ]
+        },
+        {
+          "code": "A",
+          "label": "3\"",
+          "aliases": [
+            "3\""
+          ]
+        },
+        {
+          "code": "B",
+          "label": "4\"",
+          "aliases": [
+            "4\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connection",
+      "label": "Connection (3)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "OD tube",
+          "aliases": [
+            "od tube"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Clamp",
+          "aliases": [
+            "clamp"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "OD tube x clamp",
+          "aliases": [
+            "tube x clamp"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard connection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Internal surface finish (4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "SF1 20Ra \u03bcin",
+          "aliases": [
+            "sf1"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "SF4 15Ra \u03bcin (0,4 Ra \u03bcm) EP",
+          "aliases": [
+            "sf4"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "SF5 20Ra \u03bcin (0,5 Ra \u03bcm) EP",
+          "aliases": [
+            "sf5"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard, consult factory",
+          "aliases": [
+            "non-standard finish"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuation",
+      "label": "Actuation (5)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Manual",
+          "aliases": [
+            "manual"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Manual vented",
+          "aliases": [
+            "manual vented"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "2-1/2\"-4\" and compact actuator, spring to close",
+          "aliases": [
+            "spring to close"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "2-1/2\"-4\" and compact actuator, spring to open",
+          "aliases": [
+            "spring to open"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Eclipse actuator, double acting (1/2\"-2\" standard)",
+          "aliases": [
+            "eclipse double acting"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Eclipse actuator, spring to close (1/2\"-2\" standard)",
+          "aliases": [
+            "eclipse spring close"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "Eclipse actuator, spring to open (1/2\"-2\" standard)",
+          "aliases": [
+            "eclipse spring open"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "EPDM",
+          "aliases": [
+            "epdm"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "TFM/EPDM",
+          "aliases": [
+            "tfm epdm"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (7)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (the position is left blank, as the cast sheet's example prints it)",
+          "aliases": [
+            "no accessories"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "Switch 2 position",
+          "aliases": [
+            "switch"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Positioner 4-20 mA",
+          "aliases": [
+            "positioner"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard, consult factory",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pedCe",
+      "label": "CE/PED compliance (8)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "0G",
+          "label": "SEP (0.25\" to 1\")",
+          "aliases": [
+            "sep"
+          ]
+        },
+        {
+          "code": "0F",
+          "label": "CE category 1 (1-1/2\" to 4\")",
+          "aliases": [
+            "ce category 1"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "forbid": {
+        "type": [
+          "1"
+        ]
+      },
+      "reason": "the compact size rows name themselves"
+    },
+    {
+      "when": {
+        "size": [
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "A",
+          "B"
+        ]
+      },
+      "forbid": {
+        "type": [
+          "2"
+        ]
+      },
+      "reason": "the standard sizes belong to the standard forged type, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "actuation": [
+          "3",
+          "4"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "reason": "the spring actuator rows print 2-1/2 to 4 inch and the compact forms"
+    },
+    {
+      "when": {
+        "actuation": [
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "1",
+          "2",
+          "3",
+          "9",
+          "A",
+          "B"
+        ]
+      },
+      "reason": "the Eclipse rows print 1/2 to 2 inch standard"
+    },
+    {
+      "when": {
+        "pedCe": "0G"
+      },
+      "forbid": {
+        "size": [
+          "7",
+          "8",
+          "9",
+          "A",
+          "B"
+        ]
+      },
+      "reason": "the SEP row prints 0.25 to 1 inch"
+    },
+    {
+      "when": {
+        "pedCe": "0F"
+      },
+      "forbid": {
+        "size": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "reason": "the CE row prints 1-1/2 to 4 inch"
+    }
+  ],
+  "cautions": []
+}

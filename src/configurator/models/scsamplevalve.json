@@ -1,0 +1,109 @@
+{
+  "model": "SCSV",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow sample valve (sample cooler accessory)",
+  "match": [
+    "sample valve",
+    "sc sample valve"
+  ],
+  "source": {
+    "doc": "samplecooleraccessories.pdf",
+    "page": 2,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the accessories sheet's first schematic, the manual precision sample valve for the cooler inlet or any compatible process. Model dash inlet dash outlet dash accessory dash finish. One outlet row, half inch.",
+  "assembly": "{model}-{inlet}-{outlet}-{accessory}-{finish}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SV",
+          "label": "Standard",
+          "aliases": [
+            "sample valve"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inlet",
+      "label": "Inlet connection",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" tri-clamp (will mate 1/2\" or 3/4\" ferrule)",
+          "aliases": [
+            "1/2 inlet"
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" tri-clamp (will mate 1\" or 1-1/2\" ferrule)",
+          "aliases": [
+            "1 inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outlet",
+      "label": "Outlet connection",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" tri-clamp (will mate 1/2\" or 3/4\" ferrule)",
+          "aliases": [
+            "1/2 outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessory",
+      "label": "Accessory",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Wing nut clamp and PTFE gasket",
+          "aliases": [
+            "wing nut clamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Finish",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "EP",
+          "label": "SF5, 20 Ra \u03bcin (0,5 \u03bcm Ra), electro-polish",
+          "aliases": [
+            "electro-polish"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
