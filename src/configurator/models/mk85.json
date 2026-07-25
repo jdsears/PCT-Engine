@@ -1,0 +1,208 @@
+{
+  "model": "MK85",
+  "line": "jordan",
+  "displayName": "Jordan Mark 85 controlled failure temperature regulator",
+  "match": ["mk85", "mark 85", "jordan 85", "controlled failure"],
+  "source": { "doc": "mk85.pdf", "page": "3 to 5", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, seventeen positions assembled bare. The seats section prints one ZZ spanning material and Cv, so a non-standard seat decodes as Z in each character, and the capillary section does the same with a single Z; both carried with this note rather than invented codes. The thermowell and bulb positions pair type and size characters, coupled by the size-for-bulb heading and the type words, held as inferred couplings for John; the Type C bulbs print no matching well row, so they stay uncoupled. The 150# IFE end carries the sheet's own carbon or stainless gloss; the 300# IFE row prints none, so none is enforced there.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seat}{cv}{range}{thermowell}{bulb}{capillaryArmor}{actuator}{action}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "85", "label": "Standard", "aliases": ["mk85", "mark 85", "standard"] },
+        { "code": "85T", "label": "With temperature gauge", "aliases": ["mk85t", "temperature gauge"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN10)", "aliases": ["3/8\"", "DN10"] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE, CS or SST valves", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "I3", "label": "300# IFE", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE (except IFE)", "aliases": ["300 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T3", "label": "303SS", "aliases": ["303"] },
+        { "code": "T6", "label": "316SS", "aliases": ["316"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303 SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316 SST", "aliases": ["316 seat"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.18 Kv)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.4 Kv)", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.2 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.8 Kv)", "aliases": ["4.4"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "20", "label": "40 to 80°F", "aliases": ["40 to 80"] },
+        { "code": "32", "label": "75 to 115°F", "aliases": ["75 to 115"] },
+        { "code": "40", "label": "100 to 135°F", "aliases": ["100 to 135"] },
+        { "code": "51", "label": "130 to 165°F", "aliases": ["130 to 165"] },
+        { "code": "55", "label": "155 to 190°F", "aliases": ["155 to 190"] },
+        { "code": "59", "label": "170 to 210°F", "aliases": ["170 to 210"] },
+        { "code": "61", "label": "190 to 230°F", "aliases": ["190 to 230"] },
+        { "code": "67", "label": "210 to 250°F", "aliases": ["210 to 250"] },
+        { "code": "74", "label": "240 to 285°F", "aliases": ["240 to 285"] },
+        { "code": "82", "label": "270 to 325°F", "aliases": ["270 to 325"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "thermowell", "label": "Thermowell (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "CJ", "label": "Type A 3/4\" NPT Cu well, for 3/4\" x 14\" bulb", "aliases": ["cu well 14"] },
+        { "code": "CK", "label": "Type A 3/4\" NPT Cu well, for 3/4\" x 20\" bulb", "aliases": ["cu well 20"] },
+        { "code": "DJ", "label": "Type A 3/4\" NPT SST well, for 3/4\" x 14\" bulb", "aliases": ["sst well 14"] },
+        { "code": "DK", "label": "Type A 3/4\" NPT SST well, for 3/4\" x 20\" bulb", "aliases": ["sst well 20"] },
+        { "code": "EJ", "label": "Type B 1-1/2\" x 150# SST well, for 3/4\" x 14\" bulb", "aliases": ["type b 150 well 14"] },
+        { "code": "EK", "label": "Type B 1-1/2\" x 150# SST well, for 3/4\" x 20\" bulb", "aliases": ["type b 150 well 20"] },
+        { "code": "FJ", "label": "Type B 1-1/2\" x 300# SST well, for 3/4\" x 14\" bulb", "aliases": ["type b 300 well 14"] },
+        { "code": "FK", "label": "Type B 1-1/2\" x 300# SST well, for 3/4\" x 20\" bulb", "aliases": ["type b 300 well 20"] },
+        { "code": "GJ", "label": "Type B 2\" x 150# SST well, for 3/4\" x 14\" bulb", "aliases": ["type b 2 150 well 14"] },
+        { "code": "GK", "label": "Type B 2\" x 150# SST well, for 3/4\" x 20\" bulb", "aliases": ["type b 2 150 well 20"] },
+        { "code": "HJ", "label": "Type B 2\" x 300# SST well, for 3/4\" x 14\" bulb", "aliases": ["type b 2 300 well 14"] },
+        { "code": "HK", "label": "Type B 2\" x 300# SST well, for 3/4\" x 20\" bulb", "aliases": ["type b 2 300 well 20"] },
+        { "code": "21", "label": "Tank fitting only, 3/4\" NPT brass for 3/4\" bulb", "aliases": ["tank fitting brass"] },
+        { "code": "22", "label": "Tank fitting only, 3/4\" NPT SST for 3/4\" bulb", "aliases": ["tank fitting sst"] },
+        { "code": "23", "label": "Tank fitting only, 1\" NPT brass for 3/4\" bulb", "aliases": ["tank fitting 1 brass"] },
+        { "code": "24", "label": "Tank fitting only, 1\" NPT SST for 3/4\" bulb", "aliases": ["tank fitting 1 sst"] },
+        { "code": "NN", "label": "None", "aliases": ["no thermowell"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard thermowell"] }
+      ]
+    },
+    {
+      "id": "bulb", "label": "Bulb (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "A5", "label": "Type A Cu, 3/4\" x 14\"", "aliases": ["cu bulb 14"] },
+        { "code": "A6", "label": "Type A Cu, 3/4\" x 20\"", "aliases": ["cu bulb 20"] },
+        { "code": "G5", "label": "Type A SST, 3/4\" x 14\"", "aliases": ["sst bulb 14"] },
+        { "code": "G6", "label": "Type A SST, 3/4\" x 20\"", "aliases": ["sst bulb 20"] },
+        { "code": "H5", "label": "Type B SST, 3/4\" x 14\"", "aliases": ["type b bulb 14"] },
+        { "code": "H6", "label": "Type B SST, 3/4\" x 20\"", "aliases": ["type b bulb 20"] },
+        { "code": "J5", "label": "Teflon coated Type B, 3/4\" x 14\"", "aliases": ["teflon bulb 14"] },
+        { "code": "J6", "label": "Teflon coated Type B, 3/4\" x 20\"", "aliases": ["teflon bulb 20"] },
+        { "code": "C9", "label": "Type C Cu, 1-1/8\" x 14\"", "aliases": ["type c cu"] },
+        { "code": "C1", "label": "Type C SST, 1\" x 12\"", "aliases": ["type c sst 12"] },
+        { "code": "C2", "label": "Type C SST, 1\" x 14\"", "aliases": ["type c sst 14"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard bulb"] }
+      ]
+    },
+    {
+      "id": "capillaryArmor", "label": "Capillary/armor (13 and 14)", "position": 11, "required": true,
+      "options": [
+        { "code": "A1", "label": "Cu, 8 ft", "aliases": ["cu 8"] },
+        { "code": "A2", "label": "Cu, 10 ft", "aliases": ["cu 10"] },
+        { "code": "A3", "label": "Cu, 12 ft", "aliases": ["cu 12"] },
+        { "code": "A4", "label": "Cu, 15 ft", "aliases": ["cu 15"] },
+        { "code": "A5", "label": "Cu, 20 ft", "aliases": ["cu 20"] },
+        { "code": "A6", "label": "Cu, 30 ft", "aliases": ["cu 30"] },
+        { "code": "B1", "label": "SST, 8 ft", "aliases": ["sst 8"] },
+        { "code": "B2", "label": "SST, 10 ft", "aliases": ["sst 10"] },
+        { "code": "B3", "label": "SST, 12 ft", "aliases": ["sst 12"] },
+        { "code": "B4", "label": "SST, 15 ft", "aliases": ["sst 15"] },
+        { "code": "B5", "label": "SST, 20 ft", "aliases": ["sst 20"] },
+        { "code": "B6", "label": "SST, 30 ft", "aliases": ["sst 30"] },
+        { "code": "T1", "label": "Teflon coated, 8 ft", "aliases": ["teflon 8"] },
+        { "code": "T2", "label": "Teflon coated, 10 ft", "aliases": ["teflon 10"] },
+        { "code": "T3", "label": "Teflon coated, 12 ft", "aliases": ["teflon 12"] },
+        { "code": "T4", "label": "Teflon coated, 15 ft", "aliases": ["teflon 15"] },
+        { "code": "T5", "label": "Teflon coated, 20 ft", "aliases": ["teflon 20"] },
+        { "code": "T6", "label": "Teflon coated, 30 ft", "aliases": ["teflon 30"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints a single Z)", "aliases": ["non-standard capillary"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (15)", "position": 12, "required": true,
+      "options": [
+        { "code": "7", "label": "Standard", "aliases": ["standard"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (16)", "position": 13, "required": true,
+      "options": [
+        { "code": "D", "label": "Direct", "aliases": ["direct"] },
+        { "code": "R", "label": "Reverse", "aliases": ["reverse"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (17)", "position": 14, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none"] },
+        { "code": "2", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "6", "label": "Mounting flange, Cu C bulb", "aliases": ["mounting flange cu"] },
+        { "code": "7", "label": "Mounting flange, SST C bulb", "aliases": ["mounting flange sst"] },
+        { "code": "8", "label": "Yoke cover (flexible neoprene)", "aliases": ["yoke cover"] },
+        { "code": "P", "label": "Thermometer in position 1", "aliases": ["thermometer 1"] },
+        { "code": "Q", "label": "Thermometer in position 2", "aliases": ["thermometer 2"] },
+        { "code": "R", "label": "Thermometer in position 3", "aliases": ["thermometer 3"] },
+        { "code": "S", "label": "Thermometer in position 4", "aliases": ["thermometer 4"] },
+        { "code": "T", "label": "Thermometer in position 5", "aliases": ["thermometer 5"] },
+        { "code": "U", "label": "Thermometer in position 6", "aliases": ["thermometer 6"] },
+        { "code": "V", "label": "Thermometer in position 7", "aliases": ["thermometer 7"] },
+        { "code": "W", "label": "Thermometer in position 8", "aliases": ["thermometer 8"] },
+        { "code": "X", "label": "Oxygen clean", "aliases": ["oxygen clean"] },
+        { "code": "Y", "label": "Oil-free clean", "aliases": ["oil free clean"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "ends": "I5" }, "forbid": { "body": ["DI", "BR"] },
+      "reason": "the 150# IFE row is printed for carbon or stainless valves" },
+    { "when": { "thermowell": ["CJ", "DJ", "EJ", "FJ", "GJ", "HJ"] }, "forbid": { "bulb": ["A6", "G6", "H6", "J6"] },
+      "reason": "the well's size code is headed for the bulb it takes, here 3/4 x 14 (held as an inferred coupling for John)" },
+    { "when": { "thermowell": ["CK", "DK", "EK", "FK", "GK", "HK"] }, "forbid": { "bulb": ["A5", "G5", "H5", "J5"] },
+      "reason": "the well's size code is headed for the bulb it takes, here 3/4 x 20 (held as an inferred coupling for John)" },
+    { "when": { "thermowell": ["CJ", "CK", "DJ", "DK"] }, "forbid": { "bulb": ["H5", "H6", "J5", "J6"] },
+      "reason": "a Type A well houses a Type A bulb, per the type words on both columns (held as an inferred coupling for John)" },
+    { "when": { "thermowell": ["EJ", "EK", "FJ", "FK", "GJ", "GK", "HJ", "HK"] }, "forbid": { "bulb": ["A5", "A6", "G5", "G6"] },
+      "reason": "a Type B well houses a Type B bulb, per the type words on both columns (held as an inferred coupling for John)" }
+  ],
+  "cautions": []
+}
