@@ -77,6 +77,9 @@ const mk501 = JSON.parse(readFileSync(join(here, 'models', 'mk501.json'), 'utf8'
 const mk52 = JSON.parse(readFileSync(join(here, 'models', 'mk52.json'), 'utf8'));
 const mk508 = JSON.parse(readFileSync(join(here, 'models', 'mk508.json'), 'utf8'));
 const mk508lg = JSON.parse(readFileSync(join(here, 'models', 'mk508lg.json'), 'utf8'));
+const mk518 = JSON.parse(readFileSync(join(here, 'models', 'mk518.json'), 'utf8'));
+const mk53 = JSON.parse(readFileSync(join(here, 'models', 'mk53.json'), 'utf8'));
+const mk55 = JSON.parse(readFileSync(join(here, 'models', 'mk55.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1142,6 +1145,32 @@ check('the four round-trip and the 501 end asterisk holds', () => {
   assert.ok(checkConstraints(mk501, { ends: 'F5', body: 'CS' }).length > 0, 'FE stays with ductile iron or bronze');
   assert.ok(/registry name/.test(mk508lg.note), 'the shared printed 508 code is explained');
   assert.equal(applyValue(mk508, {}, 'size', '150').accepted, false, 'the small 508 stops at 1-1/4 inch');
+});
+
+console.log('\nThe back pressure siblings continue: 518, 53/54 and 55:');
+
+check('the three round-trip, variable widths and empty options included', () => {
+  roundTrip(mk518, {
+    model: '518', size: '50', material: 'H', connections: 'F', connections2: 'A',
+    diaphragm: 'P', range: '500', seatSize: '26',
+  }, '51850H/FAP50026');
+  roundTrip(mk53, {
+    model: '54', options: '', size: '075', body: 'BR', ends: 'F5', trim: 'S6', seat: 'W',
+    cv: '5', spring: '79', diaphragmActuator: 'JLED',
+  }, '54075BR/F5S6W579JLED');
+  roundTrip(mk53, {
+    model: '53', options: 'HP', size: '150', body: 'S6', ends: 'I3', trim: 'I6', seat: 'R',
+    cv: 'B', spring: 'A3', diaphragmActuator: 'S6MD',
+  }, '53HP150S6/I3I6RBA3S6MD');
+  roundTrip(mk55, {
+    model: '55', size: '200', body: 'DI', ends: 'F4', trim: 'S3', seat: 'V', cv: 'B',
+    range: '02', diaphragmActuator: 'V1ED',
+  }, '55-200-DI/F4S3VB02V1ED');
+  assert.ok(checkConstraints(mk518, { connections: 'G', size: '50' }).length > 0, 'threaded 518 is 1 inch only');
+  assert.ok(checkConstraints(mk518, { seatSize: '18', size: '50' }).length > 0, 'the seat size pairs with the valve size');
+  assert.ok(checkConstraints(mk53, { spring: 'A3', options: '' }).length > 0, 'the HP ranges need the HP build');
+  assert.ok(/A3/.test(mk53.note) && /A1/.test(mk53.note), 'the A3-for-A1 divergence against the 63 sheet is confessed');
+  assert.ok(checkConstraints(mk55, { ends: 'F7', body: 'S6' }).length > 0, 'the 55 FE ends stay with ductile or bronze');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
