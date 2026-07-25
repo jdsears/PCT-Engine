@@ -1,0 +1,233 @@
+{
+  "model": "SSC",
+  "line": "steriflow",
+  "displayName": "Steriflow SSC sample and sensor connection assembly",
+  "match": [
+    "ssc",
+    "ssc series",
+    "ssc assembly"
+  ],
+  "source": {
+    "doc": "sscseries.pdf",
+    "page": "6 and 7",
+    "section": "Ordering schematic, SSC series"
+  },
+  "note": "Extracted by hand from the ordering schematic. The sheet's own Mark 93 grid for assembly to the SSC is a subset of the Mark 93 model already in the registry, so the trap orders through that builder and the S accessory here says it assembles to one. The F accessory carries the sheet's document part 25384 asterisk as a caution.",
+  "assembly": "{model}-{size}-{orientation}{sensor}{bodySegment}{gasket}{acc1}{acc2}{acc3}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SSC",
+          "label": "Standard",
+          "aliases": [
+            "ssc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orientation",
+      "label": "Orientation",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "H",
+          "label": "Horizontal inlet",
+          "aliases": [
+            "horizontal"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "Vertical inlet",
+          "aliases": [
+            "vertical"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sensor",
+      "label": "Sensor",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "N",
+          "label": "No sensor connector needed",
+          "aliases": [
+            "no sensor"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Sensor connector needed",
+          "aliases": [
+            "sensor"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodySegment",
+      "label": "Body segment",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "One body segment assembly",
+          "aliases": [
+            "one segment"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Electropolish one body segment assembly",
+          "aliases": [
+            "electropolish one"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Two body segment assembly",
+          "aliases": [
+            "two segments"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Electropolish two body segment assembly",
+          "aliases": [
+            "electropolish two"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gasket",
+      "label": "Gasket",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Standard, TFE/Viton gasket",
+          "aliases": [
+            "standard gasket"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "TFE/SST gasket",
+          "aliases": [
+            "tfe sst"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "TFE/SST gasket and bolted clamp",
+          "aliases": [
+            "bolted clamp"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Silverback gasket",
+          "aliases": [
+            "silverback"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acc1",
+      "label": "Accessory 1",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Assemble to Mark 93 steam trap",
+          "aliases": [
+            "assemble to 93"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acc2",
+      "label": "Accessory 2",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "TFE/Viton FDA, USP Class VI at 250F (121C)",
+          "aliases": [
+            "f gasket"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acc3",
+      "label": "Accessory 3",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": [
+    {
+      "when": {
+        "acc2": "F"
+      },
+      "note": "The sheet's own asterisk: document part #25384 is required when ordering."
+    }
+  ]
+}
