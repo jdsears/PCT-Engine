@@ -1,0 +1,148 @@
+{
+  "model": "MK75E",
+  "line": "jordan",
+  "displayName": "Jordan Mark 75E piston actuated wafer control valve, DIN",
+  "match": ["mk75e", "mark 75e", "jordan 75e"],
+  "source": { "doc": "mk75E.pdf", "page": 5, "section": "Ordering Schematic Mark 75E" },
+  "note": "Extracted by hand from the ordering schematic, the DIN sister of the 75A: the size codes are the sheet's own DN designators, four and five characters, the ends are the single DIN PN10/40 row, and the SMP position offers the MK16IQ family alone. The piston classes run through range, diaphragm and actuator and are held consistent. The seats section prints one ZZ spanning material and Cv.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seatMaterial}{cv}{range}{diaphragm}{actuator}{accessory1}{action}{accessory2}{ped}{smp}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "75E", "label": "Standard", "aliases": ["mk75e", "standard"] },
+        { "code": "75ESP", "label": "Side mounted positioner", "aliases": ["75esp"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "DN25", "label": "DN25 (1\")", "aliases": ["1\"", "DN25"] },
+        { "code": "DN40", "label": "DN40 (1-1/2\")", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "DN50", "label": "DN50 (2\")", "aliases": ["2\"", "DN50"] },
+        { "code": "DN80", "label": "DN80 (3\")", "aliases": ["3\"", "DN80"] },
+        { "code": "DN100", "label": "DN100 (4\")", "aliases": ["4\"", "DN100"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CB", "label": "Carbon steel bar", "aliases": ["carbon steel bar"] },
+        { "code": "SB", "label": "Stainless steel bar", "aliases": ["stainless bar"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "I4", "label": "DIN PN10/40", "aliases": ["din pn10/40"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T6", "label": "316SS / TEF packing", "aliases": ["316 tef"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seatMaterial", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "W", "label": "316SS / Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "Y", "label": "316SS / Jorcote / Jordanic", "aliases": ["jordanic"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "8", "label": "9.5", "aliases": ["9.5"] },
+        { "code": "A", "label": "33", "aliases": ["33"] },
+        { "code": "B", "label": "38", "aliases": ["38"] },
+        { "code": "E", "label": "72", "aliases": ["72"] },
+        { "code": "F", "label": "76", "aliases": ["76"] },
+        { "code": "H", "label": "103", "aliases": ["103"] },
+        { "code": "I", "label": "180", "aliases": ["180"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "A1", "label": "25M, 15-30", "aliases": ["25m 15-30"] },
+        { "code": "A3", "label": "25M, 30-60", "aliases": ["25m 30-60"] },
+        { "code": "B1", "label": "50M, 15-30", "aliases": ["50m 15-30"] },
+        { "code": "B3", "label": "50M, 30-60", "aliases": ["50m 30-60"] },
+        { "code": "C1", "label": "75M, 15-30", "aliases": ["75m 15-30"] },
+        { "code": "C3", "label": "75M, 30-60", "aliases": ["75m 30-60"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "E1", "label": "Buna-N, 25M", "aliases": ["buna 25m"] },
+        { "code": "E2", "label": "Buna-N, 50M", "aliases": ["buna 50m"] },
+        { "code": "E3", "label": "Buna-N, 75M", "aliases": ["buna 75m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "A1", "label": "25M", "aliases": ["25m"] },
+        { "code": "B1", "label": "50M", "aliases": ["50m"] },
+        { "code": "C1", "label": "75M", "aliases": ["75m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessory1", "label": "Accessory 1 (13 and 14)", "position": 11, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessory"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (15)", "position": 12, "required": true,
+      "options": [
+        { "code": "0D", "label": "Air-to-close", "aliases": ["air to close"] },
+        { "code": "0R", "label": "Air-to-open", "aliases": ["air to open"] }
+      ]
+    },
+    {
+      "id": "accessory2", "label": "Accessory 2 (16)", "position": 13, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessory 2"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (17)", "position": 14, "required": true,
+      "options": [
+        { "code": "0", "label": "Not required", "aliases": ["not required"] },
+        { "code": "F", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    },
+    {
+      "id": "smp", "label": "SMP (18)", "position": 15, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no smp"] },
+        { "code": "G", "label": "MK16IQ DIR/REV", "aliases": ["mk16iq"] },
+        { "code": "H", "label": "MK16IQ-B DIR/REV", "aliases": ["mk16iq-b"] },
+        { "code": "J", "label": "MK16IQ-FF DIR/REV", "aliases": ["mk16iq-ff"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard smp"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "range": ["A1", "A3"] }, "forbid": { "diaphragm": ["E2", "E3"], "actuator": ["B1", "C1"] },
+      "reason": "the piston class runs through the range, diaphragm and actuator positions, here 25M" },
+    { "when": { "range": ["B1", "B3"] }, "forbid": { "diaphragm": ["E1", "E3"], "actuator": ["A1", "C1"] },
+      "reason": "the piston class runs through the range, diaphragm and actuator positions, here 50M" },
+    { "when": { "range": ["C1", "C3"] }, "forbid": { "diaphragm": ["E1", "E2"], "actuator": ["A1", "B1"] },
+      "reason": "the piston class runs through the range, diaphragm and actuator positions, here 75M" }
+  ],
+  "cautions": []
+}

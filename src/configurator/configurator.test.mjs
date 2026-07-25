@@ -54,6 +54,12 @@ const mk89 = JSON.parse(readFileSync(join(here, 'models', 'mk89.json'), 'utf8'))
 const mk801 = JSON.parse(readFileSync(join(here, 'models', 'mk801.json'), 'utf8'));
 const mk70 = JSON.parse(readFileSync(join(here, 'models', 'mk70.json'), 'utf8'));
 const mk75 = JSON.parse(readFileSync(join(here, 'models', 'mk75.json'), 'utf8'));
+const mk74 = JSON.parse(readFileSync(join(here, 'models', 'mk74.json'), 'utf8'));
+const mk75a = JSON.parse(readFileSync(join(here, 'models', 'mk75a.json'), 'utf8'));
+const mk75e = JSON.parse(readFileSync(join(here, 'models', 'mk75e.json'), 'utf8'));
+const mk75hw = JSON.parse(readFileSync(join(here, 'models', 'mk75hw.json'), 'utf8'));
+const mk75mv = JSON.parse(readFileSync(join(here, 'models', 'mk75mv.json'), 'utf8'));
+const mk75ptp = JSON.parse(readFileSync(join(here, 'models', 'mk75ptp.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -924,6 +930,48 @@ check('the ends glosses, starred ranges and printed absences refuse', () => {
   assert.ok(checkConstraints(mk75, { model: '75', rangeActuator: 'C3', smp: '0' }).length > 0, 'a starred range on a plain 75 needs the SMP filled');
   assert.equal(checkConstraints(mk75, { model: '75', rangeActuator: 'C3', smp: 'A' }).length, 0, 'filling the SMP satisfies the star');
   assert.equal(checkCautions(mk75, { seatMaterial: 'W' }).length, 1, 'the equal percentage consult-factory line rides the seat');
+});
+
+console.log('\nThe bellows 74 and the five wafer variants, 75A, 75E, 75HW, 75MV and 75PTP:');
+
+check('all six round-trip, DN sizes, motor signals and handwheels included', () => {
+  roundTrip(mk74, {
+    model: '74SP', size: '200', body: 'S6', ends: 'I4', trim: 'BH', seat: 'V', cv: 'B',
+    system: 'H8B8A8', accessories: 'S6', action: 'D', ip: '8', smp: 'J',
+  }, '74SP200S6/I4BHVBH8B8A8S6D8J');
+  roundTrip(mk75a, {
+    model: '75ASP', size: '600', body: 'SB', ends: 'I3', trim: 'T6', seatMaterial: 'Y', cv: 'J',
+    range: 'C3', diaphragm: 'E3', actuator: 'C1', accessory1: '00', action: '0R',
+    accessory2: '00', ped: 'F', smp: 'G',
+  }, '75ASP600SBI3T6YJC3E3C1000R00FG');
+  roundTrip(mk75e, {
+    model: '75E', size: 'DN80', body: 'CB', ends: 'I4', trim: 'T6', seatMaterial: 'W', cv: 'I',
+    range: 'B1', diaphragm: 'E2', actuator: 'B1', accessory1: '00', action: '0D',
+    accessory2: '00', ped: '0', smp: '0',
+  }, '75EDN80CBI4T6WIB1E2B1000D0000');
+  roundTrip(mk75hw, {
+    model: '75HW', size: '150', body: 'CS', ends: 'I5', trim: 'T6', range: '00', diaphragm: '00',
+    seatMaterial: 'W', cv: 'B', actuator: 'H1', accessory: '00', action: '0D', ped: 'FF',
+  }, '75HW150CSI5T60000WBH1000DFF');
+  roundTrip(mk75mv, {
+    model: '75MV', size: '400', body: 'S6', ends: 'I3', trim: 'I6', seatMaterial: 'W', cv: 'J',
+    range: '42', actuator: 'A4', accessory1: 'XC', action: 'RC', ped: 'F',
+  }, '75MV400S6I3I6WJ42A4XCRCF');
+  roundTrip(mk75ptp, {
+    model: '75PTP', size: '200', body: 'SB', ends: 'I3', trim: 'G6', seatMaterial: 'W', cv: 'E',
+    range: 'B9', actuator: 'B7', action: '0R', ped: 'Z',
+  }, '75PTP200SBI3G6WEB9B70RZ');
+});
+
+check('the piston classes, bellows glosses and fail modes hold', () => {
+  assert.ok(checkConstraints(mk75a, { range: 'A1', actuator: 'C1' }).length > 0, 'the piston class digit chain holds on the 75A');
+  assert.ok(checkConstraints(mk75e, { range: 'C3', diaphragm: 'E1' }).length > 0, 'and on the DIN 75E');
+  assert.ok(checkConstraints(mk74, { ip: '3', system: 'A8B8A8' }).length > 0, 'the 74 I/P names its class');
+  assert.ok(checkConstraints(mk74, { ends: 'F5', body: 'CS' }).length > 0, 'the 74 FE gloss holds');
+  assert.equal(applyValue(mk75hw, {}, 'range', 'A3').accepted, false, 'the handwheel sheet has no powered ranges');
+  assert.ok(mk75mv.slots.find(s => s.id === 'action').options.some(o => o.code === 'RC'), 'the motor fail modes are carried');
+  assert.equal(checkCautions(mk75mv, { size: '400' }).length, 1, 'the consult-factory 6 inch line rides the largest size');
+  assert.ok(/slashed/.test(mk75ptp.note), 'the slashed-zero glyphs are confessed on the PTP');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

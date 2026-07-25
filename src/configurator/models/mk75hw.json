@@ -1,0 +1,96 @@
+{
+  "model": "MK75HW",
+  "line": "jordan",
+  "displayName": "Jordan Mark 75HW handwheel wafer valve",
+  "match": ["mk75hw", "mark 75hw", "jordan 75hw", "handwheel wafer"],
+  "source": { "doc": "mk75HW.pdf", "page": 4, "section": "Ordering Schematic Mark 75HW" },
+  "note": "Extracted by hand from the ordering schematic. Handwheel operated, so the range and diaphragm positions carry the sheet's single 00 codes and the actuator is the 4 inch handwheel alone. This sheet orders its positions differently from the powered 75s, seats after the diaphragm, and prints PED as two characters, exactly as carried.",
+  "assembly": "{model}{size}{body}{ends}{trim}{range}{diaphragm}{seatMaterial}{cv}{actuator}{accessory}{action}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "75HW", "label": "Handwheel wafer", "aliases": ["mk75hw", "handwheel"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "100", "label": "1\"", "aliases": ["1\"", "DN25"] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\"", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CB", "label": "Carbon steel bar", "aliases": ["carbon steel bar"] },
+        { "code": "SB", "label": "Stainless steel bar", "aliases": ["stainless bar"] },
+        { "code": "CS", "label": "Carbon steel cast", "aliases": ["carbon steel cast"] },
+        { "code": "S6", "label": "Stainless steel cast", "aliases": ["stainless cast"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "I3", "label": "150# / 300#", "aliases": ["300"] },
+        { "code": "I5", "label": "150#", "aliases": ["150"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T6", "label": "316SS / Tef. packing", "aliases": ["316 tef"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (5 and 6)", "position": 6, "required": true,
+      "options": [ { "code": "00", "label": "None (handwheel operated)", "aliases": ["none"] } ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (7 and 8)", "position": 7, "required": true,
+      "options": [ { "code": "00", "label": "None", "aliases": ["none"] } ]
+    },
+    {
+      "id": "seatMaterial", "label": "Seat material (9)", "position": 8, "required": true,
+      "options": [
+        { "code": "W", "label": "316SS / Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (10)", "position": 9, "required": true,
+      "options": [
+        { "code": "8", "label": "9.5", "aliases": ["9.5"] },
+        { "code": "A", "label": "33", "aliases": ["33"] },
+        { "code": "B", "label": "38", "aliases": ["38"] },
+        { "code": "E", "label": "72", "aliases": ["72"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (11 and 12)", "position": 10, "required": true,
+      "options": [ { "code": "H1", "label": "Handwheel 4\"", "aliases": ["handwheel 4"] } ]
+    },
+    {
+      "id": "accessory", "label": "Accessory (13 and 14)", "position": 11, "required": true,
+      "options": [ { "code": "00", "label": "None", "aliases": ["none"] } ]
+    },
+    {
+      "id": "action", "label": "Action (15 and 16)", "position": 12, "required": true,
+      "options": [
+        { "code": "0D", "label": "CW closes", "aliases": ["cw closes"] },
+        { "code": "0R", "label": "CW opens", "aliases": ["cw opens"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (17 and 18)", "position": 13, "required": true,
+      "options": [
+        { "code": "00", "label": "Not required", "aliases": ["not required"] },
+        { "code": "FF", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

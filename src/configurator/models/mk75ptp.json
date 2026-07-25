@@ -1,0 +1,96 @@
+{
+  "model": "MK75PTP",
+  "line": "jordan",
+  "displayName": "Jordan Mark 75PTP wafer control valve",
+  "match": ["mk75ptp", "mark 75ptp", "jordan 75ptp"],
+  "source": { "doc": "mk75ptp.pdf", "page": 4, "section": "Ordering Schematic Mark 75PTP" },
+  "note": "Extracted by hand from the ordering schematic, thirteen positions assembled bare. The range position carries the control signal, 4-20mA or 0-10V, and the actuator is the 80mm piston alone. The sheet prints its zeros as the slashed glyph in the action and PED positions, carried here as plain zeros. The sheet's own line, consult factory for equal percentage requirements, rides the seat as a caution.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seatMaterial}{cv}{range}{actuator}{action}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "75PTP", "label": "Standard", "aliases": ["mk75ptp"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "100", "label": "1\"", "aliases": ["1\"", "DN25"] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\"", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CB", "label": "Carbon steel bar", "aliases": ["carbon steel bar"] },
+        { "code": "SB", "label": "Stainless steel bar", "aliases": ["stainless bar"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [ { "code": "I3", "label": "150# / 300# IFE", "aliases": ["ife"] } ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "G6", "label": "TFE / 316", "aliases": ["tfe 316"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seatMaterial", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "W", "label": "316 / Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "4", "label": "1.6", "aliases": ["1.6"] },
+        { "code": "6", "label": "4.4", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5", "aliases": ["9.5"] },
+        { "code": "A", "label": "33", "aliases": ["33"] },
+        { "code": "B", "label": "38", "aliases": ["38"] },
+        { "code": "E", "label": "72", "aliases": ["72"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "B4", "label": "4-20mA", "aliases": ["4-20ma"] },
+        { "code": "B9", "label": "0-10V", "aliases": ["0-10v"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "B7", "label": "80mm piston", "aliases": ["80mm piston"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "0D", "label": "Air-to-close", "aliases": ["air to close"] },
+        { "code": "0R", "label": "Air-to-open", "aliases": ["air to open"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (13)", "position": 11, "required": true,
+      "options": [
+        { "code": "0", "label": "Not required", "aliases": ["not required"] },
+        { "code": "F", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": [
+    { "when": { "seatMaterial": "W" },
+      "note": "The sheet's own line: consult factory for equal percentage requirements." }
+  ]
+}
