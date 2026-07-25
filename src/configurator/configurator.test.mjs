@@ -106,6 +106,8 @@ const jsrlflpe = JSON.parse(readFileSync(join(here, 'models', 'jsrlflpe.json'), 
 const mk708 = JSON.parse(readFileSync(join(here, 'models', 'mk708.json'), 'utf8'));
 const mk708tp = JSON.parse(readFileSync(join(here, 'models', 'mk708tp.json'), 'utf8'));
 const mk8000 = JSON.parse(readFileSync(join(here, 'models', 'mk8000.json'), 'utf8'));
+const shc = JSON.parse(readFileSync(join(here, 'models', 'shc.json'), 'utf8'));
+const svc = JSON.parse(readFileSync(join(here, 'models', 'svc.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1455,6 +1457,30 @@ check('the 8000 round-trips across its body worlds and the model splits hold', (
   assert.ok(checkConstraints(mk8000, { actuator: 'D3', range: 'A8' }).length > 0, 'the size digit chain holds, flagged inferred');
   assert.ok(checkConstraints(mk8000, { bonnet: 'BH', model: '8000G', smp: '0' }).length > 0, 'the bellows high temperature bonnet requires a positioner on a plain model');
   assert.equal(checkCautions(mk8000, { bonnet: 'SH' }).length, 1, 'the recommended-positioner bonnets caution');
+});
+
+console.log('\nThe sanitary check valve pair, horizontal and vertical:');
+
+check('both check valves round-trip and the size brackets hold', () => {
+  roundTrip(shc, {
+    model: 'SHC', size: '100', body: '6L', bodyConn: 'TC', disc: 'S6', oRing: 'EP',
+  }, 'SHC-100-6LTCS6EP');
+  roundTrip(shc, {
+    model: 'SHC', size: '200', body: '6L', bodyConn: 'TA', disc: 'PK', oRing: 'VT',
+  }, 'SHC-200-6LTAPKVT');
+  roundTrip(svc, {
+    model: 'SVC', size: '075', body: '6L', inletBody: 'TC', outletBody: 'TE', disc: 'TF', gasket: '01', triClamp: '2P',
+  }, 'SVC-075-6LTCTETF012P');
+  roundTrip(svc, {
+    model: 'SVC', size: '300', body: '6L', inletBody: 'TB', outletBody: 'TB', disc: 'PK', gasket: '05', triClamp: 'BC',
+  }, 'SVC-300-6LTBTBPK05BC');
+  assert.ok(checkConstraints(shc, { disc: 'S6', size: '150' }).length > 0, 'the 316L disc keeps its half to one inch bracket on the SHC');
+  assert.ok(checkConstraints(svc, { disc: 'S6', size: '150' }).length > 0, 'and on the SVC');
+  assert.ok(checkConstraints(svc, { size: '250', triClamp: '2P' }).length > 0, 'the large sizes are bolted clamp only');
+  assert.ok(checkConstraints(svc, { disc: 'SE', size: '250' }).length > 0, 'the EPDM disc stops at two inch on the SVC');
+  assert.equal(checkConstraints(svc, { disc: 'SE', size: '200' }).length, 0, 'but two inch itself is printed');
+  assert.equal(checkCautions(svc, { disc: 'PP' }).length, 1, 'the polypropylene disc carries the downflow drain gloss');
+  assert.ok(/above 250F/.test(svc.slots.find(s => s.id === 'triClamp').options.find(o => o.code === 'BC').label), 'the bolted clamp keeps its own temperature line');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

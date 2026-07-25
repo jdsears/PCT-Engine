@@ -1,0 +1,243 @@
+{
+  "model": "SHC",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow SHC horizontal sanitary check valve",
+  "match": [
+    "shc",
+    "shc series",
+    "horizontal check valve"
+  ],
+  "source": {
+    "doc": "svc_shcseries.pdf",
+    "page": 4,
+    "section": "SHC (horizontal) series ordering schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then six positions. The 316L disc keeps its printed half to one inch bracket.",
+  "assembly": "{model}-{size}-{body}{bodyConn}{disc}{oRing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SHC",
+          "label": "Standard",
+          "aliases": [
+            "shc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "ASTM A479, 316L",
+          "aliases": [
+            "316l"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyConn",
+      "label": "Body (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "TC",
+          "label": "Tri-clamp",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "TE",
+          "label": "Tube end",
+          "aliases": [
+            "tube end"
+          ]
+        },
+        {
+          "code": "TA",
+          "label": "Tube ends to DIN 11866 row A",
+          "aliases": [
+            "din tube a"
+          ]
+        },
+        {
+          "code": "TB",
+          "label": "Tube ends to DIN 11866 row B",
+          "aliases": [
+            "din tube b"
+          ]
+        },
+        {
+          "code": "TD",
+          "label": "DIN tri-clamp to DIN 32676 row A",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "TS",
+          "label": "ISO tri-clamp to DIN 32676 row B",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "disc",
+      "label": "Disc (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "TF",
+          "label": "Teflon (FDA and USP Class VI)",
+          "aliases": [
+            "teflon disc"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "316L SST (1/2\" to 1\" valves only)",
+          "aliases": [
+            "316 disc"
+          ]
+        },
+        {
+          "code": "SE",
+          "label": "316L/EPDM (FDA and USP Class VI)",
+          "aliases": [
+            "epdm disc"
+          ]
+        },
+        {
+          "code": "PK",
+          "label": "PEEK (FDA and USP Class VI)",
+          "aliases": [
+            "peek disc"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard disc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oRing",
+      "label": "O-ring (5 and 6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "EP",
+          "label": "EPDM",
+          "aliases": [
+            "epdm o-ring"
+          ]
+        },
+        {
+          "code": "SL",
+          "label": "Silicone",
+          "aliases": [
+            "silicone"
+          ]
+        },
+        {
+          "code": "TF",
+          "label": "Teflon",
+          "aliases": [
+            "teflon o-ring"
+          ]
+        },
+        {
+          "code": "VT",
+          "label": "Viton",
+          "aliases": [
+            "viton o-ring"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard o-ring"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "disc": "S6"
+      },
+      "forbid": {
+        "size": [
+          "150",
+          "200"
+        ]
+      },
+      "reason": "the 316L disc is printed for half to one inch valves"
+    }
+  ],
+  "cautions": []
+}
