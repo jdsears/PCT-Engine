@@ -1,0 +1,76 @@
+{
+  "model": "MK695X",
+  "line": "jordan",
+  "displayName": "Jordan Mark 695X low pressure blanketing regulator",
+  "match": ["mk695x", "mark 695x", "695x"],
+  "source": { "doc": "mk695xseries.pdf", "page": 3, "section": "Ordering Schematic for MK695X" },
+  "note": "Extracted by hand from the ordering schematic. The end connection position pairs NPT with its Cv letter, 0.15, 0.20 or 0.40. The header numbers positions to 12 but nothing prints past the actuator at 9 and 10, held for the PDF. The sheet's check-with-factory caution rides every build.",
+  "assembly": "{model}-{size}-{body}{endsCv}{seatOring}{pressSwitch}{range}{actuator}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "695X", "label": "Low pressure", "aliases": ["mk695x", "low pressure"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\"", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\"", "aliases": ["3/4\"", "DN20"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "SB", "label": "Stainless steel (SA479)", "aliases": ["stainless bar"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard body"] }
+      ]
+    },
+    {
+      "id": "endsCv", "label": "End connections and Cv (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PA", "label": "NPT, Cv 0.15", "aliases": ["npt 0.15"] },
+        { "code": "PB", "label": "NPT, Cv 0.20", "aliases": ["npt 0.20"] },
+        { "code": "PC", "label": "NPT, Cv 0.40", "aliases": ["npt 0.40"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "seatOring", "label": "Seat and o-ring (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "EP", "label": "EPDM", "aliases": ["epdm"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "pressSwitch", "label": "Pressure switch (5 and 6)", "position": 6, "required": true,
+      "options": [
+        { "code": "AA", "label": "Not required", "aliases": ["no pressure switch"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard pressure switch"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 7, "required": true,
+      "options": [
+        { "code": "A7", "label": "0.5-5.5\" w.c.", "aliases": ["0.5-5.5 wc"] },
+        { "code": "A8", "label": "4-10 w.c.", "aliases": ["4-10 wc"] },
+        { "code": "A9", "label": "8-15 w.c.", "aliases": ["8-15 wc"] },
+        { "code": "B1", "label": "0.5-1.5 psi / 14-41 w.c.", "aliases": ["0.5-1.5 psi"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (9 and 10)", "position": 8, "required": true,
+      "options": [
+        { "code": "S1", "label": "Standard", "aliases": ["standard"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": [
+    { "when": { "model": "695X" },
+      "note": "The sheet's own caution: the following information is subject to change; product numbers and descriptions should be checked with the factory for accuracy before order entry." }
+  ]
+}

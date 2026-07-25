@@ -69,6 +69,10 @@ const mk37 = JSON.parse(readFileSync(join(here, 'models', 'mk37.json'), 'utf8'))
 const mk33 = JSON.parse(readFileSync(join(here, 'models', 'mk33.json'), 'utf8'));
 const mk39 = JSON.parse(readFileSync(join(here, 'models', 'mk39.json'), 'utf8'));
 const mk687 = JSON.parse(readFileSync(join(here, 'models', 'mk687.json'), 'utf8'));
+const mk695lg = JSON.parse(readFileSync(join(here, 'models', 'mk695lg.json'), 'utf8'));
+const mk695x = JSON.parse(readFileSync(join(here, 'models', 'mk695x.json'), 'utf8'));
+const mk608lg = JSON.parse(readFileSync(join(here, 'models', 'mk608lg.json'), 'utf8'));
+const mk608is = JSON.parse(readFileSync(join(here, 'models', 'mk608is.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1084,6 +1088,31 @@ check('the four blanketing sheets round-trip and their couplings hold', () => {
   assert.ok(checkConstraints(mk695, { cv: 'A9', size: '075' }).length > 0, 'the starred large Cvs are 1 inch only');
   assert.ok(checkConstraints(mk608bp, { range: '02', orifice: '05' }).length > 0, 'the starred water column ranges keep the 1/4 inch orifice');
   assert.equal(checkCautions(mk695, { model: '695' }).length, 1, "the 695 carries the sheet's own check-with-factory caution on every build");
+});
+
+console.log('\nThe blanketing variants: 695 large, 695X, 608 large and 608IS:');
+
+check('the four variants round-trip and the shared printed model codes stay unambiguous', () => {
+  roundTrip(mk695lg, {
+    model: '695', size: '200', body: '6L', ends: 'F3', trim: 'VI', cv: '48',
+    range: 'A8', actuator: 'S1', accessory: 'P1',
+  }, '695-200-6LF3VI48A8S1P1');
+  roundTrip(mk695x, {
+    model: '695X', size: '050', body: 'SB', endsCv: 'PC', seatOring: 'EP',
+    pressSwitch: 'AA', range: 'B1', actuator: 'S1',
+  }, '695X-050-SBPCEPAAB1S1');
+  roundTrip(mk608lg, {
+    model: '608', size: '200', body: 'BR', ends: 'I5', seatDiaphragm: 'EN', range: '12',
+    actuator: 'SD', bushing: 'CG', ped: 'FF',
+  }, '608200BRI5EN12SDCGFF');
+  roundTrip(mk608is, {
+    model: '608IS', size: '125', body: 'S6', ends: 'F4', orifice: '08', range: '01',
+    actuator: 'SD', bushing: '00', ped: '00',
+  }, '608IS125S6F408 01SD0000'.replace(' ', ''));
+  assert.ok(checkConstraints(mk695lg, { accessory: 'IL', ends: 'F3' }).length > 0, 'the in-line body option is FNPT only');
+  assert.equal(checkCautions(mk608lg, { range: '08' }).length, 1, 'the inverted mounting note rides the low set points');
+  assert.equal(checkCautions(mk608lg, { range: '11' }).length, 0, 'and stays off the higher ones');
+  assert.ok(/695/.test(mk695lg.note) && /registry name/.test(mk695lg.note), 'the shared printed 695 code is explained');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
