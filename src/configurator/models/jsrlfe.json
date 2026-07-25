@@ -11,7 +11,7 @@
     "page": "the ordering schematic pages",
     "section": "JSRLFE ordering schematic"
   },
-  "note": "Extracted by hand from the ordering schematic, the JR family shape with the sheet's printed dash dash slash separators. The slashed zeros in the SEP and accessories columns are carried as plain zeros. The EPDM seat variant: D seats, ranges to E5 and gauges to 400 psi, and its outlet no-gauge row prints two characters where the JSRLF prints one, carried per sheet. The self-relieving trims keep their printed PTFE gloss.",
+  "note": "Extracted by hand from the ordering schematic, the JR family shape with the sheet's printed dash dash slash separators. The slashed zeros in the SEP and accessories columns are carried as plain zeros. The EPDM seat variant: D seats, ranges to E5 and gauges to 400 psi, and its outlet no-gauge row prints two characters where the JSRLF prints one, carried per sheet. The self-relieving trims keep their printed PTFE gloss. The ISO and DIN end letters and the captured vent and air loading actuator rows shed the digits the extraction had welded onto them; the sheet prints those digits as footnote superscripts for the standards notes, so the order codes are the plain letters, the JSB and JSR reading.",
   "assembly": "{model}-{size}-{material}/{endConnection}{portConfig}{trim}{seat}{rangeSpring}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
   "slots": [
     {
@@ -122,64 +122,64 @@
           ]
         },
         {
-          "code": "H4",
-          "label": "ISO tube weld, DN15",
+          "code": "H",
+          "label": "ISO tube weld, DN15 (DIN 11866 row B)",
           "aliases": [
             "iso tube weld"
           ]
         },
         {
-          "code": "S1",
-          "label": "ISO tri-clamp, DN15",
+          "code": "S",
+          "label": "ISO tri-clamp, DN15 (DIN 32676 row B, ISO 1127)",
           "aliases": [
             "iso tri-clamp"
           ]
         },
         {
-          "code": "V1",
-          "label": "ISO with 34.0mm face T-clamp, DN15",
+          "code": "V",
+          "label": "ISO with 34.0mm face T-clamp, DN15 (DIN 32676 row B, ISO 1127)",
           "aliases": [
             "iso 34mm"
           ]
         },
         {
-          "code": "R1",
-          "label": "ISO T-clamp, DN20",
+          "code": "R",
+          "label": "ISO T-clamp, DN20 (DIN 32676 row B, ISO 1127)",
           "aliases": [
             "iso dn20"
           ]
         },
         {
-          "code": "D2",
-          "label": "DIN tri-clamp, DN15",
+          "code": "D",
+          "label": "DIN tri-clamp, DN15 (DIN 32676 row A)",
           "aliases": [
             "din tri-clamp"
           ]
         },
         {
-          "code": "N2",
-          "label": "DIN T-clamp, DN15 with 50.5mm face",
+          "code": "N",
+          "label": "DIN T-clamp, DN15 with 50.5mm face (DIN 32676 row A)",
           "aliases": [
             "din 50.5"
           ]
         },
         {
-          "code": "U2",
-          "label": "DIN T-clamp, DN20",
+          "code": "U",
+          "label": "DIN T-clamp, DN20 (DIN 32676 row A)",
           "aliases": [
             "din dn20"
           ]
         },
         {
-          "code": "X2",
-          "label": "DIN T-clamp, DN20 with 50.5mm face",
+          "code": "X",
+          "label": "DIN T-clamp, DN20 with 50.5mm face (DIN 32676 row A)",
           "aliases": [
             "din dn20 50.5"
           ]
         },
         {
-          "code": "M3",
-          "label": "DIN tube weld, DN15",
+          "code": "M",
+          "label": "DIN tube weld, DN15 (DIN 11866, DIN 11850 row A)",
           "aliases": [
             "din tube weld"
           ]
@@ -450,14 +450,14 @@
           ]
         },
         {
-          "code": "CV1",
+          "code": "CV",
           "label": "Captured vent for venting self-relieved gas",
           "aliases": [
             "captured vent"
           ]
         },
         {
-          "code": "AA1",
+          "code": "AA",
           "label": "Air loading fitting on spring housing with a stem seat nut",
           "aliases": [
             "air loading"
@@ -758,7 +758,7 @@
     },
     {
       "when": {
-        "actuator": "AA1"
+        "actuator": "AA"
       },
       "forbid": {
         "trim": [
