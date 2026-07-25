@@ -1,0 +1,217 @@
+{
+  "model": "HGY",
+  "line": "hex",
+  "displayName": "Hex HGY series 4500# Y-pattern globe valve",
+  "match": [
+    "hgy"
+  ],
+  "source": {
+    "doc": "HGY-Series.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the ordering schematic, the series letters H, G and Y as the head. The 32 and 35 sizes print only-standard-for-15mm-orifice, enforced. Other classes, materials, trims and sizes are consult-factory footnotes.",
+  "assembly": "{model}{orifice}{size}{pressureClass}{ends}{material}{trim}{packingGasket}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HGY",
+          "label": "Y-pattern globe valve",
+          "aliases": [
+            "hgy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orifice",
+      "label": "Orifice (4)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "10",
+          "aliases": [
+            "10 orifice"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "15",
+          "aliases": [
+            "15 orifice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (5-6)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "16",
+          "label": "16 BW x 3 WT",
+          "aliases": [
+            "16 bw"
+          ]
+        },
+        {
+          "code": "18",
+          "label": "18 BW x 4 WT",
+          "aliases": [
+            "18 bw"
+          ]
+        },
+        {
+          "code": "25",
+          "label": "25 BW x 7 WT",
+          "aliases": [
+            "25 bw"
+          ]
+        },
+        {
+          "code": "32",
+          "label": "32 BW x 8 WT (15mm orifice only)",
+          "aliases": [
+            "32 bw"
+          ]
+        },
+        {
+          "code": "35",
+          "label": "35 BW x 8 WT (15mm orifice only)",
+          "aliases": [
+            "35 bw"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pressureClass",
+      "label": "Pressure class (7-8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "45",
+          "label": "4500#",
+          "aliases": [
+            "4500"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "Ends (9)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "W",
+          "label": "BWE",
+          "aliases": [
+            "bwe ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material (10-11)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "A5",
+          "label": "A105",
+          "aliases": [
+            "a105"
+          ]
+        },
+        {
+          "code": "GH",
+          "label": "A182 316H",
+          "aliases": [
+            "316h"
+          ]
+        },
+        {
+          "code": "91",
+          "label": "A182 F91",
+          "aliases": [
+            "f91"
+          ]
+        },
+        {
+          "code": "92",
+          "label": "A182 F92",
+          "aliases": [
+            "f92"
+          ]
+        },
+        {
+          "code": "22",
+          "label": "A182 F22",
+          "aliases": [
+            "f22"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim (12)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "5",
+          "label": "API trim 5",
+          "aliases": [
+            "api 5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packingGasket",
+      "label": "Packing and gasket (13)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "G",
+          "label": "Manufacturer standard graphite",
+          "aliases": [
+            "graphite p&g"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": [
+          "32",
+          "35"
+        ]
+      },
+      "forbid": {
+        "orifice": [
+          "3"
+        ]
+      },
+      "reason": "these sizes print only standard for the 15mm orifice"
+    }
+  ],
+  "cautions": []
+}

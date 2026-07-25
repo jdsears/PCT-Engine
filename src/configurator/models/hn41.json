@@ -1,0 +1,152 @@
+{
+  "model": "HN41",
+  "line": "hex",
+  "displayName": "Hex HN41 needle valve",
+  "match": [
+    "hn41"
+  ],
+  "source": {
+    "doc": "HN41.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{connections}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HN41",
+          "label": "HN41",
+          "aliases": [
+            "hn41"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "Soft seat",
+          "aliases": [
+            "soft seat config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "D",
+          "label": "316 SS NACE",
+          "aliases": [
+            "316 nace"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (bi-directional)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "2F",
+          "label": "1/4\" FNPT x 1/4\" FNPT",
+          "aliases": [
+            "quarter fnpt both"
+          ]
+        },
+        {
+          "code": "2FM",
+          "label": "1/4\" FNPT x 1/4\" MNPT",
+          "aliases": [
+            "quarter fnpt mnpt"
+          ]
+        },
+        {
+          "code": "24FM",
+          "label": "1/4\" FNPT x 1/2\" MNPT",
+          "aliases": [
+            "quarter half"
+          ]
+        },
+        {
+          "code": "4F",
+          "label": "1/2\" FNPT x 1/2\" FNPT",
+          "aliases": [
+            "half fnpt both"
+          ]
+        },
+        {
+          "code": "4FM",
+          "label": "1/2\" FNPT x 1/2\" MNPT",
+          "aliases": [
+            "half fnpt mnpt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "One piece",
+          "aliases": [
+            "one piece stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "Delrin",
+          "aliases": [
+            "delrin seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "Teflon",
+          "aliases": [
+            "teflon packing"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

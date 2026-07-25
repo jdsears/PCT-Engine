@@ -1,0 +1,233 @@
+{
+  "model": "HN39",
+  "line": "hex",
+  "displayName": "Hex HN39 needle valve",
+  "match": [
+    "hn39"
+  ],
+  "source": {
+    "doc": "HN39.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table. The connection type joins the model bare and the size follows a dash, the sheet's own examples HN39F-4-G and HN39M-1-B. Options chain with further dashes; the sheet sets no order or limit, so the slot enumerates the singles and a blank, and chained multi-option builds are held for John. Standard packing is TFE, grafoil by the G option.",
+  "assembly": "{model}{connectionType}-{size}-{option}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HN39",
+          "label": "HN39",
+          "aliases": [
+            "hn39"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connectionType",
+      "label": "Connection type",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "M",
+          "label": "MNPT x MNPT",
+          "aliases": [
+            "mnpt both"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "FNPT x FNPT",
+          "aliases": [
+            "fnpt both"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Tube nut x tube nut",
+          "aliases": [
+            "tube nut both"
+          ]
+        },
+        {
+          "code": "MF",
+          "label": "MNPT x FNPT",
+          "aliases": [
+            "mnpt fnpt"
+          ]
+        },
+        {
+          "code": "FM",
+          "label": "FNPT x MNPT",
+          "aliases": [
+            "fnpt mnpt"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard connection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/8\" (DN6) (NPT)",
+          "aliases": [
+            "eighth"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/4\" (DN8) (NPT)",
+          "aliases": [
+            "quarter"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/8\" (DN10) (NPT)",
+          "aliases": [
+            "three eighths"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1/2\" (DN15) (NPT)",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "3/4\" (DN20) (NPT)",
+          "aliases": [
+            "three quarters"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1\" (DN25) (NPT)",
+          "aliases": [
+            "one inch"
+          ]
+        },
+        {
+          "code": "6MM",
+          "label": "6mm (tube nut)",
+          "aliases": [
+            "6mm"
+          ]
+        },
+        {
+          "code": "8MM",
+          "label": "8mm (tube nut)",
+          "aliases": [
+            "8mm"
+          ]
+        },
+        {
+          "code": "10MM",
+          "label": "10mm (tube nut)",
+          "aliases": [
+            "10mm"
+          ]
+        },
+        {
+          "code": "14MM",
+          "label": "14mm (tube nut)",
+          "aliases": [
+            "14mm"
+          ]
+        },
+        {
+          "code": "18MM",
+          "label": "18mm (tube nut)",
+          "aliases": [
+            "18mm"
+          ]
+        },
+        {
+          "code": "25MM",
+          "label": "25mm (tube nut)",
+          "aliases": [
+            "25mm"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "option",
+      "label": "Option",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (standard TFE packing)",
+          "aliases": [
+            "no option"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Grafoil packing",
+          "aliases": [
+            "grafoil packing"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Round handle",
+          "aliases": [
+            "round handle"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "BSPP ends",
+          "aliases": [
+            "bspp ends"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "BSPT ends",
+          "aliases": [
+            "bspt ends"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "NACE",
+          "aliases": [
+            "nace"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

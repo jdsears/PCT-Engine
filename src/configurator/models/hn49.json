@@ -1,0 +1,568 @@
+{
+  "model": "HN49",
+  "line": "hex",
+  "displayName": "Hex HN49 instrument needle valve",
+  "match": [
+    "hn49"
+  ],
+  "source": {
+    "doc": "HN49.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The stem material ladder prints Alloy 20 on both its G and H rows, carried as printed and held for the PDF. The 10,000 psi bonnet note, Teflon packing only, is a service note. Metric sizes and other materials are consult-factory footnotes.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stemMaterial}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HN49",
+          "label": "Standard",
+          "aliases": [
+            "hn49"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard",
+          "aliases": [
+            "hard seat config"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Soft",
+          "aliases": [
+            "soft seat config"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Hard / o-ring",
+          "aliases": [
+            "hard o-ring config"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Soft / o-ring",
+          "aliases": [
+            "soft o-ring config"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "3/8\" (DN10) orifice soft seat",
+          "aliases": [
+            "orifice soft"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "3/8\" (DN10) orifice hard seat",
+          "aliases": [
+            "orifice hard"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "11mm hard seat",
+          "aliases": [
+            "11mm hard"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "16 mm hard seat",
+          "aliases": [
+            "16mm hard"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless steel"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Carbon steel, NACE",
+          "aliases": [
+            "carbon nace"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Stainless steel, NACE",
+          "aliases": [
+            "stainless nace"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Monel",
+          "aliases": [
+            "monel body"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Hastelloy B",
+          "aliases": [
+            "hastelloy b"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Hastelloy C",
+          "aliases": [
+            "hastelloy c"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Alloy 20",
+          "aliases": [
+            "alloy 20 body"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "quarter inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "3/8\" (DN10)",
+          "aliases": [
+            "three eighths inlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "half inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "three quarter inlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "one inch inlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "1/2\" (DN15) single ferrule integral tube nut",
+          "aliases": [
+            "single ferrule inlet"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "1/2\" (DN15) double ferrule integral tube nut",
+          "aliases": [
+            "double ferrule inlet"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard inlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "MNPT",
+          "aliases": [
+            "mnpt inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "MSW",
+          "aliases": [
+            "msw inlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "FSW",
+          "aliases": [
+            "fsw inlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "Tube nut",
+          "aliases": [
+            "tube nut inlet"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "TSW",
+          "aliases": [
+            "tsw inlet"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard inlet type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "quarter outlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "3/8\" (DN10)",
+          "aliases": [
+            "three eighths outlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "half outlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "three quarter outlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "one inch outlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "1/2\" (DN15) single ferrule integral tube nut",
+          "aliases": [
+            "single ferrule outlet"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "1/2\" (DN15) double ferrule integral tube nut",
+          "aliases": [
+            "double ferrule outlet"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard outlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW",
+          "aliases": [
+            "fsw outlet"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "Tube nut",
+          "aliases": [
+            "tube nut outlet"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "1 plug",
+          "aliases": [
+            "plug outlet"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "TSW",
+          "aliases": [
+            "tsw outlet"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard outlet type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stemMaterial",
+      "label": "Stem/tip material",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "316 SS NACE",
+          "aliases": [
+            "316 nace stem"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "316 SS needle/plug",
+          "aliases": [
+            "needle plug stem"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "316 SS / 316 SS NACE",
+          "aliases": [
+            "316 316 nace stem"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "316 SS NRT",
+          "aliases": [
+            "nrt stem"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "316 SS / Stellite",
+          "aliases": [
+            "stellite stem"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "Monel",
+          "aliases": [
+            "monel stem"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Monel / Monel",
+          "aliases": [
+            "monel monel stem"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Hastelloy C",
+          "aliases": [
+            "hastelloy stem"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Hastelloy C / Hastelloy C",
+          "aliases": [
+            "hastelloy pair stem"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Alloy 20 (the sheet prints Alloy 20 on both G and H rows)",
+          "aliases": [
+            "alloy 20 g"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Alloy 20 (the sheet prints Alloy 20 on both G and H rows)",
+          "aliases": [
+            "alloy 20 h"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral (hard)",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Stellite insert",
+          "aliases": [
+            "stellite insert"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "PPS (soft)",
+          "aliases": [
+            "pps seat"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "KEL-F (soft)",
+          "aliases": [
+            "kel-f seat"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "TFE (soft)",
+          "aliases": [
+            "tfe seat"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "PEEK (soft)",
+          "aliases": [
+            "peek seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "TFE-chevron",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Grafoil/Grafoil/Graphite",
+          "aliases": [
+            "grafoil packing"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Viton o-ring",
+          "aliases": [
+            "viton o-ring"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

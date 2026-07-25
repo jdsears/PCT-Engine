@@ -1,0 +1,168 @@
+{
+  "model": "HN29",
+  "line": "hex",
+  "displayName": "Hex HN29 needle valve",
+  "match": [
+    "hn29"
+  ],
+  "source": {
+    "doc": "HN29.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order list, a fixed ladder of complete configuration codes rather than positions; each row bundles connection, type, size, body, material and seat as printed, dashes included. No sample schematic prints, so the joining of model and code is carried bare and held for the PDF. The sheet's minimum box quantities are order notes.",
+  "assembly": "{model}{config}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HN29",
+          "label": "HN29",
+          "aliases": [
+            "hn29"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "config",
+      "label": "Connection, type, size, body, material, set",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2F",
+          "label": "1/4\", FNPT, straight, stainless, soft seat",
+          "aliases": [
+            "2f"
+          ]
+        },
+        {
+          "code": "2F-R",
+          "label": "1/4\" FNPT, straight, stainless, soft seat, round handle",
+          "aliases": [
+            "2f-r"
+          ]
+        },
+        {
+          "code": "1S-2F",
+          "label": "1/4\", FNPT, straight, carbon, hard seat",
+          "aliases": [
+            "1s-2f"
+          ]
+        },
+        {
+          "code": "1S-2F-R",
+          "label": "1/4\", FNPT, straight, carbon, hard seat, round handle",
+          "aliases": [
+            "1s-2f-r"
+          ]
+        },
+        {
+          "code": "2FA",
+          "label": "1/4\", FNPT, angle, stainless, soft seat",
+          "aliases": [
+            "2fa"
+          ]
+        },
+        {
+          "code": "2M",
+          "label": "1/4\", MNPT, straight, stainless, soft seat",
+          "aliases": [
+            "2m"
+          ]
+        },
+        {
+          "code": "22MF",
+          "label": "1/4\", MNPTxFNPT, straight, stainless, soft seat",
+          "aliases": [
+            "22mf"
+          ]
+        },
+        {
+          "code": "22MF-R",
+          "label": "1/4\", MNPTxFNPT, straight, stainless, soft seat, round handle",
+          "aliases": [
+            "22mf-r"
+          ]
+        },
+        {
+          "code": "22AMF",
+          "label": "1/4\", MNPTxFNPT, angle, stainless, soft seat",
+          "aliases": [
+            "22amf"
+          ]
+        },
+        {
+          "code": "1S-22MF",
+          "label": "1/4\" MNPTxFNPT, straight, carbon, hard seat",
+          "aliases": [
+            "1s-22mf"
+          ]
+        },
+        {
+          "code": "1S-22MF-R",
+          "label": "1/4\", MNPTxFNPT, straight, carbon, hard seat, round handle",
+          "aliases": [
+            "1s-22mf-r"
+          ]
+        },
+        {
+          "code": "1S-4F",
+          "label": "1/2\", FNPT, straight, carbon, hard seat",
+          "aliases": [
+            "1s-4f"
+          ]
+        },
+        {
+          "code": "1S-44MF",
+          "label": "1/2\", MNPTxFNPT, straight, carbon, hard seat",
+          "aliases": [
+            "1s-44mf"
+          ]
+        },
+        {
+          "code": "2S-2F",
+          "label": "1/4\", FNPT, straight, carbon, soft seat",
+          "aliases": [
+            "2s-2f"
+          ]
+        },
+        {
+          "code": "2S-2F-R",
+          "label": "1/4\", FNPT, straight, carbon, soft seat, round handle",
+          "aliases": [
+            "2s-2f-r"
+          ]
+        },
+        {
+          "code": "2S-22MF",
+          "label": "1/4\", MNPTxFNPT, straight, carbon, soft seat",
+          "aliases": [
+            "2s-22mf"
+          ]
+        },
+        {
+          "code": "2S-22MF-R",
+          "label": "1/4\", MNPTxFNPT, straight, carbon, soft seat, round handle",
+          "aliases": [
+            "2s-22mf-r"
+          ]
+        },
+        {
+          "code": "2S-4F",
+          "label": "1/2\", FNPT, straight, carbon, soft seat",
+          "aliases": [
+            "2s-4f"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

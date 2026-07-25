@@ -1,0 +1,235 @@
+{
+  "model": "HB24",
+  "line": "hex",
+  "displayName": "Hex HB24/25/26/27 gauge valves",
+  "match": [
+    "hb24",
+    "hb25",
+    "hb26",
+    "hb27"
+  ],
+  "source": {
+    "doc": "HB24_25_26_27.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The packing column is starred HB27 only, so the packing letters refuse the other models and the blank carries them, both samples printed on the sheet.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{stemMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HB24",
+          "label": "HB24",
+          "aliases": [
+            "hb24"
+          ]
+        },
+        {
+          "code": "HB25",
+          "label": "HB25",
+          "aliases": [
+            "hb25"
+          ]
+        },
+        {
+          "code": "HB26",
+          "label": "HB26",
+          "aliases": [
+            "hb26"
+          ]
+        },
+        {
+          "code": "HB27",
+          "label": "HB27",
+          "aliases": [
+            "hb27"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard",
+          "aliases": [
+            "hard seat config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel (A108)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless steel"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Carbon steel (A105)",
+          "aliases": [
+            "carbon steel a105"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "316 / NACE",
+          "aliases": [
+            "316 nace"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\"",
+          "aliases": [
+            "quarter inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "3/8\"",
+          "aliases": [
+            "three eighths inlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "MNPT",
+          "aliases": [
+            "mnpt inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "MSW",
+          "aliases": [
+            "msw inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stemMaterial",
+      "label": "Stem material",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 SS",
+          "aliases": [
+            "316 stem"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "316SS NACE",
+          "aliases": [
+            "316 nace stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing (HB27 only)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (models other than HB27)",
+          "aliases": [
+            "no packing"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Teflon",
+          "aliases": [
+            "teflon packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "packing": [
+          "2",
+          "3"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "HB24",
+          "HB25",
+          "HB26"
+        ]
+      },
+      "reason": "the packing column is starred HB27 only"
+    }
+  ],
+  "cautions": []
+}

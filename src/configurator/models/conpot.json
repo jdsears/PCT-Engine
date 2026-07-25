@@ -1,0 +1,619 @@
+{
+  "model": "CONPOT",
+  "line": "hex",
+  "displayName": "Hex condensate and seal pot",
+  "match": [
+    "conpot",
+    "condensate pot",
+    "seal pot"
+  ],
+  "source": {
+    "doc": "CondensatePots.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the ordering schematic, nine positions after the model. The first connection location prints no not-required row, the other five do. Engineering drawings and customer approval are required before ordering, the sheet's own note.",
+  "assembly": "{model}{volume}{loc1}{loc2}{loc3}{loc4}{loc5}{loc6}{material}{pipeSch}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "CONPOT",
+          "label": "Condensate and seal pot",
+          "aliases": [
+            "conpot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "volume",
+      "label": "Approximate volume / nominal pipe size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "0.5 L, 3.0 pipe",
+          "aliases": [
+            "0.5 litre"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1.0 L, 3.0 pipe",
+          "aliases": [
+            "1 litre"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1.5 L, 3.5 pipe",
+          "aliases": [
+            "1.5 litre"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "2.0 L, 4 pipe",
+          "aliases": [
+            "2 litre"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "3.0 L, 5 pipe",
+          "aliases": [
+            "3 litre"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "5.0 L, 6 pipe",
+          "aliases": [
+            "5 litre"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loc1",
+      "label": "Connection location (1)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" FNPT",
+          "aliases": [
+            "loc 1/4\" fnpt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "loc 1/2\" fnpt"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "loc 3/4\" fnpt"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" FNPT",
+          "aliases": [
+            "loc 1\" fnpt"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1/4\" FSW",
+          "aliases": [
+            "loc 1/4\" fsw"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1/2\" FSW",
+          "aliases": [
+            "loc 1/2\" fsw"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1/4\" BSPT",
+          "aliases": [
+            "loc 1/4\" bspt"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1/2\" BSPT",
+          "aliases": [
+            "loc 1/2\" bspt"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Other (user spec)",
+          "aliases": [
+            "other"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loc2",
+      "label": "Connection location (2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" FNPT",
+          "aliases": [
+            "loc 1/4\" fnpt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "loc 1/2\" fnpt"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "loc 3/4\" fnpt"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" FNPT",
+          "aliases": [
+            "loc 1\" fnpt"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1/4\" FSW",
+          "aliases": [
+            "loc 1/4\" fsw"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1/2\" FSW",
+          "aliases": [
+            "loc 1/2\" fsw"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1/4\" BSPT",
+          "aliases": [
+            "loc 1/4\" bspt"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1/2\" BSPT",
+          "aliases": [
+            "loc 1/2\" bspt"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "Not required",
+          "aliases": [
+            "not required"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Other (user spec)",
+          "aliases": [
+            "other"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loc3",
+      "label": "Connection location (3)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" FNPT",
+          "aliases": [
+            "loc 1/4\" fnpt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "loc 1/2\" fnpt"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "loc 3/4\" fnpt"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" FNPT",
+          "aliases": [
+            "loc 1\" fnpt"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1/4\" FSW",
+          "aliases": [
+            "loc 1/4\" fsw"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1/2\" FSW",
+          "aliases": [
+            "loc 1/2\" fsw"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1/4\" BSPT",
+          "aliases": [
+            "loc 1/4\" bspt"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1/2\" BSPT",
+          "aliases": [
+            "loc 1/2\" bspt"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "Not required",
+          "aliases": [
+            "not required"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Other (user spec)",
+          "aliases": [
+            "other"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loc4",
+      "label": "Connection location (4)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" FNPT",
+          "aliases": [
+            "loc 1/4\" fnpt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "loc 1/2\" fnpt"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "loc 3/4\" fnpt"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" FNPT",
+          "aliases": [
+            "loc 1\" fnpt"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1/4\" FSW",
+          "aliases": [
+            "loc 1/4\" fsw"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1/2\" FSW",
+          "aliases": [
+            "loc 1/2\" fsw"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1/4\" BSPT",
+          "aliases": [
+            "loc 1/4\" bspt"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1/2\" BSPT",
+          "aliases": [
+            "loc 1/2\" bspt"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "Not required",
+          "aliases": [
+            "not required"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Other (user spec)",
+          "aliases": [
+            "other"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loc5",
+      "label": "Connection location (5)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" FNPT",
+          "aliases": [
+            "loc 1/4\" fnpt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "loc 1/2\" fnpt"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "loc 3/4\" fnpt"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" FNPT",
+          "aliases": [
+            "loc 1\" fnpt"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1/4\" FSW",
+          "aliases": [
+            "loc 1/4\" fsw"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1/2\" FSW",
+          "aliases": [
+            "loc 1/2\" fsw"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1/4\" BSPT",
+          "aliases": [
+            "loc 1/4\" bspt"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1/2\" BSPT",
+          "aliases": [
+            "loc 1/2\" bspt"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "Not required",
+          "aliases": [
+            "not required"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Other (user spec)",
+          "aliases": [
+            "other"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loc6",
+      "label": "Connection location (6)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" FNPT",
+          "aliases": [
+            "loc 1/4\" fnpt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "loc 1/2\" fnpt"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "loc 3/4\" fnpt"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" FNPT",
+          "aliases": [
+            "loc 1\" fnpt"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1/4\" FSW",
+          "aliases": [
+            "loc 1/4\" fsw"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1/2\" FSW",
+          "aliases": [
+            "loc 1/2\" fsw"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1/4\" BSPT",
+          "aliases": [
+            "loc 1/4\" bspt"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1/2\" BSPT",
+          "aliases": [
+            "loc 1/2\" bspt"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "Not required",
+          "aliases": [
+            "not required"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Other (user spec)",
+          "aliases": [
+            "other"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "316 SS",
+          "aliases": [
+            "316"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Other",
+          "aliases": [
+            "other material"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pipeSch",
+      "label": "Pipe schedule",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "SCH 40",
+          "aliases": [
+            "sch 40"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "SCH 80",
+          "aliases": [
+            "sch 80"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "SCH 160",
+          "aliases": [
+            "sch 160"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "SCH XXS",
+          "aliases": [
+            "sch xxs"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Other",
+          "aliases": [
+            "other sch"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

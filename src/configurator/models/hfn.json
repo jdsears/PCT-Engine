@@ -1,0 +1,450 @@
+{
+  "model": "HFN",
+  "line": "hex",
+  "displayName": "Hex HFN forged needle valve",
+  "match": [
+    "hfn"
+  ],
+  "source": {
+    "doc": "HFNseries.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The sheet's own sample prints W in the outlet type position where the type ladder prints E for the tube socket weld, held for John. The orifice ladder prints two rows that both read T at 10mm in the extraction; the 1 is the 6mm hard seat and T the 10mm, carried so. The blank option is the sample's own, panel mount the only printed code.",
+  "assembly": "{model}{orifice}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stemMaterial}{seatMaterial}{packing}{option}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HFN",
+          "label": "Forged needle valve",
+          "aliases": [
+            "hfn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orifice",
+      "label": "Orifice",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "6mm hard seat",
+          "aliases": [
+            "6mm orifice"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "10mm hard seat",
+          "aliases": [
+            "10mm orifice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless steel"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "316H SS",
+          "aliases": [
+            "316h"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "F91",
+          "aliases": [
+            "f91"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "E",
+          "label": "10mm",
+          "aliases": [
+            "inlet 10mm"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "12mm",
+          "aliases": [
+            "inlet 12mm"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "14mm",
+          "aliases": [
+            "inlet 14mm"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "16mm",
+          "aliases": [
+            "inlet 16mm"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "18mm",
+          "aliases": [
+            "inlet 18mm"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "20mm",
+          "aliases": [
+            "inlet 20mm"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "22mm",
+          "aliases": [
+            "inlet 22mm"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "25mm",
+          "aliases": [
+            "inlet 25mm"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "28mm",
+          "aliases": [
+            "inlet 28mm"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "M20 x 1.5",
+          "aliases": [
+            "inlet m20 x 1.5"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "M22 x 1.5",
+          "aliases": [
+            "inlet m22 x 1.5"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "14 x 2 (BW only)",
+          "aliases": [
+            "inlet 14 x 2 (bw only)"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "16 x 3 (BW only)",
+          "aliases": [
+            "inlet 16 x 3 (bw only)"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "18 x 4 (BW only)",
+          "aliases": [
+            "inlet 18 x 4 (bw only)"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "25 x 7 (BW only)",
+          "aliases": [
+            "inlet 25 x 7 (bw only)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "TSW tube socket weld",
+          "aliases": [
+            "tsw inlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "BW butt weld",
+          "aliases": [
+            "bw inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "E",
+          "label": "10mm",
+          "aliases": [
+            "outlet 10mm"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "12mm",
+          "aliases": [
+            "outlet 12mm"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "14mm",
+          "aliases": [
+            "outlet 14mm"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "16mm",
+          "aliases": [
+            "outlet 16mm"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "18mm",
+          "aliases": [
+            "outlet 18mm"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "20mm",
+          "aliases": [
+            "outlet 20mm"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "22mm",
+          "aliases": [
+            "outlet 22mm"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "25mm",
+          "aliases": [
+            "outlet 25mm"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "28mm",
+          "aliases": [
+            "outlet 28mm"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "M20 x 1.5",
+          "aliases": [
+            "outlet m20 x 1.5"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "M22 x 1.5",
+          "aliases": [
+            "outlet m22 x 1.5"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "14 x 2 (BW only)",
+          "aliases": [
+            "outlet 14 x 2 (bw only)"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "16 x 3 (BW only)",
+          "aliases": [
+            "outlet 16 x 3 (bw only)"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "18 x 4 (BW only)",
+          "aliases": [
+            "outlet 18 x 4 (bw only)"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "25 x 7 (BW only)",
+          "aliases": [
+            "outlet 25 x 7 (bw only)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "TSW tube socket weld",
+          "aliases": [
+            "tsw outlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "BW butt weld",
+          "aliases": [
+            "bw outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stemMaterial",
+      "label": "Stem material",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "4",
+          "label": "316 SS / NRT",
+          "aliases": [
+            "nrt stem"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "316SS / Stellite",
+          "aliases": [
+            "stellite stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral (hard)",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Stellite insert",
+          "aliases": [
+            "stellite insert"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "Graphite / Grafoil / Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "option",
+      "label": "Option",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (the sample's own blank)",
+          "aliases": [
+            "no option"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Panel mount",
+          "aliases": [
+            "panel mount"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

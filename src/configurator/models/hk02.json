@@ -1,0 +1,513 @@
+{
+  "model": "HK02",
+  "line": "hex",
+  "displayName": "Hex HK02 monoflange valve",
+  "match": [
+    "hk02",
+    "monoflange"
+  ],
+  "source": {
+    "doc": "hk02.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, no sample row printing on this sheet, so the columns are carried bare in the printed order, held for the PDF. Standard trim matches the body material except carbon steel bodies, which take 316SS trim, and the PEEK seat and Teflon packing rows are marked standard, all by the sheet's own footnotes.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{trim}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HK02",
+          "label": "HK02 monoflange",
+          "aliases": [
+            "hk02"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "Soft seat",
+          "aliases": [
+            "soft seat config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "Y",
+          "label": "A182 316L",
+          "aliases": [
+            "316l body"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "A182 316L NACE",
+          "aliases": [
+            "316l nace"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Duplex A182 F51",
+          "aliases": [
+            "duplex"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "Inconel 625",
+          "aliases": [
+            "inconel 625"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "Incoloy 825",
+          "aliases": [
+            "incoloy 825"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Hastelloy-C",
+          "aliases": [
+            "hastelloy"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Inconel 625 (the sheet prints Inconel 625 on both 7 and J rows)",
+          "aliases": [
+            "inconel j"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Low temp CS A350 LF2",
+          "aliases": [
+            "low temp cs"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Monel 400",
+          "aliases": [
+            "monel"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "CS A105 NACE (forged)",
+          "aliases": [
+            "cs nace"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "CS A105 (forged)",
+          "aliases": [
+            "cs forged"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "316 SS NACE",
+          "aliases": [
+            "316 nace"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Alloy 20",
+          "aliases": [
+            "alloy 20"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "half inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "three quarter inlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "one inch inlet"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "one and a half inlet"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "two inch inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "150#RF",
+          "aliases": [
+            "150 rf"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "300#RF",
+          "aliases": [
+            "300 rf"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "600#RF",
+          "aliases": [
+            "600 rf"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "900/1500#RF",
+          "aliases": [
+            "900 rf"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "2500#RF",
+          "aliases": [
+            "2500 rf"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "300#RTJ",
+          "aliases": [
+            "300 rtj"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "600#RTJ",
+          "aliases": [
+            "600 rtj"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "900/1500#RTJ",
+          "aliases": [
+            "900 rtj"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "2500#RTJ",
+          "aliases": [
+            "2500 rtj"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "half outlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "three quarter outlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "one inch outlet"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "one and a half outlet"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "two inch outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "150#RF",
+          "aliases": [
+            "150 rf outlet"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "300#RF",
+          "aliases": [
+            "300 rf outlet"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "600#RF",
+          "aliases": [
+            "600 rf outlet"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "900/1500#RF",
+          "aliases": [
+            "900 rf outlet"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "2500#RF",
+          "aliases": [
+            "2500 rf outlet"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "300#RTJ",
+          "aliases": [
+            "300 rtj outlet"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "600#RTJ",
+          "aliases": [
+            "600 rtj outlet"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "900/1500#RTJ",
+          "aliases": [
+            "900 rtj outlet"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "2500#RTJ",
+          "aliases": [
+            "2500 rtj outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "316 NACE",
+          "aliases": [
+            "316 nace trim"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "316",
+          "aliases": [
+            "316 trim"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Monel",
+          "aliases": [
+            "monel trim"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Hast-C",
+          "aliases": [
+            "hastelloy trim"
+          ]
+        },
+        {
+          "code": "Y",
+          "label": "316L",
+          "aliases": [
+            "316l trim"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "316L NACE",
+          "aliases": [
+            "316l nace trim"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "I-625",
+          "aliases": [
+            "i625 trim"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "I-825",
+          "aliases": [
+            "i825 trim"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Super duplex",
+          "aliases": [
+            "super duplex trim"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Duplex",
+          "aliases": [
+            "duplex trim"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Alloy 20",
+          "aliases": [
+            "alloy 20 trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "PEEK (standard)",
+          "aliases": [
+            "peek seat"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "C-PEEK",
+          "aliases": [
+            "c-peek seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "Teflon (standard)",
+          "aliases": [
+            "teflon packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

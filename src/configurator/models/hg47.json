@@ -1,0 +1,275 @@
+{
+  "model": "HG47",
+  "line": "hex",
+  "displayName": "Hex HG47 gauge valve",
+  "match": [
+    "hg47"
+  ],
+  "source": {
+    "doc": "HG47.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. Additional hard seat materials are a contact-factory footnote.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}{optionalItems}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HG47",
+          "label": "HG47",
+          "aliases": [
+            "hg47"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard",
+          "aliases": [
+            "hard seat config"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Hard, LG extension",
+          "aliases": [
+            "hard lg"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Hard, XLG extension",
+          "aliases": [
+            "hard xlg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel (A108)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless steel"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Carbon steel (A105)",
+          "aliases": [
+            "carbon steel a105"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "MNPT",
+          "aliases": [
+            "mnpt inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "MSW",
+          "aliases": [
+            "msw inlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "FSW",
+          "aliases": [
+            "fsw inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "HB24",
+          "aliases": [
+            "hb24 outlet"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Plug",
+          "aliases": [
+            "plug outlet"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "HB24 + plug",
+          "aliases": [
+            "hb24 plug outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "B",
+          "label": "316 SS NRT / 17-4 PH",
+          "aliases": [
+            "nrt 17-4 stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 SS insert",
+          "aliases": [
+            "316 insert"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "TFE-chevron",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "optionalItems",
+      "label": "Optional items",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (the sample's own blank)",
+          "aliases": [
+            "no optional items"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "410 SS bolting",
+          "aliases": [
+            "410 bolting"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

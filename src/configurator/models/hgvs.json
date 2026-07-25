@@ -1,0 +1,308 @@
+{
+  "model": "HGVS",
+  "line": "hex",
+  "displayName": "Hex HGVS/HGSY gauge syphons",
+  "match": [
+    "hgvs",
+    "hgsy",
+    "gauge syphon"
+  ],
+  "source": {
+    "doc": "Gauge_Syphons.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The starred rows and columns print HGVS, so the long body, the in-side outlet options and the stem, seat and packing columns refuse the HGSY, whose build stops at the outlet, the blanks carried.",
+  "assembly": "{model}{bodyConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HGVS",
+          "label": "Gauge valve syphon",
+          "aliases": [
+            "hgvs"
+          ]
+        },
+        {
+          "code": "HGSY",
+          "label": "Gauge syphon",
+          "aliases": [
+            "hgsy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyConfig",
+      "label": "Hard seat / body",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Standard body",
+          "aliases": [
+            "standard body"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Long body (HGVS)",
+          "aliases": [
+            "long body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "half inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "three quarter inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "MNPT",
+          "aliases": [
+            "mnpt inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "MSW",
+          "aliases": [
+            "msw inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "HB24 in side (HGVS)",
+          "aliases": [
+            "hb24 side"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Plug in side (HGVS)",
+          "aliases": [
+            "plug side"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "HN49 in side (HGVS)",
+          "aliases": [
+            "hn49 side"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "HB27 in side (HGVS)",
+          "aliases": [
+            "hb27 side"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip (HGVS)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (HGSY)",
+          "aliases": [
+            "no stem"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "316 SS",
+          "aliases": [
+            "316 stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat (HGVS)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (HGSY)",
+          "aliases": [
+            "no seat"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "Integral",
+          "aliases": [
+            "integral seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing (HGVS)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (HGSY)",
+          "aliases": [
+            "no packing"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "TFE-chevron",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite (HGVS)",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "bodyConfig": "3"
+      },
+      "forbid": {
+        "model": [
+          "HGSY"
+        ]
+      },
+      "reason": "the long body row prints HGVS"
+    },
+    {
+      "when": {
+        "outletType": [
+          "A",
+          "R",
+          "E",
+          "V"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "HGSY"
+        ]
+      },
+      "reason": "the in-side rows print HGVS"
+    },
+    {
+      "when": {
+        "model": "HGSY"
+      },
+      "forbid": {
+        "stem": [
+          "4"
+        ],
+        "seatMaterial": [
+          "1"
+        ],
+        "packing": [
+          "2",
+          "3"
+        ]
+      },
+      "reason": "the stem, seat and packing columns are starred HGVS"
+    }
+  ],
+  "cautions": []
+}

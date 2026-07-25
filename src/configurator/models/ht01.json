@@ -1,0 +1,378 @@
+{
+  "model": "HT01",
+  "line": "hex",
+  "displayName": "Hex HT01/HT03 root valves",
+  "match": [
+    "ht01",
+    "ht03"
+  ],
+  "source": {
+    "doc": "HT01_03.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The starred rows, the 1 inch inlet and the 316 SS and Stellite seats, print HT01 and are enforced.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HT01",
+          "label": "Angle body",
+          "aliases": [
+            "ht01"
+          ]
+        },
+        {
+          "code": "HT03",
+          "label": "T body",
+          "aliases": [
+            "ht03"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Hard seat / body",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Standard",
+          "aliases": [
+            "standard body"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Long",
+          "aliases": [
+            "long body"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Extra long",
+          "aliases": [
+            "extra long body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel (A108)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Alloy 20",
+          "aliases": [
+            "alloy 20"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "Incoloy-810",
+          "aliases": [
+            "incoloy 810"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Inconel-600",
+          "aliases": [
+            "inconel 600"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "F5",
+          "aliases": [
+            "f5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter inlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\" (HT01)",
+          "aliases": [
+            "one inch inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "MSW",
+          "aliases": [
+            "msw inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "FSW",
+          "aliases": [
+            "fsw inlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "BW sch. 40",
+          "aliases": [
+            "bw 40 inlet"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "BW sch. 80",
+          "aliases": [
+            "bw 80 inlet"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "BW sch. 160",
+          "aliases": [
+            "bw 160 inlet"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BW sch. XXS",
+          "aliases": [
+            "bw xxs inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW",
+          "aliases": [
+            "fsw outlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "BW sch. 40",
+          "aliases": [
+            "bw 40 outlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "BW sch. 80",
+          "aliases": [
+            "bw 80 outlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "BW sch. 160",
+          "aliases": [
+            "bw 160 outlet"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "BW sch. XXS",
+          "aliases": [
+            "bw xxs outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 SS",
+          "aliases": [
+            "316 stem"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "I-600",
+          "aliases": [
+            "i600 stem"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "I-800",
+          "aliases": [
+            "i800 stem"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "316 SS / Stellite",
+          "aliases": [
+            "stellite stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "316 SS (HT01)",
+          "aliases": [
+            "316 seat"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Stellite (HT01)",
+          "aliases": [
+            "stellite seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "inletSize": "5"
+      },
+      "forbid": {
+        "model": [
+          "HT03"
+        ]
+      },
+      "reason": "the 1 inch inlet row prints HT01"
+    },
+    {
+      "when": {
+        "seatMaterial": [
+          "2",
+          "3"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "HT03"
+        ]
+      },
+      "reason": "these seat rows print HT01"
+    }
+  ],
+  "cautions": []
+}

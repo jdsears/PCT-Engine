@@ -1,0 +1,345 @@
+{
+  "model": "HG48",
+  "line": "hex",
+  "displayName": "Hex HG48 gauge valve",
+  "match": [
+    "hg48"
+  ],
+  "source": {
+    "doc": "HG48.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The sheet's own sample prints 1 in the outlet size position where the ladder prints 3 alone, held for John; the ladder is carried.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}{optionalItems}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HG48",
+          "label": "HG48",
+          "aliases": [
+            "hg48"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard",
+          "aliases": [
+            "hard seat config"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Soft",
+          "aliases": [
+            "soft seat config"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Hard, LG extension",
+          "aliases": [
+            "hard lg"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Hard, XLG extension",
+          "aliases": [
+            "hard xlg"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Hard / o-ring",
+          "aliases": [
+            "hard o-ring"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Soft / o-ring",
+          "aliases": [
+            "soft o-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel (A108)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless steel"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Carbon steel (A105)",
+          "aliases": [
+            "carbon steel a105"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "MNPT",
+          "aliases": [
+            "mnpt inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "MSW",
+          "aliases": [
+            "msw inlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "FSW",
+          "aliases": [
+            "fsw inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "HB24",
+          "aliases": [
+            "hb24 outlet"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Plug",
+          "aliases": [
+            "plug outlet"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "HB24 + plug",
+          "aliases": [
+            "hb24 plug outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 SS needle (soft seat)",
+          "aliases": [
+            "needle stem"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "316 SS NRT",
+          "aliases": [
+            "nrt stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral (hard)",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "PPS",
+          "aliases": [
+            "pps seat"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "KEL-F",
+          "aliases": [
+            "kel-f seat"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "TFE",
+          "aliases": [
+            "tfe seat"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "PEEK",
+          "aliases": [
+            "peek seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "TFE-chevron",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Buna-N o-ring",
+          "aliases": [
+            "buna o-ring"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Viton o-ring",
+          "aliases": [
+            "viton o-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "optionalItems",
+      "label": "Optional items",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (the sample's own blank)",
+          "aliases": [
+            "no optional items"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "410 SS bolting",
+          "aliases": [
+            "410 bolting"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
