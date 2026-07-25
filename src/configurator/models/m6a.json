@@ -1,0 +1,221 @@
+{
+  "model": "M6A",
+  "line": "bestobell",
+  "displayName": "Bestobell M6A/GM6 delta element steam traps",
+  "match": [
+    "m6a",
+    "gm6"
+  ],
+  "source": {
+    "doc": "m6agm6.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The starred footnote reads not available on 2 inch GM3, the GM3 sheet's own wording carried onto this one, held as an artefact and enforced against the 2 inch GM6. The GM6 head prints its own worked example, GM006 410, whose integral blowdown gloss sits mislaid in the extraction.",
+  "assembly": "{model}{size}{connections}{specials}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "M006A",
+          "label": "M6A",
+          "aliases": [
+            "m6a"
+          ]
+        },
+        {
+          "code": "GM006",
+          "label": "GM6",
+          "aliases": [
+            "gm6"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "3/8\" (6A)",
+          "aliases": [
+            "three eighths"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" (all)",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" (all)",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" (GM6)",
+          "aliases": [
+            "one inch"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1-1/4\" (GM6)",
+          "aliases": [
+            "one and a quarter"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\" (GM6)",
+          "aliases": [
+            "one and a half"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\" (GM6)",
+          "aliases": [
+            "two inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW (starred, see note)",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "150# flange",
+          "aliases": [
+            "150 flange"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "300# flange",
+          "aliases": [
+            "300 flange"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specials",
+      "label": "Specialities (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "DTC (starred, see note)",
+          "aliases": [
+            "dtc"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Integral blowdown (starred, see note)",
+          "aliases": [
+            "integral blowdown"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": "1"
+      },
+      "forbid": {
+        "model": [
+          "GM006"
+        ]
+      },
+      "reason": "the 3/8 inch row prints 6A"
+    },
+    {
+      "when": {
+        "size": [
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "M006A"
+        ]
+      },
+      "reason": "these size rows print GM6"
+    },
+    {
+      "when": {
+        "size": "7"
+      },
+      "forbid": {
+        "connections": [
+          "2"
+        ],
+        "specials": [
+          "1",
+          "3"
+        ]
+      },
+      "reason": "the starred rows are not available on the 2 inch trap, the footnote's GM3 wording held as an artefact"
+    }
+  ],
+  "cautions": []
+}

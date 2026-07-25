@@ -1,0 +1,114 @@
+{
+  "model": "BTCS",
+  "line": "bestobell",
+  "displayName": "Bestobell BTCS sanitary steam trap",
+  "match": [
+    "btcs"
+  ],
+  "source": {
+    "doc": "btcs.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The same sheet prints in the Steriflow F&B folder, one model serving both.",
+  "assembly": "{model}{pressureRating}{size}{endConnection}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "BTCS",
+          "label": "Sanitary steam trap",
+          "aliases": [
+            "btcs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pressureRating",
+      "label": "Pressure rating (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "10-65 psi (0,7-4,5 bar)",
+          "aliases": [
+            "low rating"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "50-90 psi (3,4-6,2 bar)",
+          "aliases": [
+            "high rating"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\"",
+          "aliases": [
+            "one inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endConnection",
+      "label": "End connection (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Tri-clamp",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Tube end (inch)",
+          "aliases": [
+            "tube end"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

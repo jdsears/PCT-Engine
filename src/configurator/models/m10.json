@@ -1,0 +1,198 @@
+{
+  "model": "M10",
+  "line": "bestobell",
+  "displayName": "Bestobell M10/GM10 delta element steam traps",
+  "match": [
+    "m10",
+    "gm10"
+  ],
+  "source": {
+    "doc": "m10.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The size rows carry printed model brackets, enforced.",
+  "assembly": "{model}{size}{connections}{specialities}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "M0010",
+          "label": "M10",
+          "aliases": [
+            "m10"
+          ]
+        },
+        {
+          "code": "GM010",
+          "label": "GM10",
+          "aliases": [
+            "gm10"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "3/8\" (M10)",
+          "aliases": [
+            "three eighths"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" (all)",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" (all)",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" (GM10)",
+          "aliases": [
+            "one inch"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\" (GM10)",
+          "aliases": [
+            "one and a half"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\" (GM10)",
+          "aliases": [
+            "two inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "150# flange",
+          "aliases": [
+            "150 flange"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "300# flange",
+          "aliases": [
+            "300 flange"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specialities",
+      "label": "Specialities (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "DTC",
+          "aliases": [
+            "dtc"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Integral blowdown",
+          "aliases": [
+            "integral blowdown"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "size": "1"
+      },
+      "forbid": {
+        "model": [
+          "GM010"
+        ]
+      },
+      "reason": "the 3/8 inch row prints M10"
+    },
+    {
+      "when": {
+        "size": [
+          "4",
+          "6",
+          "7"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "M0010"
+        ]
+      },
+      "reason": "these size rows print GM10"
+    }
+  ],
+  "cautions": []
+}

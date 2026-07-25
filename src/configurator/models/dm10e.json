@@ -1,0 +1,114 @@
+{
+  "model": "DM10E",
+  "line": "bestobell",
+  "displayName": "Bestobell DM10E delta element steam trap",
+  "match": [
+    "dm10e"
+  ],
+  "source": {
+    "doc": "dm10e.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it.",
+  "assembly": "{model}{size}{connections}{specialities}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "DM10E",
+          "label": "DM10E",
+          "aliases": [
+            "dm10e"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "3/8\"",
+          "aliases": [
+            "three eighths"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specialities",
+      "label": "Specialities (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

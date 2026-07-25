@@ -1,0 +1,135 @@
+{
+  "model": "DM320HPT",
+  "line": "bestobell",
+  "displayName": "Bestobell DM320HPT delta element steam trap",
+  "match": [
+    "dm320hpt"
+  ],
+  "source": {
+    "doc": "dm40_64_100_160_320.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the sheet's second schematic, the high pressure trim form with its own positions 9 to 11.",
+  "assembly": "{model}{size}{connections}{specialties}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "DM320HPT",
+          "label": "DM320HPT",
+          "aliases": [
+            "dm320hpt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (9)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\" (all)",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" (all)",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" (all)",
+          "aliases": [
+            "one inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (10)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT (all)",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW (all)",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "2500# flange (DM320)",
+          "aliases": [
+            "2500 flange"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT (all)",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP (all)",
+          "aliases": [
+            "bspp"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Buttweld (all)",
+          "aliases": [
+            "buttweld"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specialties",
+      "label": "Specialties (11)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "DTC",
+          "aliases": [
+            "dtc"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

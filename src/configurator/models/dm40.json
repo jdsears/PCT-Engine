@@ -1,0 +1,256 @@
+{
+  "model": "DM40",
+  "line": "bestobell",
+  "displayName": "Bestobell DM40/DM64/DM100/DM160/DM320 delta element steam traps",
+  "match": [
+    "dm40",
+    "dm64",
+    "dm100",
+    "d100f",
+    "dm160",
+    "dm320"
+  ],
+  "source": {
+    "doc": "dm40_64_100_160_320.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. Six model heads print on the sheet, the D100F the Chrome Moly form of the DM100 and riding its brackets, held for John. The connection rows carry printed availability brackets and the starred specials are not for the DM160 and DM320, all enforced.",
+  "assembly": "{model}{size}{connections}{specialities}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "DM040",
+          "label": "DM40",
+          "aliases": [
+            "dm40"
+          ]
+        },
+        {
+          "code": "DM064",
+          "label": "DM64",
+          "aliases": [
+            "dm64"
+          ]
+        },
+        {
+          "code": "DM100",
+          "label": "DM100",
+          "aliases": [
+            "dm100"
+          ]
+        },
+        {
+          "code": "D100F",
+          "label": "DM100 in Chrome Moly F22",
+          "aliases": [
+            "d100f"
+          ]
+        },
+        {
+          "code": "DM160",
+          "label": "DM160",
+          "aliases": [
+            "dm160"
+          ]
+        },
+        {
+          "code": "DM320",
+          "label": "DM320",
+          "aliases": [
+            "dm320"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\" (all)",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" (all)",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1\" (all)",
+          "aliases": [
+            "one inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT (all)",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW (all)",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "600# flange (all)",
+          "aliases": [
+            "600 flange"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "900# flange (all but DM40)",
+          "aliases": [
+            "900 flange"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1500# flange (DM100, 160, 320)",
+          "aliases": [
+            "1500 flange"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "2500# flange (DM160 and DM320)",
+          "aliases": [
+            "2500 flange"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT (all)",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP (all)",
+          "aliases": [
+            "bspp"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Buttweld (all)",
+          "aliases": [
+            "buttweld"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specialities",
+      "label": "Specialities (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "DTC (not for DM160 and DM320)",
+          "aliases": [
+            "dtc"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Integral blowdown (not for DM160 and DM320)",
+          "aliases": [
+            "integral blowdown"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "connections": "6"
+      },
+      "forbid": {
+        "model": [
+          "DM040"
+        ]
+      },
+      "reason": "the 900# flange prints all but DM40"
+    },
+    {
+      "when": {
+        "connections": "7"
+      },
+      "forbid": {
+        "model": [
+          "DM040",
+          "DM064"
+        ]
+      },
+      "reason": "the 1500# flange prints DM100, 160 and 320; the D100F rides the DM100 bracket, held for John"
+    },
+    {
+      "when": {
+        "connections": "A"
+      },
+      "forbid": {
+        "model": [
+          "DM040",
+          "DM064",
+          "DM100",
+          "D100F"
+        ]
+      },
+      "reason": "the 2500# flange prints DM160 and DM320"
+    },
+    {
+      "when": {
+        "specialities": [
+          "1",
+          "3"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "DM160",
+          "DM320"
+        ]
+      },
+      "reason": "the starred specials are not available for the DM160 and DM320"
+    }
+  ],
+  "cautions": []
+}

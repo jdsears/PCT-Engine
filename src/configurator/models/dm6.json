@@ -1,0 +1,122 @@
+{
+  "model": "DM6",
+  "line": "bestobell",
+  "displayName": "Bestobell DM6/DM12 delta element steam traps",
+  "match": [
+    "dm6",
+    "dm12"
+  ],
+  "source": {
+    "doc": "dm6_dm12.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The DM12 head prints its own worked example, DM012 110.",
+  "assembly": "{model}{size}{connections}{specialities}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "DM006",
+          "label": "DM6",
+          "aliases": [
+            "dm6"
+          ]
+        },
+        {
+          "code": "DM012",
+          "label": "DM12",
+          "aliases": [
+            "dm12"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "3/8\"",
+          "aliases": [
+            "three eighths"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT (all)",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW (all)",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT (all)",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP (all)",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specialities",
+      "label": "Specialities (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

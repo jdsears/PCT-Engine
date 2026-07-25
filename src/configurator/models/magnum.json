@@ -1,0 +1,373 @@
+{
+  "model": "MAGNUM",
+  "line": "bestobell",
+  "displayName": "Bestobell Magnum series steam traps",
+  "match": [
+    "magnum",
+    "mag03",
+    "mag06",
+    "mag10",
+    "mag16",
+    "mag25"
+  ],
+  "source": {
+    "doc": "magnumseries.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The element count runs 01 to 18 in two printed digits, the sizes to six inch, and the specials plug ladder A to C.",
+  "assembly": "{model}{bodySize}{elements}{size}{connections}{specials}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "MAG03",
+          "label": "Magnum 3",
+          "aliases": [
+            "mag03"
+          ]
+        },
+        {
+          "code": "MAG06",
+          "label": "Magnum 6",
+          "aliases": [
+            "mag06"
+          ]
+        },
+        {
+          "code": "MAG10",
+          "label": "Magnum 10",
+          "aliases": [
+            "mag10"
+          ]
+        },
+        {
+          "code": "MAG16",
+          "label": "Magnum 16",
+          "aliases": [
+            "mag16"
+          ]
+        },
+        {
+          "code": "MAG25",
+          "label": "Magnum 25",
+          "aliases": [
+            "mag25"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodySize",
+      "label": "Body size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Small",
+          "aliases": [
+            "small body"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Medium",
+          "aliases": [
+            "medium body"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Large",
+          "aliases": [
+            "large body"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "Single",
+          "aliases": [
+            "single body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elements",
+      "label": "Number of elements (7 and 8)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "01",
+          "label": "1",
+          "aliases": [
+            "1 elements"
+          ]
+        },
+        {
+          "code": "02",
+          "label": "2",
+          "aliases": [
+            "2 elements"
+          ]
+        },
+        {
+          "code": "03",
+          "label": "3",
+          "aliases": [
+            "3 elements"
+          ]
+        },
+        {
+          "code": "04",
+          "label": "4",
+          "aliases": [
+            "4 elements"
+          ]
+        },
+        {
+          "code": "05",
+          "label": "5",
+          "aliases": [
+            "5 elements"
+          ]
+        },
+        {
+          "code": "06",
+          "label": "6",
+          "aliases": [
+            "6 elements"
+          ]
+        },
+        {
+          "code": "07",
+          "label": "7",
+          "aliases": [
+            "7 elements"
+          ]
+        },
+        {
+          "code": "08",
+          "label": "8",
+          "aliases": [
+            "8 elements"
+          ]
+        },
+        {
+          "code": "09",
+          "label": "9",
+          "aliases": [
+            "9 elements"
+          ]
+        },
+        {
+          "code": "10",
+          "label": "10",
+          "aliases": [
+            "10 elements"
+          ]
+        },
+        {
+          "code": "11",
+          "label": "11",
+          "aliases": [
+            "11 elements"
+          ]
+        },
+        {
+          "code": "12",
+          "label": "12",
+          "aliases": [
+            "12 elements"
+          ]
+        },
+        {
+          "code": "13",
+          "label": "13",
+          "aliases": [
+            "13 elements"
+          ]
+        },
+        {
+          "code": "14",
+          "label": "14",
+          "aliases": [
+            "14 elements"
+          ]
+        },
+        {
+          "code": "15",
+          "label": "15",
+          "aliases": [
+            "15 elements"
+          ]
+        },
+        {
+          "code": "16",
+          "label": "16",
+          "aliases": [
+            "16 elements"
+          ]
+        },
+        {
+          "code": "17",
+          "label": "17",
+          "aliases": [
+            "17 elements"
+          ]
+        },
+        {
+          "code": "18",
+          "label": "18",
+          "aliases": [
+            "18 elements"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (9)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "1-1/2\"",
+          "aliases": [
+            "one and a half"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\"",
+          "aliases": [
+            "two inch"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "2-1/2\"",
+          "aliases": [
+            "two and a half"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "3\"",
+          "aliases": [
+            "three inch"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "4\"",
+          "aliases": [
+            "four inch"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "6\"",
+          "aliases": [
+            "six inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (10)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "150# flange",
+          "aliases": [
+            "150 flange"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "300# flange",
+          "aliases": [
+            "300 flange"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specials",
+      "label": "Specials (11)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "1 - plug",
+          "aliases": [
+            "one plug"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "2 - plug",
+          "aliases": [
+            "two plug"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "3 - plug",
+          "aliases": [
+            "three plug"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

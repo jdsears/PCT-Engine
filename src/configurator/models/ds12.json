@@ -1,0 +1,107 @@
+{
+  "model": "DS12",
+  "line": "bestobell",
+  "displayName": "Bestobell DS12 delta element steam trap",
+  "match": [
+    "ds12"
+  ],
+  "source": {
+    "doc": "ds12.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The same sheet prints in the Steriflow F&B utility folder, one model serving both.",
+  "assembly": "{model}{size}{connections}{specialities}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "DS012",
+          "label": "DS12",
+          "aliases": [
+            "ds12"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specialities",
+      "label": "Specialities (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "Sealed",
+          "aliases": [
+            "sealed"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

@@ -1,0 +1,182 @@
+{
+  "model": "M40",
+  "line": "bestobell",
+  "displayName": "Bestobell M40/M64/M100 delta element steam traps",
+  "match": [
+    "m40",
+    "m64",
+    "m100"
+  ],
+  "source": {
+    "doc": "m40_m64_m100.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The 900# flange prints for the M64 and M100 and the 1500# for the M100 alone, enforced.",
+  "assembly": "{model}{size}{connections}{specialities}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "M0040",
+          "label": "M40",
+          "aliases": [
+            "m40"
+          ]
+        },
+        {
+          "code": "M0064",
+          "label": "M64",
+          "aliases": [
+            "m64"
+          ]
+        },
+        {
+          "code": "M0100",
+          "label": "M100",
+          "aliases": [
+            "m100"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "1-1/2\"",
+          "aliases": [
+            "one and a half"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\"",
+          "aliases": [
+            "two inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "NPT (all)",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW (all)",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "600# flange (all)",
+          "aliases": [
+            "600 flange"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "900# flange (M64, M100)",
+          "aliases": [
+            "900 flange"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "1500# flange (M100)",
+          "aliases": [
+            "1500 flange"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "BSPT (all)",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "BSPP (all)",
+          "aliases": [
+            "bspp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specialities",
+      "label": "Specialities (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "DTC",
+          "aliases": [
+            "dtc"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Integral blowdown",
+          "aliases": [
+            "integral blowdown"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "connections": "6"
+      },
+      "forbid": {
+        "model": [
+          "M0040"
+        ]
+      },
+      "reason": "the 900# flange prints M64 and M100"
+    },
+    {
+      "when": {
+        "connections": "7"
+      },
+      "forbid": {
+        "model": [
+          "M0040",
+          "M0064"
+        ]
+      },
+      "reason": "the 1500# flange prints M100"
+    }
+  ],
+  "cautions": []
+}

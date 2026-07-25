@@ -1,0 +1,93 @@
+{
+  "model": "DTCS",
+  "line": "bestobell",
+  "displayName": "Bestobell DTCS thermodynamic disc trap",
+  "match": [
+    "dtcs"
+  ],
+  "source": {
+    "doc": "dtcs.pdf",
+    "page": 1,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the model printed as spaced characters in the head and the numbered positions assembled bare after it. The same sheet prints in the Steriflow F&B utility folder, one model serving both.",
+  "assembly": "{model}{size}{connections}{specials}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "DTCS",
+          "label": "Disc trap, tri-clamp",
+          "aliases": [
+            "dtcs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (6)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "label": "Connections (7)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Tri-clamp",
+          "aliases": [
+            "tri-clamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "specials",
+      "label": "Specials (8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no specials"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "20 Ra exterior finish",
+          "aliases": [
+            "20 ra finish"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
