@@ -1,0 +1,117 @@
+{
+  "model": "MK65",
+  "line": "jordan",
+  "displayName": "Jordan Mark 65 vacuum regulator",
+  "match": ["mk65", "mark 65", "jordan 65", "vacuum regulator"],
+  "source": { "doc": "mk65.pdf", "page": 3, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash and the code characters. The end connection column couples itself to the body in its own labels, IFE codes for carbon and stainless valves and the FE codes for ductile iron and bronze, enforced as constraints; the 150# FE row carries no body gloss and stays open. The ninth position prints diaphragm and actuator as one four character code, 316 with the metal actuator or an elastomer with its own, exactly as the sheet pairs them. The ranges are vacuum spans in inches of mercury. No Cv by size table is printed, so the Cv column stands unconstrained.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{cv}{range}{diaphragmActuator}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "65", "label": "Vacuum regulator", "aliases": ["mk65", "mark 65", "vacuum"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN10)", "aliases": ["3/8\"", "DN10"] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE, CS or SST valves", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "I3", "label": "300# IFE, CS or SST valves", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE, DI or BR", "aliases": ["300 flanged"] },
+        { "code": "I7", "label": "PN10 IFE, CS or SST valves", "aliases": ["pn10 ife"] },
+        { "code": "F7", "label": "PN10 FE, DI or BR", "aliases": ["pn10 flanged"] },
+        { "code": "I6", "label": "PN16 IFE, CS or SST valves", "aliases": ["pn16 ife"] },
+        { "code": "F6", "label": "PN16 FE, DI or BR", "aliases": ["pn16 flanged"] },
+        { "code": "I8", "label": "PN25 IFE, CS or SST valves", "aliases": ["pn25 ife"] },
+        { "code": "F8", "label": "PN25 FE, DI or BR", "aliases": ["pn25 flanged"] },
+        { "code": "I4", "label": "PN40 IFE, CS or SST valves", "aliases": ["pn40 ife"] },
+        { "code": "F4", "label": "PN40 FE, DI or BR", "aliases": ["pn40 flanged"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316"] },
+        { "code": "I3", "label": "303SST for integral flanges (IFE)", "aliases": ["303 ife trim"] },
+        { "code": "I6", "label": "316SST for integral flanges (IFE)", "aliases": ["316 ife trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.18 Kv)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.38 Kv)", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.16 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.79 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.52 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.19 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15.0 (12.93 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25.0 (21.55 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30.0 (25.86 Kv)", "aliases": ["30"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range", "position": 8, "required": true,
+      "options": [
+        { "code": "01", "label": "1-20 inches Hg", "aliases": ["1-20 hg"] },
+        { "code": "0B", "label": "1-25 inches Hg", "aliases": ["1-25 hg"] }
+      ]
+    },
+    {
+      "id": "diaphragmActuator", "label": "Diaphragm and actuator", "position": 9, "required": true,
+      "options": [
+        { "code": "S6MD", "label": "316 SST diaphragm, metal diaphragm actuator", "aliases": ["316 diaphragm"] },
+        { "code": "BNED", "label": "Buna-N diaphragm, elastomer actuator", "aliases": ["buna-n diaphragm"] },
+        { "code": "V1ED", "label": "Viton diaphragm, elastomer actuator", "aliases": ["viton diaphragm"] },
+        { "code": "JLED", "label": "Jorlon diaphragm, elastomer actuator", "aliases": ["jorlon diaphragm"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"] }, "forbid": { "body": ["DI", "BR"] },
+      "reason": "the IFE ends are printed for carbon steel or stainless valves" },
+    { "when": { "ends": ["F3", "F7", "F6", "F8", "F4"] }, "forbid": { "body": ["CS", "S6"] },
+      "reason": "these FE ends are printed for ductile iron or bronze valves" }
+  ],
+  "cautions": []
+}

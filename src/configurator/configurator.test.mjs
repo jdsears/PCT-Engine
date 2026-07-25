@@ -39,6 +39,12 @@ const jbdl = JSON.parse(readFileSync(join(here, 'models', 'jbdl.json'), 'utf8'))
 const jrpl = JSON.parse(readFileSync(join(here, 'models', 'jrpl.json'), 'utf8'));
 const mk50 = JSON.parse(readFileSync(join(here, 'models', 'mk50.json'), 'utf8'));
 const mk60 = JSON.parse(readFileSync(join(here, 'models', 'mk60.json'), 'utf8'));
+const mk62 = JSON.parse(readFileSync(join(here, 'models', 'mk62.json'), 'utf8'));
+const mk63 = JSON.parse(readFileSync(join(here, 'models', 'mk63.json'), 'utf8'));
+const mk65 = JSON.parse(readFileSync(join(here, 'models', 'mk65.json'), 'utf8'));
+const mk66 = JSON.parse(readFileSync(join(here, 'models', 'mk66.json'), 'utf8'));
+const mk660 = JSON.parse(readFileSync(join(here, 'models', 'mk660.json'), 'utf8'));
+const mk6769 = JSON.parse(readFileSync(join(here, 'models', 'mk6769.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -714,6 +720,65 @@ check('the 60 sheet extraction artefacts are confessed, not corrected', () => {
   assert.ok(/F1/.test(mk60.note), 'the F1 label artefact is named');
   assert.ok(/DIN/.test(mk60.note), 'the DIN row placement is named');
   assert.ok(/60QC/.test(mk60.note) && /50QC/.test(mk50.note), 'the quick change spring-table assumption is held for John on both sheets');
+});
+
+console.log('\nThe rest of the Jordan reducing shelf: 62, 63/64, 65, 66, 660 and 6769:');
+
+check('each sheet round-trips, separators where printed and bare where not', () => {
+  roundTrip(mk62, {
+    model: '62', size: '125', body: 'BR', ends: 'BP', trim: 'L1', seat: 'W',
+    cv: '8', range: '38', diaphragm: 'S6', actuator: 'MD',
+  }, '62-125-BR/BPL1W838S6MD');
+  roundTrip(mk63, {
+    model: '63', options: 'CDF', size: '050', body: 'S6', ends: 'PT', trim: 'S6', seat: 'B',
+    cv: '5', spring: '15', diaphragm: 'JL', actuator: 'MD', bolting: '00', accessories: '3',
+  }, '63CDF050S6/PTS6B515JLMD003');
+  roundTrip(mk63, {
+    model: '64', options: 'D', size: '075', body: 'BR', ends: 'BT', trim: 'S3', seat: 'Q',
+    cv: '3', spring: '80', diaphragm: 'VI', actuator: 'ED', bolting: '00', accessories: '6',
+  }, '64D075BR/BTS3Q380VIED006');
+  roundTrip(mk65, {
+    model: '65', size: '200', body: 'CS', ends: 'I4', trim: 'I6', seat: 'R',
+    cv: 'B', range: '0B', diaphragmActuator: 'JLED',
+  }, '65-200-CS/I4I6RB0BJLED');
+  roundTrip(mk66, {
+    model: '66', size: '600', body: 'CI', ends: 'I1', trim: 'S6', seat: 'W',
+    cv: 'J', range: '00', diaphragm: 'JL', actuator: 'ED', bolting: '00', accessories: '0',
+  }, '66600CII1S6WJ00JLED000');
+  roundTrip(mk660, {
+    model: '660', size: '200', body: 'S6', ends: 'F4', trim: 'HC', seat: 'U',
+    cv: 'C', diaphragm: 'HC', actuator: 'ED',
+  }, '660200S6F4HCUCHCED');
+  roundTrip(mk6769, {
+    model: '6769L', size: '600', body: 'CI', ends: 'I2', trim: 'S', pressureDrop: '3',
+    seat: 'W', cv: 'J', range: 'B4', diaphragmActuator: 'S6MD', pilot: 'S6',
+  }, '6769L-600-CI/I2S3WJB4S6MDS6');
+});
+
+check('the empty options code carries a plain 63 build, the 3000 prefix device again', () => {
+  roundTrip(mk63, {
+    model: '63', options: '', size: '100', body: 'DI', ends: 'F5', trim: 'I6', seat: 'A',
+    cv: '9', spring: '75', diaphragm: 'BN', actuator: 'ED', bolting: '00', accessories: '0',
+  }, '63100DI/F5I6A975BNED000');
+});
+
+check('the printed bands and glosses refuse across the shelf', () => {
+  assert.ok(checkConstraints(mk62, { trim: 'L3', size: '100' }).length > 0, 'the 10-15 low differential trim stays with the large sizes');
+  assert.ok(checkConstraints(mk63, { model: '64', options: 'HP' }).length > 0, 'high pressure is a Mark 63 package');
+  assert.ok(checkConstraints(mk63, { spring: 'A1', options: '' }).length > 0, 'an HP range needs the HP build');
+  assert.equal(checkConstraints(mk63, { spring: 'A1', options: 'HP', model: '63' }).length, 0, 'the HP build takes its own table');
+  assert.ok(checkConstraints(mk63, { spring: '80', model: '63' }).length > 0, 'an MK64 range refuses the standard model');
+  assert.ok(checkConstraints(mk65, { ends: 'I5', body: 'DI' }).length > 0, 'IFE ends are carbon or stainless on the 65');
+  assert.ok(checkConstraints(mk65, { ends: 'F7', body: 'S6' }).length > 0, 'the DIN FE ends are ductile or bronze on the 65');
+  assert.ok(checkConstraints(mk6769, { pressureDrop: '3', size: '200' }).length > 0, 'a 6 inch pressure drop refuses a 2 inch');
+  assert.ok(checkConstraints(mk6769, { range: 'B4', model: '6769H' }).length > 0, 'the marked ranges stay with the low ∆P version');
+  assert.ok(checkConstraints(mk6769, { ends: 'PT', size: '600' }).length > 0, 'threaded ends stop at 2 inch on the 6769');
+});
+
+check('the 6769 BSPT collision is a caution in the open, and the 660 truncation is confessed', () => {
+  assert.equal(checkCautions(mk6769, { ends: 'BT' }).length, 1, 'choosing BSPT states the printed BP collision');
+  assert.ok(/BP/.test(mk6769.note) && /BSPT/.test(mk6769.note), 'the artefact is named in the note');
+  assert.ok(/15/.test(mk660.note) && /actuator/i.test(mk660.note) && /PDF/.test(mk660.note), 'the 660 header-to-15 truncation is held for the PDF');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

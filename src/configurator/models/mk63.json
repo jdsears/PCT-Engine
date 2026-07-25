@@ -1,0 +1,212 @@
+{
+  "model": "MK63",
+  "line": "jordan",
+  "displayName": "Jordan Mark 63/64 differential pressure regulator",
+  "match": ["mk63", "mark 63", "mk64", "mark 64", "jordan 63", "jordan 64"],
+  "source": { "doc": "mk63_64.pdf", "page": "4 and 5", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic and its continuation. The code runs model, an options position, size and body, then a slash and fifteen characters; the options column has no none row printed, so an empty code carries the plain build, the same device as the 3000's prefix. The sheet's own asterisk splits the options: closing cap, separated double diaphragm, their pairing and the handwheel are available for Mark 63 and 64, every other package is Mark 63 only. The high pressure option's springs are the MK63HP table alone, and its rows print no size band, so none is enforced. The spring tables are enforced per model, option and printed size band, including the 05 and 56 ranges the tables share. No Cv by size table is printed, so the Cv column stands unconstrained.",
+  "assembly": "{model}{options}{size}{body}/{ends}{trim}{seat}{cv}{spring}{diaphragm}{actuator}{bolting}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "63", "label": "Standard", "aliases": ["mk63", "mark 63", "standard"] },
+        { "code": "64", "label": "Large diaphragm", "aliases": ["mk64", "mark 64", "large diaphragm"] }
+      ]
+    },
+    {
+      "id": "options", "label": "Options", "position": 2, "required": true,
+      "options": [
+        { "code": "", "label": "None (plain build)", "aliases": ["none", "no options", "plain"] },
+        { "code": "C", "label": "Closing cap", "aliases": ["closing cap"] },
+        { "code": "CD", "label": "Closing cap with separated double diaphragm", "aliases": ["closing cap double diaphragm"] },
+        { "code": "CDF", "label": "Closing cap, separated double diaphragm and flow thru dome (MK63 only)", "aliases": ["closing cap double diaphragm flow thru"] },
+        { "code": "CF", "label": "Closing cap with flow thru dome (MK63 only)", "aliases": ["closing cap flow thru"] },
+        { "code": "D", "label": "Separated double diaphragm", "aliases": ["double diaphragm"] },
+        { "code": "DF", "label": "Separated double diaphragm with flow thru dome (MK63 only)", "aliases": ["double diaphragm flow thru"] },
+        { "code": "F", "label": "Flow thru dome (MK63 only)", "aliases": ["flow thru dome"] },
+        { "code": "H", "label": "Handwheel", "aliases": ["handwheel"] },
+        { "code": "HF", "label": "Handwheel with flow thru dome (MK63 only)", "aliases": ["handwheel flow thru"] },
+        { "code": "HDF", "label": "Handwheel, double diaphragm and flow thru dome (MK63 only)", "aliases": ["handwheel double diaphragm flow thru"] },
+        { "code": "HP", "label": "High pressure (MK63 only)", "aliases": ["high pressure"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 3, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN12)", "aliases": ["3/8\"", "DN12"] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 4, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 5, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "I3", "label": "300# IFE", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE (except IFE)", "aliases": ["300 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 6, "required": true,
+      "options": [
+        { "code": "S3", "label": "303SS", "aliases": ["303"] },
+        { "code": "S6", "label": "316SS", "aliases": ["316"] },
+        { "code": "I3", "label": "303SS F/IFE (1/2\" to 2\")", "aliases": ["303 ife trim"] },
+        { "code": "I6", "label": "316SS F/IFE (1/2\" to 2\")", "aliases": ["316 ife trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 7, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 8, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.18 Kv)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.38 Kv)", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.15 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.78 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.50 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.17 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (21.5 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.8 Kv)", "aliases": ["30"] }
+      ]
+    },
+    {
+      "id": "spring", "label": "Range (7 and 8)", "position": 9, "required": true,
+      "options": [
+        { "code": "15", "label": "2-20 psi, MK63 1/4\" to 3/4\"", "aliases": ["2-20"] },
+        { "code": "16", "label": "2-23 psi, MK63 1/4\" to 3/4\"", "aliases": ["2-23"] },
+        { "code": "37", "label": "10-38 psi, MK63 1/4\" to 3/4\"", "aliases": ["10-38"] },
+        { "code": "43", "label": "15-35 psi SST, MK63 1/4\" to 3/4\"", "aliases": ["15-35 sst"] },
+        { "code": "56", "label": "20-55 psi, MK63 1/4\" to 3/4\" and MK64", "aliases": ["20-55"] },
+        { "code": "59", "label": "20-60 psi SST, MK63 1/4\" to 3/4\"", "aliases": ["20-60 sst"] },
+        { "code": "D8", "label": "30-85 psi, MK63 1/4\" to 3/4\"", "aliases": ["30-85"] },
+        { "code": "74", "label": "30-85 psi SST, MK63 1/4\" to 3/4\"", "aliases": ["30-85 sst"] },
+        { "code": "81", "label": "35-160 psi, MK63 1/4\" to 3/4\"", "aliases": ["35-160"] },
+        { "code": "A6", "label": "95-220 psi, MK63 1/4\" to 3/4\"", "aliases": ["95-220"] },
+        { "code": "05", "label": "1-5 psi, MK63 1\" to 2\" and MK64", "aliases": ["1-5"] },
+        { "code": "07", "label": "2-6 psi SST, MK63 1\" to 2\"", "aliases": ["2-6 sst"] },
+        { "code": "20", "label": "3-8 psi, MK63 1\" to 2\"", "aliases": ["3-8"] },
+        { "code": "13", "label": "2-16 psi SST, MK63 1\" to 2\"", "aliases": ["2-16 sst"] },
+        { "code": "28", "label": "5-20 psi, MK63 1\" to 2\"", "aliases": ["5-20"] },
+        { "code": "33", "label": "10-25 psi SST, MK63 1\" to 2\"", "aliases": ["10-25 sst"] },
+        { "code": "34", "label": "10-30 psi, MK63 1\" to 2\"", "aliases": ["10-30"] },
+        { "code": "53", "label": "20-45 psi, MK63 1\" to 2\"", "aliases": ["20-45"] },
+        { "code": "75", "label": "30-95 psi, MK63 1\" to 2\"", "aliases": ["30-95"] },
+        { "code": "97", "label": "60-160 psi, MK63 1\" to 2\"", "aliases": ["60-160"] },
+        { "code": "A1", "label": "75-190 psi, MK63HP", "aliases": ["75-190"] },
+        { "code": "A7", "label": "100-320 psi, MK63HP", "aliases": ["100-320"] },
+        { "code": "A9", "label": "150-450 psi, MK63HP", "aliases": ["150-450"] },
+        { "code": "10", "label": "2-12 psi, MK64", "aliases": ["2-12"] },
+        { "code": "11", "label": "2-12 psi SST, MK64", "aliases": ["2-12 sst"] },
+        { "code": "17", "label": "2-25 psi, MK64", "aliases": ["2-25"] },
+        { "code": "18", "label": "2-25 psi SST, MK64", "aliases": ["2-25 sst"] },
+        { "code": "36", "label": "10-35 psi, MK64", "aliases": ["10-35"] },
+        { "code": "B3", "label": "10-35 psi SST, MK64", "aliases": ["10-35 sst"] },
+        { "code": "57", "label": "20-55 psi SST, MK64", "aliases": ["20-55 sst"] },
+        { "code": "63", "label": "20-80 psi, MK64", "aliases": ["20-80"] },
+        { "code": "87", "label": "40-115 psi, MK64", "aliases": ["40-115"] },
+        { "code": "70", "label": "25-160 psi, MK64", "aliases": ["25-160"] },
+        { "code": "80", "label": "30-180 psi, MK64", "aliases": ["30-180"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (9 and 10)", "position": 10, "required": true,
+      "options": [
+        { "code": "S6", "label": "316 SST", "aliases": ["316 diaphragm"] },
+        { "code": "VI", "label": "Viton", "aliases": ["viton"] },
+        { "code": "BN", "label": "Buna-N", "aliases": ["buna-n"] },
+        { "code": "JL", "label": "Jorlon", "aliases": ["jorlon"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (11 and 12)", "position": 11, "required": true,
+      "options": [
+        { "code": "MD", "label": "For metal diaphragm", "aliases": ["metal diaphragm actuator"] },
+        { "code": "ED", "label": "For elastomer diaphragm", "aliases": ["elastomer diaphragm actuator"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "bolting", "label": "Double bolting (13 and 14)", "position": 12, "required": true,
+      "options": [ { "code": "00", "label": "None", "aliases": ["none", "no double bolting"] } ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (15)", "position": 13, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none", "no accessories"] },
+        { "code": "6", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "7", "label": "High temperature bolting", "aliases": ["hi-temp bolting"] },
+        { "code": "3", "label": "Bleed port with valve", "aliases": ["bleed port valve"] },
+        { "code": "4", "label": "Bleed port plugged", "aliases": ["bleed port plugged"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "model": "64" }, "forbid": { "options": ["CDF", "CF", "DF", "F", "HF", "HDF", "HP"] },
+      "reason": "the sheet's asterisk: closing cap, double diaphragm, their pairing and the handwheel serve Mark 63 and 64; every other package is Mark 63 only" },
+    { "when": { "trim": ["I3", "I6"] }, "forbid": { "size": ["025", "038"] },
+      "reason": "the F/IFE trims are printed 1/2 to 2 inch" },
+    { "when": { "spring": ["15", "16", "37", "43", "59", "D8", "74", "81", "A6"] }, "forbid": { "model": ["64"] },
+      "reason": "these ranges are printed in the MK63 table" },
+    { "when": { "spring": ["15", "16", "37", "43", "59", "D8", "74", "81", "A6"] }, "forbid": { "size": ["100", "125", "150", "200"] },
+      "reason": "these ranges are printed for 1/4 to 3/4 inch" },
+    { "when": { "spring": ["15", "16", "37", "43", "59", "D8", "74", "81", "A6"] }, "forbid": { "options": ["HP"] },
+      "reason": "the high pressure option takes the MK63HP table alone" },
+    { "when": { "spring": "56", "model": "63" }, "forbid": { "size": ["100", "125", "150", "200"] },
+      "reason": "on the MK63 the 20-55 range is printed for 1/4 to 3/4 inch" },
+    { "when": { "spring": "56" }, "forbid": { "options": ["HP"] },
+      "reason": "the high pressure option takes the MK63HP table alone" },
+    { "when": { "spring": ["07", "20", "13", "28", "33", "34", "53", "75", "97"] }, "forbid": { "model": ["64"] },
+      "reason": "these ranges are printed in the MK63 table" },
+    { "when": { "spring": ["07", "20", "13", "28", "33", "34", "53", "75", "97"] }, "forbid": { "size": ["025", "038", "050", "075"] },
+      "reason": "these ranges are printed for 1 to 2 inch" },
+    { "when": { "spring": ["07", "20", "13", "28", "33", "34", "53", "75", "97"] }, "forbid": { "options": ["HP"] },
+      "reason": "the high pressure option takes the MK63HP table alone" },
+    { "when": { "spring": "05", "model": "63" }, "forbid": { "size": ["025", "038", "050", "075"] },
+      "reason": "on the MK63 the 1-5 range is printed for 1 to 2 inch" },
+    { "when": { "spring": "05" }, "forbid": { "options": ["HP"] },
+      "reason": "the high pressure option takes the MK63HP table alone" },
+    { "when": { "spring": ["A1", "A7", "A9"] }, "forbid": { "model": ["64"] },
+      "reason": "the MK63HP table belongs to the Mark 63 high pressure build" },
+    { "when": { "spring": ["A1", "A7", "A9"] }, "forbid": { "options": ["", "C", "CD", "CDF", "CF", "D", "DF", "F", "H", "HF", "HDF"] },
+      "reason": "these ranges are printed in the MK63HP table, so the high pressure option is the build they belong to" },
+    { "when": { "spring": ["10", "11", "17", "18", "36", "B3", "57", "63", "87", "70", "80"] }, "forbid": { "model": ["63"] },
+      "reason": "these ranges are printed in the MK64 table" }
+  ],
+  "cautions": []
+}
