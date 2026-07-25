@@ -1,0 +1,316 @@
+{
+  "model": "MK630",
+  "line": "jordan",
+  "displayName": "Jordan Mark 630 high pressure regulator",
+  "match": [
+    "mk630",
+    "mark 630",
+    "jordan 630"
+  ],
+  "source": {
+    "doc": "mk630.pdf",
+    "page": 9,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the product designator coding system, model dash size then a slash and seven characters. The flanged body constructions carry the sheet's asterisk, steel units only, enforced against the iron casing. The sheet's recommendation to use nylon or CTFE seat disks for spring ranges above 150 PSIG is carried as a caution.",
+  "assembly": "{model}-{size}/{spring}{bodyConstruction}{orifice}{seat}{diaphragm}{casing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "630",
+          "label": "Mark 630 series",
+          "aliases": [
+            "mk630"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "08",
+          "label": "1\"",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "16",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spring",
+      "label": "Spring range (1 and 2)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "010",
+          "label": "3-10 psig (0.2-0.7 bar), low pressure spring",
+          "aliases": [
+            "3-10"
+          ]
+        },
+        {
+          "code": "020",
+          "label": "8-20 psig (0.6-1.4 bar), low pressure spring",
+          "aliases": [
+            "8-20"
+          ]
+        },
+        {
+          "code": "030",
+          "label": "17-30 psig (1.2-2.1 bar), low pressure spring",
+          "aliases": [
+            "17-30"
+          ]
+        },
+        {
+          "code": "040",
+          "label": "27-40 psig (1.9-2.8 bar), low pressure spring",
+          "aliases": [
+            "27-40"
+          ]
+        },
+        {
+          "code": "050",
+          "label": "27-50 psig (1.9-3.5 bar), low pressure spring",
+          "aliases": [
+            "27-50"
+          ]
+        },
+        {
+          "code": "095",
+          "label": "46-95 psig (3.2-6.6 bar), high pressure spring",
+          "aliases": [
+            "46-95"
+          ]
+        },
+        {
+          "code": "150",
+          "label": "90-150 psig (6.2-10.3 bar), high pressure spring",
+          "aliases": [
+            "90-150"
+          ]
+        },
+        {
+          "code": "200",
+          "label": "150-200 psig (10.3-13.8 bar), high pressure spring",
+          "aliases": [
+            "150-200"
+          ]
+        },
+        {
+          "code": "275",
+          "label": "200-275 psig (13.8-18.9 bar), high pressure spring",
+          "aliases": [
+            "200-275"
+          ]
+        },
+        {
+          "code": "500",
+          "label": "275-500 psig (18.9-34.5 bar), high pressure spring",
+          "aliases": [
+            "275-500"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyConstruction",
+      "label": "Body construction (3)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Standard NPT units",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "150# RF flanged (steel units only)",
+          "aliases": [
+            "150 rf"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "300# RF flanged (steel units only)",
+          "aliases": [
+            "300 rf"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "600# RF flanged (steel units only)",
+          "aliases": [
+            "600 rf"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orifice",
+      "label": "Orifice (4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "1/8\"",
+          "aliases": [
+            "1/8 orifice"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/16\"",
+          "aliases": [
+            "3/16 orifice"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1/4\"",
+          "aliases": [
+            "1/4 orifice"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "3/8\"",
+          "aliases": [
+            "3/8 orifice"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1/2\"",
+          "aliases": [
+            "1/2 orifice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat material (5)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Nitrile",
+          "aliases": [
+            "nitrile"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "Nylon",
+          "aliases": [
+            "nylon"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "CTFE",
+          "aliases": [
+            "ctfe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "Fluorocarbon",
+          "aliases": [
+            "fluorocarbon"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Neoprene",
+          "aliases": [
+            "neoprene"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "casing",
+      "label": "Casing material (7)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Iron",
+          "aliases": [
+            "iron"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "Steel (standard NACE)",
+          "aliases": [
+            "steel"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "bodyConstruction": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "forbid": {
+        "casing": [
+          "0"
+        ]
+      },
+      "reason": "the sheet's asterisk: flanged connections are for steel units only"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "seat": "0",
+        "spring": [
+          "200",
+          "275",
+          "500"
+        ]
+      },
+      "note": "The sheet's own note: it is recommended to use nylon or CTFE seat disks for spring ranges above 150 PSIG."
+    }
+  ]
+}

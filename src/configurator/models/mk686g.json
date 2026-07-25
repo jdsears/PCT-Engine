@@ -1,0 +1,541 @@
+{
+  "model": "MK686G",
+  "line": "jordan",
+  "displayName": "Jordan Mark 686G air loaded globe valve",
+  "match": [
+    "mk686g",
+    "mark 686g",
+    "686g"
+  ],
+  "source": {
+    "doc": "mark686G.pdf",
+    "page": 2,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, ten positions assembled bare. Air loaded, so there is no range position at all; the plug seat pairs an elastomer or hard plug with a Cv character.",
+  "assembly": "{model}{size}{body}{ends}{plug}{cv}{diaphragm}{actuator}{accessories}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "686G",
+          "label": "Air loaded globe valve",
+          "aliases": [
+            "mk686g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\" (DN10)",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "125",
+          "label": "1-1/4\" (DN32)",
+          "aliases": [
+            "1-1/4\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "DI",
+          "label": "Ductile iron",
+          "aliases": [
+            "ductile iron"
+          ]
+        },
+        {
+          "code": "CS",
+          "label": "Carbon steel (WCB)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "Stainless steel (CF8M)",
+          "aliases": [
+            "stainless"
+          ]
+        },
+        {
+          "code": "BR",
+          "label": "Bronze",
+          "aliases": [
+            "bronze"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "PT",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "BT",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "BP",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        },
+        {
+          "code": "SW",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "F1",
+          "label": "125# FE",
+          "aliases": [
+            "125 flanged"
+          ]
+        },
+        {
+          "code": "F5",
+          "label": "150# FE",
+          "aliases": [
+            "150 flanged"
+          ]
+        },
+        {
+          "code": "F2",
+          "label": "250# FE",
+          "aliases": [
+            "250 flanged"
+          ]
+        },
+        {
+          "code": "F3",
+          "label": "300# FE",
+          "aliases": [
+            "300 flanged"
+          ]
+        },
+        {
+          "code": "F7",
+          "label": "PN10 DIN FE",
+          "aliases": [
+            "pn10 flanged"
+          ]
+        },
+        {
+          "code": "F6",
+          "label": "PN16 DIN FE",
+          "aliases": [
+            "pn16 flanged"
+          ]
+        },
+        {
+          "code": "F8",
+          "label": "PN25 DIN FE",
+          "aliases": [
+            "pn25 flanged"
+          ]
+        },
+        {
+          "code": "F4",
+          "label": "PN40 DIN FE",
+          "aliases": [
+            "pn40 flanged"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plug",
+      "label": "Plug seat (3)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "B",
+          "label": "Buna-N",
+          "aliases": [
+            "buna"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "Viton",
+          "aliases": [
+            "viton"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "EPDM",
+          "aliases": [
+            "epdm"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Hard",
+          "aliases": [
+            "hard plug"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cv",
+      "label": "Cv (4)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "0.21 Cv",
+          "aliases": [
+            "0.21"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "0.42 Cv",
+          "aliases": [
+            "0.42"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "0.84 Cv",
+          "aliases": [
+            "0.84"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1.6 Cv",
+          "aliases": [
+            "1.6"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "2.2 Cv",
+          "aliases": [
+            "2.2"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "2.6 Cv",
+          "aliases": [
+            "2.6"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2.9 Cv",
+          "aliases": [
+            "2.9"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "4.4 Cv",
+          "aliases": [
+            "4.4"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "5.2 Cv",
+          "aliases": [
+            "5.2"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "5.6 Cv",
+          "aliases": [
+            "5.6"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "7.0 Cv",
+          "aliases": [
+            "7.0"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "7.7 Cv",
+          "aliases": [
+            "7.7"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "13.5 Cv",
+          "aliases": [
+            "13.5"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "15.5 Cv",
+          "aliases": [
+            "15.5"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "16.5 Cv",
+          "aliases": [
+            "16.5"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "17.0 Cv",
+          "aliases": [
+            "17.0"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "19.0 Cv",
+          "aliases": [
+            "19.0"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (5 and 6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "BN",
+          "label": "Buna-N",
+          "aliases": [
+            "buna-n"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "316SST",
+          "aliases": [
+            "316 diaphragm"
+          ]
+        },
+        {
+          "code": "VI",
+          "label": "Viton",
+          "aliases": [
+            "viton"
+          ]
+        },
+        {
+          "code": "JL",
+          "label": "Jorlon",
+          "aliases": [
+            "jorlon"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (7 and 8)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "MD",
+          "label": "DI for SS diaphragm",
+          "aliases": [
+            "di metal"
+          ]
+        },
+        {
+          "code": "ED",
+          "label": "DI for elastomer diaphragm",
+          "aliases": [
+            "di elastomer"
+          ]
+        },
+        {
+          "code": "SM",
+          "label": "316 housing with metal diaphragm",
+          "aliases": [
+            "316 metal"
+          ]
+        },
+        {
+          "code": "SE",
+          "label": "316 housing with elastomer diaphragm",
+          "aliases": [
+            "316 elastomer"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (9 and 10)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "S8",
+          "label": "18-8SS bolting",
+          "aliases": [
+            "18-8 bolting"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "316SS bolting",
+          "aliases": [
+            "316 bolting"
+          ]
+        },
+        {
+          "code": "SC",
+          "label": "Oil-free clean",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "XC",
+          "label": "Oxygen clean",
+          "aliases": [
+            "oxygen clean"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

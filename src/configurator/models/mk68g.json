@@ -1,0 +1,722 @@
+{
+  "model": "MK68G",
+  "line": "jordan",
+  "displayName": "Jordan Mark 68G globe pressure reducing regulator",
+  "match": [
+    "mk68g",
+    "mark 68g",
+    "jordan 68g"
+  ],
+  "source": {
+    "doc": "mk68g.pdf",
+    "page": 3,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, fourteen positions assembled bare. The plug position pairs an elastomer or hard plug with a Cv character, and the ranges split into three printed size bands, enforced. The body and diaphragm columns carry the sheet's consult-factory asterisk for other materials, left as a note.",
+  "assembly": "{model}{size}{body}{ends}{plug}{cv}{range}{diaphragm}{actuator}{accessories}{ped}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "68G",
+          "label": "Standard",
+          "aliases": [
+            "mk68g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\" (DN12)",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "125",
+          "label": "1-1/4\" (DN32)",
+          "aliases": [
+            "1-1/4\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "DI",
+          "label": "Ductile iron",
+          "aliases": [
+            "ductile iron"
+          ]
+        },
+        {
+          "code": "CS",
+          "label": "Carbon steel (WCB)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "Stainless steel (CF8M)",
+          "aliases": [
+            "stainless"
+          ]
+        },
+        {
+          "code": "BR",
+          "label": "Bronze",
+          "aliases": [
+            "bronze"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "PT",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "BT",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "BP",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        },
+        {
+          "code": "SW",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "F5",
+          "label": "150# FE",
+          "aliases": [
+            "150 flanged"
+          ]
+        },
+        {
+          "code": "F3",
+          "label": "300# FE",
+          "aliases": [
+            "300 flanged"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plug",
+      "label": "Plug (3)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "B",
+          "label": "Buna-N",
+          "aliases": [
+            "buna"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "Viton",
+          "aliases": [
+            "viton"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "EPDM",
+          "aliases": [
+            "epdm"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Hard",
+          "aliases": [
+            "hard plug"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cv",
+      "label": "Cv (4)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "0.21 Cv",
+          "aliases": [
+            "0.21"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "0.42 Cv",
+          "aliases": [
+            "0.42"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "0.84 Cv",
+          "aliases": [
+            "0.84"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1.6 Cv",
+          "aliases": [
+            "1.6"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "2.2 Cv",
+          "aliases": [
+            "2.2"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "2.6 Cv",
+          "aliases": [
+            "2.6"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2.9 Cv",
+          "aliases": [
+            "2.9"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "4.4 Cv",
+          "aliases": [
+            "4.4"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "5.2 Cv",
+          "aliases": [
+            "5.2"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "5.6 Cv",
+          "aliases": [
+            "5.6"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "7.0 Cv",
+          "aliases": [
+            "7.0"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "7.7 Cv",
+          "aliases": [
+            "7.7"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "13.5 Cv",
+          "aliases": [
+            "13.5"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "15.5 Cv",
+          "aliases": [
+            "15.5"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "16.5 Cv",
+          "aliases": [
+            "16.5"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "17.0 Cv",
+          "aliases": [
+            "17.0"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "19.0 Cv",
+          "aliases": [
+            "19.0"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "range",
+      "label": "Range PSI (5 and 6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "C4",
+          "label": "2-7 (0.14-0.48 bar), 1/4\" to 1/2\"",
+          "aliases": [
+            "2-7"
+          ]
+        },
+        {
+          "code": "27",
+          "label": "5-15 (0.34-1.03 bar), 1/4\" to 1/2\"",
+          "aliases": [
+            "5-15"
+          ]
+        },
+        {
+          "code": "CA",
+          "label": "10-55 (0.7-3.8 bar), 1/4\" to 1/2\"",
+          "aliases": [
+            "10-55"
+          ]
+        },
+        {
+          "code": "CL",
+          "label": "50-160 (3.5-11.0 bar), 1/4\" to 1/2\"",
+          "aliases": [
+            "50-160"
+          ]
+        },
+        {
+          "code": "CV",
+          "label": "150-200 (10.3-13.8 bar), 1/4\" to 1/2\"",
+          "aliases": [
+            "150-200"
+          ]
+        },
+        {
+          "code": "C6",
+          "label": "3-10 (0.21-0.7 bar), 3/4\" to 1\"",
+          "aliases": [
+            "3-10"
+          ]
+        },
+        {
+          "code": "28",
+          "label": "5-20 (0.34-1.4 bar), 3/4\" to 1\"",
+          "aliases": [
+            "5-20"
+          ]
+        },
+        {
+          "code": "CB",
+          "label": "15-45 (1.0-3.1 bar), 3/4\" to 1\"",
+          "aliases": [
+            "15-45"
+          ]
+        },
+        {
+          "code": "CF",
+          "label": "35-70 (2.4-4.8 bar), 3/4\" to 1\"",
+          "aliases": [
+            "35-70"
+          ]
+        },
+        {
+          "code": "CN",
+          "label": "60-105 (4.1-7.2 bar), 3/4\" to 1\"",
+          "aliases": [
+            "60-105"
+          ]
+        },
+        {
+          "code": "CQ",
+          "label": "95-140 (6.6-9.7 bar), 3/4\" to 1\"",
+          "aliases": [
+            "95-140"
+          ]
+        },
+        {
+          "code": "CT",
+          "label": "130-180 (9.0-12.4 bar), 3/4\" to 1\"",
+          "aliases": [
+            "130-180"
+          ]
+        },
+        {
+          "code": "12",
+          "label": "2-16 (0.14-1.10 bar), 1-1/4\" to 2\"",
+          "aliases": [
+            "2-16"
+          ]
+        },
+        {
+          "code": "32",
+          "label": "10-25 (0.7-1.7 bar), 1-1/4\" to 2\"",
+          "aliases": [
+            "10-25"
+          ]
+        },
+        {
+          "code": "60",
+          "label": "20-65 (1.4-4.5 bar), 1-1/4\" to 2\"",
+          "aliases": [
+            "20-65"
+          ]
+        },
+        {
+          "code": "CM",
+          "label": "55-100 (3.8-6.9 bar), 1-1/4\" to 2\"",
+          "aliases": [
+            "55-100"
+          ]
+        },
+        {
+          "code": "CP",
+          "label": "90-160 (6.2-11.0 bar), 1-1/4\" to 2\"",
+          "aliases": [
+            "90-160"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (7 and 8)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "BN",
+          "label": "Buna-N",
+          "aliases": [
+            "buna-n"
+          ]
+        },
+        {
+          "code": "JL",
+          "label": "Jorlon",
+          "aliases": [
+            "jorlon"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "316SST",
+          "aliases": [
+            "316 diaphragm"
+          ]
+        },
+        {
+          "code": "VI",
+          "label": "Viton",
+          "aliases": [
+            "viton"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (9 and 10)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "MD",
+          "label": "For metal diaphragm",
+          "aliases": [
+            "metal diaphragm actuator"
+          ]
+        },
+        {
+          "code": "ED",
+          "label": "For elastomer diaphragm",
+          "aliases": [
+            "elastomer diaphragm actuator"
+          ]
+        },
+        {
+          "code": "SM",
+          "label": "316 housing with metal diaphragm",
+          "aliases": [
+            "316 metal"
+          ]
+        },
+        {
+          "code": "SE",
+          "label": "316 housing with elastomer diaphragm",
+          "aliases": [
+            "316 elastomer"
+          ]
+        },
+        {
+          "code": "CM",
+          "label": "CS housing with metal diaphragm",
+          "aliases": [
+            "cs metal"
+          ]
+        },
+        {
+          "code": "CE",
+          "label": "CS housing with elastomer diaphragm",
+          "aliases": [
+            "cs elastomer"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (11 and 12)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "SC",
+          "label": "Oil free clean",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "XC",
+          "label": "Oxygen clean",
+          "aliases": [
+            "oxygen clean"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ped",
+      "label": "PED compliance (13 and 14)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "Not required",
+          "aliases": [
+            "not required"
+          ]
+        },
+        {
+          "code": "FF",
+          "label": "CE category 1",
+          "aliases": [
+            "ce category 1"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ped"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "range": [
+          "C4",
+          "27",
+          "CA",
+          "CL",
+          "CV"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "075",
+          "100",
+          "125",
+          "150",
+          "200"
+        ]
+      },
+      "reason": "these ranges are printed for 1/4 to 1/2 inch"
+    },
+    {
+      "when": {
+        "range": [
+          "C6",
+          "28",
+          "CB",
+          "CF",
+          "CN",
+          "CQ",
+          "CT"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "025",
+          "038",
+          "050",
+          "125",
+          "150",
+          "200"
+        ]
+      },
+      "reason": "these ranges are printed for 3/4 to 1 inch"
+    },
+    {
+      "when": {
+        "range": [
+          "12",
+          "32",
+          "60",
+          "CM",
+          "CP"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "025",
+          "038",
+          "050",
+          "075",
+          "100"
+        ]
+      },
+      "reason": "these ranges are printed for 1-1/4 to 2 inch"
+    }
+  ],
+  "cautions": []
+}

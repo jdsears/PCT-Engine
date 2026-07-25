@@ -86,6 +86,12 @@ const mk57 = JSON.parse(readFileSync(join(here, 'models', 'mk57.json'), 'utf8'))
 const mk575 = JSON.parse(readFileSync(join(here, 'models', 'mk575.json'), 'utf8'));
 const mk586 = JSON.parse(readFileSync(join(here, 'models', 'mk586.json'), 'utf8'));
 const mk58 = JSON.parse(readFileSync(join(here, 'models', 'mk58.json'), 'utf8'));
+const mk68hp = JSON.parse(readFileSync(join(here, 'models', 'mk68hp.json'), 'utf8'));
+const mk68g = JSON.parse(readFileSync(join(here, 'models', 'mk68g.json'), 'utf8'));
+const mk686g = JSON.parse(readFileSync(join(here, 'models', 'mk686g.json'), 'utf8'));
+const mk675 = JSON.parse(readFileSync(join(here, 'models', 'mk675.json'), 'utf8'));
+const mk627 = JSON.parse(readFileSync(join(here, 'models', 'mk627.json'), 'utf8'));
+const mk630 = JSON.parse(readFileSync(join(here, 'models', 'mk630.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1224,6 +1230,38 @@ check('the three round-trip and the doubled Cv characters caution rather than va
   assert.equal(checkCautions(mk58, { cv: '2' }).length, 1, 'the doubled Cv character cautions on the 58');
   assert.equal(checkCautions(mk586, { cv: '3' }).length, 1, 'and on the 586');
   assert.equal(checkCautions(mk586, { cv: '4' }).length, 0, 'a single-printed character stays silent');
+});
+
+console.log('\nThe reducing leftovers close the Jordan estate: 68HP, 68G, 686G, 675, 627 and 630:');
+
+check('all six round-trip and their printed brackets hold', () => {
+  roundTrip(mk68hp, {
+    model: '68HP', size: '050', body: 'SS', ends: 'F3', trim: 'C4', range: 'R2', actuator: 'A1',
+  }, '68HP-050-SS/F3C4R2A1');
+  roundTrip(mk68g, {
+    model: '68G', size: '150', body: 'BR', ends: 'BP', plug: 'M', cv: 'W', range: 'CP',
+    diaphragm: 'JL', actuator: 'SE', accessories: 'XC', ped: 'FF',
+  }, '68G150BRBPMWCPJLSEXCFF');
+  roundTrip(mk686g, {
+    model: '686G', size: '025', body: 'S6', ends: 'F7', plug: 'V', cv: '3',
+    diaphragm: 'S6', actuator: 'SM', accessories: 'S8',
+  }, '686G025S6F7V3S6SMS8');
+  roundTrip(mk675, {
+    model: '675', size: '600', body: 'CS', ends: 'C5', trim: 'T6', seatMaterial: 'W', cv: 'J',
+    range: '42', diaphragm: 'BN', actuator: 'ED', bolting: '00', accessories: '9', ped: 'F',
+  }, '675600CSC5T6WJ42BNED009F');
+  roundTrip(mk627, {
+    model: '627', size: '16', spring: '020', adders: 'W', versions: 'T', orifice: '8', seat: '1', caseBody: '9',
+  }, '627-16/020WT819');
+  roundTrip(mk630, {
+    model: '630', size: '08', spring: '500', bodyConstruction: 'C', orifice: '8', seat: '1', diaphragm: '2', casing: '1',
+  }, '630-08/500C8121');
+  assert.ok(checkConstraints(mk68hp, { range: 'R1', size: '100' }).length > 0, 'the half inch ranges keep their bracket');
+  assert.ok(checkConstraints(mk68g, { range: 'C4', size: '200' }).length > 0, 'the 68G range bands hold');
+  assert.ok(checkConstraints(mk627, { adders: 'D', caseBody: '8' }).length > 0, 'the flanged adders refuse an iron body, per the asterisk');
+  assert.ok(checkConstraints(mk630, { bodyConstruction: 'A', casing: '0' }).length > 0, 'flanged 630s are steel units only');
+  assert.equal(checkCautions(mk630, { seat: '0', spring: '275' }).length, 1, 'the nylon-above-150 recommendation cautions');
+  assert.equal(checkCautions(mk627, { seat: '2', spring: '250' }).length, 1, 'and on the 627');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
