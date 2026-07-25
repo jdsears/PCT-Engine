@@ -96,6 +96,7 @@ const mark9020 = JSON.parse(readFileSync(join(here, 'models', 'mark9020.json'), 
 const mark93 = JSON.parse(readFileSync(join(here, 'models', 'mark93.json'), 'utf8'));
 const mk978e = JSON.parse(readFileSync(join(here, 'models', 'mk978e.json'), 'utf8'));
 const mk978 = JSON.parse(readFileSync(join(here, 'models', 'mk978.json'), 'utf8'));
+const mk978m = JSON.parse(readFileSync(join(here, 'models', 'mk978m.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1333,6 +1334,24 @@ check('both round-trip through the enumerated blocks and their brackets hold', (
   assert.ok(checkConstraints(mk978, { size: '300', model: '978' }).length > 0, 'the 3 inch page is the SP\'s alone');
   assert.ok(checkConstraints(mk978, { size: '300', actuatorRange: '5D' }).length > 0, 'and prints the 85M rows alone');
   assert.equal(checkCautions(mk978, { block: 'JAML7A' }).length, 1, 'the modified linear rows carry their contact-factory line');
+});
+
+console.log('\nThe 978M metal sister spans both size bands:');
+
+check('the 978M round-trips in both bands and its page splits hold', () => {
+  roundTrip(mk978m, {
+    model: '978M', size: '075', stemSeal: 'JD', seat: 'P', block: 'C2LNBD', stemSealDetail: 'JH',
+    actuator: '1H', sepPed: '0G', accessories: '0X',
+  }, '978M075JDPC2LNBDJH1H0G0X');
+  roundTrip(mk978m, {
+    model: '978MN', size: '200', stemSeal: 'JD', seat: 'T', block: 'J3ML71', stemSealDetail: 'JH',
+    actuator: '1H', sepPed: '0E', accessories: '00',
+  }, '978MN200JDTJ3ML71JH1H0E00');
+  assert.ok(checkConstraints(mk978m, { sepPed: '0G', size: '200' }).length > 0, 'SEP stays on the small sizes\' page');
+  assert.ok(checkConstraints(mk978m, { sepPed: '0E', size: '075' }).length > 0, 'PED stays on the large sizes\' page');
+  assert.ok(checkConstraints(mk978m, { block: 'FALN1A', size: '100' }).length > 0, 'the blocks keep their printed sizes');
+  assert.equal(checkCautions(mk978m, { block: 'J3ML71' }).length, 1, 'the modified linear rows carry their line');
+  assert.ok(/no hard seat row/.test(mk978m.note), 'the missing hard seat row is confessed against the 978');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
