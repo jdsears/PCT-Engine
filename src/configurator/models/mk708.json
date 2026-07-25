@@ -1,0 +1,789 @@
+{
+  "model": "708",
+  "line": "low_flow",
+  "displayName": "LowFlow Mark 708 fractional control valve",
+  "match": [
+    "708",
+    "mark 708",
+    "mk708",
+    "fractional control valve"
+  ],
+  "source": {
+    "doc": "708series.pdf",
+    "page": "7 and 8",
+    "section": "MK708 series ordering schematic"
+  },
+  "note": "Extracted by hand from the plain 708 schematic. The plug seat pairs a stem, plug and seat material with a Cv character running from 0.00001 to 4.0, with the 3.0 printed after the 4.0 exactly as the sheet has it, and one ZZ spanning the pair. The tube nut ends carry their printed maximum Cv of 0.2, the actuator systems carry their printed size brackets, 14M to 3/4 inch and 35M to 1 inch, and the air regulators and I/Ps name their actuator class. The body codes print a hash mark whose footnote sits outside the extraction, held for the PDF.",
+  "assembly": "{model}{size}{body}{ends}{trim}{plugMaterial}{plugCv}{system}{accessories}{action}{ip}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "708",
+          "label": "Standard",
+          "aliases": [
+            "708"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "CB",
+          "label": "A105 carbon steel barstock (the sheet marks these codes with a # whose footnote sits outside the extraction)",
+          "aliases": [
+            "carbon barstock"
+          ]
+        },
+        {
+          "code": "CS",
+          "label": "WCB carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "HC",
+          "label": "Hastelloy C",
+          "aliases": [
+            "hastelloy"
+          ]
+        },
+        {
+          "code": "SB",
+          "label": "316/316L stainless steel barstock",
+          "aliases": [
+            "stainless barstock"
+          ]
+        },
+        {
+          "code": "S6",
+          "label": "CF8M stainless steel",
+          "aliases": [
+            "stainless"
+          ]
+        },
+        {
+          "code": "MN",
+          "label": "Monel",
+          "aliases": [
+            "monel"
+          ]
+        },
+        {
+          "code": "A2",
+          "label": "Alloy 20",
+          "aliases": [
+            "alloy 20"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "PT",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "BT",
+          "label": "BSPT",
+          "aliases": [
+            "bspt"
+          ]
+        },
+        {
+          "code": "SW",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "BP",
+          "label": "BSPP",
+          "aliases": [
+            "bspp"
+          ]
+        },
+        {
+          "code": "F5",
+          "label": "150# FE",
+          "aliases": [
+            "150 flanged"
+          ]
+        },
+        {
+          "code": "F7",
+          "label": "PN10",
+          "aliases": [
+            "pn10"
+          ]
+        },
+        {
+          "code": "F3",
+          "label": "300# FE",
+          "aliases": [
+            "300 flanged"
+          ]
+        },
+        {
+          "code": "F8",
+          "label": "PN16",
+          "aliases": [
+            "pn16"
+          ]
+        },
+        {
+          "code": "TN",
+          "label": "Integral tube nuts (max Cv 0.2)",
+          "aliases": [
+            "tube nuts"
+          ]
+        },
+        {
+          "code": "F6",
+          "label": "PN25",
+          "aliases": [
+            "pn25"
+          ]
+        },
+        {
+          "code": "F4",
+          "label": "PN40",
+          "aliases": [
+            "pn40"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "T6",
+          "label": "316SS/Teflon packing",
+          "aliases": [
+            "316 teflon"
+          ]
+        },
+        {
+          "code": "TM",
+          "label": "Monel/Teflon packing",
+          "aliases": [
+            "monel teflon"
+          ]
+        },
+        {
+          "code": "TA",
+          "label": "Alloy 20/Teflon packing",
+          "aliases": [
+            "alloy 20 teflon"
+          ]
+        },
+        {
+          "code": "TC",
+          "label": "Hastelloy/Teflon packing",
+          "aliases": [
+            "hastelloy teflon"
+          ]
+        },
+        {
+          "code": "G6",
+          "label": "316SS/graphite",
+          "aliases": [
+            "316 graphite"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plugMaterial",
+      "label": "Plug seat, material of stem/plug/seat (5)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Standard, linear, hard",
+          "aliases": [
+            "linear hard"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Standard, equal percentage, hard",
+          "aliases": [
+            "eqp hard"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Standard, quick open, hard",
+          "aliases": [
+            "qo hard"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Standard, linear, soft (PEEK)",
+          "aliases": [
+            "linear soft"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Standard, equal percentage, soft (PEEK)",
+          "aliases": [
+            "eqp soft"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Standard, quick open, soft (PEEK)",
+          "aliases": [
+            "qo soft"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "17-4/Stellite, linear, hard",
+          "aliases": [
+            "stellite linear"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "17-4/Stellite, equal percentage, hard",
+          "aliases": [
+            "stellite eqp"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "17-4/Stellite, quick open, hard",
+          "aliases": [
+            "stellite qo"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across material and Cv)",
+          "aliases": [
+            "non-standard plug"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plugCv",
+      "label": "Plug seat Cv (6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Cv 0.00001",
+          "aliases": [
+            "0.00001"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Cv 0.00002",
+          "aliases": [
+            "0.00002"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Cv 0.00005",
+          "aliases": [
+            "0.00005"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Cv 0.0001",
+          "aliases": [
+            "0.0001"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Cv 0.0002",
+          "aliases": [
+            "0.0002"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Cv 0.0005",
+          "aliases": [
+            "0.0005"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Cv 0.001",
+          "aliases": [
+            "0.001"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Cv 0.002",
+          "aliases": [
+            "0.002"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "Cv 0.005",
+          "aliases": [
+            "0.005"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Cv 0.01",
+          "aliases": [
+            "0.01"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Cv 0.02",
+          "aliases": [
+            "0.02"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Cv 0.05",
+          "aliases": [
+            "0.05"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Cv 0.1",
+          "aliases": [
+            "0.1"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Cv 0.2",
+          "aliases": [
+            "0.2"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Cv 0.5",
+          "aliases": [
+            "0.5"
+          ]
+        },
+        {
+          "code": "Q",
+          "label": "Cv 1.0",
+          "aliases": [
+            "1.0"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Cv 2.0",
+          "aliases": [
+            "2.0"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Cv 4.0",
+          "aliases": [
+            "4.0"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Cv 3.0 (printed after 4.0, as the sheet has it)",
+          "aliases": [
+            "3.0"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across material and Cv)",
+          "aliases": [
+            "non-standard cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "label": "Actuator, range, diaphragm and actuator (7 to 12)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "N4Q4N4",
+          "label": "3-15 direct, Nylon/Nitrile, 14M (1/4\" to 3/4\")",
+          "aliases": [
+            "n4q4n4"
+          ]
+        },
+        {
+          "code": "Q4Q4N4",
+          "label": "3-15 reverse, Nylon/Nitrile, 14M (1/4\" to 3/4\")",
+          "aliases": [
+            "q4q4n4"
+          ]
+        },
+        {
+          "code": "G4T4D4",
+          "label": "6-30 direct, Nylon/Nitrile, 14M (1/4\" to 3/4\")",
+          "aliases": [
+            "g4t4d4"
+          ]
+        },
+        {
+          "code": "H4T4R4",
+          "label": "6-30 reverse, Nylon/Nitrile, 14M (1/4\" to 3/4\")",
+          "aliases": [
+            "h4t4r4"
+          ]
+        },
+        {
+          "code": "A3B3D3",
+          "label": "3-15 direct, Buna-N, 35M (1/4\" to 1\")",
+          "aliases": [
+            "a3b3d3"
+          ]
+        },
+        {
+          "code": "B3B3R3",
+          "label": "3-15 reverse, Buna-N, 35M (1/4\" to 1\")",
+          "aliases": [
+            "b3b3r3"
+          ]
+        },
+        {
+          "code": "G3B3D3",
+          "label": "6-30 direct, Buna-N, 35M (1/4\" to 1\")",
+          "aliases": [
+            "g3b3d3"
+          ]
+        },
+        {
+          "code": "H3B3R3",
+          "label": "6-30 reverse, Buna-N, 35M (1/4\" to 1\")",
+          "aliases": [
+            "h3b3r3"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard system"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (13 and 14)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "A7",
+          "label": "Air regulator for 14M actuator",
+          "aliases": [
+            "air regulator 14m"
+          ]
+        },
+        {
+          "code": "A5",
+          "label": "Air regulator for 35M actuator",
+          "aliases": [
+            "air regulator 35m"
+          ]
+        },
+        {
+          "code": "G2",
+          "label": "Two gauges on TMP",
+          "aliases": [
+            "two gauges"
+          ]
+        },
+        {
+          "code": "SH",
+          "label": "304SS strain hardened",
+          "aliases": [
+            "strain hardened"
+          ]
+        },
+        {
+          "code": "S2",
+          "label": "3-way solenoid, energise to open",
+          "aliases": [
+            "solenoid open"
+          ]
+        },
+        {
+          "code": "S3",
+          "label": "3-way solenoid, energise to close",
+          "aliases": [
+            "solenoid close"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "label": "Action (15)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "D",
+          "label": "Air-to-close",
+          "aliases": [
+            "air to close"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Air-to-open",
+          "aliases": [
+            "air to open"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ip",
+      "label": "I/P (16)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "no ip"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "I/P 14M actuator, 4-20mA / 3-15 psi",
+          "aliases": [
+            "ip 14m"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "I/P 35M actuator, 4-20mA / 3-15 psi",
+          "aliases": [
+            "ip 35m"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "I/P 14M actuator, 4-20mA / 6-30 psi",
+          "aliases": [
+            "ip 14m 6-30"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ip"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "ends": "TN"
+      },
+      "forbid": {
+        "plugCv": [
+          "P",
+          "Q",
+          "R",
+          "S",
+          "T"
+        ]
+      },
+      "reason": "the tube nut ends carry the sheet's own maximum Cv of 0.2"
+    },
+    {
+      "when": {
+        "system": [
+          "N4Q4N4",
+          "Q4Q4N4",
+          "G4T4D4",
+          "H4T4R4"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "100"
+        ]
+      },
+      "reason": "the 14M systems carry the sheet's own 1/4 to 3/4 inch bracket"
+    },
+    {
+      "when": {
+        "accessories": "A7"
+      },
+      "forbid": {
+        "system": [
+          "A3B3D3",
+          "B3B3R3",
+          "G3B3D3",
+          "H3B3R3"
+        ]
+      },
+      "reason": "the air regulator names its actuator, 14M"
+    },
+    {
+      "when": {
+        "accessories": "A5"
+      },
+      "forbid": {
+        "system": [
+          "N4Q4N4",
+          "Q4Q4N4",
+          "G4T4D4",
+          "H4T4R4"
+        ]
+      },
+      "reason": "the air regulator names its actuator, 35M"
+    },
+    {
+      "when": {
+        "ip": [
+          "4",
+          "9"
+        ]
+      },
+      "forbid": {
+        "system": [
+          "A3B3D3",
+          "B3B3R3",
+          "G3B3D3",
+          "H3B3R3"
+        ]
+      },
+      "reason": "these I/Ps name their actuator, 14M"
+    },
+    {
+      "when": {
+        "ip": "3"
+      },
+      "forbid": {
+        "system": [
+          "N4Q4N4",
+          "Q4Q4N4",
+          "G4T4D4",
+          "H4T4R4"
+        ]
+      },
+      "reason": "this I/P names its actuator, 35M"
+    }
+  ],
+  "cautions": []
+}

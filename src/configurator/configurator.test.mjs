@@ -103,6 +103,8 @@ const jsrlf = JSON.parse(readFileSync(join(here, 'models', 'jsrlf.json'), 'utf8'
 const jsrlfe = JSON.parse(readFileSync(join(here, 'models', 'jsrlfe.json'), 'utf8'));
 const jsrlflp = JSON.parse(readFileSync(join(here, 'models', 'jsrlflp.json'), 'utf8'));
 const jsrlflpe = JSON.parse(readFileSync(join(here, 'models', 'jsrlflpe.json'), 'utf8'));
+const mk708 = JSON.parse(readFileSync(join(here, 'models', 'mk708.json'), 'utf8'));
+const mk708tp = JSON.parse(readFileSync(join(here, 'models', 'mk708tp.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1410,6 +1412,26 @@ check('all four round-trip and the family rules hold', () => {
   assert.equal(applyValue(jsrlfe, {}, 'rangeSpring', 'E6').accepted, false, 'the EPDM sheet stops at E5');
   assert.equal(applyValue(jsrlflp, {}, 'inletGauge', 'HH').accepted, false, 'the low pressure ladder stops at 160');
   assert.ok(/4S is the correct order code/.test(jsrlf.slots.find(s => s.id === 'trim').options.find(o => o.code === '4S').label), 'the out-of-sequence note rides the option');
+});
+
+console.log('\nThe LowFlow 708 pair, plain and with positioners:');
+
+check('both round-trip and the micro-Cv couplings hold', () => {
+  roundTrip(mk708, {
+    model: '708', size: '075', body: 'HC', ends: 'TN', trim: 'TC', plugMaterial: 'E', plugCv: 'N',
+    system: 'G4T4D4', accessories: 'A7', action: 'D', ip: '9',
+  }, '708075HCTNTCENG4T4D4A7D9');
+  roundTrip(mk708tp, {
+    model: '708SP', size: '100', body: 'SB', ends: 'F4', trim: 'G6', plugMaterial: 'M', plugCv: 'S',
+    rangeAction: 'C3', diaphragm: 'B3', actuator: 'S3', accessories: 'A5', action: 'R', ip: '3', smp: 'G',
+  }, '708SP100SBF4G6MSC3B3S3A5R3G');
+  assert.ok(checkConstraints(mk708, { ends: 'TN', plugCv: 'Q' }).length > 0, 'the tube nut ends keep their 0.2 Cv ceiling');
+  assert.ok(checkConstraints(mk708, { system: 'N4Q4N4', size: '100' }).length > 0, 'the 14M systems stop at 3/4 inch');
+  assert.ok(checkConstraints(mk708, { ip: '3', system: 'G4T4D4' }).length > 0, 'the I/P names its class');
+  assert.ok(checkConstraints(mk708tp, { model: '708TP', actuator: 'S4' }).length > 0, 'the SMP actuator belongs to the side mount');
+  assert.ok(checkConstraints(mk708tp, { rangeAction: 'A4', diaphragm: 'B3' }).length > 0, 'the size digit chain holds, flagged inferred');
+  assert.ok(/3\.0 \(printed after 4\.0/.test(mk708.slots.find(s => s.id === 'plugCv').options.find(o => o.code === 'T').label), 'the out-of-order 3.0 row is carried as printed');
+  assert.ok(/708BS/.test(mk708tp.note), 'the 708BS heading artefact is held for the PDF');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
