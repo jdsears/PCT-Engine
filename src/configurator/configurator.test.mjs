@@ -45,6 +45,9 @@ const mk65 = JSON.parse(readFileSync(join(here, 'models', 'mk65.json'), 'utf8'))
 const mk66 = JSON.parse(readFileSync(join(here, 'models', 'mk66.json'), 'utf8'));
 const mk660 = JSON.parse(readFileSync(join(here, 'models', 'mk660.json'), 'utf8'));
 const mk6769 = JSON.parse(readFileSync(join(here, 'models', 'mk6769.json'), 'utf8'));
+const mk82 = JSON.parse(readFileSync(join(here, 'models', 'mk82.json'), 'utf8'));
+const mk85 = JSON.parse(readFileSync(join(here, 'models', 'mk85.json'), 'utf8'));
+const mk86 = JSON.parse(readFileSync(join(here, 'models', 'mk86.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -779,6 +782,52 @@ check('the 6769 BSPT collision is a caution in the open, and the 660 truncation 
   assert.equal(checkCautions(mk6769, { ends: 'BT' }).length, 1, 'choosing BSPT states the printed BP collision');
   assert.ok(/BP/.test(mk6769.note) && /BSPT/.test(mk6769.note), 'the artefact is named in the note');
   assert.ok(/15/.test(mk660.note) && /actuator/i.test(mk660.note) && /PDF/.test(mk660.note), 'the 660 header-to-15 truncation is held for the PDF');
+});
+
+console.log('\nThe Jordan temperature regulators, 82, 85 and 86:');
+
+check('the three sheets round-trip, sensing system and all', () => {
+  roundTrip(mk82, {
+    model: '82', size: '050', body: 'DI', ends: 'PT', trim: 'S3', seat: 'V', cv: '5',
+    range: '06', thermowell: 'CH', bulb: 'A4', capillaryArmor: 'A1', action: '5D', accessories: '0',
+  }, '82050DIPTS3V506CHA4A15D0');
+  roundTrip(mk82, {
+    model: '82FS', size: '100', body: 'BR', ends: 'F5', trim: 'L1', seat: 'Q', cv: '8',
+    range: '20', thermowell: 'EJ', bulb: 'H5', capillaryArmor: 'B3', action: '5R', accessories: 'X',
+  }, '82FS100BRF5L1Q820EJH5B35RX');
+  roundTrip(mk85, {
+    model: '85T', size: '038', body: 'S6', ends: 'I5', trim: 'T6', seat: 'Z', cv: 'Z',
+    range: '82', thermowell: '22', bulb: 'C1', capillaryArmor: 'T4', actuator: '7', action: 'R', accessories: 'P',
+  }, '85T038S6I5T6ZZ8222C1T47RP');
+  roundTrip(mk86, {
+    model: '86', size: '200', body: 'CS', ends: 'I4', trim: 'T3', seat: 'W', cv: 'B',
+    range: '55', thermowell: '00', bulb: '00', capillaryArmor: '00', actuator: 'A', action: 'D',
+  }, '86200CSI4T3WB55000000AD');
+});
+
+check('the range columns stay with their models and the sensing couplings hold', () => {
+  assert.ok(checkConstraints(mk82, { model: '82FS', range: '06' }).length > 0, 'a standard range refuses the fail safe');
+  assert.ok(checkConstraints(mk82, { model: '82', range: '20' }).length > 0, 'a fail safe range refuses the standard');
+  assert.ok(checkConstraints(mk82, { thermowell: 'CH', bulb: 'A5' }).length > 0, 'an 8 inch well refuses a 14 inch bulb');
+  assert.ok(checkConstraints(mk82, { thermowell: 'EJ', bulb: 'A5' }).length > 0, 'a Type B well refuses a Type A bulb');
+  assert.equal(checkConstraints(mk82, { thermowell: 'EJ', bulb: 'H5' }).length, 0, 'the matched pair passes');
+  assert.ok(checkConstraints(mk85, { thermowell: 'CJ', bulb: 'A6' }).length > 0, 'the 85 size coupling holds too');
+  assert.equal(checkConstraints(mk85, { thermowell: '21', bulb: 'C1' }).length, 0, 'a tank fitting leaves the Type C bulbs uncoupled, as the sheet does');
+});
+
+check('the printed glosses and absences refuse', () => {
+  assert.ok(checkConstraints(mk85, { ends: 'I5', body: 'BR' }).length > 0, 'the 150 IFE gloss holds on the 85');
+  assert.ok(checkConstraints(mk86, { ends: 'I7', body: 'DI' }).length > 0, 'every IFE row on the 86 is carbon or stainless');
+  assert.equal(applyValue(mk86, {}, 'thermowell', 'CH').accepted, false, 'the 86 sensing positions are the single code 00');
+  assert.equal(applyValue(mk82, {}, 'size', '025').accepted, false, 'the 82 starts at 1/2 inch');
+  assert.equal(applyValue(mk85, {}, 'size', '100').accepted, false, 'the 85 stops at 3/4 inch');
+});
+
+check('the spanning ZZ device and the sheet divergences are confessed in the notes', () => {
+  assert.ok(/one ZZ/i.test(mk85.note) && /one ZZ/i.test(mk86.note), 'the seat ZZ span is named on both sheets');
+  assert.ok(/12/.test(mk82.note) && /22/.test(mk82.note), 'the tank fitting code divergence against the 85 sheet is named');
+  assert.ok(/5D/.test(mk82.note), 'the two character action codes are named against the single character siblings');
+  assert.ok(/inferred/i.test(mk82.constraints.find(c => c.reason.includes('bulb it takes')).reason), 'the well to bulb coupling declares itself inferred');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

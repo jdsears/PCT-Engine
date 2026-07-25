@@ -1,0 +1,135 @@
+{
+  "model": "MK86",
+  "line": "jordan",
+  "displayName": "Jordan Mark 86 temperature regulator",
+  "match": ["mk86", "mark 86", "jordan 86"],
+  "source": { "doc": "mk86.pdf", "page": 3, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, sixteen positions assembled bare. The thermowell, bulb and capillary positions each print the single code 00, none; the sensing system on this model is not selected through those positions. The range list prints in two columns read as one flow of fourteen codes. The seats section prints one ZZ spanning material and Cv, so a non-standard seat decodes as Z in each character, carried with this note. The IFE ends all carry the sheet's carbon or stainless gloss.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seat}{cv}{range}{thermowell}{bulb}{capillaryArmor}{actuator}{action}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "86", "label": "Standard", "aliases": ["mk86", "mark 86", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN10)", "aliases": ["3/8\"", "DN10"] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE, CS or SST valves", "aliases": ["150 ife"] },
+        { "code": "I3", "label": "300# IFE, CS or SST valves", "aliases": ["300 ife"] },
+        { "code": "I7", "label": "IFE PN10, CS or SST valves", "aliases": ["pn10 ife"] },
+        { "code": "I6", "label": "IFE PN16, CS or SST valves", "aliases": ["pn16 ife"] },
+        { "code": "I8", "label": "IFE PN25, CS or SST valves", "aliases": ["pn25 ife"] },
+        { "code": "I4", "label": "IFE PN40, CS or SST valves", "aliases": ["pn40 ife"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T3", "label": "303SS", "aliases": ["303"] },
+        { "code": "T6", "label": "316SS", "aliases": ["316"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303 SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316 SST", "aliases": ["316 seat"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 (0.18 Kv)", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42 (0.36 Kv)", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84 (0.72 Kv)", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6 (1.4 Kv)", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5 (2.2 Kv)", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4 (3.8 Kv)", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4 (5.5 Kv)", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5 (8.2 Kv)", "aliases": ["9.5"] },
+        { "code": "9", "label": "15.0 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25.0 (21.5 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30.0 (25.8 Kv)", "aliases": ["30"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "10", "label": "5 to 40°F (-15 to 4°C)", "aliases": ["5 to 40"] },
+        { "code": "18", "label": "30 to 80°F (-1 to 27°C)", "aliases": ["30 to 80"] },
+        { "code": "25", "label": "50 to 100°F (10 to 38°C)", "aliases": ["50 to 100"] },
+        { "code": "34", "label": "80 to 130°F (27 to 54°C)", "aliases": ["80 to 130"] },
+        { "code": "39", "label": "100 to 150°F (38 to 66°C)", "aliases": ["100 to 150"] },
+        { "code": "48", "label": "115 to 170°F (46 to 77°C)", "aliases": ["115 to 170"] },
+        { "code": "57", "label": "155 to 210°F (68 to 99°C)", "aliases": ["155 to 210"] },
+        { "code": "09", "label": "0 to 20°F (-18 to -7°C)", "aliases": ["0 to 20"] },
+        { "code": "15", "label": "25 to 60°F (-4 to 16°C)", "aliases": ["25 to 60"] },
+        { "code": "22", "label": "45 to 80°F (7 to 27°C)", "aliases": ["45 to 80"] },
+        { "code": "31", "label": "75 to 110°F (24 to 43°C)", "aliases": ["75 to 110"] },
+        { "code": "38", "label": "100 to 130°F (38 to 54°C)", "aliases": ["100 to 130"] },
+        { "code": "45", "label": "115 to 150°F (46 to 66°C)", "aliases": ["115 to 150"] },
+        { "code": "55", "label": "155 to 190°F (68 to 88°C)", "aliases": ["155 to 190"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "thermowell", "label": "Thermowell (9 and 10)", "position": 9, "required": true,
+      "options": [ { "code": "00", "label": "None", "aliases": ["none", "no thermowell"] } ]
+    },
+    {
+      "id": "bulb", "label": "Bulb (11 and 12)", "position": 10, "required": true,
+      "options": [ { "code": "00", "label": "None", "aliases": ["none", "no bulb"] } ]
+    },
+    {
+      "id": "capillaryArmor", "label": "Capillary/armor (13 and 14)", "position": 11, "required": true,
+      "options": [ { "code": "00", "label": "None", "aliases": ["none", "no capillary"] } ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (15)", "position": 12, "required": true,
+      "options": [ { "code": "A", "label": "Standard", "aliases": ["standard"] } ]
+    },
+    {
+      "id": "action", "label": "Action (16)", "position": 13, "required": true,
+      "options": [
+        { "code": "D", "label": "Direct", "aliases": ["direct"] },
+        { "code": "R", "label": "Reverse", "aliases": ["reverse"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"] }, "forbid": { "body": ["DI", "BR"] },
+      "reason": "the IFE rows are printed for carbon or stainless valves" }
+  ],
+  "cautions": []
+}
