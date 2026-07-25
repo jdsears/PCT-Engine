@@ -2,6 +2,8 @@ import { pool } from '../db.mjs';
 import { lookupPrice } from './lookup.mjs';
 import { quotedLine } from './quotedLines.mjs';
 import { marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
+import { superlativeIntent, cheapestOf, renderCheapestValve } from './cheapest.mjs';
+import { allConfigs } from '../configurator/registry.mjs';
 
 // Price questions in the co-pilot answer deterministically, never through the
 // model: a stored part answers with its sell prices exactly as loaded, a
@@ -75,6 +77,37 @@ async function seriesSummary(series) {
   };
 }
 
+// The cheapest complete build for what the question named: a Marwin series,
+// the Marwin line, or another loaded line. One row, price ascending, then the
+// registry reads the code back into its spec where a matrix exists. Marwin
+// rows are valves by construction (the ingest skips kits and accessories);
+// other lines say "part", which claims no more than the store knows.
+async function cheapestValve(question) {
+  const series = marwinSeriesOf(question);
+  let scope, where, params;
+  if (series) {
+    scope = `Marwin ${series} series valve`;
+    where = `product_line = 'marwin' AND description LIKE $1`;
+    params = [`Marwin ${series} series%`];
+  } else if (/\bmarwin\b/i.test(String(question || ''))) {
+    scope = 'Marwin valve';
+    where = `product_line = 'marwin'`;
+    params = [];
+  } else {
+    const q = quotedLine(question);
+    if (!q) return null;
+    scope = `${q.line} part`;
+    where = 'product_line = $1';
+    params = [q.line.toLowerCase()];
+  }
+  const { rows } = await pool.query(
+    `SELECT part_number, description, sell_price FROM prices
+     WHERE ${where} AND currency = 'GBP'
+     ORDER BY sell_price ASC, norm_key LIMIT 1`, params);
+  const c = cheapestOf(allConfigs(), rows);
+  return c ? renderCheapestValve({ scope, ...c }) : null;
+}
+
 async function lineSummary(lineLabel) {
   const key = String(lineLabel || '').toLowerCase();
   const { rows } = await pool.query(
@@ -93,14 +126,20 @@ async function lineSummary(lineLabel) {
 
 // The deterministic price turn, or null to let the ordinary answer path run.
 // Only active while the price lookup switch on the Health page is on. Order:
-// a named part wins, then a named line with loaded prices answers with its
-// range, and the enquiry note remains only for lines with nothing loaded.
+// a named part wins, then a superlative question answers with the cheapest
+// build read back through its matrix, then a named series or line answers
+// with its range, and the enquiry note remains only for lines with nothing
+// loaded.
 export async function priceTurn(question) {
   if (!priceIntent(question)) return null;
   if (!(await priceEnabled())) return null;
   for (const tok of partTokens(question)) {
     const r = await lookupPrice(tok);
     if (r.exact && r.matches.length) return { answer: renderPriceAnswer(r.matches[0]), kind: 'price' };
+  }
+  if (superlativeIntent(question)) {
+    const c = await cheapestValve(question).catch(() => null);
+    if (c) return { answer: c, kind: 'cheapest' };
   }
   const series = marwinSeriesOf(question);
   if (series) {

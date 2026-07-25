@@ -1,7 +1,5 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import { emptySlots, applyValue, checkConstraints, checkCautions, assemble } from './engine.mjs';
+import { loadConfig, listModels } from './registry.mjs';
 import { voiceGate } from '../answer.mjs';
 
 // The conversational layer. This is the only place the model works, and it works
@@ -12,22 +10,10 @@ import { voiceGate } from '../answer.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
-const MODELS_DIR = join(dirname(fileURLToPath(import.meta.url)), 'models');
 
-const cache = new Map();
-export function loadConfig(modelId) {
-  const id = String(modelId || '').toLowerCase();
-  if (cache.has(id)) return cache.get(id);
-  let cfg = null;
-  try { cfg = JSON.parse(readFileSync(join(MODELS_DIR, `${id}.json`), 'utf8')); } catch { cfg = null; }
-  cache.set(id, cfg);
-  return cfg;
-}
-export function listModels() {
-  return readdirSync(MODELS_DIR).filter(f => f.endsWith('.json'))
-    .map(f => JSON.parse(readFileSync(join(MODELS_DIR, f), 'utf8')))
-    .map(c => ({ model: c.model, displayName: c.displayName }));
-}
+// The registry owns the models directory; re-exported so existing callers
+// keep their import path.
+export { loadConfig, listModels };
 
 // ---- model calls: interpretation only ----
 

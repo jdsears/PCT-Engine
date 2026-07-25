@@ -14,6 +14,8 @@ import { parseBestobell, parseHex } from './parseBooksSpecial.mjs';
 import { parseMarwinMd } from './parseMarwinMd.mjs';
 import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
 import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
+import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
+import { allConfigs } from '../configurator/registry.mjs';
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -519,6 +521,55 @@ await check('the twice-priced ruling lives in the one storage statement: the hig
   assert(/GREATEST\(prices\.sell_price, EXCLUDED\.sell_price\)/.test(batched)
     && (batched.match(/'guide'/g) || []).length === 3,
     'the ruling clauses and the guide label are identical at any batch width');
+});
+
+console.log('\nThe cheapest-valve tier (superlative questions, matrix read-back):');
+
+await check('superlative words are read narrowly: money superlatives yes, other lowests no', async () => {
+  assert(superlativeIntent('what is the lowest cost of a marwin valve?'), 'lowest cost');
+  assert(superlativeIntent('cheapest marwin valve please'), 'cheapest');
+  assert(superlativeIntent('least expensive 4700 build'), 'least expensive');
+  assert(superlativeIntent('best price on a 3000 series'), 'best price');
+  assert(!superlativeIntent('lowest temperature rating of the 9700'), 'a lowest temperature is not a price superlative');
+  assert(!superlativeIntent('how much does the 4700 cost'), 'a plain price question is not a superlative');
+});
+
+await check('the cheapest decodable build reads back slot by slot with the guide caveat', async () => {
+  const rows = [{ part_number: '4700F-05A-CS/FAHLNN0000NN', description: 'Marwin 4700 series, 1/2", carbon steel, lever', sell_price: 111 }];
+  const c = cheapestOf(allConfigs(), rows);
+  assert(c && c.build, 'the book code decodes through the registry');
+  const text = renderCheapestValve({ scope: 'Marwin valve', ...c });
+  assert(text.includes('The lowest priced Marwin valve in the loaded book is **4700F-05A-CS/FAHLNN0000NN**'), 'the answer names the code');
+  assert(text.includes('£111'), 'the synthetic price renders as loaded');
+  assert(text.includes('reads through the') && /- .*: .*\(4700F\)/.test(text), 'the spec lists each position with its code');
+  assert(text.includes("guide price at the calculator's standard settings") && text.includes('per enquiry'), 'the guide caveat and the enquiry edge hold');
+  assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
+});
+
+await check('an undecodable head row stays the answer, honestly, never skipped for a runner-up', async () => {
+  const rows = [
+    { part_number: 'MS3000X-050-CS/PTS3W5GRHL', description: 'Marwin MS3000 series metal seated, 1/2", lever', sell_price: 11 },
+    { part_number: '4700F-05A-CS/FAHLNN0000NN', description: 'Marwin 4700 series, 1/2", carbon steel, lever', sell_price: 22 },
+  ];
+  const c = cheapestOf(allConfigs(), rows);
+  assert(c.row.part_number === 'MS3000X-050-CS/PTS3W5GRHL', 'the head row wins even undecodable');
+  assert(!c.build, "the book's short form is not the datasheet grammar, so it does not decode");
+  const text = renderCheapestValve({ scope: 'Marwin valve', ...c });
+  assert(text.includes('no ordering matrix in the engine'), 'the gap is confessed, not papered over');
+  assert(text.includes('Marwin MS3000 series metal seated'), "the book's own description carries the spec");
+  assert(!text.includes('reads through'), 'no read-back is claimed');
+});
+
+await check('matrix cautions ride along on the read-back', async () => {
+  const b = decodeAcross(allConfigs(), '9700F-05A-CS/KAHLNN0000NN');
+  assert(b, 'the 9700 book form decodes');
+  const text = renderCheapestValve({ scope: 'Marwin 9700 series valve', row: { part_number: '9700F-05A-CS/KAHLNN0000NN', description: '', sell_price: 33 }, build: b });
+  assert(text.includes('Note:') && /consult factory/i.test(text), "the sheet's consult-factory line rides along");
+});
+
+await check('no rows means no answer, so the turn falls through', async () => {
+  assert(cheapestOf(allConfigs(), []) === null, 'empty rows');
+  assert(decodeAcross(allConfigs(), 'NOT-A-CODE') === null, 'garbage decodes nowhere');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
