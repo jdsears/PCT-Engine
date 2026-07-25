@@ -1,0 +1,229 @@
+{
+  "model": "MK75",
+  "line": "jordan",
+  "displayName": "Jordan Mark 75 wafer style control valve",
+  "match": ["mk75", "mark 75", "jordan 75", "wafer control valve"],
+  "source": { "doc": "mk75.pdf", "page": "8 and 9", "section": "Ordering Schematic Mark 75" },
+  "note": "Extracted by hand from the ordering schematic, eighteen positions assembled bare. The actuator size digit runs through four positions, the range, the diaphragm, the actuator and the powered accessories, and the sheet prints the same 35M, 55M, 85M and 100M classes in each, so the digits are held consistent by constraints. The 100M class and the 8 inch size are printed for the side positioner model alone. The starred 3-9 and 9-15 ranges are positioner required, so on a plain 75 they refuse an empty SMP position. The seats section prints one ZZ spanning material and Cv, so a non-standard seat decodes as Z in each character, and the sheet's own line, consult factory for equal percentage requirements, is carried as a caution on the seat.",
+  "assembly": "{model}{size}{body}{ends}{trim}{seatMaterial}{cv}{rangeActuator}{diaphragm}{actuator}{accessory1}{action}{accessory2}{ped}{smp}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "75", "label": "Standard", "aliases": ["mk75", "mark 75", "standard"] },
+        { "code": "75SP", "label": "Side mounted positioner", "aliases": ["75sp"] },
+        { "code": "75TP", "label": "Top mounted positioner", "aliases": ["75tp"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "100", "label": "1\"", "aliases": ["1\"", "DN25"] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\"", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\"", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\"", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\"", "aliases": ["4\"", "DN100"] },
+        { "code": "600", "label": "6\"", "aliases": ["6\"", "DN150"] },
+        { "code": "800", "label": "8\" (available with 75SP only)", "aliases": ["8\"", "DN200"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CB", "label": "Carbon steel bar", "aliases": ["carbon steel bar"] },
+        { "code": "SB", "label": "Stainless steel bar", "aliases": ["stainless bar"] },
+        { "code": "CS", "label": "Carbon steel cast", "aliases": ["carbon steel cast"] },
+        { "code": "S6", "label": "Stainless steel cast", "aliases": ["stainless cast"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "I3", "label": "150# / 300# IFE", "aliases": ["ife"] },
+        { "code": "I5", "label": "150# bolt thru (8\" only)", "aliases": ["bolt thru 150"] },
+        { "code": "C3", "label": "6\" 300# bolt thru, CS/S6 only", "aliases": ["bolt thru 300"] },
+        { "code": "C5", "label": "6\" 150# bolt thru, CS/S6 only", "aliases": ["bolt thru 6 150"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T6", "label": "316SS / PTFE packing", "aliases": ["316 ptfe"] },
+        { "code": "I6", "label": "316SS / 287-I packing", "aliases": ["316 287-i"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seatMaterial", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "W", "label": "316SS / Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard seat"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "8", "label": "9.5", "aliases": ["9.5"] },
+        { "code": "A", "label": "33", "aliases": ["33"] },
+        { "code": "B", "label": "38", "aliases": ["38"] },
+        { "code": "E", "label": "72", "aliases": ["72"] },
+        { "code": "F", "label": "76", "aliases": ["76"] },
+        { "code": "H", "label": "103", "aliases": ["103"] },
+        { "code": "I", "label": "180", "aliases": ["180"] },
+        { "code": "J", "label": "400", "aliases": ["400"] },
+        { "code": "K", "label": "600", "aliases": ["600"] },
+        { "code": "Z", "label": "Non-standard (the sheet prints one ZZ across material and Cv)", "aliases": ["non-standard cv"] }
+      ]
+    },
+    {
+      "id": "rangeActuator", "label": "Range (7 and 8)", "position": 8, "required": true,
+      "options": [
+        { "code": "A3", "label": "3-15 direct, 35M", "aliases": ["3-15 direct 35m"] },
+        { "code": "A5", "label": "3-15 direct, 55M", "aliases": ["3-15 direct 55m"] },
+        { "code": "A8", "label": "3-15 direct, 85M", "aliases": ["3-15 direct 85m"] },
+        { "code": "A9", "label": "Direct, 100M (8\" MK75SP only)", "aliases": ["direct 100m"] },
+        { "code": "B3", "label": "3-15 reverse, 35M", "aliases": ["3-15 reverse 35m"] },
+        { "code": "B5", "label": "3-15 reverse, 55M", "aliases": ["3-15 reverse 55m"] },
+        { "code": "B8", "label": "3-15 reverse, 85M", "aliases": ["3-15 reverse 85m"] },
+        { "code": "B9", "label": "Reverse, 100M (8\" MK75SP only)", "aliases": ["reverse 100m"] },
+        { "code": "C3", "label": "3-9 direct, 35M (positioner required)", "aliases": ["3-9 direct 35m"] },
+        { "code": "C5", "label": "3-9 direct, 55M (positioner required)", "aliases": ["3-9 direct 55m"] },
+        { "code": "C8", "label": "3-9 direct, 85M (positioner required)", "aliases": ["3-9 direct 85m"] },
+        { "code": "D3", "label": "3-9 reverse, 35M (positioner required)", "aliases": ["3-9 reverse 35m"] },
+        { "code": "D5", "label": "3-9 reverse, 55M (positioner required)", "aliases": ["3-9 reverse 55m"] },
+        { "code": "D8", "label": "3-9 reverse, 85M (positioner required)", "aliases": ["3-9 reverse 85m"] },
+        { "code": "E3", "label": "9-15 direct, 35M (positioner required)", "aliases": ["9-15 direct 35m"] },
+        { "code": "E5", "label": "9-15 direct, 55M (positioner required)", "aliases": ["9-15 direct 55m"] },
+        { "code": "E8", "label": "9-15 direct, 85M (positioner required)", "aliases": ["9-15 direct 85m"] },
+        { "code": "F3", "label": "9-15 reverse, 35M (positioner required)", "aliases": ["9-15 reverse 35m"] },
+        { "code": "F5", "label": "9-15 reverse, 55M (positioner required)", "aliases": ["9-15 reverse 55m"] },
+        { "code": "F8", "label": "9-15 reverse, 85M (positioner required)", "aliases": ["9-15 reverse 85m"] },
+        { "code": "G3", "label": "6-30 direct, 35M", "aliases": ["6-30 direct 35m"] },
+        { "code": "G5", "label": "6-30 direct, 55M", "aliases": ["6-30 direct 55m"] },
+        { "code": "G8", "label": "6-30 direct, 85M", "aliases": ["6-30 direct 85m"] },
+        { "code": "H3", "label": "6-30 reverse, 35M", "aliases": ["6-30 reverse 35m"] },
+        { "code": "H5", "label": "6-30 reverse, 55M", "aliases": ["6-30 reverse 55m"] },
+        { "code": "H8", "label": "6-30 reverse, 85M", "aliases": ["6-30 reverse 85m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (9 and 10)", "position": 9, "required": true,
+      "options": [
+        { "code": "B3", "label": "Buna-N, 35M", "aliases": ["buna 35m"] },
+        { "code": "B5", "label": "Buna-N, 55M", "aliases": ["buna 55m"] },
+        { "code": "B8", "label": "Buna-N, 85M", "aliases": ["buna 85m"] },
+        { "code": "B9", "label": "Buna-N, 100M (8\" MK75SP only)", "aliases": ["buna 100m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard diaphragm"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (11 and 12)", "position": 10, "required": true,
+      "options": [
+        { "code": "A3", "label": "35M", "aliases": ["35m"] },
+        { "code": "A5", "label": "55M", "aliases": ["55m"] },
+        { "code": "A8", "label": "85M", "aliases": ["85m"] },
+        { "code": "A9", "label": "100M (8\" MK75SP only)", "aliases": ["100m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessory1", "label": "Accessory 1 (13 and 14)", "position": 11, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "AR", "label": "Air regulator", "aliases": ["air regulator"] },
+        { "code": "H5", "label": "Handwheel, 55M actuator", "aliases": ["handwheel 55m"] },
+        { "code": "H8", "label": "Handwheel, 85M actuator", "aliases": ["handwheel 85m"] },
+        { "code": "H9", "label": "Handwheel, 100M actuator (8\" MK75SP only)", "aliases": ["handwheel 100m"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessory"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (15)", "position": 12, "required": true,
+      "options": [
+        { "code": "D", "label": "Air-to-close", "aliases": ["air to close"] },
+        { "code": "R", "label": "Air-to-open", "aliases": ["air to open"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard action"] }
+      ]
+    },
+    {
+      "id": "accessory2", "label": "Accessory 2 (16)", "position": 13, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none"] },
+        { "code": "3", "label": "I/P 35M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 35m"] },
+        { "code": "5", "label": "I/P 55M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 55m"] },
+        { "code": "8", "label": "I/P 85M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 85m"] },
+        { "code": "9", "label": "I/P 35M/55M/85M actuator, 4-20mA / 6-30 psi", "aliases": ["ip 6-30"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessory 2"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance (17)", "position": 14, "required": true,
+      "options": [
+        { "code": "0", "label": "Not required", "aliases": ["not required"] },
+        { "code": "F", "label": "CE category 1", "aliases": ["ce category 1"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard ped"] }
+      ]
+    },
+    {
+      "id": "smp", "label": "SMP (18)", "position": 15, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no smp"] },
+        { "code": "A", "label": "SMP DIR/REV 3-15", "aliases": ["smp 3-15"] },
+        { "code": "B", "label": "SMP DIR/REV 3-9", "aliases": ["smp 3-9"] },
+        { "code": "C", "label": "SMP DIR/REV 9-15", "aliases": ["smp 9-15"] },
+        { "code": "D", "label": "SMP/IP DIR/REV 4-20", "aliases": ["smp ip 4-20"] },
+        { "code": "E", "label": "SMP/IP DIR/REV 4-12", "aliases": ["smp ip 4-12"] },
+        { "code": "F", "label": "SMP/IP DIR/REV 12-20", "aliases": ["smp ip 12-20"] },
+        { "code": "G", "label": "MK16IQ DIR/REV 4-20 (Hart and FM approved)", "aliases": ["mk16iq"] },
+        { "code": "H", "label": "MK16IQ-B DIR/REV 4-20 (with gauges)", "aliases": ["mk16iq-b"] },
+        { "code": "J", "label": "MK16IQ-FF DIR/REV 4-20 (Fieldbus with gauges)", "aliases": ["mk16iq-ff"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard smp"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "size": "800" }, "forbid": { "model": ["75", "75TP"] },
+      "reason": "the 8 inch is printed available with the side positioner model alone" },
+    { "when": { "ends": "I5" }, "forbid": { "size": ["100", "150", "200", "250", "300", "400", "600"] },
+      "reason": "the 150# bolt thru is printed 8 inch only" },
+    { "when": { "ends": ["C3", "C5"] }, "forbid": { "size": ["100", "150", "200", "250", "300", "400", "800"] },
+      "reason": "the bolt thru 6 inch rows are printed for the 6 inch" },
+    { "when": { "ends": ["C3", "C5"] }, "forbid": { "body": ["CB", "SB"] },
+      "reason": "the bolt thru 6 inch rows are printed CS and S6 only" },
+    { "when": { "rangeActuator": ["A9", "B9"] }, "forbid": { "model": ["75", "75TP"] },
+      "reason": "the 100M class is printed for the 8 inch side positioner alone" },
+    { "when": { "rangeActuator": ["A9", "B9"] }, "forbid": { "size": ["100", "150", "200", "250", "300", "400", "600"] },
+      "reason": "the 100M class is printed for the 8 inch side positioner alone" },
+    { "when": { "model": "75SP" }, "forbid": { "rangeActuator": ["C3", "C5", "C8", "D3", "D5", "D8", "E3", "E5", "E8", "F3", "F5", "F8", "G3", "G5", "G8", "H3", "H5", "H8"] },
+      "reason": "the side positioner table prints the direct and reverse rows alone" },
+    { "when": { "model": "75", "rangeActuator": ["C3", "C5", "C8", "D3", "D5", "D8", "E3", "E5", "E8", "F3", "F5", "F8"] }, "forbid": { "smp": ["0"] },
+      "reason": "the starred 3-9 and 9-15 ranges are positioner required; a plain 75 needs the SMP position filled" },
+    { "when": { "rangeActuator": ["A3", "B3", "C3", "D3", "E3", "F3", "G3", "H3"] }, "forbid": { "diaphragm": ["B5", "B8", "B9"], "actuator": ["A5", "A8", "A9"] },
+      "reason": "the actuator size digit runs through the range, diaphragm and actuator positions, here 35M" },
+    { "when": { "rangeActuator": ["A5", "B5", "C5", "D5", "E5", "F5", "G5", "H5"] }, "forbid": { "diaphragm": ["B3", "B8", "B9"], "actuator": ["A3", "A8", "A9"] },
+      "reason": "the actuator size digit runs through the range, diaphragm and actuator positions, here 55M" },
+    { "when": { "rangeActuator": ["A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"] }, "forbid": { "diaphragm": ["B3", "B5", "B9"], "actuator": ["A3", "A5", "A9"] },
+      "reason": "the actuator size digit runs through the range, diaphragm and actuator positions, here 85M" },
+    { "when": { "rangeActuator": ["A9", "B9"] }, "forbid": { "diaphragm": ["B3", "B5", "B8"], "actuator": ["A3", "A5", "A8"] },
+      "reason": "the actuator size digit runs through the range, diaphragm and actuator positions, here 100M" },
+    { "when": { "accessory1": "H5" }, "forbid": { "actuator": ["A3", "A8", "A9"] },
+      "reason": "the handwheel names its actuator, 55M" },
+    { "when": { "accessory1": "H8" }, "forbid": { "actuator": ["A3", "A5", "A9"] },
+      "reason": "the handwheel names its actuator, 85M" },
+    { "when": { "accessory1": "H9" }, "forbid": { "actuator": ["A3", "A5", "A8"] },
+      "reason": "the handwheel names its actuator, 100M" },
+    { "when": { "accessory2": "3" }, "forbid": { "actuator": ["A5", "A8", "A9"] },
+      "reason": "the I/P names its actuator, 35M" },
+    { "when": { "accessory2": "5" }, "forbid": { "actuator": ["A3", "A8", "A9"] },
+      "reason": "the I/P names its actuator, 55M" },
+    { "when": { "accessory2": "8" }, "forbid": { "actuator": ["A3", "A5", "A9"] },
+      "reason": "the I/P names its actuator, 85M" }
+  ],
+  "cautions": [
+    { "when": { "seatMaterial": "W" },
+      "note": "The sheet's own line under the seats: consult factory for equal percentage requirements." }
+  ]
+}
