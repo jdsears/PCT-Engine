@@ -48,6 +48,10 @@ const mk6769 = JSON.parse(readFileSync(join(here, 'models', 'mk6769.json'), 'utf
 const mk82 = JSON.parse(readFileSync(join(here, 'models', 'mk82.json'), 'utf8'));
 const mk85 = JSON.parse(readFileSync(join(here, 'models', 'mk85.json'), 'utf8'));
 const mk86 = JSON.parse(readFileSync(join(here, 'models', 'mk86.json'), 'utf8'));
+const mk80 = JSON.parse(readFileSync(join(here, 'models', 'mk80.json'), 'utf8'));
+const mk87 = JSON.parse(readFileSync(join(here, 'models', 'mk87.json'), 'utf8'));
+const mk89 = JSON.parse(readFileSync(join(here, 'models', 'mk89.json'), 'utf8'));
+const mk801 = JSON.parse(readFileSync(join(here, 'models', 'mk801.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -828,6 +832,52 @@ check('the spanning ZZ device and the sheet divergences are confessed in the not
   assert.ok(/12/.test(mk82.note) && /22/.test(mk82.note), 'the tank fitting code divergence against the 85 sheet is named');
   assert.ok(/5D/.test(mk82.note), 'the two character action codes are named against the single character siblings');
   assert.ok(/inferred/i.test(mk82.constraints.find(c => c.reason.includes('bulb it takes')).reason), 'the well to bulb coupling declares itself inferred');
+});
+
+console.log('\nThe rest of the Jordan temperature family: 80, 87, 89 and 801/802:');
+
+check('the four sheets round-trip, thermowell systems and all', () => {
+  roundTrip(mk80, {
+    model: '80T', size: '125', body: 'S6', ends: 'I4', trim: 'IH', seatMaterial: 'U', cv: 'J',
+    range: '93', thermowell: 'HB', system: 'H2B3R', action: 'R', accessories: 'W',
+  }, '80T-125-S6/I4IHUJ93HBH2B3RRW');
+  roundTrip(mk87, {
+    model: '87', size: '600', body: 'CI', ends: 'PT', trim: 'C3', seat: 'V', cv: 'J',
+    range: '93', thermowell: 'NN', bulb: 'A1', capillaryArmor: 'B5', actuator: 'A', action: 'D', accessories: '0',
+  }, '87600CIPTC3VJ93NNA1B5AD0');
+  roundTrip(mk89, {
+    model: '89', size: '150', body: 'CS', ends: 'PT', trim: 'T3', seatMaterial: 'A', cv: '9',
+    range: '12', thermowell: 'AA', system: 'N1N1Q', accessories: '0',
+  }, '89-150-CS/PTT3A912AAN1N1Q0');
+  roundTrip(mk801, {
+    model: '802T', size: '100', body: 'BR', ends: 'F7', trim: 'IA', seatMaterial: '2', cv: 'E',
+    range: '90', thermowell: 'EB', bulb: 'H2', capillaryArmor: 'T3', actuator: 'R', action: 'D', accessories: '8',
+  }, '802T-100-BR/F7IA2E90EBH2T3RD8');
+});
+
+check('the starred sub-zero ranges demand the reinforced actuator', () => {
+  assert.ok(checkConstraints(mk80, { range: '06', system: 'N1N1Q' }).length > 0, 'a standard system refuses the -20 to 20 spring on the 80');
+  assert.equal(checkConstraints(mk80, { range: '06', system: 'A2A3R' }).length, 0, 'a reinforced system serves it');
+  assert.ok(checkConstraints(mk89, { range: 'A6', system: 'C9A1A' }).length > 0, 'the Celsius star holds on the 89, Type C systems included');
+  assert.ok(checkConstraints(mk87, { range: '06', actuator: 'A' }).length > 0, 'the 87 refuses its standard actuator below zero');
+  assert.ok(checkConstraints(mk801, { range: '07', actuator: 'A' }).length > 0, 'the 801 light spring star holds');
+});
+
+check('the size brackets and sensing couplings hold across the four', () => {
+  assert.ok(checkConstraints(mk87, { cv: 'J', size: '200' }).length > 0, 'the 395 Cv is 6 inch alone');
+  assert.ok(checkConstraints(mk87, { ends: 'I5', body: 'CI' }).length > 0, 'the 87 IFE gloss holds');
+  assert.ok(checkConstraints(mk87, { thermowell: 'AA', bulb: 'A2' }).length > 0, 'well and bulb sizes couple on the 87');
+  assert.ok(checkConstraints(mk801, { thermowell: 'AC', bulb: 'A2' }).length > 0, 'well and bulb sizes couple on the 801');
+  assert.equal(checkConstraints(mk801, { thermowell: 'HC', bulb: 'H3' }).length, 0, 'the matched Type B pair passes');
+  assert.equal(applyValue(mk89, {}, 'size', '100').accepted, false, 'the three-way is 1-1/2 and 2 inch alone');
+});
+
+check('the 89 collisions are cautions in the open, and the notes hold their artefacts', () => {
+  assert.equal(checkCautions(mk89, { ends: 'BT' }).length, 1, 'the BSPT collision cautions on selection');
+  assert.equal(checkCautions(mk89, { range: '56' }).length, 1, 'the light spring 58 collision cautions as 56');
+  assert.ok(/58/.test(mk89.note) && /56/.test(mk89.note) && /DN50/.test(mk89.note), 'the 89 artefacts are named');
+  assert.ok(/87, 89 and 801/.test(mk80.note) || /the shape the 87/.test(mk80.note), 'the 80 names the family sheets that prove its shape');
+  assert.ok(/not enforced/.test(mk80.note) && /not enforced/.test(mk89.note), 'the well to system pairing is confessed as unenforced');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

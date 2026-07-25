@@ -1,0 +1,241 @@
+{
+  "model": "MK89",
+  "line": "jordan",
+  "displayName": "Jordan Mark 89 three-way temperature regulator",
+  "match": ["mk89", "mark 89", "jordan 89", "89mx", "three-way temperature"],
+  "source": { "doc": "mk89.pdf", "page": "4 to 6", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash. Three-way, so there is no action position; the thermowell system position carries the sheet's five character codes, bulb, capillary and actuator in one, including the Type C bulb systems. Held for the PDF, three artefacts: (1) the end column prints BP against both BSPT and BSPP, so BSPT is carried as BT, the family's code, with a caution to verify, the 4700 precedent; (2) the light spring at 155 to 200 prints code 58, colliding with the standard spring's own 58, and is carried as 56, the code the Mark 80 sheet gives the same span, with a caution to verify; (3) the 1-1/2 inch size row prints DN50 where DN40 is the family's gloss, noted only. The starred ranges, -20 to 20 in both scales, refuse every system code that does not end in R. The well to system pairing follows the size-for-bulb heading but is not enforced, held for John's confirmation.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seatMaterial}{cv}{range}{thermowell}{system}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "89", "label": "Three-way temperature regulator", "aliases": ["mk89", "mark 89"] },
+        { "code": "89T", "label": "With temperature gauge", "aliases": ["mk89t"] },
+        { "code": "89MX", "label": "Three-way mixing valve", "aliases": ["mixing valve", "89mx"] },
+        { "code": "89MXT", "label": "Mixing valve with temperature gauge", "aliases": ["89mxt"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "150", "label": "1-1/2\" (the sheet prints DN50 here; the family gloss is DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT (printed BP on the sheet, see note)", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "F3", "label": "300# FE (except IFE)", "aliases": ["300 flanged"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "T3", "label": "303 SS", "aliases": ["303"] },
+        { "code": "T6", "label": "316 SS", "aliases": ["316"] }
+      ]
+    },
+    {
+      "id": "seatMaterial", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316 SST", "aliases": ["316 seat"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv", "position": 7, "required": true,
+      "options": [
+        { "code": "9", "label": "15 (12.9 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25 (21.5 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30 (25.8 Kv)", "aliases": ["30"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range", "position": 8, "required": true,
+      "options": [
+        { "code": "06", "label": "-20 to 20°F standard spring (reinforced actuator required)", "aliases": ["-20 to 20"] },
+        { "code": "12", "label": "10 to 55°F standard spring", "aliases": ["10 to 55"] },
+        { "code": "19", "label": "35 to 90°F standard spring", "aliases": ["35 to 90"] },
+        { "code": "27", "label": "55 to 115°F standard spring", "aliases": ["55 to 115"] },
+        { "code": "35", "label": "80 to 140°F standard spring", "aliases": ["80 to 140"] },
+        { "code": "42", "label": "110 to 165°F standard spring", "aliases": ["110 to 165"] },
+        { "code": "49", "label": "120 to 185°F standard spring", "aliases": ["120 to 185"] },
+        { "code": "58", "label": "160 to 225°F standard spring", "aliases": ["160 to 225"] },
+        { "code": "66", "label": "205 to 260°F standard spring", "aliases": ["205 to 260"] },
+        { "code": "72", "label": "230 to 290°F standard spring", "aliases": ["230 to 290"] },
+        { "code": "81", "label": "265 to 325°F standard spring", "aliases": ["265 to 325"] },
+        { "code": "88", "label": "315 to 400°F standard spring", "aliases": ["315 to 400"] },
+        { "code": "93", "label": "380 to 450°F standard spring", "aliases": ["380 to 450"] },
+        { "code": "A6", "label": "-29 to -7°C standard spring (reinforced actuator required)", "aliases": ["-29 to -7"] },
+        { "code": "B2", "label": "-12 to 10°C standard spring", "aliases": ["-12 to 10"] },
+        { "code": "B9", "label": "2 to 32°C standard spring", "aliases": ["2 to 32"] },
+        { "code": "C7", "label": "13 to 46°C standard spring", "aliases": ["13 to 46"] },
+        { "code": "D5", "label": "27 to 60°C standard spring", "aliases": ["27 to 60"] },
+        { "code": "E2", "label": "43 to 74°C standard spring", "aliases": ["43 to 74"] },
+        { "code": "E9", "label": "49 to 85°C standard spring", "aliases": ["49 to 85"] },
+        { "code": "F8", "label": "71 to 107°C standard spring", "aliases": ["71 to 107"] },
+        { "code": "G6", "label": "96 to 127°C standard spring", "aliases": ["96 to 127"] },
+        { "code": "H2", "label": "110 to 143°C standard spring", "aliases": ["110 to 143"] },
+        { "code": "J1", "label": "129 to 163°C standard spring", "aliases": ["129 to 163"] },
+        { "code": "J8", "label": "157 to 204°C standard spring", "aliases": ["157 to 204"] },
+        { "code": "K3", "label": "193 to 232°C standard spring", "aliases": ["193 to 232"] },
+        { "code": "05", "label": "-25 to -5°F light spring", "aliases": ["-25 to -5"] },
+        { "code": "11", "label": "5 to 35°F light spring", "aliases": ["5 to 35"] },
+        { "code": "17", "label": "30 to 70°F light spring", "aliases": ["30 to 70"] },
+        { "code": "24", "label": "50 to 90°F light spring", "aliases": ["50 to 90"] },
+        { "code": "32", "label": "75 to 115°F light spring", "aliases": ["75 to 115"] },
+        { "code": "41", "label": "105 to 140°F light spring", "aliases": ["105 to 140"] },
+        { "code": "46", "label": "115 to 160°F light spring", "aliases": ["115 to 160"] },
+        { "code": "56", "label": "155 to 200°F light spring (printed 58 on this sheet, see note)", "aliases": ["155 to 200"] },
+        { "code": "64", "label": "195 to 235°F light spring", "aliases": ["195 to 235"] },
+        { "code": "71", "label": "225 to 270°F light spring", "aliases": ["225 to 270"] },
+        { "code": "79", "label": "260 to 300°F light spring", "aliases": ["260 to 300"] },
+        { "code": "A5", "label": "-32 to -21°C light spring", "aliases": ["-32 to -21"] },
+        { "code": "B1", "label": "-15 to 2°C light spring", "aliases": ["-15 to 2"] },
+        { "code": "B7", "label": "-1 to 21°C light spring", "aliases": ["-1 to 21"] },
+        { "code": "C4", "label": "10 to 32°C light spring", "aliases": ["10 to 32"] },
+        { "code": "D2", "label": "24 to 46°C light spring", "aliases": ["24 to 46"] },
+        { "code": "E1", "label": "41 to 60°C light spring", "aliases": ["41 to 60"] },
+        { "code": "E6", "label": "46 to 71°C light spring", "aliases": ["46 to 71"] },
+        { "code": "F6", "label": "68 to 93°C light spring", "aliases": ["68 to 93"] },
+        { "code": "G4", "label": "91 to 113°C light spring", "aliases": ["91 to 113"] },
+        { "code": "H1", "label": "107 to 132°C light spring", "aliases": ["107 to 132"] },
+        { "code": "H9", "label": "127 to 149°C light spring", "aliases": ["127 to 149"] }
+      ]
+    },
+    {
+      "id": "thermowell", "label": "Thermowell", "position": 9, "required": true,
+      "options": [
+        { "code": "AA", "label": "Type A 1\" NPT Cu well, for 1\" x 12\" bulb", "aliases": ["cu well 12"] },
+        { "code": "AB", "label": "Type A 1\" NPT Cu well, for 1\" x 14\" bulb", "aliases": ["cu well 14"] },
+        { "code": "BA", "label": "Type A 1\" NPT SST well, for 1\" x 12\" bulb", "aliases": ["sst well 12"] },
+        { "code": "BB", "label": "Type A 1\" NPT SST well, for 1\" x 14\" bulb", "aliases": ["sst well 14"] },
+        { "code": "EA", "label": "Type B 1-1/2\" x 150# SST well, for 1\" x 12\" bulb", "aliases": ["type b 150 well 12"] },
+        { "code": "EB", "label": "Type B 1-1/2\" x 150# SST well, for 1\" x 14\" bulb", "aliases": ["type b 150 well 14"] },
+        { "code": "FA", "label": "Type B 1-1/2\" x 300# SST well, for 1\" x 12\" bulb", "aliases": ["type b 300 well 12"] },
+        { "code": "FB", "label": "Type B 1-1/2\" x 300# SST well, for 1\" x 14\" bulb", "aliases": ["type b 300 well 14"] },
+        { "code": "GA", "label": "Type B 2\" x 150# SST well, for 1\" x 12\" bulb", "aliases": ["type b 2 150 well 12"] },
+        { "code": "GB", "label": "Type B 2\" x 150# SST well, for 1\" x 14\" bulb", "aliases": ["type b 2 150 well 14"] },
+        { "code": "HA", "label": "Type B 2\" x 300# SST well, for 1\" x 12\" bulb", "aliases": ["type b 2 300 well 12"] },
+        { "code": "HB", "label": "Type B 2\" x 300# SST well, for 1\" x 14\" bulb", "aliases": ["type b 2 300 well 14"] },
+        { "code": "11", "label": "Tank fitting only, 1\" NPT brass for 1\" bulb", "aliases": ["tank fitting brass"] },
+        { "code": "12", "label": "Tank fitting only, 1\" NPT SST for 1\" bulb", "aliases": ["tank fitting sst"] },
+        { "code": "NN", "label": "None", "aliases": ["no thermowell"] }
+      ]
+    },
+    {
+      "id": "system", "label": "Thermowell system (bulb, capillary and actuator)", "position": 10, "required": true,
+      "options": [
+        { "code": "N1N1Q", "label": "1\" x 12\" bulb, 8 ft, SWA", "aliases": ["n1n1q"] },
+        { "code": "N2N1Q", "label": "1\" x 14\" bulb, 8 ft, SWA", "aliases": ["n2n1q"] },
+        { "code": "A1A2A", "label": "Copper Type A 1\" x 12\", 10 ft, SWA", "aliases": ["a1a2a"] },
+        { "code": "A2A2A", "label": "Copper Type A 1\" x 14\", 10 ft, SWA", "aliases": ["a2a2a"] },
+        { "code": "A1A3A", "label": "Copper Type A 1\" x 12\", 12 ft, SWA", "aliases": ["a1a3a"] },
+        { "code": "A2A3A", "label": "Copper Type A 1\" x 14\", 12 ft, SWA", "aliases": ["a2a3a"] },
+        { "code": "A1A4A", "label": "Copper Type A 1\" x 12\", 15 ft, SWA", "aliases": ["a1a4a"] },
+        { "code": "A2A4A", "label": "Copper Type A 1\" x 14\", 15 ft, SWA", "aliases": ["a2a4a"] },
+        { "code": "A1A5A", "label": "Copper Type A 1\" x 12\", 20 ft, SWA", "aliases": ["a1a5a"] },
+        { "code": "A2A5A", "label": "Copper Type A 1\" x 14\", 20 ft, SWA", "aliases": ["a2a5a"] },
+        { "code": "A2A1R", "label": "Copper Type A 1\" x 14\", 8 ft, reinforced SWA", "aliases": ["a2a1r"] },
+        { "code": "A2A2R", "label": "Copper Type A 1\" x 14\", 10 ft, reinforced SWA", "aliases": ["a2a2r"] },
+        { "code": "A2A3R", "label": "Copper Type A 1\" x 14\", 12 ft, reinforced SWA", "aliases": ["a2a3r"] },
+        { "code": "A2A4R", "label": "Copper Type A 1\" x 14\", 15 ft, reinforced SWA", "aliases": ["a2a4r"] },
+        { "code": "A2A5R", "label": "Copper Type A 1\" x 14\", 20 ft, reinforced SWA", "aliases": ["a2a5r"] },
+        { "code": "Q1N1Q", "label": "1\" x 12\" bulb, 8 ft, SWA", "aliases": ["q1n1q"] },
+        { "code": "Q2N1Q", "label": "1\" x 14\" bulb, 8 ft, SWA", "aliases": ["q2n1q"] },
+        { "code": "G1B2A", "label": "SST Type A 1\" x 12\", 10 ft, SWA", "aliases": ["g1b2a"] },
+        { "code": "G2B2A", "label": "SST Type A 1\" x 14\", 10 ft, SWA", "aliases": ["g2b2a"] },
+        { "code": "G1B3A", "label": "SST Type A 1\" x 12\", 12 ft, SWA", "aliases": ["g1b3a"] },
+        { "code": "G2B3A", "label": "SST Type A 1\" x 14\", 12 ft, SWA", "aliases": ["g2b3a"] },
+        { "code": "G1B4A", "label": "SST Type A 1\" x 12\", 15 ft, SWA", "aliases": ["g1b4a"] },
+        { "code": "G2B4A", "label": "SST Type A 1\" x 14\", 15 ft, SWA", "aliases": ["g2b4a"] },
+        { "code": "G1B5A", "label": "SST Type A 1\" x 12\", 20 ft, SWA", "aliases": ["g1b5a"] },
+        { "code": "G2B5A", "label": "SST Type A 1\" x 14\", 20 ft, SWA", "aliases": ["g2b5a"] },
+        { "code": "G2B1R", "label": "SST Type A 1\" x 14\", 8 ft, reinforced SWA", "aliases": ["g2b1r"] },
+        { "code": "G2B2R", "label": "SST Type A 1\" x 14\", 10 ft, reinforced SWA", "aliases": ["g2b2r"] },
+        { "code": "G2B3R", "label": "SST Type A 1\" x 14\", 12 ft, reinforced SWA", "aliases": ["g2b3r"] },
+        { "code": "G2B4R", "label": "SST Type A 1\" x 14\", 15 ft, reinforced SWA", "aliases": ["g2b4r"] },
+        { "code": "G2B5R", "label": "SST Type A 1\" x 14\", 20 ft, reinforced SWA", "aliases": ["g2b5r"] },
+        { "code": "H1B1A", "label": "SST Type B 1\" x 12\", 8 ft, SWA", "aliases": ["h1b1a"] },
+        { "code": "H2B1A", "label": "SST Type B 1\" x 14\", 8 ft, SWA", "aliases": ["h2b1a"] },
+        { "code": "H1B2A", "label": "SST Type B 1\" x 12\", 10 ft, SWA", "aliases": ["h1b2a"] },
+        { "code": "H2B2A", "label": "SST Type B 1\" x 14\", 10 ft, SWA", "aliases": ["h2b2a"] },
+        { "code": "H1B3A", "label": "SST Type B 1\" x 12\", 12 ft, SWA", "aliases": ["h1b3a"] },
+        { "code": "H2B3A", "label": "SST Type B 1\" x 14\", 12 ft, SWA", "aliases": ["h2b3a"] },
+        { "code": "H1B4A", "label": "SST Type B 1\" x 12\", 15 ft, SWA", "aliases": ["h1b4a"] },
+        { "code": "H2B4A", "label": "SST Type B 1\" x 14\", 15 ft, SWA", "aliases": ["h2b4a"] },
+        { "code": "H1B5A", "label": "SST Type B 1\" x 12\", 20 ft, SWA", "aliases": ["h1b5a"] },
+        { "code": "H2B5A", "label": "SST Type B 1\" x 14\", 20 ft, SWA", "aliases": ["h2b5a"] },
+        { "code": "H2B1R", "label": "SST Type B 1\" x 14\", 8 ft, reinforced SWA", "aliases": ["h2b1r"] },
+        { "code": "H2B2R", "label": "SST Type B 1\" x 14\", 10 ft, reinforced SWA", "aliases": ["h2b2r"] },
+        { "code": "H2B3R", "label": "SST Type B 1\" x 14\", 12 ft, reinforced SWA", "aliases": ["h2b3r"] },
+        { "code": "H2B4R", "label": "SST Type B 1\" x 14\", 15 ft, reinforced SWA", "aliases": ["h2b4r"] },
+        { "code": "H2B5R", "label": "SST Type B 1\" x 14\", 20 ft, reinforced SWA", "aliases": ["h2b5r"] },
+        { "code": "J3T1A", "label": "TFE coated Type B 1\" x 17\", 8 ft, SWA", "aliases": ["j3t1a"] },
+        { "code": "J3T4A", "label": "TFE coated Type B 1\" x 17\", 10 ft, SWA", "aliases": ["j3t4a"] },
+        { "code": "J3T5A", "label": "TFE coated Type B 1\" x 17\", 12 ft, SWA", "aliases": ["j3t5a"] },
+        { "code": "C9A1A", "label": "Copper Type C 1-1/8\" x 14\", 8 ft, SWA", "aliases": ["c9a1a"] },
+        { "code": "C9A2A", "label": "Copper Type C 1-1/8\" x 14\", 10 ft, SWA", "aliases": ["c9a2a"] },
+        { "code": "C9A3A", "label": "Copper Type C 1-1/8\" x 14\", 12 ft, SWA", "aliases": ["c9a3a"] },
+        { "code": "C9A4A", "label": "Copper Type C 1-1/8\" x 14\", 15 ft, SWA", "aliases": ["c9a4a"] },
+        { "code": "C9A5A", "label": "Copper Type C 1-1/8\" x 14\", 20 ft, SWA", "aliases": ["c9a5a"] },
+        { "code": "C1B1A", "label": "SST Type C 1\" x 12\", 8 ft, SWA", "aliases": ["c1b1a"] },
+        { "code": "C1B2A", "label": "SST Type C 1\" x 12\", 10 ft, SWA", "aliases": ["c1b2a"] },
+        { "code": "C1B3A", "label": "SST Type C 1\" x 12\", 12 ft, SWA", "aliases": ["c1b3a"] },
+        { "code": "C1B4A", "label": "SST Type C 1\" x 12\", 15 ft, SWA", "aliases": ["c1b4a"] },
+        { "code": "C1B5A", "label": "SST Type C 1\" x 12\", 20 ft, SWA", "aliases": ["c1b5a"] },
+        { "code": "C2B1A", "label": "SST Type C 1\" x 14\", 8 ft, SWA", "aliases": ["c2b1a"] },
+        { "code": "C2B2A", "label": "SST Type C 1\" x 14\", 10 ft, SWA", "aliases": ["c2b2a"] },
+        { "code": "C2B3A", "label": "SST Type C 1\" x 14\", 12 ft, SWA", "aliases": ["c2b3a"] },
+        { "code": "C2B4A", "label": "SST Type C 1\" x 14\", 15 ft, SWA", "aliases": ["c2b4a"] },
+        { "code": "C2B5A", "label": "SST Type C 1\" x 14\", 20 ft, SWA", "aliases": ["c2b5a"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories", "position": 11, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none"] },
+        { "code": "2", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "6", "label": "Mounting flange, Cu C bulb", "aliases": ["mounting flange cu"] },
+        { "code": "7", "label": "Mounting flange, SST C bulb", "aliases": ["mounting flange sst"] },
+        { "code": "8", "label": "Yoke cover (flexible neoprene)", "aliases": ["yoke cover"] },
+        { "code": "P", "label": "Thermometer in position 1", "aliases": ["thermometer 1"] },
+        { "code": "Q", "label": "Thermometer in position 2", "aliases": ["thermometer 2"] },
+        { "code": "R", "label": "Thermometer in position 3", "aliases": ["thermometer 3"] },
+        { "code": "S", "label": "Thermometer in position 4", "aliases": ["thermometer 4"] },
+        { "code": "T", "label": "Thermometer in position 5", "aliases": ["thermometer 5"] },
+        { "code": "U", "label": "Thermometer in position 6", "aliases": ["thermometer 6"] },
+        { "code": "V", "label": "Thermometer in position 7", "aliases": ["thermometer 7"] },
+        { "code": "W", "label": "Thermometer in position 8", "aliases": ["thermometer 8"] },
+        { "code": "X", "label": "Oxygen clean", "aliases": ["oxygen clean"] },
+        { "code": "Y", "label": "Oil-free clean", "aliases": ["oil free clean"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "range": ["06", "A6"] }, "forbid": { "system": ["N1N1Q", "N2N1Q", "A1A2A", "A2A2A", "A1A3A", "A2A3A", "A1A4A", "A2A4A", "A1A5A", "A2A5A", "Q1N1Q", "Q2N1Q", "G1B2A", "G2B2A", "G1B3A", "G2B3A", "G1B4A", "G2B4A", "G1B5A", "G2B5A", "H1B1A", "H2B1A", "H1B2A", "H2B2A", "H1B3A", "H2B3A", "H1B4A", "H2B4A", "H1B5A", "H2B5A", "J3T1A", "J3T4A", "J3T5A", "C9A1A", "C9A2A", "C9A3A", "C9A4A", "C9A5A", "C1B1A", "C1B2A", "C1B3A", "C1B4A", "C1B5A", "C2B1A", "C2B2A", "C2B3A", "C2B4A", "C2B5A"] },
+      "reason": "the starred ranges require the reinforced actuator, per the sheet's asterisk, so only the system codes ending in R serve them" }
+  ],
+  "cautions": [
+    { "when": { "ends": "BT" },
+      "note": "The sheet prints BP against both BSPT and BSPP. BSPT is carried here as BT, the code every sibling Jordan sheet gives it; verify against the PDF before ordering." },
+    { "when": { "range": "56" },
+      "note": "The light spring at 155 to 200°F prints code 58 on this sheet, colliding with the standard spring's own 58. It is carried here as 56, the code the Mark 80 sheet gives the same span; verify against the PDF before ordering." }
+  ]
+}
