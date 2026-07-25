@@ -1,0 +1,268 @@
+{
+  "model": "MK68HP",
+  "line": "jordan",
+  "displayName": "Jordan Mark 68HP high pressure regulator",
+  "match": [
+    "mk68hp",
+    "mark 68hp",
+    "jordan 68hp"
+  ],
+  "source": {
+    "doc": "mk68hp.pdf",
+    "page": 2,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash. The ranges carry their own printed size brackets, enforced, and the stainless body prints SS on this sheet where the family prints S6, carried as printed.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{range}{actuator}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "68HP",
+          "label": "High pressure",
+          "aliases": [
+            "mk68hp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\"",
+            "DN15"
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\"",
+            "DN20"
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\"",
+            "DN25"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "CS",
+          "label": "Carbon steel (WCB)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "SS",
+          "label": "Stainless steel (CF8M) (printed SS on this sheet)",
+          "aliases": [
+            "stainless"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "PT",
+          "label": "NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "SW",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "F5",
+          "label": "150# FE",
+          "aliases": [
+            "150 flanged"
+          ]
+        },
+        {
+          "code": "F3",
+          "label": "300# FE",
+          "aliases": [
+            "300 flanged"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard ends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "C1",
+          "label": "Cv 1.4",
+          "aliases": [
+            "1.4"
+          ]
+        },
+        {
+          "code": "C2",
+          "label": "Cv 1.8",
+          "aliases": [
+            "1.8"
+          ]
+        },
+        {
+          "code": "C3",
+          "label": "Cv 2.3",
+          "aliases": [
+            "2.3"
+          ]
+        },
+        {
+          "code": "C4",
+          "label": "Cv 5.0",
+          "aliases": [
+            "5.0"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "range",
+      "label": "Range PSI",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "R1",
+          "label": "100-300 (6.9-20.7 bar), 1/2\"",
+          "aliases": [
+            "100-300"
+          ]
+        },
+        {
+          "code": "R2",
+          "label": "200-450 (13.8-31.0 bar), 1/2\"",
+          "aliases": [
+            "200-450"
+          ]
+        },
+        {
+          "code": "R3",
+          "label": "100-350 (6.9-24.1 bar), 3/4\" to 1\"",
+          "aliases": [
+            "100-350"
+          ]
+        },
+        {
+          "code": "R4",
+          "label": "300-600 (20.7-41.4 bar), 1/2\" to 1\"",
+          "aliases": [
+            "300-600"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "A1",
+          "label": "Actuator",
+          "aliases": [
+            "standard"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "range": [
+          "R1",
+          "R2"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "075",
+          "100"
+        ]
+      },
+      "reason": "these ranges carry the sheet's own half inch bracket"
+    },
+    {
+      "when": {
+        "range": "R3"
+      },
+      "forbid": {
+        "size": [
+          "050"
+        ]
+      },
+      "reason": "this range carries the sheet's own 3/4 to 1 inch bracket"
+    }
+  ],
+  "cautions": []
+}

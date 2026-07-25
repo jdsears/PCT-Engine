@@ -1,0 +1,417 @@
+{
+  "model": "MK627",
+  "line": "jordan",
+  "displayName": "Jordan Mark 627 high pressure regulator",
+  "match": [
+    "mk627",
+    "mark 627",
+    "jordan 627"
+  ],
+  "source": {
+    "doc": "mk627.pdf",
+    "page": 5,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the product designator coding system, model dash size then a slash and eight characters. The flanged and socket weld special adders carry the sheet's own asterisk, steel or stainless bodies only, enforced against the iron-bodied case codes. The sheet's seat recommendation, nitrile or FKM for the low ranges and nylon above 150 PSIG or for the small low pressure orifices, is carried as a caution where a chosen pairing crosses it.",
+  "assembly": "{model}-{size}/{spring}{adders}{versions}{orifice}{seat}{caseBody}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "627",
+          "label": "Mark 627 series",
+          "aliases": [
+            "mk627"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "06",
+          "label": "3/4\"",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "08",
+          "label": "1\"",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "16",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spring",
+      "label": "Spring range (1 and 2)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "020",
+          "label": "5-20 psig (0.34-1.4 bar)",
+          "aliases": [
+            "5-20"
+          ]
+        },
+        {
+          "code": "040",
+          "label": "15-40 psig (1-2.8 bar)",
+          "aliases": [
+            "15-40"
+          ]
+        },
+        {
+          "code": "080",
+          "label": "35-80 psig (2.4-5.5 bar)",
+          "aliases": [
+            "35-80"
+          ]
+        },
+        {
+          "code": "095",
+          "label": "10-95 psig (0.7-6.6 bar)",
+          "aliases": [
+            "10-95"
+          ]
+        },
+        {
+          "code": "150",
+          "label": "70-150 psig (4.8-10.3 bar)",
+          "aliases": [
+            "70-150"
+          ]
+        },
+        {
+          "code": "250",
+          "label": "140-250 psig (9.7-17.2 bar)",
+          "aliases": [
+            "140-250"
+          ]
+        },
+        {
+          "code": "500",
+          "label": "240-500 psig (16.5-34.5 bar)",
+          "aliases": [
+            "240-500"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adders",
+      "label": "Special adders (3)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Monitor",
+          "aliases": [
+            "monitor"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "150# RF (steel or stainless bodies only)",
+          "aliases": [
+            "150 rf"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "300# RF (steel or stainless bodies only)",
+          "aliases": [
+            "300 rf"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "600# RF (steel or stainless bodies only)",
+          "aliases": [
+            "600 rf"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Socket weld (steel or stainless bodies only)",
+          "aliases": [
+            "socket weld"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "900# RTJ (steel or stainless bodies only)",
+          "aliases": [
+            "900 rtj"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "150# RF and monitor (steel or stainless bodies only)",
+          "aliases": [
+            "150 rf monitor"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "300# RF and monitor (steel or stainless bodies only)",
+          "aliases": [
+            "300 rf monitor"
+          ]
+        },
+        {
+          "code": "Y",
+          "label": "600# RF and monitor (steel or stainless bodies only)",
+          "aliases": [
+            "600 rf monitor"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Socket weld and monitor (steel or stainless bodies only)",
+          "aliases": [
+            "socket weld monitor"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "versions",
+      "label": "Versions (4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Standard",
+          "aliases": [
+            "standard"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "NACE",
+          "aliases": [
+            "nace"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "NACE and fluorocarbon elastomers",
+          "aliases": [
+            "nace fluorocarbon"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Stainless trim",
+          "aliases": [
+            "stainless trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orifice",
+      "label": "Orifice (5 and 6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "3/32\"",
+          "aliases": [
+            "3/32 orifice"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/8\"",
+          "aliases": [
+            "1/8 orifice"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/16\"",
+          "aliases": [
+            "3/16 orifice"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1/4\"",
+          "aliases": [
+            "1/4 orifice"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "3/8\"",
+          "aliases": [
+            "3/8 orifice"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "1/2\"",
+          "aliases": [
+            "1/2 orifice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat material (7)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Nitrile",
+          "aliases": [
+            "nitrile"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "Nylon",
+          "aliases": [
+            "nylon"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Fluorocarbon",
+          "aliases": [
+            "fluorocarbon"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "caseBody",
+      "label": "Case / body (8)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "Aluminium / iron",
+          "aliases": [
+            "aluminium iron"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "WCB / WCB",
+          "aliases": [
+            "wcb"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Aluminium / WCB",
+          "aliases": [
+            "aluminium wcb"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Aluminium / LCC steel",
+          "aliases": [
+            "aluminium lcc"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "WCB / LCC steel",
+          "aliases": [
+            "wcb lcc"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "WCB / iron",
+          "aliases": [
+            "wcb iron"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "Stainless / stainless",
+          "aliases": [
+            "stainless"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "adders": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "W",
+          "X",
+          "Y",
+          "Z"
+        ]
+      },
+      "forbid": {
+        "caseBody": [
+          "0",
+          "8"
+        ]
+      },
+      "reason": "the sheet's asterisk: flanged and socket weld adders are for WCB, LCC steel or stainless steel bodies only"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "seat": [
+          "0",
+          "2"
+        ],
+        "spring": [
+          "150",
+          "250",
+          "500"
+        ]
+      },
+      "note": "The sheet's own note: nylon is recommended for pressures above 150 PSIG."
+    }
+  ]
+}
