@@ -1,0 +1,173 @@
+{
+  "model": "MK79",
+  "line": "jordan",
+  "displayName": "Jordan Mark 79 three-way control valve",
+  "match": ["mk79", "mark 79", "jordan 79", "79mx", "three-way control"],
+  "source": { "doc": "mk79.pdf", "page": "3 and 4", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash. Six models, the three-way and mixing forms each plain or with a side or top positioner. The action position prints the single code 0, none, a three-way having no fail direction to choose. The sheet's own line, contact factory for 3 inch ordering information, means no 3 inch row prints and none is offered. The handwheel accessories and I/Ps name their actuator class and refuse a system from another class.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{cv}{system}{accessories}{action}{ip}{smp}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "79", "label": "Three-way control valve", "aliases": ["mk79", "mark 79"] },
+        { "code": "79TP", "label": "With top positioner", "aliases": ["79tp"] },
+        { "code": "79SP", "label": "With side mounted positioner", "aliases": ["79sp"] },
+        { "code": "79MX", "label": "Mixing control valve", "aliases": ["79mx", "mixing"] },
+        { "code": "79MXTP", "label": "Mixing with top positioner", "aliases": ["79mxtp"] },
+        { "code": "79MXSP", "label": "Mixing with side mounted positioner", "aliases": ["79mxsp"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "F3", "label": "300# FE", "aliases": ["300 flanged"] },
+        { "code": "F4", "label": "PN40 DIN FE", "aliases": ["pn40 flanged"] },
+        { "code": "F5", "label": "150# FE", "aliases": ["150 flanged"] },
+        { "code": "F6", "label": "PN16 DIN FE", "aliases": ["pn16 flanged"] },
+        { "code": "F7", "label": "PN10 DIN FE", "aliases": ["pn10 flanged"] },
+        { "code": "F8", "label": "PN25 DIN FE", "aliases": ["pn25 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "T3", "label": "303SS / Teflon packing", "aliases": ["303 teflon"] },
+        { "code": "T6", "label": "316SS / Teflon packing", "aliases": ["316 teflon"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316SST", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon coated"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon coated"] },
+        { "code": "V", "label": "303SS / Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS / Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv", "position": 7, "required": true,
+      "options": [
+        { "code": "9", "label": "15.0 (12.93 Kv)", "aliases": ["15"] },
+        { "code": "A", "label": "25.0 (21.55 Kv)", "aliases": ["25"] },
+        { "code": "B", "label": "30.0 (25.86 Kv)", "aliases": ["30"] }
+      ]
+    },
+    {
+      "id": "system", "label": "Actuator", "position": 8, "required": true,
+      "options": [
+        { "code": "A3B3A3", "label": "3-15 direct, 35M", "aliases": ["a3b3a3"] },
+        { "code": "B3B3A3", "label": "3-15 reverse, 35M", "aliases": ["b3b3a3"] },
+        { "code": "N3Q3N3", "label": "3-15 direct, 35M", "aliases": ["n3q3n3"] },
+        { "code": "Q3Q3N3", "label": "3-15 reverse, 35M", "aliases": ["q3q3n3"] },
+        { "code": "C3B3A3", "label": "3-9 direct, 35M", "aliases": ["c3b3a3"] },
+        { "code": "D3B3A3", "label": "3-9 reverse, 35M", "aliases": ["d3b3a3"] },
+        { "code": "E3B3A3", "label": "9-15 direct, 35M", "aliases": ["e3b3a3"] },
+        { "code": "F3B3A3", "label": "9-15 reverse, 35M", "aliases": ["f3b3a3"] },
+        { "code": "G3B3A3", "label": "6-30 direct, 35M", "aliases": ["g3b3a3"] },
+        { "code": "H3B3A3", "label": "6-30 reverse, 35M", "aliases": ["h3b3a3"] },
+        { "code": "A5B5A5", "label": "3-15 direct, 55M", "aliases": ["a5b5a5"] },
+        { "code": "B5B5A5", "label": "3-15 reverse, 55M", "aliases": ["b5b5a5"] },
+        { "code": "C5B5A5", "label": "3-9 direct, 55M", "aliases": ["c5b5a5"] },
+        { "code": "D5B5A5", "label": "3-9 reverse, 55M", "aliases": ["d5b5a5"] },
+        { "code": "E5B5A5", "label": "9-15 direct, 55M", "aliases": ["e5b5a5"] },
+        { "code": "F5B5A5", "label": "9-15 reverse, 55M", "aliases": ["f5b5a5"] },
+        { "code": "G5B5A5", "label": "6-30 direct, 55M", "aliases": ["g5b5a5"] },
+        { "code": "H5B5A5", "label": "6-30 reverse, 55M", "aliases": ["h5b5a5"] },
+        { "code": "A8B8A8", "label": "3-15 direct, 85M", "aliases": ["a8b8a8"] },
+        { "code": "B8B8A8", "label": "3-15 reverse, 85M", "aliases": ["b8b8a8"] },
+        { "code": "C8B8A8", "label": "3-9 direct, 85M", "aliases": ["c8b8a8"] },
+        { "code": "D8B8A8", "label": "3-9 reverse, 85M", "aliases": ["d8b8a8"] },
+        { "code": "E8B8A8", "label": "9-15 direct, 85M", "aliases": ["e8b8a8"] },
+        { "code": "F8B8A8", "label": "9-15 reverse, 85M", "aliases": ["f8b8a8"] },
+        { "code": "G8B8A8", "label": "6-30 direct, 85M", "aliases": ["g8b8a8"] },
+        { "code": "H8B8A8", "label": "6-30 reverse, 85M", "aliases": ["h8b8a8"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "AR", "label": "Air regulator", "aliases": ["air regulator"] },
+        { "code": "H3", "label": "Handwheel, 35M actuator", "aliases": ["handwheel 35m"] },
+        { "code": "H5", "label": "Handwheel, 55M actuator", "aliases": ["handwheel 55m"] },
+        { "code": "H8", "label": "Handwheel, 85M actuator", "aliases": ["handwheel 85m"] },
+        { "code": "S6", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "TS", "label": "Travel scale", "aliases": ["travel scale"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action", "position": 10, "required": true,
+      "options": [ { "code": "0", "label": "None (three-way)", "aliases": ["none"] } ]
+    },
+    {
+      "id": "ip", "label": "I/P", "position": 11, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no ip"] },
+        { "code": "3", "label": "I/P 35M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 35m"] },
+        { "code": "5", "label": "I/P 55M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 55m"] },
+        { "code": "8", "label": "I/P 85M actuator, 4-20mA / 3-15 psi", "aliases": ["ip 85m"] },
+        { "code": "9", "label": "I/P 35M/55M/85M actuator, 4-20mA / 3-15 psi", "aliases": ["ip any"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard ip"] }
+      ]
+    },
+    {
+      "id": "smp", "label": "SMP", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no smp"] },
+        { "code": "A", "label": "SMP DIR/REV 3-15", "aliases": ["smp 3-15"] },
+        { "code": "B", "label": "SMP DIR/REV 3-9", "aliases": ["smp 3-9"] },
+        { "code": "C", "label": "SMP DIR/REV 9-15", "aliases": ["smp 9-15"] },
+        { "code": "D", "label": "SMP/IP DIR/REV 4-20", "aliases": ["smp ip 4-20"] },
+        { "code": "E", "label": "SMP/IP DIR/REV 4-12", "aliases": ["smp ip 4-12"] },
+        { "code": "F", "label": "SMP/IP DIR/REV 12-20", "aliases": ["smp ip 12-20"] },
+        { "code": "G", "label": "MK16IQ-S DIR/REV 4-20 (Hart and FM approved)", "aliases": ["mk16iq-s"] },
+        { "code": "H", "label": "MK16IQ-B DIR/REV 4-20 (with gauges)", "aliases": ["mk16iq-b"] },
+        { "code": "J", "label": "MK16IQ-FF DIR/REV 4-20 (Fieldbus with gauges)", "aliases": ["mk16iq-ff"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard smp"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "accessories": "H3" }, "forbid": { "system": ["A5B5A5", "B5B5A5", "C5B5A5", "D5B5A5", "E5B5A5", "F5B5A5", "G5B5A5", "H5B5A5", "A8B8A8", "B8B8A8", "C8B8A8", "D8B8A8", "E8B8A8", "F8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the handwheel names its actuator, 35M" },
+    { "when": { "accessories": "H5" }, "forbid": { "system": ["A3B3A3", "B3B3A3", "N3Q3N3", "Q3Q3N3", "C3B3A3", "D3B3A3", "E3B3A3", "F3B3A3", "G3B3A3", "H3B3A3", "A8B8A8", "B8B8A8", "C8B8A8", "D8B8A8", "E8B8A8", "F8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the handwheel names its actuator, 55M" },
+    { "when": { "accessories": "H8" }, "forbid": { "system": ["A3B3A3", "B3B3A3", "N3Q3N3", "Q3Q3N3", "C3B3A3", "D3B3A3", "E3B3A3", "F3B3A3", "G3B3A3", "H3B3A3", "A5B5A5", "B5B5A5", "C5B5A5", "D5B5A5", "E5B5A5", "F5B5A5", "G5B5A5", "H5B5A5"] },
+      "reason": "the handwheel names its actuator, 85M" },
+    { "when": { "ip": "3" }, "forbid": { "system": ["A5B5A5", "B5B5A5", "C5B5A5", "D5B5A5", "E5B5A5", "F5B5A5", "G5B5A5", "H5B5A5", "A8B8A8", "B8B8A8", "C8B8A8", "D8B8A8", "E8B8A8", "F8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the I/P names its actuator, 35M" },
+    { "when": { "ip": "5" }, "forbid": { "system": ["A3B3A3", "B3B3A3", "N3Q3N3", "Q3Q3N3", "C3B3A3", "D3B3A3", "E3B3A3", "F3B3A3", "G3B3A3", "H3B3A3", "A8B8A8", "B8B8A8", "C8B8A8", "D8B8A8", "E8B8A8", "F8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the I/P names its actuator, 55M" },
+    { "when": { "ip": "8" }, "forbid": { "system": ["A3B3A3", "B3B3A3", "N3Q3N3", "Q3Q3N3", "C3B3A3", "D3B3A3", "E3B3A3", "F3B3A3", "G3B3A3", "H3B3A3", "A5B5A5", "B5B5A5", "C5B5A5", "D5B5A5", "E5B5A5", "F5B5A5", "G5B5A5", "H5B5A5"] },
+      "reason": "the I/P names its actuator, 85M" }
+  ],
+  "cautions": [
+    { "when": { "size": "200" },
+      "note": "The sheet's own line: contact the factory for 3 inch ordering information; this sheet stops at 2 inch." }
+  ]
+}

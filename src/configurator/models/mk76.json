@@ -1,0 +1,167 @@
+{
+  "model": "MK76",
+  "line": "jordan",
+  "displayName": "Jordan Mark 76 on/off control valve",
+  "match": ["mk76", "mark 76", "jordan 76", "on/off control valve"],
+  "source": { "doc": "mk76.pdf", "page": "6 and 7", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then a slash. On/off, so the range position carries the single 00 code and the actuator is the 506 for 1/4 to 2 inch or the 35MM for 2-1/2 to 6 inch, coupled to size as the actuator's own brackets say and to the diaphragm's size digit. The I5 end's label prints 150# FE where the I family reads IFE, carried as printed and noted. The solenoid accessories are the sheet's own energise-to-open and energise-to-close codes with their explosion-proof forms.",
+  "assembly": "{model}-{size}-{body}/{ends}{trim}{seat}{cv}{range}{diaphragm}{actuator}{accessories}{action}{ped}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "76", "label": "On/off control valve", "aliases": ["mk76", "on off"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\" (DN65)", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\" (DN80)", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\" (DN100)", "aliases": ["4\"", "DN100"] },
+        { "code": "600", "label": "6\" (DN150)", "aliases": ["6\"", "DN150"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# (printed FE against the I family's IFE, see note)", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE (except IFE)", "aliases": ["150 flanged"] },
+        { "code": "I3", "label": "300# IFE", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE (except IFE)", "aliases": ["300 flanged"] },
+        { "code": "I7", "label": "PN10 DIN IFE", "aliases": ["pn10 ife"] },
+        { "code": "F7", "label": "PN10 FE (except IFE)", "aliases": ["pn10 flanged"] },
+        { "code": "I6", "label": "PN16 DIN IFE", "aliases": ["pn16 ife"] },
+        { "code": "F6", "label": "PN16 FE (except IFE)", "aliases": ["pn16 flanged"] },
+        { "code": "I8", "label": "PN25 DIN IFE", "aliases": ["pn25 ife"] },
+        { "code": "F8", "label": "PN25 FE (except IFE)", "aliases": ["pn25 flanged"] },
+        { "code": "I4", "label": "PN40 DIN IFE", "aliases": ["pn40 ife"] },
+        { "code": "F4", "label": "PN40 FE (except IFE)", "aliases": ["pn40 flanged"] },
+        { "code": "I1", "label": "125# IFE", "aliases": ["125 ife"] },
+        { "code": "F1", "label": "125# FE (except IFE)", "aliases": ["125 flanged"] },
+        { "code": "I2", "label": "250# IFE", "aliases": ["250 ife"] },
+        { "code": "F2", "label": "250# FE (except IFE)", "aliases": ["250 flanged"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim", "position": 5, "required": true,
+      "options": [
+        { "code": "T3", "label": "303SS / TFE packing", "aliases": ["303 tfe"] },
+        { "code": "T6", "label": "316SS / TFE packing", "aliases": ["316 tfe"] },
+        { "code": "TM", "label": "Monel / TFE packing", "aliases": ["monel tfe"] },
+        { "code": "TA", "label": "Alloy 20 / TFE packing", "aliases": ["alloy 20 tfe"] },
+        { "code": "TH", "label": "Hastelloy C / TFE packing", "aliases": ["hastelloy tfe"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "303 SST", "aliases": ["303 seat"] },
+        { "code": "B", "label": "316 SST", "aliases": ["316 seat"] },
+        { "code": "Q", "label": "303/Teflon", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316/Teflon", "aliases": ["316 teflon"] },
+        { "code": "S", "label": "Monel/Teflon", "aliases": ["monel teflon"] },
+        { "code": "T", "label": "AL20/Teflon", "aliases": ["alloy 20 teflon"] },
+        { "code": "U", "label": "Hastelloy C/Teflon", "aliases": ["hastelloy teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] },
+        { "code": "1", "label": "303 SST with standard W.H.", "aliases": ["303 wh"] },
+        { "code": "2", "label": "316 SST with standard W.H.", "aliases": ["316 wh"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Seat Cv", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21", "aliases": ["0.21"] },
+        { "code": "2", "label": "0.42", "aliases": ["0.42"] },
+        { "code": "3", "label": "0.84", "aliases": ["0.84"] },
+        { "code": "4", "label": "1.6", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5", "aliases": ["9.5"] },
+        { "code": "9", "label": "15.0", "aliases": ["15"] },
+        { "code": "A", "label": "25", "aliases": ["25"] },
+        { "code": "B", "label": "30", "aliases": ["30"] },
+        { "code": "C", "label": "50", "aliases": ["50"] },
+        { "code": "F", "label": "85", "aliases": ["85"] },
+        { "code": "G", "label": "115", "aliases": ["115"] },
+        { "code": "H", "label": "130", "aliases": ["130"] },
+        { "code": "I", "label": "200", "aliases": ["200"] },
+        { "code": "J", "label": "395", "aliases": ["395"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range", "position": 8, "required": true,
+      "options": [ { "code": "00", "label": "None (on/off)", "aliases": ["none"] } ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm", "position": 9, "required": true,
+      "options": [
+        { "code": "B3", "label": "Buna-N, 35MM", "aliases": ["buna 35mm"] },
+        { "code": "V6", "label": "Viton, 506", "aliases": ["viton 506"] },
+        { "code": "B6", "label": "Buna-N, 506", "aliases": ["buna 506"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator", "position": 10, "required": true,
+      "options": [
+        { "code": "A6", "label": "Standard 506 (1/4\" to 2\")", "aliases": ["506"] },
+        { "code": "A3", "label": "Standard 35MM (2-1/2\" to 6\")", "aliases": ["35mm"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories", "position": 11, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "AR", "label": "Air regulator", "aliases": ["air regulator"] },
+        { "code": "S2", "label": "3-way solenoid, energise to open", "aliases": ["solenoid open"] },
+        { "code": "S3", "label": "3-way solenoid, energise to close", "aliases": ["solenoid close"] },
+        { "code": "X2", "label": "3-way solenoid, explosion proof, energise to open", "aliases": ["x-proof solenoid open"] },
+        { "code": "X3", "label": "3-way solenoid, explosion proof, energise to close", "aliases": ["x-proof solenoid close"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action", "position": 12, "required": true,
+      "options": [
+        { "code": "D", "label": "Air-to-close", "aliases": ["air to close"] },
+        { "code": "R", "label": "Air-to-open", "aliases": ["air to open"] }
+      ]
+    },
+    {
+      "id": "ped", "label": "PED compliance", "position": 13, "required": true,
+      "options": [
+        { "code": "0", "label": "Not required", "aliases": ["not required"] },
+        { "code": "F", "label": "CE category 1", "aliases": ["ce category 1"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "actuator": "A6" }, "forbid": { "size": ["250", "300", "400", "600"] },
+      "reason": "the 506 actuator carries the sheet's own 1/4 to 2 inch bracket" },
+    { "when": { "actuator": "A3" }, "forbid": { "size": ["050", "075", "100", "125", "150", "200"] },
+      "reason": "the 35MM actuator carries the sheet's own 2-1/2 to 6 inch bracket" },
+    { "when": { "diaphragm": "B3" }, "forbid": { "actuator": ["A6"] },
+      "reason": "the diaphragm's size digit matches the actuator, here the 35MM" },
+    { "when": { "diaphragm": ["V6", "B6"] }, "forbid": { "actuator": ["A3"] },
+      "reason": "the diaphragm's size digit matches the actuator, here the 506" }
+  ],
+  "cautions": []
+}
