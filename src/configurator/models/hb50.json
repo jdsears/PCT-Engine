@@ -1,0 +1,336 @@
+{
+  "model": "HB50",
+  "line": "hex",
+  "displayName": "Hex HB50/HB51 block and bleed valves",
+  "match": [
+    "hb50",
+    "hb51"
+  ],
+  "source": {
+    "doc": "hb50_51.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The MSW inlet and the Buna-N and Viton o-ring packings carry printed HB50 brackets, enforced.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HB50",
+          "label": "HB50",
+          "aliases": [
+            "hb50"
+          ]
+        },
+        {
+          "code": "HB51",
+          "label": "HB51",
+          "aliases": [
+            "hb51"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard",
+          "aliases": [
+            "hard seat config"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Soft seat",
+          "aliases": [
+            "soft seat config"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Hard, LG extension",
+          "aliases": [
+            "hard lg"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "Soft seat, LG extension",
+          "aliases": [
+            "soft lg"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Hard, XLG extension",
+          "aliases": [
+            "hard xlg"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Soft seat, XLG extension",
+          "aliases": [
+            "soft xlg"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Hard / o-ring",
+          "aliases": [
+            "hard o-ring"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Soft / o-ring",
+          "aliases": [
+            "soft o-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel (A108)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless steel"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Carbon steel (A105)",
+          "aliases": [
+            "carbon steel a105"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "MNPT",
+          "aliases": [
+            "mnpt inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "MSW (HB50)",
+          "aliases": [
+            "msw inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 SS needle (soft seat)",
+          "aliases": [
+            "needle stem"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "316 SS NRT",
+          "aliases": [
+            "nrt stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral (hard)",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "PPS",
+          "aliases": [
+            "pps seat"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "KEL-F",
+          "aliases": [
+            "kel-f seat"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "TFE",
+          "aliases": [
+            "tfe seat"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "PEEK",
+          "aliases": [
+            "peek seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "TFE",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Buna-N o-ring (HB50)",
+          "aliases": [
+            "buna o-ring"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Viton o-ring (HB50)",
+          "aliases": [
+            "viton o-ring"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "inletType": "2"
+      },
+      "forbid": {
+        "model": [
+          "HB51"
+        ]
+      },
+      "reason": "the MSW row prints HB50"
+    },
+    {
+      "when": {
+        "packing": [
+          "5",
+          "6"
+        ]
+      },
+      "forbid": {
+        "model": [
+          "HB51"
+        ]
+      },
+      "reason": "the o-ring packing rows print HB50"
+    }
+  ],
+  "cautions": []
+}

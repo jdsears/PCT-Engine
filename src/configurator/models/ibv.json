@@ -1,0 +1,193 @@
+{
+  "model": "IBV",
+  "line": "hex",
+  "displayName": "Hex IBV instrument ball valve",
+  "match": [
+    "ibv"
+  ],
+  "source": {
+    "doc": "ibvvalves.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table. Standard body material is 316SS by the sheet's own line. The same table prints in the E series catalogue, whose mounting brackets are fixed part numbers, not positions.",
+  "assembly": "{model}{inletSize}{inletType}{outletSize}{outletType}{pressure}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "IBV",
+          "label": "Instrument ball valve",
+          "aliases": [
+            "ibv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\"",
+          "aliases": [
+            "quarter inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "3/8\"",
+          "aliases": [
+            "three eighths inlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter inlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\"",
+          "aliases": [
+            "one inch inlet"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\"",
+          "aliases": [
+            "one and a half inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\"",
+          "aliases": [
+            "quarter outlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "3/8\"",
+          "aliases": [
+            "three eighths outlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half outlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter outlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\"",
+          "aliases": [
+            "one inch outlet"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\"",
+          "aliases": [
+            "one and a half outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pressure",
+      "label": "Pressure",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3K",
+          "label": "3000 psi",
+          "aliases": [
+            "3000 psi"
+          ]
+        },
+        {
+          "code": "6K",
+          "label": "6000 psi",
+          "aliases": [
+            "6000 psi"
+          ]
+        },
+        {
+          "code": "10K",
+          "label": "10000 psi",
+          "aliases": [
+            "10000 psi"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

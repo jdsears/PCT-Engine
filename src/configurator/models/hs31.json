@@ -1,0 +1,297 @@
+{
+  "model": "HS31",
+  "line": "hex",
+  "displayName": "Hex HS31 sampling valve",
+  "match": [
+    "hs31"
+  ],
+  "source": {
+    "doc": "HS31.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The footnotes are enforced: the starred 3/4 inch inlet is hard seat insert only, and the double starred soft rows are 1 to 1-1/2 inch MNPT only.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stemMaterial}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HS31",
+          "label": "HS31",
+          "aliases": [
+            "hs31"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard",
+          "aliases": [
+            "hard seat config"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Soft seat (1\"-1-1/2\" MNPT only)",
+          "aliases": [
+            "soft seat config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel (A105)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "4",
+          "label": "3/4\" (hard seat insert only)",
+          "aliases": [
+            "three quarter inlet"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\"",
+          "aliases": [
+            "one inch inlet"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\"",
+          "aliases": [
+            "one and a half inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "MNPT (1\"-1-1/2\" only for the soft rows)",
+          "aliases": [
+            "mnpt inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "MSW (hard seat insert only)",
+          "aliases": [
+            "msw inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\" x 1/2\"",
+          "aliases": [
+            "half outlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" x 3/4\"",
+          "aliases": [
+            "three quarter outlet"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "1/2\" x 3/4\"",
+          "aliases": [
+            "mixed outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt outlet"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "HB24",
+          "aliases": [
+            "hb24 outlet"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Plug",
+          "aliases": [
+            "plug outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stemMaterial",
+      "label": "Stem material",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 SS",
+          "aliases": [
+            "316 stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "316 SS",
+          "aliases": [
+            "316 seat"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "KEL-F soft (1\"-1-1/2\" MNPT only)",
+          "aliases": [
+            "kel-f seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "TFE-chevron",
+          "aliases": [
+            "tfe packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "seatConfig": "2"
+      },
+      "forbid": {
+        "inletSize": [
+          "4"
+        ],
+        "inletType": [
+          "2"
+        ]
+      },
+      "reason": "the soft seat rows are 1 to 1-1/2 inch MNPT only, the sheet's double star"
+    },
+    {
+      "when": {
+        "seatMaterial": "5"
+      },
+      "forbid": {
+        "inletSize": [
+          "4"
+        ],
+        "inletType": [
+          "2"
+        ]
+      },
+      "reason": "the KEL-F soft seat is 1 to 1-1/2 inch MNPT only, the sheet's double star"
+    },
+    {
+      "when": {
+        "inletSize": "4"
+      },
+      "forbid": {
+        "seatMaterial": [
+          "1",
+          "5"
+        ],
+        "seatConfig": [
+          "2"
+        ]
+      },
+      "reason": "the starred 3/4 inch inlet is hard seat insert only"
+    }
+  ],
+  "cautions": []
+}

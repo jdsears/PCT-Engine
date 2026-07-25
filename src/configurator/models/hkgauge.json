@@ -1,0 +1,144 @@
+{
+  "model": "HKGAUGE",
+  "line": "hex",
+  "displayName": "Hex HK gauge accessory assembly",
+  "match": [
+    "hk gauge",
+    "gauge accessory"
+  ],
+  "source": {
+    "doc": "optionsandaccessories.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. Two of the gauge inlet rows print dashes where their siblings print equals signs, the sheet's own slip.",
+  "assembly": "{model}{configuration}{tubeFittings}{valveOutlet}{gaugeInlet}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HK",
+          "label": "HK gauge assembly",
+          "aliases": [
+            "hk gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "configuration",
+      "label": "Configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "4-1/2\" gauge",
+          "aliases": [
+            "small gauge"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "6\" gauge",
+          "aliases": [
+            "large gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tubeFittings",
+      "label": "Tube fittings/material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "4-1/2\" gauge",
+          "aliases": [
+            "small fittings"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "6\" gauge",
+          "aliases": [
+            "large fittings"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "valveOutlet",
+      "label": "Valve outlet",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" FNPT",
+          "aliases": [
+            "quarter outlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "half outlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "three quarter outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gaugeInlet",
+      "label": "Gauge inlet",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" MNPT",
+          "aliases": [
+            "quarter gauge inlet"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "1/2\" MNPT",
+          "aliases": [
+            "half gauge inlet"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "3/4\" FNPT",
+          "aliases": [
+            "three quarter gauge inlet"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "half fnpt gauge inlet"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

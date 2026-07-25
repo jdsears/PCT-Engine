@@ -1,0 +1,700 @@
+{
+  "model": "HGP",
+  "line": "hex",
+  "displayName": "Hex HGP series globe valve",
+  "match": [
+    "hgp"
+  ],
+  "source": {
+    "doc": "HGP-Series.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the ordering schematic, fourteen positions with the series letters H, G and P as the head. The NACE footnote rides the note: API trim 10 or 12 can serve NACE valves if the N, K or M bonnet and bolting codes are selected, and a NACE bonnet designation is required for a NACE valve.",
+  "assembly": "{model}{size}{type}{pressureClass}{ends}{material}{trim}{packingGasket}{bonnet}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HGP",
+          "label": "Globe valve",
+          "aliases": [
+            "hgp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (4)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "1/2\"",
+          "aliases": [
+            "half"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\"",
+          "aliases": [
+            "three quarter"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\"",
+          "aliases": [
+            "one inch"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1 1/2\"",
+          "aliases": [
+            "one and a half"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\"",
+          "aliases": [
+            "two inch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "type",
+      "label": "Type (5-6)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "GL",
+          "label": "Globe",
+          "aliases": [
+            "globe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pressureClass",
+      "label": "Pressure class (7-8)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "01",
+          "label": "Standard port 150#",
+          "aliases": [
+            "150 std"
+          ]
+        },
+        {
+          "code": "L1",
+          "label": "Full port 150#",
+          "aliases": [
+            "150 full"
+          ]
+        },
+        {
+          "code": "03",
+          "label": "Standard port 300#",
+          "aliases": [
+            "300 std"
+          ]
+        },
+        {
+          "code": "L3",
+          "label": "Full port 300#",
+          "aliases": [
+            "300 full"
+          ]
+        },
+        {
+          "code": "06",
+          "label": "Standard port 600#",
+          "aliases": [
+            "600 std"
+          ]
+        },
+        {
+          "code": "L6",
+          "label": "Full port 600#",
+          "aliases": [
+            "600 full"
+          ]
+        },
+        {
+          "code": "08",
+          "label": "Standard port 800#",
+          "aliases": [
+            "800 std"
+          ]
+        },
+        {
+          "code": "L8",
+          "label": "Full port 800#",
+          "aliases": [
+            "800 full"
+          ]
+        },
+        {
+          "code": "15",
+          "label": "Standard port 1500#",
+          "aliases": [
+            "1500 std"
+          ]
+        },
+        {
+          "code": "L5",
+          "label": "Full port 1500#",
+          "aliases": [
+            "1500 full"
+          ]
+        },
+        {
+          "code": "16",
+          "label": "Standard port 1690#",
+          "aliases": [
+            "1690 std"
+          ]
+        },
+        {
+          "code": "L7",
+          "label": "Full port 1690#",
+          "aliases": [
+            "1690 full"
+          ]
+        },
+        {
+          "code": "25",
+          "label": "2500#",
+          "aliases": [
+            "2500"
+          ]
+        },
+        {
+          "code": "26",
+          "label": "2680#",
+          "aliases": [
+            "2680"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "Ends (9)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "T",
+          "label": "Threaded",
+          "aliases": [
+            "threaded ends"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Socketweld",
+          "aliases": [
+            "socketweld ends"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Flanged",
+          "aliases": [
+            "flanged ends"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Ring joint",
+          "aliases": [
+            "ring joint ends"
+          ]
+        },
+        {
+          "code": "Y",
+          "label": "Inlet threaded x outlet socketweld",
+          "aliases": [
+            "th x sw"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Inlet socketweld x outlet threaded",
+          "aliases": [
+            "sw x th"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material (10-11)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "A5",
+          "label": "A105",
+          "aliases": [
+            "mat a5"
+          ]
+        },
+        {
+          "code": "04",
+          "label": "A182 304",
+          "aliases": [
+            "mat 04"
+          ]
+        },
+        {
+          "code": "16",
+          "label": "A182 316",
+          "aliases": [
+            "mat 16"
+          ]
+        },
+        {
+          "code": "21",
+          "label": "A182 321",
+          "aliases": [
+            "mat 21"
+          ]
+        },
+        {
+          "code": "47",
+          "label": "A182 347",
+          "aliases": [
+            "mat 47"
+          ]
+        },
+        {
+          "code": "4H",
+          "label": "A182 304H",
+          "aliases": [
+            "mat 4h"
+          ]
+        },
+        {
+          "code": "4L",
+          "label": "A182 304L",
+          "aliases": [
+            "mat 4l"
+          ]
+        },
+        {
+          "code": "6L",
+          "label": "A182 316L",
+          "aliases": [
+            "mat 6l"
+          ]
+        },
+        {
+          "code": "L2",
+          "label": "A350-LF2",
+          "aliases": [
+            "mat l2"
+          ]
+        },
+        {
+          "code": "A2",
+          "label": "Alloy 20",
+          "aliases": [
+            "mat a2"
+          ]
+        },
+        {
+          "code": "40",
+          "label": "Alloy N04400",
+          "aliases": [
+            "mat 40"
+          ]
+        },
+        {
+          "code": "F1",
+          "label": "A182 F11",
+          "aliases": [
+            "mat f1"
+          ]
+        },
+        {
+          "code": "F2",
+          "label": "A182 F22",
+          "aliases": [
+            "mat f2"
+          ]
+        },
+        {
+          "code": "F4",
+          "label": "A182 F44",
+          "aliases": [
+            "mat f4"
+          ]
+        },
+        {
+          "code": "F5",
+          "label": "A182 F5",
+          "aliases": [
+            "mat f5"
+          ]
+        },
+        {
+          "code": "51",
+          "label": "A182 F51",
+          "aliases": [
+            "mat 51"
+          ]
+        },
+        {
+          "code": "F3",
+          "label": "A182 F53",
+          "aliases": [
+            "mat f3"
+          ]
+        },
+        {
+          "code": "55",
+          "label": "A182 F55",
+          "aliases": [
+            "mat 55"
+          ]
+        },
+        {
+          "code": "F9",
+          "label": "A182 F9",
+          "aliases": [
+            "mat f9"
+          ]
+        },
+        {
+          "code": "91",
+          "label": "A182 F91",
+          "aliases": [
+            "mat 91"
+          ]
+        },
+        {
+          "code": "C2",
+          "label": "Hastelloy",
+          "aliases": [
+            "mat c2"
+          ]
+        },
+        {
+          "code": "80",
+          "label": "Incoloy 800H",
+          "aliases": [
+            "mat 80"
+          ]
+        },
+        {
+          "code": "82",
+          "label": "Incoloy 825",
+          "aliases": [
+            "mat 82"
+          ]
+        },
+        {
+          "code": "62",
+          "label": "Inconel 625",
+          "aliases": [
+            "mat 62"
+          ]
+        },
+        {
+          "code": "17",
+          "label": "A182 317",
+          "aliases": [
+            "mat 17"
+          ]
+        },
+        {
+          "code": "7L",
+          "label": "A182 317L",
+          "aliases": [
+            "mat 7l"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim (12)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "API trim 10",
+          "aliases": [
+            "trim 0"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "API trim 1",
+          "aliases": [
+            "trim 1"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "API trim 12",
+          "aliases": [
+            "trim 2"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "API trim 13",
+          "aliases": [
+            "trim 3"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "API trim 5",
+          "aliases": [
+            "trim 5"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "API trim 16",
+          "aliases": [
+            "trim 6"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "API trim 8",
+          "aliases": [
+            "trim 8"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "API trim 9",
+          "aliases": [
+            "trim 9"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "Base metal with half hard facing",
+          "aliases": [
+            "trim a"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Base metal with full hard facing",
+          "aliases": [
+            "trim b"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Base metal",
+          "aliases": [
+            "trim c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "API trim 11",
+          "aliases": [
+            "trim d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "API trim 2",
+          "aliases": [
+            "trim e"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "API trim 8 (NACE)",
+          "aliases": [
+            "trim n"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Std cryo trim with PCTFE disc insert",
+          "aliases": [
+            "trim k"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Std cryo trim",
+          "aliases": [
+            "trim p"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Std cryo trim with GFTFE disc insert",
+          "aliases": [
+            "trim g"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Special trim",
+          "aliases": [
+            "trim z"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packingGasket",
+      "label": "Packing and gasket (13)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "G",
+          "label": "Manufacturer standard graphite",
+          "aliases": [
+            "graphite p&g"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Manufacturer standard Teflon",
+          "aliases": [
+            "teflon p&g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonnet",
+      "label": "Bonnet and bolting (14)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "W",
+          "label": "Welded bonnet",
+          "aliases": [
+            "bonnet w"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Bolted bonnet std. bolting",
+          "aliases": [
+            "bonnet b"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Bolted bonnet with A193 B8M Cl.2 and A194 8M",
+          "aliases": [
+            "bonnet c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Bolted bonnet with A193 B8 Cl.2 and A194 8",
+          "aliases": [
+            "bonnet d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Bolted bonnet A193 B8M and A194 8M",
+          "aliases": [
+            "bonnet e"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Bolted bonnet, std. bolting, clean for oxygen",
+          "aliases": [
+            "bonnet f"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Bolted bonnet with A193 B7M and A194 2HM (NACE)",
+          "aliases": [
+            "bonnet n"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Std. extended bolted bonnet, std. bolting, clean for oxygen",
+          "aliases": [
+            "bonnet g"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Std. extended welded bonnet, clean for oxygen",
+          "aliases": [
+            "bonnet h"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Welded bonnet, clean for oxygen",
+          "aliases": [
+            "bonnet j"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Bolted bonnet, locking device",
+          "aliases": [
+            "bonnet l"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Welded bonnet (NACE)",
+          "aliases": [
+            "bonnet k"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Bolted bonnet A193 B8 and A194 8 (NACE)",
+          "aliases": [
+            "bonnet m"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Ring joint bonnet",
+          "aliases": [
+            "bonnet r"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

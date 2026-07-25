@@ -1,0 +1,212 @@
+{
+  "model": "PM",
+  "line": "hex",
+  "displayName": "Hex PM series power manifold valves",
+  "match": [
+    "pm13",
+    "pm16",
+    "pm57",
+    "pm76"
+  ],
+  "source": {
+    "doc": "Power_ManifoldValves.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The sample row prints the bare stem PM without model digits, the sheet's own shorthand, noted.",
+  "assembly": "{model}{seat}{bodyMaterial}{inletSizeType}{outletSizeType}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "PM13",
+          "label": "PM13",
+          "aliases": [
+            "pm13"
+          ]
+        },
+        {
+          "code": "PM16",
+          "label": "PM16",
+          "aliases": [
+            "pm16"
+          ]
+        },
+        {
+          "code": "PM57",
+          "label": "PM57",
+          "aliases": [
+            "pm57"
+          ]
+        },
+        {
+          "code": "PM76",
+          "label": "PM76",
+          "aliases": [
+            "pm76"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral hard seat",
+          "aliases": [
+            "hard seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "P",
+          "label": "Carbon steel (ASTM A105)",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (ASTM A479-316)",
+          "aliases": [
+            "stainless"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSizeType",
+      "label": "Inlet size and type",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "33",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "half fnpt inlet"
+          ]
+        },
+        {
+          "code": "41",
+          "label": "3/4\" MNPT",
+          "aliases": [
+            "three quarter mnpt inlet"
+          ]
+        },
+        {
+          "code": "42",
+          "label": "3/4\" MSW",
+          "aliases": [
+            "three quarter msw inlet"
+          ]
+        },
+        {
+          "code": "99",
+          "label": "Flanged",
+          "aliases": [
+            "flanged inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSizeType",
+      "label": "Outlet size and type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "31",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "half fnpt outlet"
+          ]
+        },
+        {
+          "code": "99",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 SS needle",
+          "aliases": [
+            "needle stem"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "316 SS non-rotating",
+          "aliases": [
+            "nrt stem"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "316 SS / Stellite non-rotating",
+          "aliases": [
+            "stellite stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral hard seat",
+          "aliases": [
+            "integral seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "Graphite / Grafoil / Graphite",
+          "aliases": [
+            "graphite packing"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

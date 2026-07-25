@@ -156,6 +156,22 @@ const hm58 = JSON.parse(readFileSync(join(here, 'models', 'hm58.json'), 'utf8'))
 const he40 = JSON.parse(readFileSync(join(here, 'models', 'he40.json'), 'utf8'));
 const ha = JSON.parse(readFileSync(join(here, 'models', 'ha.json'), 'utf8'));
 const hg35 = JSON.parse(readFileSync(join(here, 'models', 'hg35.json'), 'utf8'));
+const hn39 = JSON.parse(readFileSync(join(here, 'models', 'hn39.json'), 'utf8'));
+const hn49 = JSON.parse(readFileSync(join(here, 'models', 'hn49.json'), 'utf8'));
+const hfn = JSON.parse(readFileSync(join(here, 'models', 'hfn.json'), 'utf8'));
+const ibv = JSON.parse(readFileSync(join(here, 'models', 'ibv.json'), 'utf8'));
+const hk02 = JSON.parse(readFileSync(join(here, 'models', 'hk02.json'), 'utf8'));
+const hb24 = JSON.parse(readFileSync(join(here, 'models', 'hb24.json'), 'utf8'));
+const hb50 = JSON.parse(readFileSync(join(here, 'models', 'hb50.json'), 'utf8'));
+const hg48 = JSON.parse(readFileSync(join(here, 'models', 'hg48.json'), 'utf8'));
+const ht01 = JSON.parse(readFileSync(join(here, 'models', 'ht01.json'), 'utf8'));
+const hgvs = JSON.parse(readFileSync(join(here, 'models', 'hgvs.json'), 'utf8'));
+const hs31 = JSON.parse(readFileSync(join(here, 'models', 'hs31.json'), 'utf8'));
+const conpot = JSON.parse(readFileSync(join(here, 'models', 'conpot.json'), 'utf8'));
+const hgp = JSON.parse(readFileSync(join(here, 'models', 'hgp.json'), 'utf8'));
+const hgy = JSON.parse(readFileSync(join(here, 'models', 'hgy.json'), 'utf8'));
+const pmi = JSON.parse(readFileSync(join(here, 'models', 'pmi.json'), 'utf8'));
+const pbpg = JSON.parse(readFileSync(join(here, 'models', 'pbpg.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1966,6 +1982,75 @@ check('the HE, HA and HG members keep their printed brackets', () => {
     model: 'HG35', seatConfig: '1', bodyMaterial: 'U', inletSize: '3', inletType: '1',
     outletSize: '3', outletType: '1', stem: '4', seatMaterial: '1', packing: '2',
   }, 'HG351U3131412'.replace(' ', ''));
+});
+
+console.log('\nThe Hex estate, second pass: needles, gauges, pots and power valves:');
+
+check('the needle and ball members round-trip', () => {
+  roundTrip(hn39, { model: 'HN39', connectionType: 'T', size: '6MM', option: 'G' }, 'HN39T-6MM-G');
+  roundTrip(hn39, { model: 'HN39', connectionType: 'F', size: '4', option: '' }, 'HN39F-4-');
+  roundTrip(hn49, {
+    model: 'HN49', seatConfig: '1', bodyMaterial: 'U', inletSize: '3', inletType: '1',
+    outletSize: '3', outletType: '1', stemMaterial: '4', seatMaterial: '1', packing: '2',
+  }, 'HN491U3131412');
+  assert.ok(/Alloy 20 on both/.test(hn49.slots.find(s => s.id === 'stemMaterial').options.find(o => o.code === 'G').label), 'the doubled Alloy 20 rows are confessed');
+  roundTrip(hfn, {
+    model: 'HFN', orifice: 'T', bodyMaterial: 'U', inletSize: 'H', inletType: 'E',
+    outletSize: 'H', outletType: 'E', stemMaterial: '4', seatMaterial: '1', packing: '3', option: '',
+  }, 'HFNTUHEHE413');
+  assert.ok(/sample prints W/.test(hfn.note), 'the sample W against the E ladder is held');
+  roundTrip(ibv, { model: 'IBV', inletSize: '3', inletType: '1', outletSize: '3', outletType: '1', pressure: '10K' }, 'IBV313110K');
+  roundTrip(hk02, {
+    model: 'HK02', seatConfig: '2', bodyMaterial: 'Y', inletSize: '3', inletType: 'C',
+    outletSize: '3', outletType: 'C', trim: 'Y', seatMaterial: '3', packing: '2',
+  }, 'HK022Y3C3CY32');
+});
+
+check('the gauge and block members keep their footnote webs', () => {
+  roundTrip(hb24, { model: 'HB24', seatConfig: '1', bodyMaterial: 'S', inletSize: '2', inletType: '1', stemMaterial: '2', packing: '' }, 'HB241S212');
+  roundTrip(hb24, { model: 'HB27', seatConfig: '1', bodyMaterial: 'S', inletSize: '3', inletType: '1', stemMaterial: '2', packing: '2' }, 'HB271S3122');
+  assert.ok(checkConstraints(hb24, { model: 'HB25', packing: '2' }).length > 0, 'the packing column is the HB27 alone');
+  assert.ok(checkConstraints(hb50, { model: 'HB51', inletType: '2' }).length > 0, 'the MSW inlet is the HB50');
+  assert.ok(checkConstraints(hb50, { model: 'HB51', packing: '5' }).length > 0, 'as are the o-ring packings');
+  roundTrip(hg48, {
+    model: 'HG48', seatConfig: '1', bodyMaterial: 'S', inletSize: '3', inletType: '3',
+    outletSize: '3', outletType: '1', stem: '4', seatMaterial: '1', packing: '2', optionalItems: '',
+  }, 'HG481S3331412');
+  assert.ok(/sample prints 1 in the outlet size/.test(hg48.note), 'the HG48 sample slip is held');
+  roundTrip(ht01, {
+    model: 'HT01', seatConfig: '1', bodyMaterial: 'S', inletSize: '5', inletType: '2',
+    outletSize: '4', outletType: '2', stem: '9', seatMaterial: '1', packing: '3',
+  }, 'HT011S5242913');
+  assert.ok(checkConstraints(ht01, { model: 'HT03', inletSize: '5' }).length > 0, 'the 1 inch inlet is the HT01');
+  roundTrip(hgvs, {
+    model: 'HGVS', bodyConfig: '1', bodyMaterial: 'S', inletSize: '3', inletType: '1',
+    outletSize: '3', outletType: '1', stem: '4', seatMaterial: '1', packing: '2',
+  }, 'HGVS1S3131412');
+  assert.ok(checkConstraints(hgvs, { model: 'HGSY', stem: '4' }).length > 0, 'the starred columns refuse the syphon');
+  assert.ok(checkConstraints(hs31, { seatConfig: '2', inletSize: '4' }).length > 0, 'the soft rows keep their MNPT-only star');
+});
+
+check('the pots, globes and power members round-trip', () => {
+  roundTrip(conpot, {
+    model: 'CONPOT', volume: '2', loc1: '2', loc2: '2', loc3: '0', loc4: '0', loc5: '0', loc6: '0',
+    material: '1', pipeSch: '2',
+  }, 'CONPOT222000012');
+  roundTrip(hgp, {
+    model: 'HGP', size: '3', type: 'GL', pressureClass: '01', ends: 'T', material: 'A5',
+    trim: '8', packingGasket: 'G', bonnet: 'B',
+  }, 'HGP3GL01TA58GB');
+  roundTrip(hgy, {
+    model: 'HGY', orifice: '3', size: '16', pressureClass: '45', ends: 'W', material: 'A5',
+    trim: '5', packingGasket: 'G',
+  }, 'HGY31645WA55G');
+  assert.ok(checkConstraints(hgy, { size: '32', orifice: '3' }).length > 0, 'the large sizes are the 15mm orifice alone');
+  roundTrip(pmi, {
+    model: 'PM45', seat: '1', bodyMaterial: 'U', inletSizeType: '31', outletSizeType: '31',
+    stem: '4', seatMaterial: '1', packing: '3',
+  }, 'PM451U3131413');
+  assert.ok(checkConstraints(pmi, { inletSizeType: '99', model: 'PM45' }).length > 0, 'the flanged inlet is the PM54');
+  assert.ok(checkConstraints(pbpg, { model: 'PG35', seat: '3' }).length > 0, 'the PG35 keeps its only-option rows');
+  assert.ok(checkConstraints(pbpg, { outletSizeType: '37', model: 'PB59' }).length > 0, 'and its own MNPT outlets');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
