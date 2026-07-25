@@ -1,0 +1,796 @@
+{
+  "model": "JSRLFLPE",
+  "line": "steriflow",
+  "displayName": "Steriflow JSRLFLPE low flow low pressure reducing valve, EPDM seat",
+  "match": [
+    "jsrlflpe",
+    "jsrlflpe series"
+  ],
+  "source": {
+    "doc": "jsrlflpseries.pdf",
+    "page": "the ordering schematic pages",
+    "section": "JSRLFLPE ordering schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, the JR family shape with the sheet's printed dash dash slash separators. The slashed zeros in the SEP and accessories columns are carried as plain zeros. The low pressure EPDM seat variant, the FLP shape with D seats.",
+  "assembly": "{model}-{size}-{material}/{endConnection}{portConfig}{trim}{seat}{rangeSpring}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "JSRLFLPE",
+          "label": "EPDM seat",
+          "aliases": [
+            "jsrlflpe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\" (DN08)",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\" (DN10)",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "ASTM A479, 316L",
+          "aliases": [
+            "316l"
+          ]
+        },
+        {
+          "code": "30",
+          "label": "Stainless steel 316L, 30 Ra or better, EP",
+          "aliases": [
+            "30 ra"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endConnection",
+      "label": "End connection",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "FNPT 1/4\" (ASME BPE)",
+          "aliases": [
+            "fnpt 1/4"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "FNPT 3/8\" (ASME BPE)",
+          "aliases": [
+            "fnpt 3/8"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "FNPT 1/2\" (ASME BPE)",
+          "aliases": [
+            "fnpt 1/2"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "ASME BPE tri-clamp, 1/2\"",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "W",
+          "label": "ASME BPE tube weld, 1/2\"",
+          "aliases": [
+            "tube weld"
+          ]
+        },
+        {
+          "code": "H4",
+          "label": "ISO tube weld, DN15",
+          "aliases": [
+            "iso tube weld"
+          ]
+        },
+        {
+          "code": "S1",
+          "label": "ISO tri-clamp, DN15",
+          "aliases": [
+            "iso tri-clamp"
+          ]
+        },
+        {
+          "code": "V1",
+          "label": "ISO with 34.0mm face T-clamp, DN15",
+          "aliases": [
+            "iso 34mm"
+          ]
+        },
+        {
+          "code": "R1",
+          "label": "ISO T-clamp, DN20",
+          "aliases": [
+            "iso dn20"
+          ]
+        },
+        {
+          "code": "D2",
+          "label": "DIN tri-clamp, DN15",
+          "aliases": [
+            "din tri-clamp"
+          ]
+        },
+        {
+          "code": "N2",
+          "label": "DIN T-clamp, DN15 with 50.5mm face",
+          "aliases": [
+            "din 50.5"
+          ]
+        },
+        {
+          "code": "U2",
+          "label": "DIN T-clamp, DN20",
+          "aliases": [
+            "din dn20"
+          ]
+        },
+        {
+          "code": "X2",
+          "label": "DIN T-clamp, DN20 with 50.5mm face",
+          "aliases": [
+            "din dn20 50.5"
+          ]
+        },
+        {
+          "code": "M3",
+          "label": "DIN tube weld, DN15",
+          "aliases": [
+            "din tube weld"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard end"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portConfig",
+      "label": "Port configuration",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Port A",
+          "aliases": [
+            "port a"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Port B",
+          "aliases": [
+            "port b"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Port C",
+          "aliases": [
+            "port c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Port D",
+          "aliases": [
+            "port d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Port E",
+          "aliases": [
+            "port e"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1S",
+          "label": "Cv 0.012",
+          "aliases": [
+            "0.012"
+          ]
+        },
+        {
+          "code": "2S",
+          "label": "Cv 0.08",
+          "aliases": [
+            "0.08"
+          ]
+        },
+        {
+          "code": "3S",
+          "label": "Cv 0.2",
+          "aliases": [
+            "0.2"
+          ]
+        },
+        {
+          "code": "4S",
+          "label": "Cv 0.03 (the sheet's own note: though out of sequence, 4S is the correct order code)",
+          "aliases": [
+            "0.03"
+          ]
+        },
+        {
+          "code": "1R",
+          "label": "Cv 0.012 self-relieving",
+          "aliases": [
+            "0.012 self relieving"
+          ]
+        },
+        {
+          "code": "2R",
+          "label": "Cv 0.08 self-relieving",
+          "aliases": [
+            "0.08 self relieving"
+          ]
+        },
+        {
+          "code": "3R",
+          "label": "Cv 0.2 self-relieving",
+          "aliases": [
+            "0.2 self relieving"
+          ]
+        },
+        {
+          "code": "4R",
+          "label": "Cv 0.03 self-relieving",
+          "aliases": [
+            "0.03 self relieving"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat material, FDA and USP Class VI",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "D1",
+          "label": "EPDM Cv 0.012",
+          "aliases": [
+            "epdm 0.012"
+          ]
+        },
+        {
+          "code": "D2",
+          "label": "EPDM Cv 0.08",
+          "aliases": [
+            "epdm 0.08"
+          ]
+        },
+        {
+          "code": "D3",
+          "label": "EPDM Cv 0.2",
+          "aliases": [
+            "epdm 0.2"
+          ]
+        },
+        {
+          "code": "D4",
+          "label": "EPDM Cv 0.03",
+          "aliases": [
+            "epdm 0.03"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rangeSpring",
+      "label": "Range spring / outlet pressure",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "E1",
+          "label": "1-75 psi",
+          "aliases": [
+            "1-75"
+          ]
+        },
+        {
+          "code": "E2",
+          "label": "25-100 psi",
+          "aliases": [
+            "25-100"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "JL",
+          "label": "Jorlon PTFE, FDA and USP Class VI",
+          "aliases": [
+            "jorlon"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "SK",
+          "label": "Standard actuator",
+          "aliases": [
+            "standard"
+          ]
+        },
+        {
+          "code": "AK",
+          "label": "Standard actuator, autoclavable anodised aluminium knob",
+          "aliases": [
+            "autoclavable"
+          ]
+        },
+        {
+          "code": "PM",
+          "label": "Panel mount",
+          "aliases": [
+            "panel mount"
+          ]
+        },
+        {
+          "code": "CV1",
+          "label": "Captured vent for venting self-relieved gas",
+          "aliases": [
+            "captured vent"
+          ]
+        },
+        {
+          "code": "AA1",
+          "label": "Air loading fitting on spring housing with a stem seat nut",
+          "aliases": [
+            "air loading"
+          ]
+        },
+        {
+          "code": "TP",
+          "label": "Anti-tamper feature",
+          "aliases": [
+            "anti-tamper"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletGauge",
+      "label": "Inlet gauge",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "AA",
+          "label": "0-30 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-30"
+          ]
+        },
+        {
+          "code": "BB",
+          "label": "0-60 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-60"
+          ]
+        },
+        {
+          "code": "CC",
+          "label": "0-100 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-100"
+          ]
+        },
+        {
+          "code": "DD",
+          "label": "0-160 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-160"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "None",
+          "aliases": [
+            "no inlet gauge"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard inlet gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletGauge",
+      "label": "Outlet gauge",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "0-30 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-30"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "0-60 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-60"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "0-100 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-100"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "None",
+          "aliases": [
+            "no outlet gauge"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard outlet gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sep",
+      "label": "SEP compliance",
+      "position": 13,
+      "required": true,
+      "options": [
+        {
+          "code": "G",
+          "label": "SEP compliant",
+          "aliases": [
+            "sep"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "None (the sheet prints a slashed zero)",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard sep"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories",
+      "position": 14,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Clean for oil free",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Clean for oxygen",
+          "aliases": [
+            "oxygen"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Clean for oxygen, assemble dry (ASTM G-93 2011, CGA G-4.1-2009)",
+          "aliases": [
+            "oxygen dry"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "EN10204 3.1 cert for wetted parts",
+          "aliases": [
+            "en10204"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "None (slashed zero)",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "endConnection": "A"
+      },
+      "forbid": {
+        "size": [
+          "038",
+          "050"
+        ]
+      },
+      "reason": "the 1/4 inch FNPT end matches its size"
+    },
+    {
+      "when": {
+        "endConnection": "B"
+      },
+      "forbid": {
+        "size": [
+          "025",
+          "050"
+        ]
+      },
+      "reason": "the 3/8 inch FNPT end matches its size"
+    },
+    {
+      "when": {
+        "endConnection": [
+          "C",
+          "T",
+          "W"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "025",
+          "038"
+        ]
+      },
+      "reason": "these half inch ends match their size"
+    },
+    {
+      "when": {
+        "actuator": "AA1"
+      },
+      "forbid": {
+        "trim": [
+          "1R",
+          "2R",
+          "3R",
+          "4R"
+        ]
+      },
+      "reason": "the sheet's own note: you cannot choose self-relieving with the air-loading option"
+    },
+    {
+      "when": {
+        "trim": [
+          "1S",
+          "1R"
+        ]
+      },
+      "forbid": {
+        "seat": [
+          "D2",
+          "D3",
+          "D4"
+        ]
+      },
+      "reason": "the seat Cv must match the trim Cv, 0.012, per the shared Cv list (held as an inferred coupling for John, the JR precedent)"
+    },
+    {
+      "when": {
+        "trim": [
+          "2S",
+          "2R"
+        ]
+      },
+      "forbid": {
+        "seat": [
+          "D1",
+          "D3",
+          "D4"
+        ]
+      },
+      "reason": "the seat Cv must match the trim Cv, 0.08, per the shared Cv list (held as an inferred coupling for John, the JR precedent)"
+    },
+    {
+      "when": {
+        "trim": [
+          "3S",
+          "3R"
+        ]
+      },
+      "forbid": {
+        "seat": [
+          "D1",
+          "D2",
+          "D4"
+        ]
+      },
+      "reason": "the seat Cv must match the trim Cv, 0.2, per the shared Cv list (held as an inferred coupling for John, the JR precedent)"
+    },
+    {
+      "when": {
+        "trim": [
+          "4S",
+          "4R"
+        ]
+      },
+      "forbid": {
+        "seat": [
+          "D1",
+          "D2",
+          "D3"
+        ]
+      },
+      "reason": "the seat Cv must match the trim Cv, 0.03, per the shared Cv list (held as an inferred coupling for John, the JR precedent)"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "rangeSpring": "E1",
+        "outletGauge": [
+          "A",
+          "B"
+        ]
+      },
+      "note": "The selected outlet gauge does not fully cover the range spring; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    },
+    {
+      "when": {
+        "rangeSpring": "E1",
+        "inletGauge": [
+          "AA",
+          "BB"
+        ]
+      },
+      "note": "The selected inlet gauge span is below the top of the range spring; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    },
+    {
+      "when": {
+        "rangeSpring": "E2",
+        "outletGauge": [
+          "A",
+          "B"
+        ]
+      },
+      "note": "The selected outlet gauge does not fully cover the range spring; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    },
+    {
+      "when": {
+        "rangeSpring": "E2",
+        "inletGauge": [
+          "AA",
+          "BB"
+        ]
+      },
+      "note": "The selected inlet gauge span is below the top of the range spring; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    }
+  ]
+}
