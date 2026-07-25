@@ -1,0 +1,217 @@
+{
+  "model": "9020",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 9020 3-piece BPE sanitary ball valve",
+  "match": ["9020", "mark 9020", "mk9020", "sanitary ball valve"],
+  "source": { "doc": "mark9020.pdf", "page": "15 and 16", "section": "Ordering schematic" },
+  "note": "Extracted by hand from the ordering schematic, the Marwin UT actuator family in sanitary form. The PED/CE segment is blank on a standard valve and CE on the marked form, the empty-code device, with the CE mark held to the sheet's own 1.5 to 4 inch bracket. One decode limit is confessed rather than papered over: a standard build whose seat prints C and ends print E opens with the same letters as the CE marked form, so the engine assembles such a code correctly but cannot read it back unambiguously. The solenoid, limit switch, positioner and miscellaneous feature couplings follow each row's own printed UT spans and actuator classes, and the SEP options keep their half to one inch bracket.",
+  "assembly": "{model}-{size}-{bodyMat}-{pedCe}{seat}{ends}{operation}{actuatorPressure}{solenoid}{limitSwitch}{fail}{positioner}{misc}{sep}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "9020", "label": "3-piece BPE sanitary ball valve", "aliases": ["9020", "sanitary ball"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "050", "label": "1/2\"", "aliases": ["1/2\""] },
+        { "code": "075", "label": "3/4\"", "aliases": ["3/4\""] },
+        { "code": "100", "label": "1\"", "aliases": ["1\""] },
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\""] },
+        { "code": "200", "label": "2\"", "aliases": ["2\""] },
+        { "code": "250", "label": "2-1/2\"", "aliases": ["2-1/2\""] },
+        { "code": "300", "label": "3\"", "aliases": ["3\""] },
+        { "code": "400", "label": "4\"", "aliases": ["4\""] }
+      ]
+    },
+    {
+      "id": "bodyMat", "label": "Body material / drain option", "position": 3, "required": true,
+      "options": [
+        { "code": "LF", "label": "CF3M 1% ferrite", "aliases": ["cf3m", "low ferrite"] },
+        { "code": "DF", "label": "CF3M 1% ferrite with 1/2\" tri-clamp body condensate drain", "aliases": ["condensate drain"] }
+      ]
+    },
+    {
+      "id": "pedCe", "label": "PED/CE option", "position": 4, "required": true,
+      "options": [
+        { "code": "", "label": "Standard, no PED (the sheet says leave blank)", "aliases": ["no ped", "standard"] },
+        { "code": "CE", "label": "PED / CE, 1.5\" to 4\" only", "aliases": ["ce", "ped"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat / stem extension (1)", "position": 5, "required": true,
+      "options": [
+        { "code": "T", "label": "TFM1600 enhanced Teflon (standard)", "aliases": ["tfm1600", "teflon seat"] },
+        { "code": "C", "label": "TFM1600 cavity filler enhanced Teflon", "aliases": ["cavity filler"] },
+        { "code": "E", "label": "TFM1600 with enclosed stem extension", "aliases": ["stem extension"] },
+        { "code": "S", "label": "TFM1600 cavity filler with stem extension", "aliases": ["cavity filler stem extension"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "Ends (2)", "position": 6, "required": true,
+      "options": [
+        { "code": "A", "label": "Tri-clamp / SF1 internal finish (standard)", "aliases": ["tri-clamp sf1"] },
+        { "code": "B", "label": "Extended tube end / SF1 internal finish (standard)", "aliases": ["extended tube sf1"] },
+        { "code": "C", "label": "Tri-clamp x extended tube end / SF1 internal finish", "aliases": ["tri-clamp x tube sf1"] },
+        { "code": "D", "label": "Tri-clamp / SF4 internal finish", "aliases": ["tri-clamp sf4"] },
+        { "code": "E", "label": "Extended tube end / SF4 internal finish", "aliases": ["extended tube sf4"] },
+        { "code": "F", "label": "Tri-clamp x extended tube end / SF4 internal finish", "aliases": ["tri-clamp x tube sf4"] },
+        { "code": "G", "label": "Extended tube x tri-clamp / SF4 internal finish", "aliases": ["tube x tri-clamp sf4"] },
+        { "code": "H", "label": "Extended tube x tri-clamp / SF1 internal finish", "aliases": ["tube x tri-clamp sf1"] },
+        { "code": "2", "label": "Extended tube ends with comp tube fittings (1/2\" to 1\" only)", "aliases": ["comp tube fittings"] }
+      ]
+    },
+    {
+      "id": "operation", "label": "Operation (3 and 4)", "position": 7, "required": true,
+      "options": [
+        { "code": "HL", "label": "Lever (standard)", "aliases": ["lever", "manual"] },
+        { "code": "NN", "label": "None", "aliases": ["none", "bare"] },
+        { "code": "P1", "label": "UT-0A-DA STD", "aliases": ["ut-0a da"] },
+        { "code": "P2", "label": "UT-0-DA STD", "aliases": ["ut-0 da"] },
+        { "code": "P3", "label": "UT-1-DA STD", "aliases": ["ut-1 da"] },
+        { "code": "P4", "label": "UT-2-DA STD", "aliases": ["ut-2 da"] },
+        { "code": "P5", "label": "UT-2.5-DA STD", "aliases": ["ut-2.5 da"] },
+        { "code": "P6", "label": "UT-3-DA STD", "aliases": ["ut-3 da"] },
+        { "code": "P7", "label": "UT-3.5-DA STD", "aliases": ["ut-3.5 da"] },
+        { "code": "P8", "label": "UT-4-DA STD", "aliases": ["ut-4 da"] },
+        { "code": "PF", "label": "UT-4.5-DA STD", "aliases": ["ut-4.5 da"] },
+        { "code": "P9", "label": "UT-5-DA STD", "aliases": ["ut-5 da"] },
+        { "code": "S1", "label": "UT-0-SR STD", "aliases": ["ut-0 sr"] },
+        { "code": "S2", "label": "UT-1-SR STD", "aliases": ["ut-1 sr"] },
+        { "code": "S3", "label": "UT-2-SR STD", "aliases": ["ut-2 sr"] },
+        { "code": "S4", "label": "UT-2.5-SR STD", "aliases": ["ut-2.5 sr"] },
+        { "code": "S5", "label": "UT-3-SR STD", "aliases": ["ut-3 sr"] },
+        { "code": "S6", "label": "UT-3.5-SR STD", "aliases": ["ut-3.5 sr"] },
+        { "code": "S7", "label": "UT-4-SR STD", "aliases": ["ut-4 sr"] },
+        { "code": "SF", "label": "UT-4.5-SR STD", "aliases": ["ut-4.5 sr"] },
+        { "code": "S8", "label": "UT-5-SR STD", "aliases": ["ut-5 sr"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard operation"] }
+      ]
+    },
+    {
+      "id": "actuatorPressure", "label": "Actuator pressure (5 and 6)", "position": 8, "required": true,
+      "options": [
+        { "code": "40", "label": "40 psi", "aliases": ["40 psi"] },
+        { "code": "60", "label": "60 psi", "aliases": ["60 psi"] },
+        { "code": "80", "label": "80 psi", "aliases": ["80 psi"] },
+        { "code": "NN", "label": "N/A (no pneumatic actuator)", "aliases": ["n/a", "none"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard pressure"] }
+      ]
+    },
+    {
+      "id": "solenoid", "label": "Solenoid feature (7 and 8)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no solenoid"] },
+        { "code": "3A", "label": "3W 8551-120VAC N4, UT-0/5, spring return", "aliases": ["8551 n4 sr"] },
+        { "code": "3C", "label": "3W EF8551-120VAC N7, UT-0/5, spring return", "aliases": ["ef8551 n7 sr"] },
+        { "code": "3J", "label": "3W 8317G35-120VAC N4, UT-0/2.5, spring return", "aliases": ["8317 n4 sr"] },
+        { "code": "3M", "label": "3W 8321G1-120VAC N4, UT-3/5, spring return", "aliases": ["8321 n4 sr"] },
+        { "code": "3Q", "label": "3W EF8317G35-120VAC N7, UT-0/2.5, spring return", "aliases": ["ef8317 n7 sr"] },
+        { "code": "3R", "label": "3W EF8321G1-120VAC N7, UT-3/5, spring return", "aliases": ["ef8321 n7 sr"] },
+        { "code": "4A", "label": "4W 8551-120VAC N4, UT-0A, double acting", "aliases": ["8551 n4 da 0a"] },
+        { "code": "4B", "label": "4W 8551-120VAC N4, UT-0/5, double acting", "aliases": ["8551 n4 da"] },
+        { "code": "4D", "label": "4W EF8551-120VAC N7, UT-0A, double acting", "aliases": ["ef8551 n7 da 0a"] },
+        { "code": "4E", "label": "4W EF8551-120VAC N7, UT-0/5, double acting", "aliases": ["ef8551 n7 da"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard solenoid"] }
+      ]
+    },
+    {
+      "id": "limitSwitch", "label": "Limit switch (9 and 10)", "position": 10, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no limit switch"] },
+        { "code": "AA", "label": "LS FMYB-5120-N4, to UT-0/3", "aliases": ["fmyb n4 small"] },
+        { "code": "AB", "label": "LS FMYB-5120-N4, to UT-3.5/7", "aliases": ["fmyb n4 large"] },
+        { "code": "AC", "label": "LS AMYB-5120-N7, to UT-0/3", "aliases": ["amyb n7 small"] },
+        { "code": "AD", "label": "LS AMYB-5120-N7, to UT-3.5/7", "aliases": ["amyb n7 large"] },
+        { "code": "AE", "label": "LS AMYB-5120-N4, to valve", "aliases": ["amyb n4 valve"] },
+        { "code": "AF", "label": "LS AMYB-5120-N7, to valve", "aliases": ["amyb n7 valve"] },
+        { "code": "0Z", "label": "Non-standard", "aliases": ["non-standard limit switch"] }
+      ]
+    },
+    {
+      "id": "fail", "label": "Fail position (11 and 12)", "position": 11, "required": true,
+      "options": [
+        { "code": "NN", "label": "Fail position N/A (no spring return actuator)", "aliases": ["no fail action", "n/a"] },
+        { "code": "01", "label": "Fail closed", "aliases": ["fail closed"] },
+        { "code": "02", "label": "Fail open", "aliases": ["fail open"] }
+      ]
+    },
+    {
+      "id": "positioner", "label": "Positioner (13 and 14)", "position": 12, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["no positioner"] },
+        { "code": "AA", "label": "Siemens 760P (3-15 psi), for UT-0/3", "aliases": ["760p small"] },
+        { "code": "AB", "label": "Siemens 760P (3-15 psi), for UT-3.5/7", "aliases": ["760p large"] },
+        { "code": "AC", "label": "Siemens 760E (4-20 mA), for UT-0/3", "aliases": ["760e small"] },
+        { "code": "AD", "label": "Siemens 760E (4-20 mA), for UT-3.5/7", "aliases": ["760e large"] },
+        { "code": "AE", "label": "Siemens 2-IQ (4-20 mA), for UT-0/3 DA", "aliases": ["2-iq small da"] },
+        { "code": "AF", "label": "Siemens 2-IQ (4-20 mA), for UT-3.5/7 DA", "aliases": ["2-iq large da"] },
+        { "code": "AQ", "label": "Siemens 2-IQ (4-20 mA), for UT-0/3 SR", "aliases": ["2-iq small sr"] },
+        { "code": "AR", "label": "Siemens 2-IQ (4-20 mA), for UT-3.5/7 SR", "aliases": ["2-iq large sr"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard positioner"] }
+      ]
+    },
+    {
+      "id": "misc", "label": "Miscellaneous features (15)", "position": 13, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none"] },
+        { "code": "1", "label": "2-bug screen 1/8\" SST", "aliases": ["bug screen"] },
+        { "code": "2", "label": "2-speed control 1/8\" (4-way)", "aliases": ["speed control"] },
+        { "code": "3", "label": "SST tube and fittings for automation", "aliases": ["sst tube"] },
+        { "code": "4", "label": "AFR 4Z030A, to UT-0-2.5 SST", "aliases": ["afr"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard features"] }
+      ]
+    },
+    {
+      "id": "sep", "label": "SEP option (16)", "position": 14, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["none", "no sep"] },
+        { "code": "G", "label": "SEP with SF1 finish, 0.5\" to 1\" only", "aliases": ["sep sf1"] },
+        { "code": "H", "label": "SEP with SF4 finish, 0.5\" to 1\" only", "aliases": ["sep sf4"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "pedCe": "CE" }, "forbid": { "size": ["050", "075", "100"] },
+      "reason": "the CE mark carries the sheet's own 1.5 to 4 inch bracket" },
+    { "when": { "ends": "2" }, "forbid": { "size": ["150", "200", "250", "300", "400"] },
+      "reason": "the comp tube fitting ends are printed for 1/2 to 1 inch valves alone" },
+    { "when": { "operation": ["HL", "NN"] }, "forbid": { "actuatorPressure": ["40", "60", "80"] },
+      "reason": "an air supply pressure applies only to a pneumatic actuator" },
+    { "when": { "operation": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8"] }, "forbid": { "actuatorPressure": ["NN"] },
+      "reason": "a pneumatic actuator needs its air supply stated" },
+    { "when": { "solenoid": ["3A", "3C", "3J", "3M", "3Q", "3R"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9"] },
+      "reason": "a three-way solenoid pairs with a spring return actuator, as its own column marks" },
+    { "when": { "solenoid": ["4A", "4B", "4D", "4E"] }, "forbid": { "operation": ["HL", "NN", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8"] },
+      "reason": "a four-way solenoid pairs with a double acting actuator, as its own column marks" },
+    { "when": { "solenoid": ["3J", "3Q"] }, "forbid": { "operation": ["S5", "S6", "S7", "SF", "S8"] },
+      "reason": "the 8317 solenoids cover UT-0 to UT-2.5, per their printed span" },
+    { "when": { "solenoid": ["3M", "3R"] }, "forbid": { "operation": ["S1", "S2", "S3", "S4"] },
+      "reason": "the 8321 solenoids cover UT-3 to UT-5, per their printed span" },
+    { "when": { "solenoid": ["4A", "4D"] }, "forbid": { "operation": ["P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9"] },
+      "reason": "these solenoids are marked for the UT-0A actuator alone" },
+    { "when": { "limitSwitch": ["AA", "AC"] }, "forbid": { "operation": ["HL", "NN", "P7", "P8", "PF", "P9", "S6", "S7", "SF", "S8"] },
+      "reason": "these limit switches mount to UT-0 through UT-3 actuators, per their printed span" },
+    { "when": { "limitSwitch": ["AB", "AD"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "S1", "S2", "S3", "S4", "S5"] },
+      "reason": "these limit switches mount to UT-3.5 through UT-7 actuators, per their printed span" },
+    { "when": { "fail": ["01", "02"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9"] },
+      "reason": "a fail position is the spring's doing; it belongs to spring return builds" },
+    { "when": { "positioner": ["AA", "AC"] }, "forbid": { "operation": ["HL", "NN", "P7", "P8", "PF", "P9", "S6", "S7", "SF", "S8"] },
+      "reason": "these positioners are printed for UT-0 through UT-3" },
+    { "when": { "positioner": ["AB", "AD"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "S1", "S2", "S3", "S4", "S5"] },
+      "reason": "these positioners are printed for UT-3.5 through UT-7" },
+    { "when": { "positioner": ["AE", "AQ"] }, "forbid": { "operation": ["HL", "NN", "P7", "P8", "PF", "P9", "S6", "S7", "SF", "S8"] },
+      "reason": "these positioners are printed for UT-0 through UT-3" },
+    { "when": { "positioner": ["AF", "AR"] }, "forbid": { "operation": ["HL", "NN", "P1", "P2", "P3", "P4", "P5", "P6", "S1", "S2", "S3", "S4", "S5"] },
+      "reason": "these positioners are printed for UT-3.5 through UT-7" },
+    { "when": { "positioner": ["AE", "AF"] }, "forbid": { "operation": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "SF", "S8"] },
+      "reason": "these positioner rows are marked DA" },
+    { "when": { "positioner": ["AQ", "AR"] }, "forbid": { "operation": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "PF", "P9"] },
+      "reason": "these positioner rows are marked SR" },
+    { "when": { "misc": "4" }, "forbid": { "operation": ["P6", "P7", "P8", "PF", "P9", "S5", "S6", "S7", "SF", "S8"] },
+      "reason": "the AFR row is printed to UT-0 through UT-2.5" },
+    { "when": { "sep": ["G", "H"] }, "forbid": { "size": ["150", "200", "250", "300", "400"] },
+      "reason": "the SEP options are printed 0.5 to 1 inch only" }
+  ],
+  "cautions": []
+}

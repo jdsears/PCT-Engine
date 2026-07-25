@@ -92,6 +92,7 @@ const mk686g = JSON.parse(readFileSync(join(here, 'models', 'mk686g.json'), 'utf
 const mk675 = JSON.parse(readFileSync(join(here, 'models', 'mk675.json'), 'utf8'));
 const mk627 = JSON.parse(readFileSync(join(here, 'models', 'mk627.json'), 'utf8'));
 const mk630 = JSON.parse(readFileSync(join(here, 'models', 'mk630.json'), 'utf8'));
+const mark9020 = JSON.parse(readFileSync(join(here, 'models', 'mark9020.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1262,6 +1263,28 @@ check('all six round-trip and their printed brackets hold', () => {
   assert.ok(checkConstraints(mk630, { bodyConstruction: 'A', casing: '0' }).length > 0, 'flanged 630s are steel units only');
   assert.equal(checkCautions(mk630, { seat: '0', spring: '275' }).length, 1, 'the nylon-above-150 recommendation cautions');
   assert.equal(checkCautions(mk627, { seat: '2', spring: '250' }).length, 1, 'and on the 627');
+});
+
+console.log('\nThe Steriflow shelf opens: the Mark 9020 sanitary ball valve:');
+
+check('the 9020 round-trips in standard and CE forms and its UT couplings hold', () => {
+  roundTrip(mark9020, {
+    model: '9020', size: '100', bodyMat: 'LF', pedCe: '', seat: 'T', ends: 'A',
+    operation: 'S4', actuatorPressure: '60', solenoid: '3J', limitSwitch: 'AA',
+    fail: '01', positioner: 'AQ', misc: '4', sep: 'G',
+  }, '9020-100-LF-TAS4603JAA01AQ4G');
+  roundTrip(mark9020, {
+    model: '9020', size: '200', bodyMat: 'DF', pedCe: 'CE', seat: 'S', ends: 'F',
+    operation: 'P8', actuatorPressure: '80', solenoid: '4B', limitSwitch: 'AB',
+    fail: 'NN', positioner: 'AF', misc: '2', sep: '0',
+  }, '9020-200-DF-CESFP8804BABNNAF20');
+  assert.ok(checkConstraints(mark9020, { pedCe: 'CE', size: '075' }).length > 0, 'the CE mark keeps its 1.5 to 4 inch bracket');
+  assert.ok(checkConstraints(mark9020, { ends: '2', size: '200' }).length > 0, 'the comp tube ends stop at 1 inch');
+  assert.ok(checkConstraints(mark9020, { solenoid: '3J', operation: 'S6' }).length > 0, 'the 8317 span holds');
+  assert.ok(checkConstraints(mark9020, { positioner: 'AQ', operation: 'P4' }).length > 0, 'an SR positioner refuses a DA build');
+  assert.ok(checkConstraints(mark9020, { misc: '4', operation: 'P9' }).length > 0, 'the AFR keeps its UT-0 to 2.5 span');
+  assert.ok(checkConstraints(mark9020, { sep: 'H', size: '400' }).length > 0, 'SEP stays with the small sizes');
+  assert.ok(/cannot read it back/.test(mark9020.note), 'the seat-C ends-E decode limit is confessed');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
