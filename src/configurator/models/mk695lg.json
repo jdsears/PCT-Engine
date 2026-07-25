@@ -1,0 +1,85 @@
+{
+  "model": "MK695LG",
+  "line": "jordan",
+  "displayName": "Jordan Mark 695 large piloted tank blanketing regulator",
+  "match": ["mk695lg", "mark 695 large", "695 large", "695lg"],
+  "source": { "doc": "mk695lgseries.pdf", "page": 3, "section": "Ordering Schematic for MK695" },
+  "note": "Extracted by hand from the large 695 sheet, whose printed model code is the same 695 as the standard sheet; the two grammars differ in every other position, so this one carries its own registry name and the code itself assembles with the printed 695. Flanged ends are the angle body version with the sheet's own consult-factory line for the inline version, and the in-line body option is an accessory code for FNPT alone, coupled. The sheet's check-with-factory caution rides every build.",
+  "assembly": "{model}-{size}-{body}{ends}{trim}{cv}{range}{actuator}{accessory}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "695", "label": "Piloted tank blanketing regulator, large", "aliases": ["695 large", "mk695lg"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [ { "code": "200", "label": "2\"", "aliases": ["2\"", "DN50"] } ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "6L", "label": "Stainless steel (CF3M)", "aliases": ["stainless"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard body"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "F3", "label": "300# flanged, angle body version (consult factory for inline)", "aliases": ["300 flanged"] },
+        { "code": "F5", "label": "150# flanged, angle body version (consult factory for inline)", "aliases": ["150 flanged"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim material (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "BN", "label": "Buna-N / 316", "aliases": ["buna"] },
+        { "code": "VI", "label": "Viton / 316", "aliases": ["viton"] },
+        { "code": "EP", "label": "EPDM / 316", "aliases": ["epdm"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (5 and 6)", "position": 6, "required": true,
+      "options": [
+        { "code": "10", "label": "10 Cv (8.6 Kv)", "aliases": ["10 cv"] },
+        { "code": "19", "label": "19 Cv (16.3 Kv)", "aliases": ["19 cv"] },
+        { "code": "28", "label": "28 Cv (24.1 Kv)", "aliases": ["28 cv"] },
+        { "code": "48", "label": "48 Cv (41.3 Kv)", "aliases": ["48 cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 7, "required": true,
+      "options": [
+        { "code": "A7", "label": "0.7-5.4\" w.c.", "aliases": ["0.7-5.4 wc"] },
+        { "code": "A8", "label": "4-18\" w.c.", "aliases": ["4-18 wc"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (9 and 10)", "position": 8, "required": true,
+      "options": [
+        { "code": "S1", "label": "Standard", "aliases": ["standard"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessory", "label": "Accessory (11 and 12)", "position": 9, "required": true,
+      "options": [
+        { "code": "G2", "label": "Outlet gauge 0-6\" w.c.", "aliases": ["outlet gauge"] },
+        { "code": "IL", "label": "In-line body option (FNPT only)", "aliases": ["inline body"] },
+        { "code": "P1", "label": "Purge system", "aliases": ["purge"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessory"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "accessory": "IL" }, "forbid": { "ends": ["F3", "F5"] },
+      "reason": "the in-line body option is printed FNPT only" }
+  ],
+  "cautions": [
+    { "when": { "model": "695" },
+      "note": "The sheet's own caution: the following information is subject to change; product numbers and descriptions should be checked with the factory for accuracy before order entry." }
+  ]
+}
