@@ -1,0 +1,81 @@
+{
+  "model": "MK518",
+  "line": "jordan",
+  "displayName": "Jordan Mark 518 back pressure regulator",
+  "match": ["mk518", "mark 518", "jordan 518"],
+  "source": { "doc": "mk518.pdf", "page": 3, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, model then two digit size and a material letter, a slash, then five positions of variable width. The pressure ranges split by size, the 3 to 5 inch spring printing under the 1 inch column alone, and the seat sizes carry their own size pairings in their labels, both enforced. The second connections position describes the flange standard or the thread form and its for-threaded glosses stay in the labels. The sheet points lower capacity needs at the Mark 508.",
+  "assembly": "{model}{size}{material}/{connections}{connections2}{diaphragm}{range}{seatSize}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "518", "label": "Standard", "aliases": ["mk518", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "25", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "50", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "material", "label": "Material", "position": 3, "required": true,
+      "options": [
+        { "code": "S", "label": "Stainless steel", "aliases": ["stainless"] },
+        { "code": "H", "label": "Hastelloy C", "aliases": ["hastelloy"] }
+      ]
+    },
+    {
+      "id": "connections", "label": "Connections (1)", "position": 4, "required": true,
+      "options": [
+        { "code": "F", "label": "Flange", "aliases": ["flange"] },
+        { "code": "G", "label": "Threaded (1\"/DN25 only)", "aliases": ["threaded"] }
+      ]
+    },
+    {
+      "id": "connections2", "label": "Connections standard (2)", "position": 5, "required": true,
+      "options": [
+        { "code": "D", "label": "DIN (BSPP for threaded)", "aliases": ["din", "bspp"] },
+        { "code": "A", "label": "ANSI", "aliases": ["ansi"] },
+        { "code": "X", "label": "FNPT for threaded", "aliases": ["fnpt"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard connections"] }
+      ]
+    },
+    {
+      "id": "diaphragm", "label": "Diaphragm (3)", "position": 6, "required": true,
+      "options": [
+        { "code": "P", "label": "PTFE", "aliases": ["ptfe"] },
+        { "code": "V", "label": "Viton", "aliases": ["viton"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Pressure range (4)", "position": 7, "required": true,
+      "options": [
+        { "code": "10", "label": "3-5\" w.c. (8-13 mbar), 1\" only", "aliases": ["3-5 wc"] },
+        { "code": "20", "label": "4-10\" w.c. (10-25 mbar)", "aliases": ["4-10 wc"] },
+        { "code": "50", "label": "5-22\" w.c. (13-55 mbar)", "aliases": ["5-22 wc"] },
+        { "code": "100", "label": "6-40\" w.c. (15-100 mbar)", "aliases": ["6-40 wc"] },
+        { "code": "200", "label": "8-80\" w.c. (20-200 mbar)", "aliases": ["8-80 wc"] },
+        { "code": "500", "label": "10-201\" w.c. (25-500 mbar)", "aliases": ["10-201 wc"] }
+      ]
+    },
+    {
+      "id": "seatSize", "label": "Seat size (5)", "position": 8, "required": true,
+      "options": [
+        { "code": "18", "label": "7.5 Cv (6.5 Kv), 0.71\" (18mm), for the 1\"", "aliases": ["7.5 cv seat"] },
+        { "code": "26", "label": "17 Cv (15 Kv), 1\" (26mm), for the 2\"", "aliases": ["17 cv seat"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "connections": "G" }, "forbid": { "size": ["50"] },
+      "reason": "threaded connections are printed 1 inch only" },
+    { "when": { "range": "10" }, "forbid": { "size": ["50"] },
+      "reason": "the 3 to 5 inch spring prints under the 1 inch column alone" },
+    { "when": { "seatSize": "18" }, "forbid": { "size": ["50"] },
+      "reason": "the 18mm seat carries the 1 inch pairing in its own label" },
+    { "when": { "seatSize": "26" }, "forbid": { "size": ["25"] },
+      "reason": "the 26mm seat carries the 2 inch pairing in its own label" }
+  ],
+  "cautions": []
+}
