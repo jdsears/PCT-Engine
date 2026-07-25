@@ -94,6 +94,8 @@ const mk627 = JSON.parse(readFileSync(join(here, 'models', 'mk627.json'), 'utf8'
 const mk630 = JSON.parse(readFileSync(join(here, 'models', 'mk630.json'), 'utf8'));
 const mark9020 = JSON.parse(readFileSync(join(here, 'models', 'mark9020.json'), 'utf8'));
 const mark93 = JSON.parse(readFileSync(join(here, 'models', 'mark93.json'), 'utf8'));
+const mk978e = JSON.parse(readFileSync(join(here, 'models', 'mk978e.json'), 'utf8'));
+const mk978 = JSON.parse(readFileSync(join(here, 'models', 'mk978.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1303,6 +1305,34 @@ check('the 93 round-trips the sheet\'s own example and the option pairs behave',
   assert.ok(checkConstraints(mark93, { options: 'LR', model: '93B' }).length > 0, 'the impossible LR pair refuses every body');
   assert.equal(checkCautions(mark93, { options: 'BTF' }).length, 1, 'the document-required gaskets caution inside pairs too');
   assert.equal(checkCautions(mark93, { options: 'BS' }).length, 0, 'an ordinary pair stays silent');
+});
+
+console.log('\nThe Mark 978 complex: the 978E small and the 978 large with its 3 inch page:');
+
+check('both round-trip through the enumerated blocks and their brackets hold', () => {
+  roundTrip(mk978e, {
+    model: '978ETP', size: '100', stemSealSeat: 'JDT', block: 'E3LN31', stemSeal: 'JH',
+    actuatorRange: 'D5', action: 'RR', accessories: '3A', smp: 'G',
+  }, '978ETP100JDTE3LN31JHD5RR3AG');
+  roundTrip(mk978e, {
+    model: '978E', size: '050', stemSealSeat: 'JD', block: 'A2LN10', stemSeal: 'JH',
+    actuatorRange: '3D', action: 'DD', accessories: '00', smp: 'N',
+  }, '978E050JDA2LN10JH3DDD00N');
+  roundTrip(mk978, {
+    model: '978SP', size: '300', stemSeal: 'JD', seat: '', block: 'JALN2A', stemSealDetail: 'JH',
+    actuatorRange: '8D', action: 'DD', accessories: '00', smp: 'S',
+  }, '978SP300JDJALN2AJH8DDD00S');
+  roundTrip(mk978, {
+    model: '978N', size: '200', stemSeal: 'JD', seat: 'T', block: 'IALN6A', stemSealDetail: 'JH',
+    actuatorRange: 'R9', action: 'RR', accessories: '2A', smp: 'D',
+  }, '978N200JDTIALN6AJHR9RR2AD');
+  assert.ok(checkConstraints(mk978e, { stemSealSeat: 'JDP', block: 'A1LN2A' }).length > 0, 'the PEEK seat keeps its Cv 3.5 bracket');
+  assert.equal(checkConstraints(mk978e, { stemSealSeat: 'JDP', block: 'C3LN31' }).length, 0, 'a 3.5 Cv block passes it');
+  assert.ok(checkConstraints(mk978e, { model: '978ESP', actuatorRange: '6D' }).length > 0, 'the SP table has no 6-30 rows');
+  assert.ok(checkConstraints(mk978e, { block: 'BALN1A', size: '050' }).length > 0, 'the blocks keep their printed sizes');
+  assert.ok(checkConstraints(mk978, { size: '300', model: '978' }).length > 0, 'the 3 inch page is the SP\'s alone');
+  assert.ok(checkConstraints(mk978, { size: '300', actuatorRange: '5D' }).length > 0, 'and prints the 85M rows alone');
+  assert.equal(checkCautions(mk978, { block: 'JAML7A' }).length, 1, 'the modified linear rows carry their contact-factory line');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

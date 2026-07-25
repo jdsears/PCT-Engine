@@ -1,0 +1,1437 @@
+{
+  "model": "978",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 978 sanitary control valve, Jorlon diaphragm seal",
+  "match": [
+    "mark 978",
+    "mk978",
+    "978 control valve"
+  ],
+  "source": {
+    "doc": "mk978_jdversion.pdf",
+    "page": "13 to 15",
+    "section": "Ordering schematic (1-1/2 and 2 inch, and the 3 inch 978SP)"
+  },
+  "note": "Extracted by hand from the JD version sheet's large schematics, the 1-1/2 and 2 inch pages and the 3 inch side positioner page folded into one grammar. The seat segment is blank for the standard hard seat, the empty-code device, or P and T for PEEK and Teflon. Each pre-combined block is held to its printed size, the 3 inch blocks to the 978SP alone, and the modified linear 2 inch rows carry the sheet's contact-factory line as a caution. The side positioner actuator rows read ALL for the same codes that read 3-15 elsewhere, so the labels carry both. The header prints no separator row, so the code assembles bare, held for the PDF.",
+  "assembly": "{model}{size}{stemSeal}{seat}{block}{stemSealDetail}{actuatorRange}{action}{accessories}{smp}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "978",
+          "label": "Standard",
+          "aliases": [
+            "978"
+          ]
+        },
+        {
+          "code": "978SP",
+          "label": "Side mounted positioner (SMP)",
+          "aliases": [
+            "978sp"
+          ]
+        },
+        {
+          "code": "978TP",
+          "label": "Top mounted positioner (TMP)",
+          "aliases": [
+            "978tp"
+          ]
+        },
+        {
+          "code": "978N",
+          "label": "In line body",
+          "aliases": [
+            "978n"
+          ]
+        },
+        {
+          "code": "978NSP",
+          "label": "In line with SMP",
+          "aliases": [
+            "978nsp"
+          ]
+        },
+        {
+          "code": "978NTP",
+          "label": "In line with TMP",
+          "aliases": [
+            "978ntp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "150",
+          "label": "1-1/2\"",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "300",
+          "label": "3\" (978SP only)",
+          "aliases": [
+            "3\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stemSeal",
+      "label": "Stem seal",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "JD",
+          "label": "Jorlon diaphragm",
+          "aliases": [
+            "jorlon diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seat",
+      "label": "Seat",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "Standard hard seat (the sheet says leave blank)",
+          "aliases": [
+            "hard seat"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "PEEK (FDA/USP Class VI)",
+          "aliases": [
+            "peek"
+          ]
+        },
+        {
+          "code": "T",
+          "label": "Teflon FDA/USP Class VI",
+          "aliases": [
+            "teflon seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "block",
+      "label": "Body, Cv, characteristic and finish (1 to 6)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "FALN1A",
+          "label": "1-1/2\" LIN Cv 5 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 5 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "F1LN1A",
+          "label": "1-1/2\" LIN Cv 5 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 5 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F2LN10",
+          "label": "1-1/2\" LIN Cv 5 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 5 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F3LN10",
+          "label": "1-1/2\" LIN Cv 5 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 5 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "F4LN10",
+          "label": "1-1/2\" LIN Cv 5 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 5 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "FAEPA1",
+          "label": "1-1/2\" EQP Cv 5 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 5 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "F1EPA1",
+          "label": "1-1/2\" EQP Cv 5 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 5 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F2EP11",
+          "label": "1-1/2\" EQP Cv 5 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 5 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F3EP11",
+          "label": "1-1/2\" EQP Cv 5 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 5 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "F4EP11",
+          "label": "1-1/2\" EQP Cv 5 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 5 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "FALN2A",
+          "label": "1-1/2\" LIN Cv 10 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 10 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "F1LN2A",
+          "label": "1-1/2\" LIN Cv 10 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 10 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F2LN21",
+          "label": "1-1/2\" LIN Cv 10 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 10 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F3LN21",
+          "label": "1-1/2\" LIN Cv 10 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 10 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "F4LN21",
+          "label": "1-1/2\" LIN Cv 10 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 10 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "FAEPA2",
+          "label": "1-1/2\" EQP Cv 10 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 10 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "F1EPA2",
+          "label": "1-1/2\" EQP Cv 10 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 10 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F2EP12",
+          "label": "1-1/2\" EQP Cv 10 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 10 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F3EP12",
+          "label": "1-1/2\" EQP Cv 10 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 10 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "F4EP12",
+          "label": "1-1/2\" EQP Cv 10 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 10 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "FALN3A",
+          "label": "1-1/2\" LIN Cv 15 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 15 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "F1LN3A",
+          "label": "1-1/2\" LIN Cv 15 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 15 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F2LN31",
+          "label": "1-1/2\" LIN Cv 15 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 15 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F3LN31",
+          "label": "1-1/2\" LIN Cv 15 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 15 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "F4LN31",
+          "label": "1-1/2\" LIN Cv 15 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 15 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "FAEPA3",
+          "label": "1-1/2\" EQP Cv 15 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 15 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "F1EPA3",
+          "label": "1-1/2\" EQP Cv 15 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 15 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F2EP13",
+          "label": "1-1/2\" EQP Cv 15 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 15 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "F3EP13",
+          "label": "1-1/2\" EQP Cv 15 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 15 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "F4EP13",
+          "label": "1-1/2\" EQP Cv 15 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 15 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "GALN4A",
+          "label": "1-1/2\" LIN Cv 20 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 20 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "G1LN4A",
+          "label": "1-1/2\" LIN Cv 20 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 20 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "G2LN41",
+          "label": "1-1/2\" LIN Cv 20 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 20 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "G3LN41",
+          "label": "1-1/2\" LIN Cv 20 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 20 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "G4LN41",
+          "label": "1-1/2\" LIN Cv 20 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 20 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "GAEPA4",
+          "label": "1-1/2\" EQP Cv 20 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 20 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "G1EPA4",
+          "label": "1-1/2\" EQP Cv 20 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 20 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "G2EP14",
+          "label": "1-1/2\" EQP Cv 20 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 20 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "G3EP14",
+          "label": "1-1/2\" EQP Cv 20 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 20 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "G4EP14",
+          "label": "1-1/2\" EQP Cv 20 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" eqp cv 20 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "GALN5A",
+          "label": "1-1/2\" LIN Cv 30 20Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 30 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "G1LN5A",
+          "label": "1-1/2\" LIN Cv 30 20Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 30 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "G2LN51",
+          "label": "1-1/2\" LIN Cv 30 8Ra int./20Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 30 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "G3LN51",
+          "label": "1-1/2\" LIN Cv 30 8Ra int./8Ra ext.",
+          "aliases": [
+            "1-1/2\" lin cv 30 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "G4LN51",
+          "label": "1-1/2\" LIN Cv 30 8Ra int./63 RMS ext.",
+          "aliases": [
+            "1-1/2\" lin cv 30 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "G2LNBB",
+          "label": "1-1/2\" LIN Cv 30 8Ra int./20Ra ext., TBL",
+          "aliases": [
+            "1-1/2\" lin cv 30 8ra int./20ra ext., tbl"
+          ]
+        },
+        {
+          "code": "HALN1A",
+          "label": "2\" LIN Cv 10 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 10 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "H1LN1A",
+          "label": "2\" LIN Cv 10 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 10 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H2LN10",
+          "label": "2\" LIN Cv 10 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 10 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H3LN10",
+          "label": "2\" LIN Cv 10 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" lin cv 10 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "H4LN10",
+          "label": "2\" LIN Cv 10 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 10 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "HAEPA1",
+          "label": "2\" EQP Cv 10 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" eqp cv 10 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "H1EPA1",
+          "label": "2\" EQP Cv 10 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" eqp cv 10 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H2EP11",
+          "label": "2\" EQP Cv 10 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" eqp cv 10 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H3EP11",
+          "label": "2\" EQP Cv 10 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" eqp cv 10 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "H4EP11",
+          "label": "2\" EQP Cv 10 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" eqp cv 10 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "HALN2A",
+          "label": "2\" LIN Cv 15 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 15 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "H1LN2A",
+          "label": "2\" LIN Cv 15 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 15 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H2LN21",
+          "label": "2\" LIN Cv 15 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 15 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H3LN21",
+          "label": "2\" LIN Cv 15 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" lin cv 15 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "H4LN21",
+          "label": "2\" LIN Cv 15 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 15 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "HAEPA2",
+          "label": "2\" EQP Cv 15 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" eqp cv 15 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "H1EPA2",
+          "label": "2\" EQP Cv 15 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" eqp cv 15 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H2EP12",
+          "label": "2\" EQP Cv 15 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" eqp cv 15 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H3EP12",
+          "label": "2\" EQP Cv 15 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" eqp cv 15 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "H4EP12",
+          "label": "2\" EQP Cv 15 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" eqp cv 15 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "HALN3A",
+          "label": "2\" LIN Cv 20 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 20 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "H1LN3A",
+          "label": "2\" LIN Cv 20 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 20 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H2LN31",
+          "label": "2\" LIN Cv 20 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 20 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H3LN31",
+          "label": "2\" LIN Cv 20 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" lin cv 20 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "H4LN31",
+          "label": "2\" LIN Cv 20 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 20 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "HAEPA3",
+          "label": "2\" EQP Cv 20 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" eqp cv 20 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "H1EPA3",
+          "label": "2\" EQP Cv 20 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" eqp cv 20 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H2EP13",
+          "label": "2\" EQP Cv 20 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" eqp cv 20 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H3EP13",
+          "label": "2\" EQP Cv 20 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" eqp cv 20 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "H4EP13",
+          "label": "2\" EQP Cv 20 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" eqp cv 20 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "HALN4A",
+          "label": "2\" LIN Cv 30 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 30 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "H1LN4A",
+          "label": "2\" LIN Cv 30 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 30 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H2LN41",
+          "label": "2\" LIN Cv 30 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 30 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H3LN41",
+          "label": "2\" LIN Cv 30 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" lin cv 30 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "H4LN41",
+          "label": "2\" LIN Cv 30 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 30 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "HAEPA4",
+          "label": "2\" EQP Cv 30 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" eqp cv 30 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "H1EPA4",
+          "label": "2\" EQP Cv 30 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" eqp cv 30 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H2EP14",
+          "label": "2\" EQP Cv 30 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" eqp cv 30 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "H3EP14",
+          "label": "2\" EQP Cv 30 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" eqp cv 30 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "H4EP14",
+          "label": "2\" EQP Cv 30 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" eqp cv 30 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "IALN5A",
+          "label": "2\" LIN Cv 40 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 40 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "I1LN5A",
+          "label": "2\" LIN Cv 40 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 40 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "I2LN51",
+          "label": "2\" LIN Cv 40 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 40 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "I3LN51",
+          "label": "2\" LIN Cv 40 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" lin cv 40 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "I4LN51",
+          "label": "2\" LIN Cv 40 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 40 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "IALN6A",
+          "label": "2\" LIN Cv 60 20Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 60 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "I1LN6A",
+          "label": "2\" LIN Cv 60 20Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 60 20ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "I2LN61",
+          "label": "2\" LIN Cv 60 8Ra int./20Ra ext.",
+          "aliases": [
+            "2\" lin cv 60 8ra int./20ra ext."
+          ]
+        },
+        {
+          "code": "I3LN61",
+          "label": "2\" LIN Cv 60 8Ra int./8Ra ext.",
+          "aliases": [
+            "2\" lin cv 60 8ra int./8ra ext."
+          ]
+        },
+        {
+          "code": "I4LN61",
+          "label": "2\" LIN Cv 60 8Ra int./63 RMS ext.",
+          "aliases": [
+            "2\" lin cv 60 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "JAML7A",
+          "label": "2\" modified linear Cv 70 20Ra int./63 RMS ext. (contact factory)",
+          "aliases": [
+            "2\" modified linear cv 70 20ra int./63 rm"
+          ]
+        },
+        {
+          "code": "J1ML7A",
+          "label": "2\" modified linear Cv 70 20Ra int./20Ra ext. (contact factory)",
+          "aliases": [
+            "2\" modified linear cv 70 20ra int./20ra "
+          ]
+        },
+        {
+          "code": "J2ML71",
+          "label": "2\" modified linear Cv 70 8Ra int./20Ra ext. (contact factory)",
+          "aliases": [
+            "2\" modified linear cv 70 8ra int./20ra e"
+          ]
+        },
+        {
+          "code": "J3ML71",
+          "label": "2\" modified linear Cv 70 8Ra int./8Ra ext. (contact factory)",
+          "aliases": [
+            "2\" modified linear cv 70 8ra int./8ra ex"
+          ]
+        },
+        {
+          "code": "J4ML71",
+          "label": "2\" modified linear Cv 70 8Ra int./63 RMS ext. (contact factory)",
+          "aliases": [
+            "2\" modified linear cv 70 8ra int./63 rms"
+          ]
+        },
+        {
+          "code": "JALN1A",
+          "label": "3\" LIN Cv 75 20Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" lin cv 75 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "J4LN10",
+          "label": "3\" LIN Cv 75 8Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" lin cv 75 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "JAEPA1",
+          "label": "3\" EQP Cv 60 20Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" eqp cv 60 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "J4EP11",
+          "label": "3\" EQP Cv 60 8Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" eqp cv 60 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "JALN2A",
+          "label": "3\" LIN Cv 100 20Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" lin cv 100 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "J4LN21",
+          "label": "3\" LIN Cv 100 8Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" lin cv 100 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "JAEPA2",
+          "label": "3\" EQP Cv 80 20Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" eqp cv 80 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "J4EP12",
+          "label": "3\" EQP Cv 80 8Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" eqp cv 80 8ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "JAEPA3",
+          "label": "3\" EQP Cv 90 20Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" eqp cv 90 20ra int./63 rms ext."
+          ]
+        },
+        {
+          "code": "J4EP13",
+          "label": "3\" EQP Cv 90 8Ra int./63 RMS ext.",
+          "aliases": [
+            "3\" eqp cv 90 8ra int./63 rms ext."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stemSealDetail",
+      "label": "Stem seal (7 and 8)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "JH",
+          "label": "Jorlon, FDA / USP Class VI",
+          "aliases": [
+            "jorlon"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuatorRange",
+      "label": "Actuator / range (9 and 10)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "5D",
+          "label": "55M 3-15 DIR STL/painted (reads ALL ranges on the SP models)",
+          "aliases": [
+            "55m 3-15 dir stl/painted (reads all rang"
+          ]
+        },
+        {
+          "code": "5R",
+          "label": "55M 3-15 REV STL/painted (reads ALL ranges on the SP models)",
+          "aliases": [
+            "55m 3-15 rev stl/painted (reads all rang"
+          ]
+        },
+        {
+          "code": "6D",
+          "label": "55M 6-30 DIR STL/painted",
+          "aliases": [
+            "55m 6-30 dir stl/painted"
+          ]
+        },
+        {
+          "code": "6R",
+          "label": "55M 6-30 REV STL/painted",
+          "aliases": [
+            "55m 6-30 rev stl/painted"
+          ]
+        },
+        {
+          "code": "8D",
+          "label": "85M 3-15 DIR STL/painted (reads ALL ranges on the SP models)",
+          "aliases": [
+            "85m 3-15 dir stl/painted (reads all rang"
+          ]
+        },
+        {
+          "code": "8R",
+          "label": "85M 3-15 REV STL/painted (reads ALL ranges on the SP models)",
+          "aliases": [
+            "85m 3-15 rev stl/painted (reads all rang"
+          ]
+        },
+        {
+          "code": "9D",
+          "label": "85M 6-30 DIR STL/painted",
+          "aliases": [
+            "85m 6-30 dir stl/painted"
+          ]
+        },
+        {
+          "code": "9R",
+          "label": "85M 6-30 REV STL/painted",
+          "aliases": [
+            "85m 6-30 rev stl/painted"
+          ]
+        },
+        {
+          "code": "D5",
+          "label": "55M 3-15 DIR 304 SST (reads ALL ranges on the SP models)",
+          "aliases": [
+            "55m 3-15 dir 304 sst (reads all ranges o"
+          ]
+        },
+        {
+          "code": "R5",
+          "label": "55M 3-15 REV 304 SST (reads ALL ranges on the SP models)",
+          "aliases": [
+            "55m 3-15 rev 304 sst (reads all ranges o"
+          ]
+        },
+        {
+          "code": "D6",
+          "label": "55M 6-30 DIR 304 SST",
+          "aliases": [
+            "55m 6-30 dir 304 sst"
+          ]
+        },
+        {
+          "code": "R6",
+          "label": "55M 6-30 REV 304 SST",
+          "aliases": [
+            "55m 6-30 rev 304 sst"
+          ]
+        },
+        {
+          "code": "D8",
+          "label": "85M 3-15 DIR 304 SST (reads ALL ranges on the SP models)",
+          "aliases": [
+            "85m 3-15 dir 304 sst (reads all ranges o"
+          ]
+        },
+        {
+          "code": "R8",
+          "label": "85M 3-15 REV 304 SST (reads ALL ranges on the SP models)",
+          "aliases": [
+            "85m 3-15 rev 304 sst (reads all ranges o"
+          ]
+        },
+        {
+          "code": "D9",
+          "label": "85M 6-30 DIR 304 SST",
+          "aliases": [
+            "85m 6-30 dir 304 sst"
+          ]
+        },
+        {
+          "code": "R9",
+          "label": "85M 6-30 REV 304 SST",
+          "aliases": [
+            "85m 6-30 rev 304 sst"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "label": "Action (11 and 12)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "DD",
+          "label": "Direct",
+          "aliases": [
+            "direct"
+          ]
+        },
+        {
+          "code": "RR",
+          "label": "Reverse",
+          "aliases": [
+            "reverse"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (13 and 14)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None (the sheet prints slashed zeros)",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "1A",
+          "label": "I/P transducer 4-20mA / 3-15 psi",
+          "aliases": [
+            "ip 3-15"
+          ]
+        },
+        {
+          "code": "2A",
+          "label": "Air regulator with gauge",
+          "aliases": [
+            "air regulator"
+          ]
+        },
+        {
+          "code": "3A",
+          "label": "I/P transducer 4-20mA / 6-30 psi",
+          "aliases": [
+            "ip 6-30"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smp",
+      "label": "SMP (15)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "N",
+          "label": "None",
+          "aliases": [
+            "no smp"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "SMP DIR/REV 3-15",
+          "aliases": [
+            "smp 3-15"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "SMP DIR/REV 3-9",
+          "aliases": [
+            "smp 3-9"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "SMP DIR/REV 9-15",
+          "aliases": [
+            "smp 9-15"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "SMP/IP DIR/REV 4-20",
+          "aliases": [
+            "smp ip 4-20"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "SMP/IP DIR/REV 4-12",
+          "aliases": [
+            "smp ip 4-12"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "SMP/IP DIR/REV 12-20",
+          "aliases": [
+            "smp ip 12-20"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "MK16IQ-S DIR/REV 4-20 (HART)",
+          "aliases": [
+            "mk16iq-s"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "MK16IQ-B DIR/REV 4-20",
+          "aliases": [
+            "mk16iq-b"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "MK16IQ-FF DIR/REV 4-20 (Foundation Fieldbus)",
+          "aliases": [
+            "mk16iq-ff"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "LNZA 6200 HART5 with PD, CFR and GA",
+          "aliases": [
+            "lnza 6200"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "block": [
+          "FALN1A",
+          "F1LN1A",
+          "F2LN10",
+          "F3LN10",
+          "F4LN10",
+          "FAEPA1",
+          "F1EPA1",
+          "F2EP11",
+          "F3EP11",
+          "F4EP11",
+          "FALN2A",
+          "F1LN2A",
+          "F2LN21",
+          "F3LN21",
+          "F4LN21",
+          "FAEPA2",
+          "F1EPA2",
+          "F2EP12",
+          "F3EP12",
+          "F4EP12",
+          "FALN3A",
+          "F1LN3A",
+          "F2LN31",
+          "F3LN31",
+          "F4LN31",
+          "FAEPA3",
+          "F1EPA3",
+          "F2EP13",
+          "F3EP13",
+          "F4EP13",
+          "GALN4A",
+          "G1LN4A",
+          "G2LN41",
+          "G3LN41",
+          "G4LN41",
+          "GAEPA4",
+          "G1EPA4",
+          "G2EP14",
+          "G3EP14",
+          "G4EP14",
+          "GALN5A",
+          "G1LN5A",
+          "G2LN51",
+          "G3LN51",
+          "G4LN51",
+          "G2LNBB"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "200",
+          "300"
+        ]
+      },
+      "reason": "these blocks print under the 1-1/2 inch body heading"
+    },
+    {
+      "when": {
+        "block": [
+          "HALN1A",
+          "H1LN1A",
+          "H2LN10",
+          "H3LN10",
+          "H4LN10",
+          "HAEPA1",
+          "H1EPA1",
+          "H2EP11",
+          "H3EP11",
+          "H4EP11",
+          "HALN2A",
+          "H1LN2A",
+          "H2LN21",
+          "H3LN21",
+          "H4LN21",
+          "HAEPA2",
+          "H1EPA2",
+          "H2EP12",
+          "H3EP12",
+          "H4EP12",
+          "HALN3A",
+          "H1LN3A",
+          "H2LN31",
+          "H3LN31",
+          "H4LN31",
+          "HAEPA3",
+          "H1EPA3",
+          "H2EP13",
+          "H3EP13",
+          "H4EP13",
+          "HALN4A",
+          "H1LN4A",
+          "H2LN41",
+          "H3LN41",
+          "H4LN41",
+          "HAEPA4",
+          "H1EPA4",
+          "H2EP14",
+          "H3EP14",
+          "H4EP14",
+          "IALN5A",
+          "I1LN5A",
+          "I2LN51",
+          "I3LN51",
+          "I4LN51",
+          "IALN6A",
+          "I1LN6A",
+          "I2LN61",
+          "I3LN61",
+          "I4LN61",
+          "JAML7A",
+          "J1ML7A",
+          "J2ML71",
+          "J3ML71",
+          "J4ML71"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "150",
+          "300"
+        ]
+      },
+      "reason": "these blocks print under the 2 inch body heading"
+    },
+    {
+      "when": {
+        "block": [
+          "JALN1A",
+          "J4LN10",
+          "JAEPA1",
+          "J4EP11",
+          "JALN2A",
+          "J4LN21",
+          "JAEPA2",
+          "J4EP12",
+          "JAEPA3",
+          "J4EP13"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "150",
+          "200"
+        ]
+      },
+      "reason": "these blocks print on the 3 inch page"
+    },
+    {
+      "when": {
+        "size": "300"
+      },
+      "forbid": {
+        "model": [
+          "978",
+          "978TP",
+          "978N",
+          "978NSP",
+          "978NTP"
+        ]
+      },
+      "reason": "the 3 inch page is the 978SP's alone"
+    },
+    {
+      "when": {
+        "size": "300"
+      },
+      "forbid": {
+        "actuatorRange": [
+          "5D",
+          "5R",
+          "6D",
+          "6R",
+          "9D",
+          "9R",
+          "D5",
+          "R5",
+          "D6",
+          "R6",
+          "D9",
+          "R9"
+        ]
+      },
+      "reason": "the 3 inch page prints the 85M direct and reverse rows alone"
+    },
+    {
+      "when": {
+        "model": [
+          "978SP",
+          "978NSP"
+        ]
+      },
+      "forbid": {
+        "actuatorRange": [
+          "6D",
+          "6R",
+          "9D",
+          "9R",
+          "D6",
+          "R6",
+          "D9",
+          "R9"
+        ]
+      },
+      "reason": "the side positioner table prints the 55M and 85M all-range rows alone"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "block": [
+          "JAML7A",
+          "J1ML7A",
+          "J2ML71",
+          "J3ML71",
+          "J4ML71"
+        ]
+      },
+      "note": "The sheet's own asterisk: modified linear, contact the factory for more information."
+    },
+    {
+      "when": {
+        "block": [
+          "G2LNBB"
+        ]
+      },
+      "note": "The TBL row is the sheet's own special listing; confirm the build with the factory."
+    }
+  ]
+}
