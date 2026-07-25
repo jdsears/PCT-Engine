@@ -1,19 +1,18 @@
 {
-  "model": "JSRLP",
+  "model": "JSRH",
   "line": "steriflow",
-  "displayName": "Steriflow JSRLP high purity gas pressure reducing valve",
+  "displayName": "Steriflow JSRH high flow gas pressure reducing valve",
   "match": [
-    "jsrlp",
-    "jsrlp series",
-    "high purity gas reducing"
+    "jsrh",
+    "jsrh series"
   ],
   "source": {
-    "doc": "jsrlpseries.pdf",
-    "page": "13 and 14",
-    "section": "Ordering schematic"
+    "doc": "jsrhseries.pdf",
+    "page": "6 and 7",
+    "section": "Ordering Schematic"
   },
-  "note": "Extracted by hand from the ordering schematic, the JR family shape assembled bare. The end connection column mixes single letter BPE codes with two character ISO and DIN codes, carried exactly as printed with their standards in the labels. The sheet's own rule, you cannot self-relieve and air-load at the same time, is enforced between the trim and the actuator, and the gauge-span liability note rides the one range the printed gauges do not cover. The repair kit schematic on the same page is an accessory grammar and stays out, the kits precedent. The ISO and DIN end letters and the captured vent and air loading actuator rows shed the digits the extraction had welded onto them; the sheet prints those digits as footnote superscripts for the standards notes, so the order codes are the plain letters, the JSB and JSR reading.",
-  "assembly": "{model}{size}{material}{endConnection}{portConfig}{trim}{seat}{rangeSpring}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
+  "note": "Extracted by hand from the ordering schematic, the JSB grammar at high flow. The end connection ladder runs to DN25 forms, the letters shedding their footnote superscripts as on the JSB. The o-ring and trim position pairs a USP o-ring with the 6L trim, the 2-series rows self-relieving; two of those rows print Releiving, the sheet's own spelling. The trim position's dual Cv labels, 1.5 on the half inch and 1.9 above, ride the labels. The inlet gauge ladder prints plain zeros on this sheet, no slashed glyphs. The outlet gauge non-standard row prints ZZ though the position is single width, carried as printed.",
+  "assembly": "{model}-{size}-{material}{endConnection}{portConfig}{oRingTrim}{trim}{springRange}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
   "slots": [
     {
       "id": "model",
@@ -22,10 +21,10 @@
       "required": true,
       "options": [
         {
-          "code": "JSRLP",
-          "label": "High purity gas pressure reducing valve",
+          "code": "JSRH",
+          "label": "High flow gas pressure reducing valve",
           "aliases": [
-            "jsrlp"
+            "jsrh"
           ]
         }
       ]
@@ -49,6 +48,13 @@
           "aliases": [
             "3/4\""
           ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
         }
       ]
     },
@@ -67,7 +73,7 @@
         },
         {
           "code": "30",
-          "label": "Stainless steel 316L, 30 Ra or better, EP",
+          "label": "Stainless steel 316L, \u226430 Ra \u03bcin (0,76 Ra \u03bcm) EP",
           "aliases": [
             "30 ra"
           ]
@@ -76,27 +82,27 @@
     },
     {
       "id": "endConnection",
-      "label": "End connection",
+      "label": "End connection / internal finish (1)",
       "position": 4,
       "required": true,
       "options": [
         {
           "code": "C",
-          "label": "Tri-clamp 20 Ra EP (ASME BPE)",
+          "label": "Tri-clamp 20Ra EP",
           "aliases": [
             "tri-clamp"
           ]
         },
         {
           "code": "P",
-          "label": "FNPT 20 Ra EP (ASME BPE)",
+          "label": "FNPT 20Ra EP",
           "aliases": [
             "fnpt"
           ]
         },
         {
           "code": "T",
-          "label": "Tube weld end 20 Ra EP (ASME BPE)",
+          "label": "Tube weld end 20Ra EP",
           "aliases": [
             "tube weld"
           ]
@@ -105,12 +111,12 @@
           "code": "S",
           "label": "ISO tri-clamp, DN15 (DIN 32676 row B, ISO 1127)",
           "aliases": [
-            "iso tri-clamp"
+            "iso tri-clamp dn15"
           ]
         },
         {
           "code": "V",
-          "label": "ISO with 34.0mm face T-clamp, DN15 (DIN 32676 row B, ISO 1127)",
+          "label": "ISO with 34.0mm face tr-clamp, DN15 (DIN 32676 row B, ISO 1127)",
           "aliases": [
             "iso 34mm"
           ]
@@ -123,24 +129,17 @@
           ]
         },
         {
-          "code": "H",
-          "label": "ISO tube weld, DN15 (DIN 11866 row B)",
-          "aliases": [
-            "iso tube weld"
-          ]
-        },
-        {
           "code": "D",
           "label": "DIN tri-clamp, DN15 (DIN 32676 row A)",
           "aliases": [
-            "din tri-clamp"
+            "din tri-clamp dn15"
           ]
         },
         {
           "code": "N",
           "label": "DIN T-clamp, DN15 with 50.5mm face (DIN 32676 row A)",
           "aliases": [
-            "din 50.5"
+            "din 50.5 dn15"
           ]
         },
         {
@@ -154,14 +153,63 @@
           "code": "X",
           "label": "DIN T-clamp, DN20 with 50.5mm face (DIN 32676 row A)",
           "aliases": [
-            "din dn20 50.5"
+            "din 50.5 dn20"
           ]
         },
         {
           "code": "M",
           "label": "DIN tube weld, DN15 (DIN 11866, DIN 11850 row A)",
           "aliases": [
-            "din tube weld"
+            "din tube dn15"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "ISO tube weld, DN15 (DIN 11866 row B)",
+          "aliases": [
+            "iso tube dn15"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "ISO tri-clamp, DN25 (DIN 32676 row B, ISO 1127)",
+          "aliases": [
+            "iso tri-clamp dn25"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "DIN tri-clamp, DN25 (DIN 32676 row A)",
+          "aliases": [
+            "din tri-clamp dn25"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "DIN tube weld DN20 (DIN 11866, DIN 11850 row A)",
+          "aliases": [
+            "din tube dn20"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "ISO tube weld DN20 (DIN 11866 row B)",
+          "aliases": [
+            "iso tube dn20"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "DIN tube weld DN25 (DIN 11866, DIN 11850 row A)",
+          "aliases": [
+            "din tube dn25"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "ISO tube weld DN25 (DIN 11866 row B)",
+          "aliases": [
+            "iso tube dn25"
           ]
         },
         {
@@ -175,7 +223,7 @@
     },
     {
       "id": "portConfig",
-      "label": "Port configuration",
+      "label": "Port configuration (2)",
       "position": 5,
       "required": true,
       "options": [
@@ -217,37 +265,94 @@
       ]
     },
     {
-      "id": "trim",
-      "label": "Trim",
+      "id": "oRingTrim",
+      "label": "O-ring and trim (3 and 4)",
       "position": 6,
       "required": true,
       "options": [
         {
-          "code": "1S",
-          "label": "0.8 Cv",
+          "code": "1E",
+          "label": "USP - EPDM and 6L",
           "aliases": [
-            "0.8"
+            "usp epdm"
           ]
         },
         {
-          "code": "2S",
-          "label": "0.5 Cv",
+          "code": "1V",
+          "label": "USP - Viton and 6L",
           "aliases": [
-            "0.5"
+            "usp viton"
           ]
         },
         {
-          "code": "1R",
-          "label": "Cv 0.8 self-relieving",
+          "code": "1K",
+          "label": "USP - KLRZ and 6L",
           "aliases": [
-            "0.8 self relieving"
+            "usp klrz"
           ]
         },
         {
-          "code": "2R",
-          "label": "Cv 0.5 self-relieving",
+          "code": "1L",
+          "label": "USP - Silicone and 6L",
           "aliases": [
-            "0.5 self relieving"
+            "usp silicone"
+          ]
+        },
+        {
+          "code": "2E",
+          "label": "USP-EPDM and 6L self relieving",
+          "aliases": [
+            "epdm self relieving"
+          ]
+        },
+        {
+          "code": "2V",
+          "label": "USP-VIT and 6L self releiving (the sheet's own spelling)",
+          "aliases": [
+            "viton self relieving"
+          ]
+        },
+        {
+          "code": "2K",
+          "label": "USP-KLRZ and 6L self releiving (the sheet's own spelling)",
+          "aliases": [
+            "klrz self relieving"
+          ]
+        },
+        {
+          "code": "2L",
+          "label": "USP-SIL and 6L self relieving",
+          "aliases": [
+            "silicone self relieving"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim, FDA and USP Class VI (5 and 6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "EP",
+          "label": "EPDM (1/2\" 1.5 Cv) (3/4\" and 1\" 1.9 Cv)",
+          "aliases": [
+            "epdm trim"
+          ]
+        },
+        {
+          "code": "PK",
+          "label": "PEEK (1/2\" 1.5 Cv) (3/4\" and 1\" 1.9 Cv)",
+          "aliases": [
+            "peek trim"
+          ]
+        },
+        {
+          "code": "TF",
+          "label": "PTFE (1/2\" 1.5 Cv) (3/4\" and 1\" 1.9 Cv)",
+          "aliases": [
+            "ptfe trim"
           ]
         },
         {
@@ -260,73 +365,37 @@
       ]
     },
     {
-      "id": "seat",
-      "label": "Seat material",
-      "position": 7,
-      "required": true,
-      "options": [
-        {
-          "code": "TF",
-          "label": "PTFE",
-          "aliases": [
-            "ptfe"
-          ]
-        },
-        {
-          "code": "PK",
-          "label": "PEEK",
-          "aliases": [
-            "peek"
-          ]
-        },
-        {
-          "code": "EP",
-          "label": "EPDM",
-          "aliases": [
-            "epdm"
-          ]
-        },
-        {
-          "code": "ZZ",
-          "label": "Non-standard",
-          "aliases": [
-            "non-standard seat"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "rangeSpring",
-      "label": "Range spring / outlet pressure",
+      "id": "springRange",
+      "label": "Range spring / outlet pressure (7 and 8)",
       "position": 8,
       "required": true,
       "options": [
         {
-          "code": "01",
-          "label": "1-5 psi",
+          "code": "02",
+          "label": "5-20 psi (0,3-1,4 bar)",
           "aliases": [
-            "1-5"
+            "5-20"
           ]
         },
         {
           "code": "05",
-          "label": "5-15 psi",
+          "label": "5-50 psi (0,3-3,4 bar)",
           "aliases": [
-            "5-15"
+            "5-50"
+          ]
+        },
+        {
+          "code": "10",
+          "label": "5-100 psi (0,3-6,9 bar)",
+          "aliases": [
+            "5-100"
           ]
         },
         {
           "code": "15",
-          "label": "15-25 psi",
+          "label": "5-150 (0,3-10,3 bar)",
           "aliases": [
-            "15-25"
-          ]
-        },
-        {
-          "code": "25",
-          "label": "25-50 psi",
-          "aliases": [
-            "25-50"
+            "5-150"
           ]
         },
         {
@@ -340,13 +409,13 @@
     },
     {
       "id": "diaphragm",
-      "label": "Diaphragm material",
+      "label": "Diaphragm material (9 and 10)",
       "position": 9,
       "required": true,
       "options": [
         {
           "code": "JL",
-          "label": "Jorlon",
+          "label": "Jorlon PTFE, FDA and USP Class VI",
           "aliases": [
             "jorlon"
           ]
@@ -362,22 +431,22 @@
     },
     {
       "id": "actuator",
-      "label": "Actuator",
+      "label": "Actuator (11 and 12)",
       "position": 10,
       "required": true,
       "options": [
         {
           "code": "SK",
-          "label": "Standard actuator",
+          "label": "Standard actuator / nylon knob",
           "aliases": [
             "standard"
           ]
         },
         {
           "code": "AK",
-          "label": "Standard actuator, autoclavable anodised aluminium knob",
+          "label": "Standard actuator / autoclavable anodised aluminium knob",
           "aliases": [
-            "autoclavable"
+            "autoclavable knob"
           ]
         },
         {
@@ -389,23 +458,23 @@
         },
         {
           "code": "CV",
-          "label": "Captured vent, fitting on spring housing for venting self-relieved gas",
+          "label": "Captured vent provides fitting on spring housing for venting self-relieved gas",
           "aliases": [
             "captured vent"
           ]
         },
         {
           "code": "AA",
-          "label": "Air loading, fitting for air input on spring housing and a stem seat nut",
+          "label": "Air loading provides fitting for air input on spring housing, and a stem seat nut",
           "aliases": [
             "air loading"
           ]
         },
         {
           "code": "TP",
-          "label": "Anti-tamper feature",
+          "label": "Tamper proof option",
           "aliases": [
-            "anti-tamper"
+            "tamper proof"
           ]
         },
         {
@@ -419,50 +488,57 @@
     },
     {
       "id": "inletGauge",
-      "label": "Inlet gauge",
+      "label": "Inlet gauge (13 and 14)",
       "position": 11,
       "required": true,
       "options": [
         {
-          "code": "AA",
-          "label": "0-30 psig/bar (dual)",
-          "aliases": [
-            "inlet 0-30"
-          ]
-        },
-        {
-          "code": "BB",
-          "label": "0-60 psig/bar (dual)",
-          "aliases": [
-            "inlet 0-60"
-          ]
-        },
-        {
-          "code": "CC",
-          "label": "0-100 psig/bar (dual)",
-          "aliases": [
-            "inlet 0-100"
-          ]
-        },
-        {
-          "code": "DD",
-          "label": "0-160 psig/bar (dual)",
-          "aliases": [
-            "inlet 0-160"
-          ]
-        },
-        {
-          "code": "EE",
-          "label": "0-200 psig/bar (dual)",
-          "aliases": [
-            "inlet 0-200"
-          ]
-        },
-        {
-          "code": "NN",
+          "code": "0N",
           "label": "None",
           "aliases": [
             "no inlet gauge"
+          ]
+        },
+        {
+          "code": "0B",
+          "label": "0-30 psig/bar (dual)",
+          "aliases": [
+            "0-30 gauge"
+          ]
+        },
+        {
+          "code": "0C",
+          "label": "0-60 psig/bar (dual)",
+          "aliases": [
+            "0-60 gauge"
+          ]
+        },
+        {
+          "code": "0D",
+          "label": "0-100 psig/bar (dual)",
+          "aliases": [
+            "0-100 gauge"
+          ]
+        },
+        {
+          "code": "0E",
+          "label": "0-160 psig/bar (dual)",
+          "aliases": [
+            "0-160 gauge"
+          ]
+        },
+        {
+          "code": "0F",
+          "label": "0-200 psig/bar (dual)",
+          "aliases": [
+            "0-200 gauge"
+          ]
+        },
+        {
+          "code": "0G",
+          "label": "0-400 psig/bar (dual)",
+          "aliases": [
+            "0-400 gauge"
           ]
         },
         {
@@ -476,38 +552,10 @@
     },
     {
       "id": "outletGauge",
-      "label": "Outlet gauge",
+      "label": "Outlet gauge (15)",
       "position": 12,
       "required": true,
       "options": [
-        {
-          "code": "A",
-          "label": "0-30 psig/bar (dual)",
-          "aliases": [
-            "outlet 0-30"
-          ]
-        },
-        {
-          "code": "B",
-          "label": "0-60 psig/bar (dual)",
-          "aliases": [
-            "outlet 0-60"
-          ]
-        },
-        {
-          "code": "C",
-          "label": "0-100 psig/bar (dual)",
-          "aliases": [
-            "outlet 0-100"
-          ]
-        },
-        {
-          "code": "D",
-          "label": "0-160 psig/bar (dual)",
-          "aliases": [
-            "outlet 0-160"
-          ]
-        },
         {
           "code": "N",
           "label": "None",
@@ -516,8 +564,36 @@
           ]
         },
         {
+          "code": "B",
+          "label": "0-30 psig/bar (dual)",
+          "aliases": [
+            "0-30 outlet"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "0-60 psig/bar (dual)",
+          "aliases": [
+            "0-60 outlet"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "0-100 psig/bar (dual)",
+          "aliases": [
+            "0-100 outlet"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "0-160 psig/bar (dual)",
+          "aliases": [
+            "0-160 outlet"
+          ]
+        },
+        {
           "code": "ZZ",
-          "label": "Non-standard",
+          "label": "Non-standard (printed two characters wide in a single position, as the sheet has it)",
           "aliases": [
             "non-standard outlet gauge"
           ]
@@ -526,7 +602,7 @@
     },
     {
       "id": "sep",
-      "label": "SEP compliance",
+      "label": "SEP compliance (16)",
       "position": 13,
       "required": true,
       "options": [
@@ -534,7 +610,7 @@
           "code": "0",
           "label": "None required",
           "aliases": [
-            "none"
+            "no sep"
           ]
         },
         {
@@ -555,13 +631,13 @@
     },
     {
       "id": "accessories",
-      "label": "Accessories",
+      "label": "Accessories (17)",
       "position": 14,
       "required": true,
       "options": [
         {
           "code": "0",
-          "label": "None required",
+          "label": "None",
           "aliases": [
             "none"
           ]
@@ -575,23 +651,16 @@
         },
         {
           "code": "X",
-          "label": "Clean for oxygen",
+          "label": "Clean for oxygen (ASTM G-93 2011 and CGA G-4.1-2009)",
           "aliases": [
-            "oxygen"
-          ]
-        },
-        {
-          "code": "J",
-          "label": "Clean for oxygen, assemble dry (ASTM G-93 2011 and CGA G-4.1-2009)",
-          "aliases": [
-            "oxygen dry"
+            "oxygen clean"
           ]
         },
         {
           "code": "A",
           "label": "EN10204 3.1 cert for wetted parts",
           "aliases": [
-            "en10204"
+            "3.1 cert"
           ]
         },
         {
@@ -604,38 +673,20 @@
       ]
     }
   ],
-  "constraints": [
-    {
-      "when": {
-        "actuator": "AA"
-      },
-      "forbid": {
-        "trim": [
-          "1R",
-          "2R"
-        ]
-      },
-      "reason": "the sheet's own note: you cannot self-relieve and air-load at the same time"
-    }
-  ],
+  "constraints": [],
   "cautions": [
     {
       "when": {
-        "rangeSpring": "25",
-        "outletGauge": [
-          "A"
-        ]
-      },
-      "note": "The selected outlet gauge does not fully cover the 25-50 psi range; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
-    },
-    {
-      "when": {
-        "rangeSpring": "25",
         "inletGauge": [
-          "AA"
+          "0B",
+          "0C",
+          "0D",
+          "0E",
+          "0F",
+          "0G"
         ]
       },
-      "note": "The selected inlet gauge span is below the top of the 25-50 psi range; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+      "note": "Gauges are oil free and O2 clean as standard, the sheet's own line; the customer assumes responsibility if the selected gauge span does not fully cover the range spring / outlet pressure option."
     }
   ]
 }

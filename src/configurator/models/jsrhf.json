@@ -1,0 +1,871 @@
+{
+  "model": "JSRHF",
+  "line": "steriflow",
+  "displayName": "Steriflow JSRHF high flow bioprocess gas pressure reducing valve",
+  "match": [
+    "jsrhf",
+    "jsrhf series"
+  ],
+  "source": {
+    "doc": "jsrhfseries.pdf",
+    "page": "6 and 7",
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic. The head runs model dash size dash material and connection type dash optional finish, the last left blank for the standard 20 Ra, the empty-code device. The body feature pairs a Cv and connection size letter with a port letter, and nearly every later section carries a printed Cv bracket, all enforced against that letter: the o-rings and diaphragms split at 5 Cv, the trim seats name their Cv, the 5-20 range and the two EN10204 certs keep their brackets. The NPT thread finish note rides the note: threads are not 20 Ra and cavity bottoms are machine finish only. The inlet gauge codes print slashed zero glyphs, carried as plain zeros.",
+  "assembly": "{model}-{size}-{matConn}-{optFinish}{cvConn}{portConfig}{oRing}{trimSeat}{rangeSpring}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "JSRHF",
+          "label": "High flow gas pressure reducing valve",
+          "aliases": [
+            "jsrhf"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "matConn",
+      "label": "Material / connection type",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6C",
+          "label": "316L / tri-clamp",
+          "aliases": [
+            "tri-clamp"
+          ]
+        },
+        {
+          "code": "6N",
+          "label": "316L / NPT",
+          "aliases": [
+            "npt"
+          ]
+        },
+        {
+          "code": "6T",
+          "label": "316L / tube weld",
+          "aliases": [
+            "tube weld"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "optFinish",
+      "label": "Optional finish",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "Standard 20 Ra (leave blank)",
+          "aliases": [
+            "standard finish"
+          ]
+        },
+        {
+          "code": "30",
+          "label": "\u226430 Ra \u03bcin (0,76 Ra \u03bcm)",
+          "aliases": [
+            "30 ra"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cvConn",
+      "label": "Cv / connection size (1)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "2.5 Cv (3/4\")",
+          "aliases": [
+            "2.5 cv"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "3.5 Cv (1\"-1-1/2\")",
+          "aliases": [
+            "3.5 cv"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "5 Cv (1\"-2\")",
+          "aliases": [
+            "5 cv"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "7.5 Cv (1\"-2\")",
+          "aliases": [
+            "7.5 cv"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "10 Cv (1\"-2\")",
+          "aliases": [
+            "10 cv"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across Cv and port)",
+          "aliases": [
+            "non-standard cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portConfig",
+      "label": "Port configuration (2)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "A",
+          "label": "Port A",
+          "aliases": [
+            "port a"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Port B",
+          "aliases": [
+            "port b"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Port C",
+          "aliases": [
+            "port c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Port D",
+          "aliases": [
+            "port d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Port E",
+          "aliases": [
+            "port e"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard (the sheet prints one ZZ across Cv and port)",
+          "aliases": [
+            "non-standard port"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oRing",
+      "label": "O-ring, FDA and USP Class VI (3 and 4)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1E",
+          "label": "EPDM (2.5 and 3.5 Cv)",
+          "aliases": [
+            "epdm small"
+          ]
+        },
+        {
+          "code": "1V",
+          "label": "Viton (2.5 and 3.5 Cv)",
+          "aliases": [
+            "viton small"
+          ]
+        },
+        {
+          "code": "1K",
+          "label": "KLRZ (2.5 and 3.5 Cv)",
+          "aliases": [
+            "klrz small"
+          ]
+        },
+        {
+          "code": "1L",
+          "label": "Silicone (2.5 and 3.5 Cv)",
+          "aliases": [
+            "silicone small"
+          ]
+        },
+        {
+          "code": "2E",
+          "label": "EPDM (5-10 Cv)",
+          "aliases": [
+            "epdm large"
+          ]
+        },
+        {
+          "code": "2V",
+          "label": "Viton (5-10 Cv)",
+          "aliases": [
+            "viton large"
+          ]
+        },
+        {
+          "code": "2K",
+          "label": "KLRZ (5-10 Cv)",
+          "aliases": [
+            "klrz large"
+          ]
+        },
+        {
+          "code": "2L",
+          "label": "Silicone (5-10 Cv)",
+          "aliases": [
+            "silicone large"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trimSeat",
+      "label": "Trim/seat material (5 and 6)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "T1",
+          "label": "6L/PTFE (2.5 and 3.5 Cv)",
+          "aliases": [
+            "ptfe 2.5-3.5"
+          ]
+        },
+        {
+          "code": "T2",
+          "label": "6L/PTFE (5 Cv)",
+          "aliases": [
+            "ptfe 5"
+          ]
+        },
+        {
+          "code": "T3",
+          "label": "6L/PTFE (7.5 Cv)",
+          "aliases": [
+            "ptfe 7.5"
+          ]
+        },
+        {
+          "code": "T4",
+          "label": "6L/PTFE (10 Cv)",
+          "aliases": [
+            "ptfe 10"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rangeSpring",
+      "label": "Range spring / outlet pressure (7 and 8)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "02",
+          "label": "5-20 psi (0,3-1,4 bar) (2.5 and 3.5 Cv only)",
+          "aliases": [
+            "5-20"
+          ]
+        },
+        {
+          "code": "05",
+          "label": "5-50 psi (0,3-3,4 bar)",
+          "aliases": [
+            "5-50"
+          ]
+        },
+        {
+          "code": "10",
+          "label": "5-100 psi (0,3-6,9 bar)",
+          "aliases": [
+            "5-100"
+          ]
+        },
+        {
+          "code": "15",
+          "label": "10-150 (0,7-10,3 bar)",
+          "aliases": [
+            "10-150"
+          ]
+        },
+        {
+          "code": "25",
+          "label": "25-250 (1,7-17,2 bar)",
+          "aliases": [
+            "25-250"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm material (9 and 10)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "J1",
+          "label": "Jorlon PTFE, FDA and USP Class VI (2.5 and 3.5 Cv)",
+          "aliases": [
+            "jorlon small"
+          ]
+        },
+        {
+          "code": "J2",
+          "label": "Jorlon PTFE, FDA and USP Class VI (5-10 Cv)",
+          "aliases": [
+            "jorlon large"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (11 and 12)",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "SK",
+          "label": "Standard actuator / nylon knob",
+          "aliases": [
+            "standard"
+          ]
+        },
+        {
+          "code": "AK",
+          "label": "Standard actuator / autoclavable anodised aluminium knob",
+          "aliases": [
+            "autoclavable knob"
+          ]
+        },
+        {
+          "code": "AA",
+          "label": "Air loading provides fitting for air input on spring housing, and a stem seat nut",
+          "aliases": [
+            "air loading"
+          ]
+        },
+        {
+          "code": "PM",
+          "label": "Panel mount",
+          "aliases": [
+            "panel mount"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletGauge",
+      "label": "Inlet gauge (13 and 14)",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "0N",
+          "label": "None (the sheet prints a slashed zero)",
+          "aliases": [
+            "no inlet gauge"
+          ]
+        },
+        {
+          "code": "0B",
+          "label": "0-30 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-30 gauge"
+          ]
+        },
+        {
+          "code": "0C",
+          "label": "0-60 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-60 gauge"
+          ]
+        },
+        {
+          "code": "0D",
+          "label": "0-100 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-100 gauge"
+          ]
+        },
+        {
+          "code": "0E",
+          "label": "0-160 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-160 gauge"
+          ]
+        },
+        {
+          "code": "0F",
+          "label": "0-200 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-200 gauge"
+          ]
+        },
+        {
+          "code": "0G",
+          "label": "0-400 psig/bar (dual) (the sheet prints a slashed zero)",
+          "aliases": [
+            "0-400 gauge"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard inlet gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletGauge",
+      "label": "Outlet gauge (15)",
+      "position": 13,
+      "required": true,
+      "options": [
+        {
+          "code": "N",
+          "label": "None",
+          "aliases": [
+            "no outlet gauge"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "0-30 psig/bar (dual)",
+          "aliases": [
+            "0-30 outlet"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "0-60 psig/bar (dual)",
+          "aliases": [
+            "0-60 outlet"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "0-100 psig/bar (dual)",
+          "aliases": [
+            "0-100 outlet"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "0-160 psig/bar (dual)",
+          "aliases": [
+            "0-160 outlet"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "0-200 psig/bar (dual)",
+          "aliases": [
+            "0-200 outlet"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "0-300 psig/bar (dual)",
+          "aliases": [
+            "0-300 outlet"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard outlet gauge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sep",
+      "label": "SEP compliance (16)",
+      "position": 14,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None required",
+          "aliases": [
+            "no sep"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "SEP compliant",
+          "aliases": [
+            "sep"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "PED/CE compliance for 1-1/2\" and 2\"",
+          "aliases": [
+            "ped ce"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard sep"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (17)",
+      "position": 15,
+      "required": true,
+      "options": [
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Clean for oil free",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Clean for oxygen (ASTM G-93 2011 and CGA G-4.1-2009)",
+          "aliases": [
+            "oxygen clean"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "EN10204 3.1 cert for Cv 2.5-3.5 wetted parts",
+          "aliases": [
+            "3.1 cert small"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "EN10204 3.1 cert for Cv 5-10 wetted parts",
+          "aliases": [
+            "3.1 cert large"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "cvConn": "A"
+      },
+      "forbid": {
+        "size": [
+          "100",
+          "150",
+          "200"
+        ]
+      },
+      "reason": "the 2.5 Cv row prints 3/4 inch"
+    },
+    {
+      "when": {
+        "cvConn": "B"
+      },
+      "forbid": {
+        "size": [
+          "075",
+          "200"
+        ]
+      },
+      "reason": "the 3.5 Cv row prints 1 to 1-1/2 inch"
+    },
+    {
+      "when": {
+        "cvConn": [
+          "C",
+          "D",
+          "E"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "075"
+        ]
+      },
+      "reason": "the 5 to 10 Cv rows print 1 to 2 inch"
+    },
+    {
+      "when": {
+        "oRing": [
+          "1E",
+          "1V",
+          "1K",
+          "1L"
+        ]
+      },
+      "forbid": {
+        "cvConn": [
+          "C",
+          "D",
+          "E"
+        ]
+      },
+      "reason": "the 1-series o-rings print 2.5 and 3.5 Cv"
+    },
+    {
+      "when": {
+        "oRing": [
+          "2E",
+          "2V",
+          "2K",
+          "2L"
+        ]
+      },
+      "forbid": {
+        "cvConn": [
+          "A",
+          "B"
+        ]
+      },
+      "reason": "the 2-series o-rings print 5 to 10 Cv"
+    },
+    {
+      "when": {
+        "trimSeat": "T1"
+      },
+      "forbid": {
+        "cvConn": [
+          "C",
+          "D",
+          "E"
+        ]
+      },
+      "reason": "the T1 seat prints 2.5 and 3.5 Cv"
+    },
+    {
+      "when": {
+        "trimSeat": "T2"
+      },
+      "forbid": {
+        "cvConn": [
+          "A",
+          "B",
+          "D",
+          "E"
+        ]
+      },
+      "reason": "the T2 seat prints 5 Cv"
+    },
+    {
+      "when": {
+        "trimSeat": "T3"
+      },
+      "forbid": {
+        "cvConn": [
+          "A",
+          "B",
+          "C",
+          "E"
+        ]
+      },
+      "reason": "the T3 seat prints 7.5 Cv"
+    },
+    {
+      "when": {
+        "trimSeat": "T4"
+      },
+      "forbid": {
+        "cvConn": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "reason": "the T4 seat prints 10 Cv"
+    },
+    {
+      "when": {
+        "rangeSpring": "02"
+      },
+      "forbid": {
+        "cvConn": [
+          "C",
+          "D",
+          "E"
+        ]
+      },
+      "reason": "the 5-20 range prints 2.5 and 3.5 Cv only"
+    },
+    {
+      "when": {
+        "diaphragm": "J1"
+      },
+      "forbid": {
+        "cvConn": [
+          "C",
+          "D",
+          "E"
+        ]
+      },
+      "reason": "the J1 diaphragm prints 2.5 and 3.5 Cv"
+    },
+    {
+      "when": {
+        "diaphragm": "J2"
+      },
+      "forbid": {
+        "cvConn": [
+          "A",
+          "B"
+        ]
+      },
+      "reason": "the J2 diaphragm prints 5 to 10 Cv"
+    },
+    {
+      "when": {
+        "sep": "F"
+      },
+      "forbid": {
+        "size": [
+          "075",
+          "100"
+        ]
+      },
+      "reason": "the PED/CE row prints 1-1/2 and 2 inch"
+    },
+    {
+      "when": {
+        "accessories": "A"
+      },
+      "forbid": {
+        "cvConn": [
+          "C",
+          "D",
+          "E"
+        ]
+      },
+      "reason": "this cert row prints Cv 2.5 to 3.5"
+    },
+    {
+      "when": {
+        "accessories": "B"
+      },
+      "forbid": {
+        "cvConn": [
+          "A",
+          "B"
+        ]
+      },
+      "reason": "this cert row prints Cv 5 to 10"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "matConn": "6N"
+      },
+      "note": "The sheet's own note: NPT threads are not 20 Ra and cavity bottoms are machine finish only; for pure gas installations needing surface finish at the cavity bottoms, tri-clamp or weld ends are recommended."
+    }
+  ]
+}

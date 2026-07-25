@@ -125,6 +125,12 @@ const mk934 = JSON.parse(readFileSync(join(here, 'models', 'mk934.json'), 'utf8'
 const mk9020d = JSON.parse(readFileSync(join(here, 'models', 'mk9020d.json'), 'utf8'));
 const mk9020s = JSON.parse(readFileSync(join(here, 'models', 'mk9020s.json'), 'utf8'));
 const samplecoolers = JSON.parse(readFileSync(join(here, 'models', 'samplecoolers.json'), 'utf8'));
+const jsr = JSON.parse(readFileSync(join(here, 'models', 'jsr.json'), 'utf8'));
+const jsrh = JSON.parse(readFileSync(join(here, 'models', 'jsrh.json'), 'utf8'));
+const jsrhf = JSON.parse(readFileSync(join(here, 'models', 'jsrhf.json'), 'utf8'));
+const mk96a = JSON.parse(readFileSync(join(here, 'models', 'mk96a.json'), 'utf8'));
+const mark96aa = JSON.parse(readFileSync(join(here, 'models', 'mark96aa.json'), 'utf8'));
+const mark96c = JSON.parse(readFileSync(join(here, 'models', 'mark96c.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1386,16 +1392,16 @@ console.log('\nThe JSRLP high purity valve and the SSC assembly:');
 
 check('both round-trip and the no-airload-with-self-relieve rule holds', () => {
   roundTrip(jsrlp, {
-    model: 'JSRLP', size: '075', material: '30', endConnection: 'X2', portConfig: 'E',
-    trim: '1R', seat: 'PK', rangeSpring: '25', diaphragm: 'JL', actuator: 'CV1',
+    model: 'JSRLP', size: '075', material: '30', endConnection: 'X', portConfig: 'E',
+    trim: '1R', seat: 'PK', rangeSpring: '25', diaphragm: 'JL', actuator: 'CV',
     inletGauge: 'EE', outletGauge: 'B', sep: 'G', accessories: 'J',
-  }, 'JSRLP07530X2E1RPK25JLCV1EEBGJ');
+  }, 'JSRLP07530XE1RPK25JLCVEEBGJ');
   roundTrip(ssc, {
     model: 'SSC', size: '075', orientation: 'H', sensor: 'S', bodySegment: 'J',
     gasket: 'S', acc1: 'S', acc2: 'F', acc3: '0',
   }, 'SSC-075-HSJSSF0');
-  assert.ok(checkConstraints(jsrlp, { actuator: 'AA1', trim: '1R' }).length > 0, 'self-relieve and air-load refuse each other');
-  assert.equal(checkConstraints(jsrlp, { actuator: 'CV1', trim: '1R' }).length, 0, 'the captured vent serves the self-relieved build');
+  assert.ok(checkConstraints(jsrlp, { actuator: 'AA', trim: '1R' }).length > 0, 'self-relieve and air-load refuse each other');
+  assert.equal(checkConstraints(jsrlp, { actuator: 'CV', trim: '1R' }).length, 0, 'the captured vent serves the self-relieved build');
   assert.equal(checkCautions(jsrlp, { rangeSpring: '25', outletGauge: 'A' }).length, 1, 'the one uncovered range cautions');
   assert.equal(checkCautions(ssc, { acc2: 'F' }).length, 1, 'the document-required gasket cautions');
   assert.ok(/Mark 93/.test(ssc.note), 'the trap grid points at the existing 93 builder');
@@ -1406,9 +1412,9 @@ console.log('\nThe JSRL low flow family: F, FE, FLP and FLPE:');
 check('all four round-trip and the family rules hold', () => {
   roundTrip(jsrlf, {
     model: 'JSRLF', size: '050', material: '6L', endConnection: 'C', portConfig: 'A',
-    trim: '4R', seat: 'P4', rangeSpring: 'E6', diaphragm: 'JL', actuator: 'CV1',
+    trim: '4R', seat: 'P4', rangeSpring: 'E6', diaphragm: 'JL', actuator: 'CV',
     inletGauge: 'MM', outletGauge: 'J', sep: 'G', accessories: 'J',
-  }, 'JSRLF-050-6L/CA4RP4E6JLCV1MMJGJ');
+  }, 'JSRLF-050-6L/CA4RP4E6JLCVMMJGJ');
   roundTrip(jsrlfe, {
     model: 'JSRLFE', size: '025', material: '30', endConnection: 'A', portConfig: 'A',
     trim: '1S', seat: 'D1', rangeSpring: 'E5', diaphragm: 'JL', actuator: 'SK',
@@ -1425,9 +1431,9 @@ check('all four round-trip and the family rules hold', () => {
     inletGauge: 'NN', outletGauge: 'N', sep: 'G', accessories: 'A',
   }, 'JSRLFLPE-050-6L/WE3RD3E2JLTPNNNGA');
   assert.ok(checkConstraints(jsrlf, { rangeSpring: 'E6', endConnection: 'T' }).length > 0, 'the E6 range is NPT only');
-  assert.ok(checkConstraints(jsrlf, { inletGauge: 'KK', endConnection: 'S1' }).length > 0, 'the high gauge spans are NPT only');
+  assert.ok(checkConstraints(jsrlf, { inletGauge: 'KK', endConnection: 'S' }).length > 0, 'the high gauge spans are NPT only');
   assert.ok(checkConstraints(jsrlf, { trim: '1S', seat: 'P2' }).length > 0, 'the seat Cv matches the trim Cv');
-  assert.ok(checkConstraints(jsrlfe, { actuator: 'AA1', trim: '2R' }).length > 0, 'self-relieve and air-load refuse each other');
+  assert.ok(checkConstraints(jsrlfe, { actuator: 'AA', trim: '2R' }).length > 0, 'self-relieve and air-load refuse each other');
   assert.ok(checkConstraints(jsrlflp, { endConnection: 'A', size: '050' }).length > 0, 'the FNPT ends match their sizes');
   assert.equal(applyValue(jsrlfe, {}, 'rangeSpring', 'E6').accepted, false, 'the EPDM sheet stops at E5');
   assert.equal(applyValue(jsrlflp, {}, 'inletGauge', 'HH').accepted, false, 'the low pressure ladder stops at 160');
@@ -1669,6 +1675,77 @@ check('the sample coolers keep their per-series tables', () => {
   assert.ok(checkConstraints(samplecoolers, { model: 'SC50', connection: 'A' }).length > 0, 'the SC50 takes the 3/4 tri-clamp alone');
   assert.ok(checkConstraints(samplecoolers, { model: 'SC30', legs: '00' }).length > 0, 'the SC30 takes legs');
   assert.ok(checkConstraints(samplecoolers, { model: 'SC60', legs: 'SL' }).length > 0, 'the SC60 does not');
+});
+
+console.log('\nThe reducing shelf: JSR, JSRH, JSRHF and the Mark 96 variants:');
+
+check('the JSR trio round-trips and the corrected end letters decode', () => {
+  roundTrip(jsr, {
+    model: 'JSR', size: '050', material: '6L', endConnection: 'C', portConfig: 'A', trim: '1S', seat: 'TF',
+    springRange: '05', diaphragm: 'JL', actuator: 'SK', inletGauge: '0B', outletGauge: 'B', sep: '0', accessories: '0',
+  }, 'JSR-050-6LCA1STF05JLSK0BB00');
+  roundTrip(jsr, {
+    model: 'JSR', size: '075', material: '30', endConnection: 'D', portConfig: 'E', trim: '1R', seat: 'PK',
+    springRange: '0B', diaphragm: 'ZZ', actuator: 'CV', inletGauge: '0N', outletGauge: 'N', sep: 'G', accessories: 'A',
+  }, 'JSR-075-30DE1RPK0BZZCV0NNGA');
+  assert.ok(checkConstraints(jsr, { trim: '1R', actuator: 'AA' }).length > 0, 'self-relieve refuses the air loading row');
+  assert.equal(checkConstraints(jsr, { trim: '1R', actuator: 'CV' }).length, 0, 'but the captured vent serves it');
+  roundTrip(jsrh, {
+    model: 'JSRH', size: '100', material: '6L', endConnection: 'E', portConfig: 'B', oRingTrim: '2V', trim: 'PK',
+    springRange: '15', diaphragm: 'JL', actuator: 'AA', inletGauge: '0G', outletGauge: 'E', sep: 'Z', accessories: 'X',
+  }, 'JSRH-100-6LEB2VPK15JLAA0GEZX');
+  assert.ok(/releiving/i.test(jsrh.slots.find(s => s.id === 'oRingTrim').options.find(o => o.code === '2V').label), 'the sheet\'s own spelling rides the label');
+  roundTrip(jsrhf, {
+    model: 'JSRHF', size: '075', matConn: '6C', optFinish: '', cvConn: 'A', portConfig: 'A', oRing: '1E',
+    trimSeat: 'T1', rangeSpring: '02', diaphragm: 'J1', actuator: 'SK', inletGauge: '0N', outletGauge: 'N', sep: '0', accessories: '0',
+  }, 'JSRHF-075-6C-AA1ET102J1SK0NN00');
+  roundTrip(jsrhf, {
+    model: 'JSRHF', size: '200', matConn: '6N', optFinish: '30', cvConn: 'E', portConfig: 'C', oRing: '2K',
+    trimSeat: 'T4', rangeSpring: '25', diaphragm: 'J2', actuator: 'AA', inletGauge: '0F', outletGauge: 'G', sep: 'F', accessories: 'B',
+  }, 'JSRHF-200-6N-30EC2KT425J2AA0FGFB');
+  assert.ok(checkConstraints(jsrhf, { cvConn: 'A', size: '200' }).length > 0, 'the 2.5 Cv is the 3/4 inch alone');
+  assert.ok(checkConstraints(jsrhf, { oRing: '1E', cvConn: 'C' }).length > 0, 'the o-rings split at 5 Cv');
+  assert.ok(checkConstraints(jsrhf, { trimSeat: 'T2', cvConn: 'E' }).length > 0, 'the seats name their Cv');
+  assert.ok(checkConstraints(jsrhf, { rangeSpring: '02', cvConn: 'D' }).length > 0, 'the 5-20 range keeps its bracket');
+  assert.ok(checkConstraints(jsrhf, { sep: 'F', size: '075' }).length > 0, 'PED/CE is the large sizes');
+  assert.ok(checkConstraints(jsrhf, { accessories: 'A', cvConn: 'E' }).length > 0, 'the certs keep their Cv brackets');
+  assert.equal(checkCautions(jsrhf, { matConn: '6N' }).length, 1, 'the NPT finish note rides the threads');
+});
+
+check('the Mark 96 variants round-trip and their webs hold', () => {
+  roundTrip(mk96a, {
+    model: '96A', size: '100', material: '6L', bodyCv: 'AH', trim: 'AJ', oRing: 'TY',
+    airLoad: '00', diaphragm: 'JL', actuator: 'AA', accessories: 'SC',
+  }, '96A-100-6LAHAJTY00JLAASC');
+  assert.ok(checkConstraints(mk96a, { bodyCv: 'AH', trim: 'AQ' }).length > 0, 'the body Cv matches the trim Cv, flagged inferred');
+  assert.ok(/nine positions/.test(mk96a.note), 'the header miscount is confessed');
+  roundTrip(mark96c, {
+    model: '96C', size: '050', bodyMaterial: '6L', gaugePort: '', bodyFinish: 'A', bodyCv: 'B', trimFinish: 'A',
+    trimSeat: '3', oRing: 'B5', screw: 'A', range: 'C', diaphragm: 'E5', actuator: 'AA', ped: '00',
+  }, '96C-050-6L-ABA3B5ACE5AA00');
+  roundTrip(mark96c, {
+    model: '96C', size: '100', bodyMaterial: '6E', gaugePort: '270', bodyFinish: 'C', bodyCv: 'L', trimFinish: 'B',
+    trimSeat: 'M', oRing: 'TY', screw: 'A', range: 'T', diaphragm: 'JL', actuator: 'AA', ped: '0G',
+  }, '96C-100-6E-270CLBMTYATJLAA0G');
+  assert.ok(checkConstraints(mark96c, { bodyCv: 'B', size: '100' }).length > 0, 'the B body is the half inch alone');
+  assert.ok(checkConstraints(mark96c, { oRing: 'TY', trimSeat: '4' }).length > 0, 'the o-rings split at 1.2 Cv');
+  assert.ok(checkConstraints(mark96c, { range: 'A', diaphragm: 'JL' }).length > 0, 'the 3-8 range refuses the Jorlons, the EPDM/Nylon naming held');
+  assert.ok(checkConstraints(mark96c, { trimSeat: '3', bodyCv: 'A' }).length > 0, 'the small seats sit on the B body, flagged inferred');
+  assert.equal(checkCautions(mark96c, { trimSeat: 'L' }).length, 1, 'the deadhead warning rides the hard seats');
+  roundTrip(mark96aa, {
+    model: '96AA', size: '100', bodyMaterial: '6L', gaugePort: '', bodyFinish: 'A', bodyCv: 'D', trimFinish: 'A',
+    trimSeat: 'B', oRing: 'EE', screw: 'A', range: 'C', diaphragm: 'EP', actuator: 'AA', ped: '0G', ipFeature: '0',
+  }, '96AA-100-6L-ADABEEACEPAA0G0');
+  roundTrip(mark96aa, {
+    model: '96DAA', size: '20N', bodyMaterial: '6E', gaugePort: '90', bodyFinish: 'C', bodyCv: 'A', trimFinish: 'B',
+    trimSeat: '9', oRing: 'JK', screw: 'B', range: 'A', diaphragm: 'UJ', actuator: 'BA', ped: '00', ipFeature: '4',
+  }, '96DAA-20N-6E-90CAB9JKBAUJBA004');
+  assert.ok(checkConstraints(mark96aa, { size: '15N', model: '96TAA' }).length > 0, 'the DN15 face is the DAA and SAA alone');
+  assert.ok(checkConstraints(mark96aa, { bodyCv: 'N', size: '100' }).length > 0, 'the 19 Cv body is the 2 inch alone');
+  assert.ok(checkConstraints(mark96aa, { trimSeat: 'V', size: '075' }).length > 0, 'the 23 Cv trims are the 3 inch alone');
+  assert.ok(checkConstraints(mark96aa, { range: 'A', diaphragm: 'JL' }).length > 0, 'the starred range refuses plain Jorlon');
+  assert.equal(checkConstraints(mark96aa, { trimSeat: 'V', size: '15' }).length, 0, 'the DN15 rows sit outside the inch brackets, held');
+  assert.ok(checkConstraints(mark96aa, { bodyCv: 'K', trimSeat: 'P' }).length > 0, 'the body Cv matches the trim Cv, flagged inferred');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

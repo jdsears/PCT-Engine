@@ -1,0 +1,452 @@
+{
+  "model": "MK96A",
+  "line": "steriflow",
+  "displayName": "Steriflow Mark 96A sanitary air-loaded pressure regulator",
+  "match": [
+    "mk96a",
+    "mark 96a",
+    "96a"
+  ],
+  "source": {
+    "doc": "MK96A.pdf",
+    "page": 6,
+    "section": "Order Schematic"
+  },
+  "note": "Extracted by hand from the order schematic, the 95A pattern one size up. The header numbers nine positions while the printed sections run to ten, the accessories section carried as the tenth, held for the PDF. The body position pre-combines a finish letter with a Cv letter, eighteen printed rows plus the spanning ZZ, and the trim does the same at two finishes and three Cvs. The body Cv letter is matched to the trim Cv letter as an inferred coupling. The accessories section prints no none row, only the cleans and the PED certification, carried as the sheet has it.",
+  "assembly": "{model}-{size}-{material}{bodyCv}{trim}{oRing}{airLoad}{diaphragm}{actuator}{accessories}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model (1)",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "96A",
+          "label": "Standard",
+          "aliases": [
+            "96a"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (2)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "label": "Material (3)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6L",
+          "label": "316L stainless steel",
+          "aliases": [
+            "316l"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyCv",
+      "label": "Body and Cv (4)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "AH",
+          "label": "20Ra interior/40Ra exterior (standard); 4.5Cv",
+          "aliases": [
+            "body ah"
+          ]
+        },
+        {
+          "code": "BH",
+          "label": "20Ra interior/20Ra exterior; 4.5Cv",
+          "aliases": [
+            "body bh"
+          ]
+        },
+        {
+          "code": "CH",
+          "label": "8Ra interior/40Ra exterior; 4.5Cv",
+          "aliases": [
+            "body ch"
+          ]
+        },
+        {
+          "code": "DH",
+          "label": "20Ra interior/8Ra exterior; 4.5Cv",
+          "aliases": [
+            "body dh"
+          ]
+        },
+        {
+          "code": "EH",
+          "label": "8Ra interior/8Ra exterior; 4.5Cv",
+          "aliases": [
+            "body eh"
+          ]
+        },
+        {
+          "code": "FH",
+          "label": "8Ra interior/20Ra exterior; 4.5Cv",
+          "aliases": [
+            "body fh"
+          ]
+        },
+        {
+          "code": "AM",
+          "label": "20Ra interior/40Ra exterior (standard); 10Cv",
+          "aliases": [
+            "body am"
+          ]
+        },
+        {
+          "code": "BM",
+          "label": "20Ra interior/20Ra exterior; 10Cv",
+          "aliases": [
+            "body bm"
+          ]
+        },
+        {
+          "code": "CM",
+          "label": "8Ra interior/40Ra exterior; 10Cv",
+          "aliases": [
+            "body cm"
+          ]
+        },
+        {
+          "code": "DM",
+          "label": "20Ra interior/8Ra exterior; 10Cv",
+          "aliases": [
+            "body dm"
+          ]
+        },
+        {
+          "code": "EM",
+          "label": "8Ra interior/8Ra exterior; 10Cv",
+          "aliases": [
+            "body em"
+          ]
+        },
+        {
+          "code": "FM",
+          "label": "8Ra interior/20Ra exterior; 10Cv",
+          "aliases": [
+            "body fm"
+          ]
+        },
+        {
+          "code": "AN",
+          "label": "20Ra interior/40Ra exterior (standard); 19Cv",
+          "aliases": [
+            "body an"
+          ]
+        },
+        {
+          "code": "BN",
+          "label": "20Ra interior/20Ra exterior; 19Cv",
+          "aliases": [
+            "body bn"
+          ]
+        },
+        {
+          "code": "CN",
+          "label": "8Ra interior/40Ra exterior; 19Cv",
+          "aliases": [
+            "body cn"
+          ]
+        },
+        {
+          "code": "DN",
+          "label": "20Ra interior/8Ra exterior; 19Cv",
+          "aliases": [
+            "body dn"
+          ]
+        },
+        {
+          "code": "EN",
+          "label": "8Ra interior/8Ra exterior; 19Cv",
+          "aliases": [
+            "body en"
+          ]
+        },
+        {
+          "code": "FN",
+          "label": "8Ra interior/20Ra exterior; 19Cv",
+          "aliases": [
+            "body fn"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trim",
+      "label": "Trim; Cv and seat (5)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "AJ",
+          "label": "20Ra (standard); Cv 4.5 Teflon seats",
+          "aliases": [
+            "trim aj"
+          ]
+        },
+        {
+          "code": "BJ",
+          "label": "8Ra; Cv 4.5 Teflon seats",
+          "aliases": [
+            "trim bj"
+          ]
+        },
+        {
+          "code": "AQ",
+          "label": "20Ra (standard); Cv 10 Teflon seats",
+          "aliases": [
+            "trim aq"
+          ]
+        },
+        {
+          "code": "BQ",
+          "label": "8Ra; Cv 10 Teflon seats",
+          "aliases": [
+            "trim bq"
+          ]
+        },
+        {
+          "code": "AT",
+          "label": "20Ra (standard); Cv 19 Teflon seats",
+          "aliases": [
+            "trim at"
+          ]
+        },
+        {
+          "code": "BT",
+          "label": "8Ra; Cv 19 Teflon seats",
+          "aliases": [
+            "trim bt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oRing",
+      "label": "O-ring (6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "TY",
+          "label": "Teflon encapsulated Viton / Jorlon diaphragm",
+          "aliases": [
+            "ty"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard o-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "airLoad",
+      "label": "Air loading I/P transducer option (7)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "no loader"
+          ]
+        },
+        {
+          "code": "AP",
+          "label": "I/P transducer, 4/20 MA / 60 psi output",
+          "aliases": [
+            "ip 60"
+          ]
+        },
+        {
+          "code": "AH",
+          "label": "I/P transducer, 4/20 MA / 120 psi output",
+          "aliases": [
+            "ip 120"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (8)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "JL",
+          "label": "Jorlon",
+          "aliases": [
+            "jorlon"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuator",
+      "label": "Actuator (9)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "AA",
+          "label": "Anodized aluminium",
+          "aliases": [
+            "anodized aluminium"
+          ]
+        },
+        {
+          "code": "BA",
+          "label": "316 stainless steel",
+          "aliases": [
+            "316 actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (10)",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "SC",
+          "label": "Clean for oil free",
+          "aliases": [
+            "oil free"
+          ]
+        },
+        {
+          "code": "XC",
+          "label": "O2 clean",
+          "aliases": [
+            "oxygen clean"
+          ]
+        },
+        {
+          "code": "0F",
+          "label": "PED certification",
+          "aliases": [
+            "ped certification"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "bodyCv": [
+          "AH",
+          "BH",
+          "CH",
+          "DH",
+          "EH",
+          "FH"
+        ]
+      },
+      "forbid": {
+        "trim": [
+          "AQ",
+          "BQ",
+          "AT",
+          "BT"
+        ]
+      },
+      "reason": "the 4.5 Cv bodies pair with the 4.5 Cv trims, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": [
+          "AM",
+          "BM",
+          "CM",
+          "DM",
+          "EM",
+          "FM"
+        ]
+      },
+      "forbid": {
+        "trim": [
+          "AJ",
+          "BJ",
+          "AT",
+          "BT"
+        ]
+      },
+      "reason": "the 10 Cv bodies pair with the 10 Cv trims, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "bodyCv": [
+          "AN",
+          "BN",
+          "CN",
+          "DN",
+          "EN",
+          "FN"
+        ]
+      },
+      "forbid": {
+        "trim": [
+          "AJ",
+          "BJ",
+          "AQ",
+          "BQ"
+        ]
+      },
+      "reason": "the 19 Cv bodies pair with the 19 Cv trims, held as an inferred coupling for John"
+    }
+  ],
+  "cautions": []
+}
