@@ -52,6 +52,8 @@ const mk80 = JSON.parse(readFileSync(join(here, 'models', 'mk80.json'), 'utf8'))
 const mk87 = JSON.parse(readFileSync(join(here, 'models', 'mk87.json'), 'utf8'));
 const mk89 = JSON.parse(readFileSync(join(here, 'models', 'mk89.json'), 'utf8'));
 const mk801 = JSON.parse(readFileSync(join(here, 'models', 'mk801.json'), 'utf8'));
+const mk70 = JSON.parse(readFileSync(join(here, 'models', 'mk70.json'), 'utf8'));
+const mk75 = JSON.parse(readFileSync(join(here, 'models', 'mk75.json'), 'utf8'));
 
 let pass = 0, fail = 0;
 const unsatisfiable = [];
@@ -878,6 +880,50 @@ check('the 89 collisions are cautions in the open, and the notes hold their arte
   assert.ok(/58/.test(mk89.note) && /56/.test(mk89.note) && /DN50/.test(mk89.note), 'the 89 artefacts are named');
   assert.ok(/87, 89 and 801/.test(mk80.note) || /the shape the 87/.test(mk80.note), 'the 80 names the family sheets that prove its shape');
   assert.ok(/not enforced/.test(mk80.note) && /not enforced/.test(mk89.note), 'the well to system pairing is confessed as unenforced');
+});
+
+console.log('\nThe Jordan control valve flagships, Mark 70 and Mark 75:');
+
+check('both flagships round-trip, six character systems and wafer digits included', () => {
+  roundTrip(mk70, {
+    model: '70TP', size: '300', body: 'DI', ends: 'I3', trim: 'I6', seat: 'W', cv: 'J',
+    system: 'A8B8A8', accessories: 'H8', action: 'R', ip: '8', smp: 'G',
+  }, '70TP300DI/I3I6WJA8B8A8H8R8G');
+  roundTrip(mk70, {
+    model: '707', size: '050', body: 'BR', ends: 'F5', trim: 'T3', seat: 'Q', cv: 'N',
+    system: 'N3Q3N3', accessories: '00', action: 'D', ip: '0', smp: '0',
+  }, '707050BR/F5T3QNN3Q3N300D00');
+  roundTrip(mk75, {
+    model: '75SP', size: '800', body: 'S6', ends: 'I5', trim: 'T6', seatMaterial: 'W', cv: 'K',
+    rangeActuator: 'A9', diaphragm: 'B9', actuator: 'A9', accessory1: 'H9', action: 'R',
+    accessory2: '9', ped: 'F', smp: 'A',
+  }, '75SP800S6I5T6WKA9B9A9H9R9FA');
+});
+
+check('the split Cv column keeps its families and the dual-read digits both print', () => {
+  assert.ok(checkConstraints(mk70, { cv: 'N', model: '70' }).length > 0, 'an equal percentage Cv refuses the standard');
+  assert.ok(checkConstraints(mk70, { cv: 'J', model: '707' }).length > 0, 'a standard Cv refuses the equal percentage');
+  assert.equal(checkConstraints(mk70, { cv: '1', model: '707' }).length, 0, 'a shared digit passes both, reading 60 there');
+  assert.ok(/0\.21 on MK70\/711, 60 on MK707/.test(mk70.slots.find(s => s.id === 'cv').options.find(o => o.code === '1').label), 'the shared digit label carries both readings');
+});
+
+check('the actuator classes hold across systems, handwheels, I/Ps and the wafer digit chain', () => {
+  assert.ok(checkConstraints(mk70, { accessories: 'H3', system: 'A8B8A8' }).length > 0, 'a 35M handwheel refuses an 85M system');
+  assert.ok(checkConstraints(mk70, { ip: '5', system: 'A3B3A3' }).length > 0, 'a 55M I/P refuses a 35M system');
+  assert.ok(checkConstraints(mk75, { rangeActuator: 'A3', actuator: 'A8' }).length > 0, 'the wafer size digit must agree across positions');
+  assert.ok(checkConstraints(mk75, { rangeActuator: 'A9', model: '75' }).length > 0, 'the 100M class is the 8 inch side positioner alone');
+  assert.ok(checkConstraints(mk75, { model: '75SP', rangeActuator: 'G3' }).length > 0, 'the side positioner table prints direct and reverse alone');
+});
+
+check('the ends glosses, starred ranges and printed absences refuse', () => {
+  assert.ok(checkConstraints(mk70, { ends: 'I5', body: 'DI', size: '150' }).length > 0, 'ductile iron IFE lives above 2 inch');
+  assert.ok(checkConstraints(mk70, { ends: 'F5', body: 'DI', size: '300' }).length > 0, 'ductile iron FE lives below 2-1/2 inch');
+  assert.equal(checkConstraints(mk70, { ends: 'F5', body: 'BR', size: '050' }).length, 0, 'bronze FE is unbanded');
+  assert.ok(checkConstraints(mk75, { size: '800', model: '75' }).length > 0, 'the 8 inch is side positioner only');
+  assert.ok(checkConstraints(mk75, { ends: 'C3', body: 'CB' }).length > 0, 'bolt thru 6 inch is cast steel only');
+  assert.ok(checkConstraints(mk75, { model: '75', rangeActuator: 'C3', smp: '0' }).length > 0, 'a starred range on a plain 75 needs the SMP filled');
+  assert.equal(checkConstraints(mk75, { model: '75', rangeActuator: 'C3', smp: 'A' }).length, 0, 'filling the SMP satisfies the star');
+  assert.equal(checkCautions(mk75, { seatMaterial: 'W' }).length, 1, 'the equal percentage consult-factory line rides the seat');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

@@ -1,0 +1,206 @@
+{
+  "model": "MK70",
+  "line": "jordan",
+  "displayName": "Jordan Mark 70 sliding gate control valve",
+  "match": ["mk70", "mark 70", "jordan 70", "mk707", "mark 707", "mk711", "mark 711"],
+  "source": { "doc": "mk70.pdf", "page": "7 to 9", "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic. Nine models on one sheet, the standard, equal percentage and linear characteristics each plain or with a side or top positioner. The Cv column is split by model, and the shared digits mean different flows on each side, so the labels carry both readings and the exclusive codes refuse the other family. The range and actuator position is the sheet's own six character code; the two printed tables are carried whole, with the narrower Mark 70 Series header on the first pair noted for John rather than turned into a constraint. The handwheel and I/P accessories name their actuator in their own labels, so they refuse a system from another actuator class. The end connection glosses couple body and size exactly as printed, IFE for ductile iron above 2 inch or carbon or stainless, FE for ductile iron below 2-1/2 inch or bronze.",
+  "assembly": "{model}{size}{body}/{ends}{trim}{seat}{cv}{system}{accessories}{action}{ip}{smp}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [
+        { "code": "70", "label": "Standard", "aliases": ["mk70", "mark 70", "standard"] },
+        { "code": "70SP", "label": "Standard with side positioner", "aliases": ["70sp"] },
+        { "code": "70TP", "label": "Standard with top positioner", "aliases": ["70tp"] },
+        { "code": "707", "label": "Equal percentage", "aliases": ["mk707", "equal percentage"] },
+        { "code": "707SP", "label": "Equal percentage with side positioner", "aliases": ["707sp"] },
+        { "code": "707TP", "label": "Equal percentage with top positioner", "aliases": ["707tp"] },
+        { "code": "711", "label": "Linear", "aliases": ["mk711", "linear"] },
+        { "code": "711SP", "label": "Linear with side positioner", "aliases": ["711sp"] },
+        { "code": "711TP", "label": "Linear with top positioner", "aliases": ["711tp"] }
+      ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "025", "label": "1/4\" (DN8)", "aliases": ["1/4\"", "DN8"] },
+        { "code": "038", "label": "3/8\" (DN12)", "aliases": ["3/8\""] },
+        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "DN15"] },
+        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "DN25"] },
+        { "code": "125", "label": "1-1/4\" (DN32)", "aliases": ["1-1/4\"", "DN32"] },
+        { "code": "150", "label": "1-1/2\" (DN40)", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\" (DN50)", "aliases": ["2\"", "DN50"] },
+        { "code": "250", "label": "2-1/2\" (DN65)", "aliases": ["2-1/2\"", "DN65"] },
+        { "code": "300", "label": "3\" (DN80)", "aliases": ["3\"", "DN80"] },
+        { "code": "400", "label": "4\" (DN100)", "aliases": ["4\"", "DN100"] },
+        { "code": "600", "label": "6\" (DN150)", "aliases": ["6\"", "DN150"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CI", "label": "Cast iron", "aliases": ["cast iron"] },
+        { "code": "DI", "label": "Ductile iron", "aliases": ["ductile iron"] },
+        { "code": "BR", "label": "Bronze", "aliases": ["bronze"] },
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# IFE, DI above 2\" or CS or SST valves", "aliases": ["150 ife"] },
+        { "code": "F5", "label": "150# FE, DI below 2-1/2\" or BR", "aliases": ["150 flanged"] },
+        { "code": "I3", "label": "300# IFE, DI above 2\" or CS or SST valves", "aliases": ["300 ife"] },
+        { "code": "F3", "label": "300# FE, DI below 2-1/2\" or BR", "aliases": ["300 flanged"] },
+        { "code": "I7", "label": "PN10 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn10 ife"] },
+        { "code": "F7", "label": "PN10 FE, DI below 2-1/2\" or BR", "aliases": ["pn10 flanged"] },
+        { "code": "I6", "label": "PN16 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn16 ife"] },
+        { "code": "F6", "label": "PN16 FE, DI below 2-1/2\" or BR", "aliases": ["pn16 flanged"] },
+        { "code": "I8", "label": "PN25 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn25 ife"] },
+        { "code": "F8", "label": "PN25 FE, DI below 2-1/2\" or BR", "aliases": ["pn25 flanged"] },
+        { "code": "I4", "label": "PN40 IFE, DI above 2\" or CS or SST valves", "aliases": ["pn40 ife"] },
+        { "code": "F4", "label": "PN40 FE, DI below 2-1/2\" or BR", "aliases": ["pn40 flanged"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "T3", "label": "303SS / TFE packing", "aliases": ["303 tfe"] },
+        { "code": "T6", "label": "316SS / TFE packing", "aliases": ["316 tfe"] },
+        { "code": "I3", "label": "303SS / graphite", "aliases": ["303 graphite"] },
+        { "code": "I6", "label": "316SS / graphite", "aliases": ["316 graphite"] }
+      ]
+    },
+    {
+      "id": "seat", "label": "Seat material (5)", "position": 6, "required": true,
+      "options": [
+        { "code": "Q", "label": "303SST/Teflon coated", "aliases": ["303 teflon"] },
+        { "code": "R", "label": "316SST/Teflon coated", "aliases": ["316 teflon"] },
+        { "code": "V", "label": "303SS/Jorcote", "aliases": ["303 jorcote"] },
+        { "code": "W", "label": "316SS/Jorcote", "aliases": ["316 jorcote"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (6)", "position": 7, "required": true,
+      "options": [
+        { "code": "1", "label": "0.21 on MK70/711, 60 on MK707", "aliases": ["0.21", "60"] },
+        { "code": "2", "label": "0.42 on MK70/711, 80 on MK707", "aliases": ["0.42", "80"] },
+        { "code": "3", "label": "0.84 on MK70/711, 230 on MK707", "aliases": ["0.84", "230"] },
+        { "code": "4", "label": "1.6, MK70/711", "aliases": ["1.6"] },
+        { "code": "5", "label": "2.5, both families", "aliases": ["2.5"] },
+        { "code": "6", "label": "4.4, both families", "aliases": ["4.4"] },
+        { "code": "7", "label": "6.4, MK70/711", "aliases": ["6.4"] },
+        { "code": "8", "label": "9.5, MK70/711", "aliases": ["9.5"] },
+        { "code": "9", "label": "15, MK70/711", "aliases": ["15"] },
+        { "code": "A", "label": "25, MK70/711", "aliases": ["25"] },
+        { "code": "B", "label": "30, MK70/711", "aliases": ["30"] },
+        { "code": "C", "label": "50, MK70/711", "aliases": ["50"] },
+        { "code": "F", "label": "85, MK70/711", "aliases": ["85"] },
+        { "code": "G", "label": "115, MK70/711", "aliases": ["115"] },
+        { "code": "H", "label": "130, both families", "aliases": ["130"] },
+        { "code": "I", "label": "200, MK70/711", "aliases": ["200"] },
+        { "code": "J", "label": "395, MK70/711", "aliases": ["395"] },
+        { "code": "N", "label": "11.5, MK707", "aliases": ["11.5"] },
+        { "code": "P", "label": "13, MK707", "aliases": ["13"] },
+        { "code": "S", "label": "22, MK707", "aliases": ["22"] },
+        { "code": "U", "label": "34, MK707", "aliases": ["34"] }
+      ]
+    },
+    {
+      "id": "system", "label": "Range and actuator (7 to 12)", "position": 8, "required": true,
+      "options": [
+        { "code": "N3Q3N3", "label": "3-15 direct, 35M (printed under the narrower Mark 70 Series header)", "aliases": ["n3q3n3"] },
+        { "code": "Q3Q3N3", "label": "3-15 reverse, 35M (printed under the narrower Mark 70 Series header)", "aliases": ["q3q3n3"] },
+        { "code": "A3B3A3", "label": "3-15 direct, 35M", "aliases": ["a3b3a3"] },
+        { "code": "B3B3A3", "label": "3-15 reverse, 35M", "aliases": ["b3b3a3"] },
+        { "code": "G3B3A3", "label": "6-30 direct, 35M", "aliases": ["g3b3a3"] },
+        { "code": "H3B3A3", "label": "6-30 reverse, 35M", "aliases": ["h3b3a3"] },
+        { "code": "A5B5A5", "label": "3-15 direct, 55M", "aliases": ["a5b5a5"] },
+        { "code": "B5B5A5", "label": "3-15 reverse, 55M", "aliases": ["b5b5a5"] },
+        { "code": "G5B5A5", "label": "6-30 direct, 55M", "aliases": ["g5b5a5"] },
+        { "code": "H5B5A5", "label": "6-30 reverse, 55M", "aliases": ["h5b5a5"] },
+        { "code": "A8B8A8", "label": "3-15 direct, 85M", "aliases": ["a8b8a8"] },
+        { "code": "B8B8A8", "label": "3-15 reverse, 85M", "aliases": ["b8b8a8"] },
+        { "code": "G8B8A8", "label": "6-30 direct, 85M", "aliases": ["g8b8a8"] },
+        { "code": "H8B8A8", "label": "6-30 reverse, 85M", "aliases": ["h8b8a8"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (13 and 14)", "position": 9, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "AR", "label": "Air regulator", "aliases": ["air regulator"] },
+        { "code": "H3", "label": "Handwheel, 35M actuator", "aliases": ["handwheel 35m"] },
+        { "code": "H5", "label": "Handwheel, 55M actuator", "aliases": ["handwheel 55m"] },
+        { "code": "H8", "label": "Handwheel, 85M actuator", "aliases": ["handwheel 85m"] },
+        { "code": "S6", "label": "316SS bolting", "aliases": ["316 bolting"] }
+      ]
+    },
+    {
+      "id": "action", "label": "Action (15)", "position": 10, "required": true,
+      "options": [
+        { "code": "D", "label": "Air-to-close", "aliases": ["air to close"] },
+        { "code": "R", "label": "Air-to-open", "aliases": ["air to open"] }
+      ]
+    },
+    {
+      "id": "ip", "label": "I/P (16)", "position": 11, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no ip"] },
+        { "code": "3", "label": "I/P, 35M actuator", "aliases": ["ip 35m"] },
+        { "code": "5", "label": "I/P, 55M actuator", "aliases": ["ip 55m"] },
+        { "code": "8", "label": "I/P, 85M actuator", "aliases": ["ip 85m"] }
+      ]
+    },
+    {
+      "id": "smp", "label": "SMP (17)", "position": 12, "required": true,
+      "options": [
+        { "code": "0", "label": "None", "aliases": ["no smp"] },
+        { "code": "A", "label": "SMP DIR/REV 3-15", "aliases": ["smp 3-15"] },
+        { "code": "B", "label": "SMP DIR/REV 3-9", "aliases": ["smp 3-9"] },
+        { "code": "C", "label": "SMP DIR/REV 9-15", "aliases": ["smp 9-15"] },
+        { "code": "D", "label": "SMP/IP DIR/REV 4-20", "aliases": ["smp ip 4-20"] },
+        { "code": "E", "label": "SMP/IP DIR/REV 4-12", "aliases": ["smp ip 4-12"] },
+        { "code": "F", "label": "SMP/IP DIR/REV 12-20", "aliases": ["smp ip 12-20"] },
+        { "code": "G", "label": "MK16IQ-S DIR/REV 4-20 (Hart and FM approved)", "aliases": ["mk16iq-s"] },
+        { "code": "H", "label": "MK16IQ-B DIR/REV 4-20 (with gauges)", "aliases": ["mk16iq-b"] },
+        { "code": "J", "label": "MK16IQ-FF DIR/REV 4-20 (Fieldbus with gauges)", "aliases": ["mk16iq-ff"] },
+        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard smp"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"] }, "forbid": { "body": ["BR", "CI"] },
+      "reason": "the IFE glosses name ductile iron above 2 inch or carbon or stainless valves" },
+    { "when": { "ends": ["I5", "I3", "I7", "I6", "I8", "I4"], "body": "DI" }, "forbid": { "size": ["025", "038", "050", "075", "100", "125", "150", "200"] },
+      "reason": "on ductile iron the IFE ends are printed above 2 inch" },
+    { "when": { "ends": ["F5", "F3", "F7", "F6", "F8", "F4"] }, "forbid": { "body": ["CS", "S6", "CI"] },
+      "reason": "the FE glosses name ductile iron below 2-1/2 inch or bronze" },
+    { "when": { "ends": ["F5", "F3", "F7", "F6", "F8", "F4"], "body": "DI" }, "forbid": { "size": ["250", "300", "400", "600"] },
+      "reason": "on ductile iron the FE ends are printed below 2-1/2 inch" },
+    { "when": { "cv": ["4", "7", "8", "9", "A", "B", "C", "F", "G", "I", "J"] }, "forbid": { "model": ["707", "707SP", "707TP"] },
+      "reason": "these Cvs are printed in the MK70 and MK711 column" },
+    { "when": { "cv": ["N", "P", "S", "U"] }, "forbid": { "model": ["70", "70SP", "70TP", "711", "711SP", "711TP"] },
+      "reason": "these Cvs are printed in the MK707 column" },
+    { "when": { "accessories": "H3" }, "forbid": { "system": ["A5B5A5", "B5B5A5", "G5B5A5", "H5B5A5", "A8B8A8", "B8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the handwheel names its actuator, 35M" },
+    { "when": { "accessories": "H5" }, "forbid": { "system": ["N3Q3N3", "Q3Q3N3", "A3B3A3", "B3B3A3", "G3B3A3", "H3B3A3", "A8B8A8", "B8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the handwheel names its actuator, 55M" },
+    { "when": { "accessories": "H8" }, "forbid": { "system": ["N3Q3N3", "Q3Q3N3", "A3B3A3", "B3B3A3", "G3B3A3", "H3B3A3", "A5B5A5", "B5B5A5", "G5B5A5", "H5B5A5"] },
+      "reason": "the handwheel names its actuator, 85M" },
+    { "when": { "ip": "3" }, "forbid": { "system": ["A5B5A5", "B5B5A5", "G5B5A5", "H5B5A5", "A8B8A8", "B8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the I/P names its actuator, 35M" },
+    { "when": { "ip": "5" }, "forbid": { "system": ["N3Q3N3", "Q3Q3N3", "A3B3A3", "B3B3A3", "G3B3A3", "H3B3A3", "A8B8A8", "B8B8A8", "G8B8A8", "H8B8A8"] },
+      "reason": "the I/P names its actuator, 55M" },
+    { "when": { "ip": "8" }, "forbid": { "system": ["N3Q3N3", "Q3Q3N3", "A3B3A3", "B3B3A3", "G3B3A3", "H3B3A3", "A5B5A5", "B5B5A5", "G5B5A5", "H5B5A5"] },
+      "reason": "the I/P names its actuator, 85M" }
+  ],
+  "cautions": []
+}
