@@ -1,0 +1,69 @@
+{
+  "model": "MK687",
+  "line": "jordan",
+  "displayName": "Jordan Mark 687 pilot operated blanketing regulator",
+  "match": ["mk687", "mark 687", "jordan 687"],
+  "source": { "doc": "mk687.pdf", "page": 2, "section": "Ordering Schematic" },
+  "note": "Extracted by hand from the ordering schematic, eight positions assembled bare. The range column splits by pilot, the 69L rows and the 69H rows, carried with the pilot named in each label. The 150# and 300# ends print FE against the I codes, carried as printed.",
+  "assembly": "{model}{size}{body}{ends}{trim}{range}{accessories}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "687", "label": "Standard", "aliases": ["mk687", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "150", "label": "1-1/2\"", "aliases": ["1-1/2\"", "DN40"] },
+        { "code": "200", "label": "2\"", "aliases": ["2\"", "DN50"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "CS", "label": "Carbon steel (WCB)", "aliases": ["carbon steel"] },
+        { "code": "S6", "label": "Stainless steel (CF8M)", "aliases": ["stainless"] }
+      ]
+    },
+    {
+      "id": "ends", "label": "End connections (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PT", "label": "NPT", "aliases": ["npt"] },
+        { "code": "BT", "label": "BSPT", "aliases": ["bspt"] },
+        { "code": "BP", "label": "BSPP", "aliases": ["bspp"] },
+        { "code": "SW", "label": "FSW", "aliases": ["fsw"] },
+        { "code": "I5", "label": "150# (printed FE, see note)", "aliases": ["150"] },
+        { "code": "I3", "label": "300# (printed FE, see note)", "aliases": ["300"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "trim", "label": "Trim (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "HW", "label": "Plug seat and cage o-ring 316 - TFE, 45 Cv", "aliases": ["316 tfe 45"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (5 and 6)", "position": 6, "required": true,
+      "options": [
+        { "code": "AA", "label": "2-8 (0.14-0.55 bar), 69L pilot", "aliases": ["2-8"] },
+        { "code": "34", "label": "5-30 (0.34-2.1 bar), 69L pilot", "aliases": ["5-30"] },
+        { "code": "AH", "label": "10-50 (1.0-3.5 bar), 69L pilot", "aliases": ["10-50"] },
+        { "code": "65", "label": "25-75 (1.7-5.2 bar), 69H pilot", "aliases": ["25-75"] },
+        { "code": "99", "label": "70-150 (4.8-10.3 bar), 69H pilot", "aliases": ["70-150"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "accessories", "label": "Accessories (7 and 8)", "position": 7, "required": true,
+      "options": [
+        { "code": "00", "label": "None", "aliases": ["none"] },
+        { "code": "S6", "label": "316SS bolting", "aliases": ["316 bolting"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

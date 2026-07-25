@@ -1,0 +1,112 @@
+{
+  "model": "MK695",
+  "line": "jordan",
+  "displayName": "Jordan Mark 695 blanketing regulator",
+  "match": ["mk695", "mark 695", "jordan 695"],
+  "source": { "doc": "mk695series.pdf", "page": 6, "section": "Ordering Schematic for MK695" },
+  "note": "Extracted by hand from the ordering schematic, model dash size dash body then twelve positions. The end connection, the seat and o-ring and the Cv positions each carry the same Cv letter ladder, A for 1 to 2, B for 4, C for 7.5 and D for 10, so the letters are held consistent across the three and the starred 7.5 and 10 Cvs keep their 1 inch bracket; the letter couplings are inferred from the shared ladder and flagged for John. The sheet's own caution, product numbers should be checked with the factory before order entry, is carried on every build.",
+  "assembly": "{model}-{size}-{body}{endsCv}{seatOring}{cv}{range}{actuator}{accessory}",
+  "slots": [
+    {
+      "id": "model", "label": "Model", "position": 1, "required": true,
+      "options": [ { "code": "695", "label": "Standard", "aliases": ["mk695", "standard"] } ]
+    },
+    {
+      "id": "size", "label": "Size", "position": 2, "required": true,
+      "options": [
+        { "code": "075", "label": "3/4\"", "aliases": ["3/4\"", "DN20"] },
+        { "code": "100", "label": "1\"", "aliases": ["1\"", "DN25"] }
+      ]
+    },
+    {
+      "id": "body", "label": "Body material", "position": 3, "required": true,
+      "options": [
+        { "code": "SB", "label": "Stainless steel (A479)", "aliases": ["stainless bar"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard body"] }
+      ]
+    },
+    {
+      "id": "endsCv", "label": "End connection and Cv (1 and 2)", "position": 4, "required": true,
+      "options": [
+        { "code": "PA", "label": "NPT, Cv 1-2", "aliases": ["npt 1-2"] },
+        { "code": "PB", "label": "NPT, Cv 4", "aliases": ["npt 4"] },
+        { "code": "PC", "label": "NPT, Cv 7.5", "aliases": ["npt 7.5"] },
+        { "code": "PD", "label": "NPT, Cv 10", "aliases": ["npt 10"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard ends"] }
+      ]
+    },
+    {
+      "id": "seatOring", "label": "Seat and o-ring (3 and 4)", "position": 5, "required": true,
+      "options": [
+        { "code": "BA", "label": "Buna-N, Cv 1-2", "aliases": ["buna 1-2"] },
+        { "code": "BB", "label": "Buna-N, Cv 4", "aliases": ["buna 4"] },
+        { "code": "BC", "label": "Buna-N, Cv 7.5", "aliases": ["buna 7.5"] },
+        { "code": "BD", "label": "Buna-N, Cv 10", "aliases": ["buna 10"] },
+        { "code": "VA", "label": "Viton, Cv 1-2", "aliases": ["viton 1-2"] },
+        { "code": "VB", "label": "Viton, Cv 4", "aliases": ["viton 4"] },
+        { "code": "VC", "label": "Viton, Cv 7.5", "aliases": ["viton 7.5"] },
+        { "code": "VD", "label": "Viton, Cv 10", "aliases": ["viton 10"] },
+        { "code": "EA", "label": "EPDM, Cv 1-2", "aliases": ["epdm 1-2"] },
+        { "code": "EB", "label": "EPDM, Cv 4", "aliases": ["epdm 4"] },
+        { "code": "EC", "label": "EPDM, Cv 7.5", "aliases": ["epdm 7.5"] },
+        { "code": "ED", "label": "EPDM, Cv 10", "aliases": ["epdm 10"] }
+      ]
+    },
+    {
+      "id": "cv", "label": "Cv (5 and 6)", "position": 6, "required": true,
+      "options": [
+        { "code": "A1", "label": "1 Cv", "aliases": ["1 cv"] },
+        { "code": "A2", "label": "2 Cv", "aliases": ["2 cv"] },
+        { "code": "A4", "label": "4 Cv", "aliases": ["4 cv"] },
+        { "code": "A7", "label": "7.5 Cv (1\" only)", "aliases": ["7.5 cv"] },
+        { "code": "A9", "label": "10 Cv (1\" only)", "aliases": ["10 cv"] }
+      ]
+    },
+    {
+      "id": "range", "label": "Range (7 and 8)", "position": 7, "required": true,
+      "options": [
+        { "code": "A7", "label": "0.5-5.5 inches w.c.", "aliases": ["0.5-5.5 wc"] },
+        { "code": "A8", "label": "4-10 inches w.c.", "aliases": ["4-10 wc"] },
+        { "code": "A9", "label": "8-15 w.c.", "aliases": ["8-15 wc"] },
+        { "code": "B1", "label": "0.5-1.5 psi / 14-41 w.c.", "aliases": ["0.5-1.5 psi"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+      ]
+    },
+    {
+      "id": "actuator", "label": "Actuator (9 and 10)", "position": 8, "required": true,
+      "options": [
+        { "code": "S1", "label": "Standard", "aliases": ["standard"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+      ]
+    },
+    {
+      "id": "accessory", "label": "Accessory (11 and 12)", "position": 9, "required": true,
+      "options": [
+        { "code": "G1", "label": "Inlet gauge 0-100", "aliases": ["inlet gauge 100"] },
+        { "code": "G2", "label": "Inlet gauge 0-200", "aliases": ["inlet gauge 200"] },
+        { "code": "D1", "label": "Diagnostic gauge 0-100", "aliases": ["diagnostic 100"] },
+        { "code": "D2", "label": "Diagnostic gauge 0-200", "aliases": ["diagnostic 200"] },
+        { "code": "11", "label": "Inlet/diagnostic pair 0-100", "aliases": ["pair 100"] },
+        { "code": "22", "label": "Inlet/diagnostic pair 0-200", "aliases": ["pair 200"] },
+        { "code": "P1", "label": "Purge system", "aliases": ["purge"] },
+        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard accessory"] }
+      ]
+    }
+  ],
+  "constraints": [
+    { "when": { "cv": ["A7", "A9"] }, "forbid": { "size": ["075"] },
+      "reason": "the starred 7.5 and 10 Cvs are printed available in the 1 inch alone" },
+    { "when": { "endsCv": "PA" }, "forbid": { "seatOring": ["BB", "BC", "BD", "VB", "VC", "VD", "EB", "EC", "ED"], "cv": ["A4", "A7", "A9"] },
+      "reason": "the Cv letter runs through the ends, seat and Cv positions, here A for 1 to 2 (held as an inferred coupling for John)" },
+    { "when": { "endsCv": "PB" }, "forbid": { "seatOring": ["BA", "BC", "BD", "VA", "VC", "VD", "EA", "EC", "ED"], "cv": ["A1", "A2", "A7", "A9"] },
+      "reason": "the Cv letter runs through the ends, seat and Cv positions, here B for 4 (held as an inferred coupling for John)" },
+    { "when": { "endsCv": "PC" }, "forbid": { "seatOring": ["BA", "BB", "BD", "VA", "VB", "VD", "EA", "EB", "ED"], "cv": ["A1", "A2", "A4", "A9"] },
+      "reason": "the Cv letter runs through the ends, seat and Cv positions, here C for 7.5 (held as an inferred coupling for John)" },
+    { "when": { "endsCv": "PD" }, "forbid": { "seatOring": ["BA", "BB", "BC", "VA", "VB", "VC", "EA", "EB", "EC"], "cv": ["A1", "A2", "A4", "A7"] },
+      "reason": "the Cv letter runs through the ends, seat and Cv positions, here D for 10 (held as an inferred coupling for John)" }
+  ],
+  "cautions": [
+    { "when": { "model": "695" },
+      "note": "The sheet's own caution: the following information is subject to change; product numbers and descriptions should be checked with the factory for accuracy before order entry." }
+  ]
+}
