@@ -148,6 +148,14 @@ const fbcvor = JSON.parse(readFileSync(join(here, 'models', 'fbcvor.json'), 'utf
 const ssrv81 = JSON.parse(readFileSync(join(here, 'models', 'ssrv81.json'), 'utf8'));
 const ssrv83 = JSON.parse(readFileSync(join(here, 'models', 'ssrv83.json'), 'utf8'));
 const ssrv88 = JSON.parse(readFileSync(join(here, 'models', 'ssrv88.json'), 'utf8'));
+const hm10 = JSON.parse(readFileSync(join(here, 'models', 'hm10.json'), 'utf8'));
+const hm45 = JSON.parse(readFileSync(join(here, 'models', 'hm45.json'), 'utf8'));
+const hm50 = JSON.parse(readFileSync(join(here, 'models', 'hm50.json'), 'utf8'));
+const hm54 = JSON.parse(readFileSync(join(here, 'models', 'hm54.json'), 'utf8'));
+const hm58 = JSON.parse(readFileSync(join(here, 'models', 'hm58.json'), 'utf8'));
+const he40 = JSON.parse(readFileSync(join(here, 'models', 'he40.json'), 'utf8'));
+const ha = JSON.parse(readFileSync(join(here, 'models', 'ha.json'), 'utf8'));
+const hg35 = JSON.parse(readFileSync(join(here, 'models', 'hg35.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1911,6 +1919,53 @@ check('the relief trio splits by model as printed', () => {
   assert.ok(checkConstraints(ssrv88, { size: 'A', model: '88-3' }).length > 0, 'the 88 size rows name their models');
   assert.ok(checkConstraints(ssrv88, { setpoint: '13', model: '88-1' }).length > 0, 'as do the setpoint columns');
   assert.equal(checkCautions(ssrv88, { setting: 'ST' }).length, 1, 'the steam lifting device note rides the setting');
+});
+
+console.log('\nThe Hex manifold shelf, first pass:');
+
+check('the manifold family round-trips against the printed samples', () => {
+  roundTrip(hm10, {
+    model: 'HM10', seatConfig: '1', bodyMaterial: 'U', bodySize: '3', inletType: '3',
+    outletSize: '9', outletType: '9', stem: '4', seatMaterial: '1', packing: '2', option1: 'N', option2: 'L',
+  }, 'HM101U339941 2NL'.replace(' ', ''));
+  assert.ok(checkConstraints(hm10, { inletType: '9', model: 'HM10' }).length > 0, 'the flanged inlet is the HM14\'s');
+  assert.ok(/squashes/.test(hm10.note), 'the column squash is confessed');
+  roundTrip(hm45, {
+    model: 'HM45', seatConfig: '1', bodyMaterial: 'U', inletSize: '3', inletType: '3',
+    outletSize: '3', outletType: '1', stem: '4', seatMaterial: '1', packing: '2', option1: '0', option2: 'L',
+  }, 'HM451U3331412 0L'.replace(' ', ''));
+  roundTrip(hm50, {
+    model: 'HM50', seatConfig: '1', bodyMaterial: 'S', bodySize: '3', inletType: '3',
+    outletSizeType: '99', stem: '4', seatMaterial: '1', packing: '2', option1: '1', option2: 'L',
+  }, 'HM501S339941 21L'.replace('99 41', '9941').replace(' ', ''));
+  roundTrip(hm54, {
+    model: 'HM54', seatConfig: '1', bodyMaterial: 'U', bodySize: '9', inletType: '9',
+    outletSize: '9', outletType: '9', stem: '4', seatMaterial: '1', packing: '2', option1: '0', option2: 'L',
+  }, 'HM541U9999412 0L'.replace(' ', ''));
+  roundTrip(hm58, {
+    model: 'HM58', seatConfig: '1', bodyMaterial: 'S', bodySize: '5', inletType: 'C',
+    outletSizeType: '99', stem: '4', seatMaterial: '1', packing: '2', option1: '0', option2: 'L',
+  }, 'HM581S5C99412 0L'.replace(' ', ''));
+});
+
+check('the HE, HA and HG members keep their printed brackets', () => {
+  roundTrip(he40, {
+    model: 'HE40', seatConfig: '1', bodyMaterial: 'U', bodySize: '3', inletType: '3',
+    outletSizeType: '99', stem: '2', seatMaterial: '1', packing: '2',
+  }, 'HE401U339921 2'.replace(' ', ''));
+  assert.ok(checkConstraints(he40, { model: 'HE44', bodySize: '3' }).length > 0, 'the half inch body is the HE40\'s');
+  assert.ok(checkConstraints(he40, { model: 'HE40', inletType: '9' }).length > 0, 'and the flanged inlet the HE44\'s');
+  roundTrip(ha, {
+    model: 'HA06', seatConfig: 'G', bodyMaterial: 'S', bodySize: '3', inletType: '3',
+    outletSizeType: '11', stem: '2', seatMaterial: '5', packing: '6',
+  }, 'HA06GS331125 6'.replace(' ', ''));
+  assert.ok(checkConstraints(ha, { seatConfig: '2', model: 'HA06' }).length > 0, 'the soft seat row is the HA162\'s');
+  assert.ok(checkConstraints(ha, { packing: '6', model: 'HA162' }).length > 0, 'and the Viton o-ring the small pair\'s');
+  assert.ok(/H12/.test(ha.note), 'the H12 slip is confessed');
+  roundTrip(hg35, {
+    model: 'HG35', seatConfig: '1', bodyMaterial: 'U', inletSize: '3', inletType: '1',
+    outletSize: '3', outletType: '1', stem: '4', seatMaterial: '1', packing: '2',
+  }, 'HG351U3131412'.replace(' ', ''));
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

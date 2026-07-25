@@ -1,0 +1,116 @@
+{
+  "model": "HM37A",
+  "line": "hex",
+  "displayName": "Hex HM37A horizontal twist manifold adapter",
+  "match": [
+    "hm37a"
+  ],
+  "source": {
+    "doc": "HM37A.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the adapter's few columns assembled bare. No sample row prints on this sheet.",
+  "assembly": "{model}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HM37A",
+          "label": "HM37A",
+          "aliases": [
+            "hm37a"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel (SA-479; 316)",
+          "aliases": [
+            "stainless steel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged inlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged inlet type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet type"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

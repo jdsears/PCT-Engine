@@ -1,0 +1,176 @@
+{
+  "model": "HE30",
+  "line": "hex",
+  "displayName": "Hex HE30 series manifold valve",
+  "match": [
+    "he30"
+  ],
+  "source": {
+    "doc": "he30.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic. The soft seat pressure line rides the note: 1500 psi at 100F and 500 psi at 200F.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HE30",
+          "label": "HE30",
+          "aliases": [
+            "he30"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat/body configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "G",
+          "label": "O-ring packing and soft seat",
+          "aliases": [
+            "soft o-ring config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless steel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\"",
+          "aliases": [
+            "quarter inch inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "4",
+          "label": "316/316SS NRT",
+          "aliases": [
+            "nrt stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "C",
+          "label": "Delrin",
+          "aliases": [
+            "delrin seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "5",
+          "label": "Buna-N",
+          "aliases": [
+            "buna packing"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

@@ -1,0 +1,175 @@
+{
+  "model": "HM37",
+  "line": "hex",
+  "displayName": "Hex HM37 series manifold valve",
+  "match": [
+    "hm37"
+  ],
+  "source": {
+    "doc": "HM37.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table, the columns assembled bare in the printed order, anchored on the sheet's own sample ordering schematic.",
+  "assembly": "{model}{seatConfig}{bodyMaterial}{inletSizeType}{outletSize}{outletType}{stem}{seatMaterial}{packing}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HM37",
+          "label": "HM37",
+          "aliases": [
+            "hm37"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatConfig",
+      "label": "Seat/body configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "G",
+          "label": "Soft seat with o-ring packing",
+          "aliases": [
+            "soft o-ring config"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Carbon steel",
+          "aliases": [
+            "carbon steel"
+          ]
+        },
+        {
+          "code": "U",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless steel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSizeType",
+      "label": "Inlet size and type",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "11",
+          "label": "1/4\" FNPT/flanged",
+          "aliases": [
+            "quarter fnpt flanged"
+          ]
+        },
+        {
+          "code": "33",
+          "label": "1/2\" FNPT",
+          "aliases": [
+            "half fnpt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "9",
+          "label": "Flanged",
+          "aliases": [
+            "flanged outlet type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem/tip",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "316 stem",
+          "aliases": [
+            "316 stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "Carbon-filled PTFE",
+          "aliases": [
+            "carbon ptfe seat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "5",
+          "label": "Buna-N o-ring",
+          "aliases": [
+            "buna o-ring"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "Aflas o-ring",
+          "aliases": [
+            "aflas o-ring"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}
