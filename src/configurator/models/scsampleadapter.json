@@ -1,0 +1,87 @@
+{
+  "model": "SCSA",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow sample adapter (sample cooler accessory)",
+  "match": [
+    "sample adapter",
+    "sc sample adapter"
+  ],
+  "source": {
+    "doc": "samplecooleraccessories.pdf",
+    "page": 2,
+    "section": "Ordering Schematic, sample adapter"
+  },
+  "note": "Extracted by hand from the accessories sheet's third schematic, the adapter from the half inch tri-clamp sample outlet to quarter inch hose or spout. The accessory codes here are two characters, 00 and KT, as this schematic prints them.",
+  "assembly": "{model}-{size}-{accessory}-{finish}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SA",
+          "label": "Sample adapter",
+          "aliases": [
+            "sample adapter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" tri-clamp",
+          "aliases": [
+            "1/2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessory",
+      "label": "Accessory",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "KT",
+          "label": "Kit with tri-clamp and PTFE gasket",
+          "aliases": [
+            "clamp kit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Finish",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "EP",
+          "label": "SF5, 20 Ra \u03bcin (0,5 \u03bcm Ra), electro-polish",
+          "aliases": [
+            "electro-polish"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": []
+}

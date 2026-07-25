@@ -1,0 +1,306 @@
+{
+  "model": "SFBCAST",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow F&B cast body 2-way sanitary diaphragm valve",
+  "match": [
+    "cast diaphragm valve",
+    "cast body 2-way",
+    "sfb cast"
+  ],
+  "source": {
+    "doc": "SFB_Cast_diaphragmvalves.pdf",
+    "page": 2,
+    "section": "Ordering Schematic (cast body, 2-way diaphragm valve)"
+  },
+  "note": "Extracted by hand from the ordering schematic, model SFB then the digits bare, the example row printing SFB 1 8 2 3 1 1 with the accessories position left blank, so the blank is carried as the none. The spring actuator rows still say and Compact Actuator though this sheet prints no compact size, an orphan of the forged template, noted and not enforced. The Eclipse rows print 1-1/2 to 2 inch standard. There is no CE/PED position on the cast sheet.",
+  "assembly": "{model}{type}{size}{connection}{finish}{actuation}{diaphragm}{accessories}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SFB",
+          "label": "Cast body sanitary diaphragm valve",
+          "aliases": [
+            "sfb"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "type",
+      "label": "Type (1)",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Cast body 2-way",
+          "aliases": [
+            "cast 2-way"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size (2)",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "7",
+          "label": "1-1/2\"",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "8",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "A",
+          "label": "3\"",
+          "aliases": [
+            "3\""
+          ]
+        },
+        {
+          "code": "B",
+          "label": "4\"",
+          "aliases": [
+            "4\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "connection",
+      "label": "Connection (3)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "OD tube",
+          "aliases": [
+            "od tube"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Clamp",
+          "aliases": [
+            "clamp"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "OD tube x clamp",
+          "aliases": [
+            "tube x clamp"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard connection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Internal surface finish (4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "32Ra \u03bcin (0,81 Ra \u03bcm)",
+          "aliases": [
+            "32ra"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "32Ra \u03bcin (0,81 Ra \u03bcm) EP",
+          "aliases": [
+            "32ra ep"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard, consult factory",
+          "aliases": [
+            "non-standard finish"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actuation",
+      "label": "Actuation (5)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Manual",
+          "aliases": [
+            "manual"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Manual vented",
+          "aliases": [
+            "manual vented"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "2-1/2\"-4\" and compact actuator, spring to close (as the sheet prints it)",
+          "aliases": [
+            "spring to close"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "2-1/2\"-4\" and compact actuator, spring to open (as the sheet prints it)",
+          "aliases": [
+            "spring to open"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "Eclipse actuator, double acting (1-1/2\"-2\" standard)",
+          "aliases": [
+            "eclipse double acting"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Eclipse actuator, spring to close (1-1/2\"-2\" standard)",
+          "aliases": [
+            "eclipse spring close"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "Eclipse actuator, spring to open (1-1/2\"-2\" standard)",
+          "aliases": [
+            "eclipse spring open"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diaphragm",
+      "label": "Diaphragm (6)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "EPDM",
+          "aliases": [
+            "epdm"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "TFM/EPDM",
+          "aliases": [
+            "tfm epdm"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard diaphragm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "Accessories (7)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (the example row leaves the position blank)",
+          "aliases": [
+            "no accessories"
+          ]
+        },
+        {
+          "code": "1",
+          "label": "Switch 2 position",
+          "aliases": [
+            "switch"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Positioner 4-20 mA",
+          "aliases": [
+            "positioner"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard, consult factory",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "actuation": [
+          "3",
+          "4"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "7",
+          "8"
+        ]
+      },
+      "reason": "the spring actuator rows print 2-1/2 to 4 inch"
+    },
+    {
+      "when": {
+        "actuation": [
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      "forbid": {
+        "size": [
+          "A",
+          "B"
+        ]
+      },
+      "reason": "the Eclipse rows print 1-1/2 to 2 inch standard"
+    }
+  ],
+  "cautions": []
+}

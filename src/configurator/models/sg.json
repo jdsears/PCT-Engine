@@ -1,0 +1,186 @@
+{
+  "model": "SG",
+  "line": "steriflow_fb",
+  "displayName": "Steriflow F&B SG sanitary sight glass",
+  "match": [
+    "sight glass",
+    "sg series"
+  ],
+  "source": {
+    "doc": "sgseries.pdf",
+    "page": 2,
+    "section": "Ordering Schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic, five positions assembled bare, the header printing no separators. The standard silicone seal carries the sheet's own footnote as a caution, not suitable for steam service or SIP. One shield option and one finish.",
+  "assembly": "{model}{size}{seal}{shield}{finish}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "SG",
+          "label": "Sight glass",
+          "aliases": [
+            "sight glass"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "050",
+          "label": "1/2\" ASME BPE tri-clamp",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" ASME BPE tri-clamp",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" ASME BPE tri-clamp",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\" ASME BPE tri-clamp",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\" ASME BPE tri-clamp",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "250",
+          "label": "2-1/2\" ASME BPE tri-clamp",
+          "aliases": [
+            "2-1/2\""
+          ]
+        },
+        {
+          "code": "300",
+          "label": "3\" ASME BPE tri-clamp",
+          "aliases": [
+            "3\""
+          ]
+        },
+        {
+          "code": "400",
+          "label": "4\" ASME BPE tri-clamp",
+          "aliases": [
+            "4\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seal",
+      "label": "Seal",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "EP",
+          "label": "EPDM, FDA, USP Class VI",
+          "aliases": [
+            "epdm seal"
+          ]
+        },
+        {
+          "code": "VI",
+          "label": "Viton, FDA, USP Class VI",
+          "aliases": [
+            "viton seal"
+          ]
+        },
+        {
+          "code": "SI",
+          "label": "Silicone, FDA, USP Class VI (standard silicone not suitable for steam service or SIP)",
+          "aliases": [
+            "silicone seal"
+          ]
+        },
+        {
+          "code": "FI",
+          "label": "FEP-Silicon, FDA, USP Class VI",
+          "aliases": [
+            "fep silicone seal"
+          ]
+        },
+        {
+          "code": "PL",
+          "label": "Perlast (FFKM), FDA, USP Class VI",
+          "aliases": [
+            "perlast seal"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shield",
+      "label": "Shield",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "no shield"
+          ]
+        },
+        {
+          "code": "KS",
+          "label": "Polycarbonate outer shield",
+          "aliases": [
+            "polycarbonate shield"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "label": "Finish",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "EP",
+          "label": "Electro-polish",
+          "aliases": [
+            "electro-polish"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [],
+  "cautions": [
+    {
+      "when": {
+        "seal": "SI"
+      },
+      "note": "The sheet's own footnote: standard silicone is not suitable for steam service or SIP."
+    }
+  ]
+}

@@ -136,6 +136,12 @@ const mk978eor = JSON.parse(readFileSync(join(here, 'models', 'mk978eor.json'), 
 const mk978or = JSON.parse(readFileSync(join(here, 'models', 'mk978or.json'), 'utf8'));
 const mk978lf = JSON.parse(readFileSync(join(here, 'models', 'mk978lf.json'), 'utf8'));
 const mk978lfjd = JSON.parse(readFileSync(join(here, 'models', 'mk978lfjd.json'), 'utf8'));
+const sv2way = JSON.parse(readFileSync(join(here, 'models', 'sv2way.json'), 'utf8'));
+const sfbcast = JSON.parse(readFileSync(join(here, 'models', 'sfbcast.json'), 'utf8'));
+const sg = JSON.parse(readFileSync(join(here, 'models', 'sg.json'), 'utf8'));
+const scsamplevalve = JSON.parse(readFileSync(join(here, 'models', 'scsamplevalve.json'), 'utf8'));
+const scsamplehose = JSON.parse(readFileSync(join(here, 'models', 'scsamplehose.json'), 'utf8'));
+const scsampleadapter = JSON.parse(readFileSync(join(here, 'models', 'scsampleadapter.json'), 'utf8'));
 const mk688 = JSON.parse(readFileSync(join(here, 'models', 'mk688.json'), 'utf8'));
 const mk695 = JSON.parse(readFileSync(join(here, 'models', 'mk695.json'), 'utf8'));
 const mk608bp = JSON.parse(readFileSync(join(here, 'models', 'mk608bp.json'), 'utf8'));
@@ -1815,6 +1821,37 @@ check('the low flow pair keeps the micro Cv ladders and their glyphs', () => {
   assert.ok(/letter I here where its siblings print 1/.test(mk978lfjd.slots.find(s => s.id === 'block').options.find(o => o.code === 'D2LNIC').label), 'the 1 versus I glyph rows are confessed');
   assert.equal(mk978lfjd.slots.find(s => s.id === 'model').options.length, 3, 'the JD low flow prints no plain 978 row');
   assert.ok(checkConstraints(mk978lfjd, { model: '978MV', actuatorRange: 'D1' }).length > 0, 'its motor valve actuator row prints only ZZ');
+});
+
+console.log('\nThe F&B diaphragm valves, sight glass and sample accessories:');
+
+check('the forged and cast diaphragm valves round-trip with their brackets', () => {
+  roundTrip(sv2way, {
+    model: 'SV', type: '1', size: '6', connection: '2', finish: '3', actuation: '1',
+    diaphragm: '2', accessories: '', pedCe: '0G',
+  }, 'SV1623120G');
+  roundTrip(sv2way, {
+    model: 'SV', type: '2', size: '1', connection: '1', finish: '1', actuation: '3',
+    diaphragm: '1', accessories: '1', pedCe: '0G',
+  }, 'SV21113110G');
+  assert.ok(checkConstraints(sv2way, { size: '1', type: '1' }).length > 0, 'the compact sizes name themselves');
+  assert.ok(checkConstraints(sv2way, { actuation: '5', size: 'A' }).length > 0, 'the Eclipse rows stop at 2 inch');
+  assert.ok(checkConstraints(sv2way, { actuation: '3', size: '4' }).length > 0, 'the spring rows are the large and compact forms');
+  assert.ok(checkConstraints(sv2way, { pedCe: '0F', size: '4' }).length > 0, 'the CE row starts at 1-1/2 inch');
+  roundTrip(sfbcast, {
+    model: 'SFB', type: '1', size: '8', connection: '2', finish: '3', actuation: '1',
+    diaphragm: '1', accessories: '',
+  }, 'SFB1823 11'.replace(' ', ''));
+  assert.ok(checkConstraints(sfbcast, { actuation: '4', size: '7' }).length > 0, 'the cast spring rows start at 2-1/2 inch');
+  assert.ok(/orphan of the forged template/.test(sfbcast.note), 'the compact wording orphan is confessed');
+});
+
+check('the sight glass and the three sample accessories round-trip', () => {
+  roundTrip(sg, { model: 'SG', size: '150', seal: 'PL', shield: 'KS', finish: 'EP' }, 'SG150PLKSEP');
+  assert.equal(checkCautions(sg, { seal: 'SI' }).length, 1, 'the silicone steam caution rides the seal');
+  roundTrip(scsamplevalve, { model: 'SV', inlet: '100', outlet: '050', accessory: 'K', finish: 'EP' }, 'SV-100-050-K-EP');
+  roundTrip(scsamplehose, { model: 'SH', size: '050', length: '4m', finish: 'EP' }, 'SH-050-4m-EP');
+  roundTrip(scsampleadapter, { model: 'SA', size: '050', accessory: 'KT', finish: 'EP' }, 'SA-050-KT-EP');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
