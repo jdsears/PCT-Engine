@@ -1,0 +1,843 @@
+{
+  "model": "HKGLOBE",
+  "line": "hex",
+  "displayName": "Hex Hexblok globe and plug style valves (HK10, 11, 20, 21, 30, 31, 40, 41)",
+  "match": [
+    "hexblok globe",
+    "hexblok plug",
+    "hk10",
+    "hk11",
+    "hk20",
+    "hk21",
+    "hk30",
+    "hk31",
+    "hk40",
+    "hk41"
+  ],
+  "source": {
+    "doc": "hexblok_us.pdf",
+    "page": 29,
+    "section": "Ordering schematic"
+  },
+  "note": "Extracted by hand from the ordering schematic on page 29. Twelve columns assembled bare. The body configuration rows carry their own model brackets, enforced, and the C-PEEK seat its own body configuration bracket. The sheet's own footnote that soft seat is limited to 200F and 1500 psi rides the soft seat configurations as a caution, and the vent valve is always hard seat. The two option positions carry the sheet's own rule, choose any two options in alpha-numerical order, which is recorded but not enforced because the engine has no ordering rule; neither position prints a none row, and the sheet's own sample fills them with a code that appears in no option list, so a build with fewer than two options is held for John.",
+  "assembly": "{model}{bodyConfig}{bodyMaterial}{inletSize}{inletType}{outletSize}{outletType}{stem}{seatMaterial}{packing}{option1}{option2}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "HK10",
+          "label": "Single block screwed bonnet",
+          "aliases": [
+            "hk10"
+          ]
+        },
+        {
+          "code": "HK11",
+          "label": "Single block OS&Y bonnet",
+          "aliases": [
+            "hk11"
+          ]
+        },
+        {
+          "code": "HK20",
+          "label": "Single block and bleed screwed bonnet",
+          "aliases": [
+            "hk20"
+          ]
+        },
+        {
+          "code": "HK21",
+          "label": "Single block and bleed OS&Y bonnet",
+          "aliases": [
+            "hk21"
+          ]
+        },
+        {
+          "code": "HK30",
+          "label": "Double block and bleed screwed bonnet, block then bleed then block",
+          "aliases": [
+            "hk30"
+          ]
+        },
+        {
+          "code": "HK31",
+          "label": "Double block and bleed OS&Y bonnet, block then bleed then block",
+          "aliases": [
+            "hk31"
+          ]
+        },
+        {
+          "code": "HK40",
+          "label": "Double block and bleed screwed bonnet, block then block then bleed",
+          "aliases": [
+            "hk40"
+          ]
+        },
+        {
+          "code": "HK41",
+          "label": "Double block and bleed OS&Y bonnet, block then block then bleed",
+          "aliases": [
+            "hk41"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyConfig",
+      "label": "Body configuration",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Hard seat block valve(s)",
+          "aliases": [
+            "hard seat block valve(s)"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "Soft seat block valve(s)",
+          "aliases": [
+            "soft seat block valve(s)"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Hard seat primary and vent valve and soft seat secondary block valve (HK30 and HK31 only)",
+          "aliases": [
+            "hard seat primary and vent valve and s"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "10,000 psi hard seat primary and secondary block valves, with hard seat vent valve (HK10, HK20, HK30 only)",
+          "aliases": [
+            "10,000 psi hard seat primary and secon"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "U",
+          "label": "316SS (forged)",
+          "aliases": [
+            "316ss (forged)"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "316SS NACE (forged)",
+          "aliases": [
+            "316ss nace (forged)"
+          ]
+        },
+        {
+          "code": "Y",
+          "label": "A182F 316L (forged)",
+          "aliases": [
+            "a182f 316l (forged)"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "A182F 316L NACE (forged)",
+          "aliases": [
+            "a182f 316l nace (forged)"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "Carbon steel A105",
+          "aliases": [
+            "carbon steel a105"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Carbon steel, A105 NACE",
+          "aliases": [
+            "carbon steel, a105 nace"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Duplex A182 F51 (forged)",
+          "aliases": [
+            "duplex a182 f51 (forged)"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "Super duplex A182 F55 (forged)",
+          "aliases": [
+            "super duplex a182 f55 (forged)"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Hastelloy C",
+          "aliases": [
+            "hastelloy c"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Alloy 20",
+          "aliases": [
+            "alloy 20"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Low temp CS A350 LF2 (forged)",
+          "aliases": [
+            "low temp cs a350 lf2 (forged)"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "Inconel 625",
+          "aliases": [
+            "inconel 625"
+          ]
+        },
+        {
+          "code": "I",
+          "label": "Incoloy 825",
+          "aliases": [
+            "incoloy 825"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Monel 400 (forged)",
+          "aliases": [
+            "monel 400 (forged)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletSize",
+      "label": "Inlet size",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\" (DN8)",
+          "aliases": [
+            "1/4\" (DN8)"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "3/8\" (DN10)",
+          "aliases": [
+            "3/8\" (DN10)"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\" (DN15)"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\" (DN20)"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\" (DN25)"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\" (DN40)"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\" (DN50)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inletType",
+      "label": "Inlet type",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "MNPT",
+          "aliases": [
+            "mnpt"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "150# RF",
+          "aliases": [
+            "150# rf"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "300# RF",
+          "aliases": [
+            "300# rf"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "600# RF",
+          "aliases": [
+            "600# rf"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "900/1500# RF",
+          "aliases": [
+            "900/1500# rf"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "2500# RF",
+          "aliases": [
+            "2500# rf"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "150# RTJ",
+          "aliases": [
+            "150# rtj"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "300# RTJ",
+          "aliases": [
+            "300# rtj"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "600# RTJ",
+          "aliases": [
+            "600# rtj"
+          ]
+        },
+        {
+          "code": "P",
+          "label": "900/1500# RTJ",
+          "aliases": [
+            "900/1500# rtj"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "2500# RTJ",
+          "aliases": [
+            "2500# rtj"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletSize",
+      "label": "Outlet size",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "1/4\"",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "2",
+          "label": "3/8\"",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "3",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\" (DN15)"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\" (DN20)"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\" (DN25)"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "1-1/2\" (DN40)",
+          "aliases": [
+            "1-1/2\" (DN40)"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "2\" (DN50)",
+          "aliases": [
+            "2\" (DN50)"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "Flanged, same as inlet",
+          "aliases": [
+            "Flanged, same as inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outletType",
+      "label": "Outlet type",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "MNPT",
+          "aliases": [
+            "mnpt"
+          ]
+        },
+        {
+          "code": "2",
+          "label": "FSW",
+          "aliases": [
+            "fsw"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "Flanged, same as inlet",
+          "aliases": [
+            "flanged, same as inlet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Ball and stem / NRT (vent valve)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "4",
+          "label": "316/316 stem with NRT tip",
+          "aliases": [
+            "316/316 stem with nrt tip"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "316/316 NACE stem with NRT tip",
+          "aliases": [
+            "316/316 nace stem with nrt tip"
+          ]
+        },
+        {
+          "code": "5",
+          "label": "316/Stellite stem with NRT tip",
+          "aliases": [
+            "316/stellite stem with nrt tip"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "316/Monel stem with NRT tip",
+          "aliases": [
+            "316/monel stem with nrt tip"
+          ]
+        },
+        {
+          "code": "Y",
+          "label": "316L/316L stem with NRT tip",
+          "aliases": [
+            "316l/316l stem with nrt tip"
+          ]
+        },
+        {
+          "code": "A",
+          "label": "316L/316L NACE stem with NRT tip",
+          "aliases": [
+            "316l/316l nace stem with nrt tip"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Duplex/Duplex stem with NRT tip",
+          "aliases": [
+            "duplex/duplex stem with nrt tip"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Super duplex/Super duplex stem with NRT tip",
+          "aliases": [
+            "super duplex/super duplex stem with nr"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Hastelloy C/Hastelloy C stem with NRT tip",
+          "aliases": [
+            "hastelloy c/hastelloy c stem with nrt "
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Alloy 20/Alloy 20 stem with NRT tip",
+          "aliases": [
+            "alloy 20/alloy 20 stem with nrt tip"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "I-625/I-625 stem with NRT tip",
+          "aliases": [
+            "i-625/i-625 stem with nrt tip"
+          ]
+        },
+        {
+          "code": "7",
+          "label": "I-825/I-825 stem with NRT tip",
+          "aliases": [
+            "i-825/i-825 stem with nrt tip"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Monel/Monel stem with NRT tip",
+          "aliases": [
+            "monel/monel stem with nrt tip"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seatMaterial",
+      "label": "Seat material",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "1",
+          "label": "Integral seat",
+          "aliases": [
+            "integral seat"
+          ]
+        },
+        {
+          "code": "4",
+          "label": "C-PEEK (body configuration 2 and 3 only)",
+          "aliases": [
+            "c-peek (body configuration 2 and 3 onl"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 10,
+      "required": true,
+      "options": [
+        {
+          "code": "2",
+          "label": "Teflon packing",
+          "aliases": [
+            "teflon packing"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Graphite packing (fire safe selection)",
+          "aliases": [
+            "graphite packing (fire safe selection)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "option1",
+      "label": "Option",
+      "position": 11,
+      "required": true,
+      "options": [
+        {
+          "code": "M",
+          "label": "Two outlets",
+          "aliases": [
+            "two outlets"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Three outlets",
+          "aliases": [
+            "three outlets"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Swivel adapter (consult factory for ordering options)",
+          "aliases": [
+            "swivel adapter (consult factory for or"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Plugged vent option (same material as body)",
+          "aliases": [
+            "plugged vent option (same material as "
+          ]
+        },
+        {
+          "code": "D",
+          "label": "1/4\" vent port",
+          "aliases": [
+            "1/4\" vent port"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "3/4\" vent port",
+          "aliases": [
+            "3/4\" vent port"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "100% 316 non-wet parts",
+          "aliases": [
+            "100% 316 non-wet parts"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "Tamper proof/lockout handle, block valve(s)",
+          "aliases": [
+            "tamper proof/lockout handle, block val"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "Tamper proof/lockout handle, vent valve",
+          "aliases": [
+            "tamper proof/lockout handle, vent valv"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Bonnet grease fitting",
+          "aliases": [
+            "bonnet grease fitting"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "option2",
+      "label": "Option",
+      "position": 12,
+      "required": true,
+      "options": [
+        {
+          "code": "M",
+          "label": "Two outlets",
+          "aliases": [
+            "two outlets"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Three outlets",
+          "aliases": [
+            "three outlets"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Swivel adapter (consult factory for ordering options)",
+          "aliases": [
+            "swivel adapter (consult factory for or"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Plugged vent option (same material as body)",
+          "aliases": [
+            "plugged vent option (same material as "
+          ]
+        },
+        {
+          "code": "D",
+          "label": "1/4\" vent port",
+          "aliases": [
+            "1/4\" vent port"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "3/4\" vent port",
+          "aliases": [
+            "3/4\" vent port"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "100% 316 non-wet parts",
+          "aliases": [
+            "100% 316 non-wet parts"
+          ]
+        },
+        {
+          "code": "8",
+          "label": "Tamper proof/lockout handle, block valve(s)",
+          "aliases": [
+            "tamper proof/lockout handle, block val"
+          ]
+        },
+        {
+          "code": "9",
+          "label": "Tamper proof/lockout handle, vent valve",
+          "aliases": [
+            "tamper proof/lockout handle, vent valv"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Bonnet grease fitting",
+          "aliases": [
+            "bonnet grease fitting"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "bodyConfig": "3"
+      },
+      "forbid": {
+        "model": [
+          "HK10",
+          "HK11",
+          "HK20",
+          "HK21",
+          "HK40",
+          "HK41"
+        ]
+      },
+      "reason": "the sheet prints this configuration for the HK30 and HK31 only"
+    },
+    {
+      "when": {
+        "bodyConfig": "0"
+      },
+      "forbid": {
+        "model": [
+          "HK11",
+          "HK21",
+          "HK31",
+          "HK40",
+          "HK41"
+        ]
+      },
+      "reason": "the sheet's asterisk prints this configuration for the HK10, HK20 and HK30 only"
+    },
+    {
+      "when": {
+        "seatMaterial": "4"
+      },
+      "forbid": {
+        "bodyConfig": [
+          "1",
+          "0"
+        ]
+      },
+      "reason": "the C-PEEK seat prints for body configurations 2 and 3"
+    }
+  ],
+  "cautions": [
+    {
+      "when": {
+        "bodyConfig": [
+          "2",
+          "3"
+        ]
+      },
+      "note": "The sheet's own footnote: the soft seat is limited to 200F and 1500 psi (93C and 103 bar)."
+    }
+  ]
+}

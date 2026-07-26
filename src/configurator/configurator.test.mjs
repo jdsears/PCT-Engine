@@ -20,6 +20,15 @@ const cv4700 = JSON.parse(readFileSync(join(here, 'models', 'cv4700.json'), 'utf
 const jr = JSON.parse(readFileSync(join(here, 'models', 'jr.json'), 'utf8'));
 const mark96 = JSON.parse(readFileSync(join(here, 'models', 'mark96.json'), 'utf8'));
 const t2100 = JSON.parse(readFileSync(join(here, 'models', '2100.json'), 'utf8'));
+const t3101 = JSON.parse(readFileSync(join(here, 'models', '3t3101.json'), 'utf8'));
+const m600 = JSON.parse(readFileSync(join(here, 'models', 'm600.json'), 'utf8'));
+const m4600 = JSON.parse(readFileSync(join(here, 'models', 'm4600.json'), 'utf8'));
+const m3100 = JSON.parse(readFileSync(join(here, 'models', 'm3100.json'), 'utf8'));
+const m3300 = JSON.parse(readFileSync(join(here, 'models', 'm3300.json'), 'utf8'));
+const m3700 = JSON.parse(readFileSync(join(here, 'models', 'm3700.json'), 'utf8'));
+const hkBall = JSON.parse(readFileSync(join(here, 'models', 'hexblok_ball.json'), 'utf8'));
+const hkGlobe = JSON.parse(readFileSync(join(here, 'models', 'hexblok_globe.json'), 'utf8'));
+const hkApi = JSON.parse(readFileSync(join(here, 'models', 'hexblok_api.json'), 'utf8'));
 const s3000 = JSON.parse(readFileSync(join(here, 'models', '3000.json'), 'utf8'));
 const ms3000 = JSON.parse(readFileSync(join(here, 'models', 'ms3000.json'), 'utf8'));
 const f2000 = JSON.parse(readFileSync(join(here, 'models', '2000.json'), 'utf8'));
@@ -2108,6 +2117,107 @@ check('the buckets, sanitary traps and stations round-trip', () => {
   assert.ok(checkConstraints(dt711, { specials: '1', bodyType: '1' }).length > 0, 'the DTC is the strainer body alone');
   roundTrip(totaltrap, { model: 'TT3HP-4' }, 'TT3HP-4');
   roundTrip(pr3g, { model: 'PR3G', material: 'S', size: '4', cv: 'F', range: 'M' }, 'PR3GS4FM');
+});
+
+console.log('\nThe 3T-3101/3L-3201 bottom entry pair:');
+
+check('the port pattern binds the start position to the model', () => {
+  roundTrip(t3101, {
+    model: '3T-3101F', size: '050', bodyMaterial: 'BR', ends: 'PT',
+    operation: 'HL', pneumatic: 'NN00', startPosition: 'TA',
+  }, '3T-3101F-050-BRPTHLNN00TA');
+  roundTrip(t3101, {
+    model: '3L-3201F', size: '200', bodyMaterial: 'BR', ends: 'PT',
+    operation: 'NN', pneumatic: 'NN00', startPosition: 'LC',
+  }, '3L-3201F-200-BRPTNNNN00LC');
+  assert.ok(checkConstraints(t3101, { model: '3T-3101F', startPosition: 'LA' }).length > 0, 'the L positions are the L-port\'s');
+  assert.ok(checkConstraints(t3101, { model: '3L-3201F', startPosition: 'TA' }).length > 0, 'and the T positions the T-port\'s');
+  assert.ok(/with bushings/.test(t3101.slots.find(s => s.id === 'size').options.find(o => o.code === '025').label),
+    'the starred small sizes keep the sheet\'s bushing note');
+  assert.ok(/separator is held for John/.test(t3101.note), 'the missing slash is confessed, not invented');
+});
+
+console.log('\nThe brass and three-way sheets that were scans until today:');
+
+check('the 600 family holds its three printed trims apart', () => {
+  roundTrip(m600, { body: '6', ball: '6', stem: '6', port: 'F', packing: 'T', seats: 'T', ends: 'S', size: '025' },
+    '666FTTS-025');
+  roundTrip(m600, { body: '6', ball: '3', stem: '3', port: 'F', packing: 'T', seats: 'R', ends: 'S', size: '050' },
+    '633FTRS-050');
+  roundTrip(m600, { body: '6', ball: '6', stem: '6', port: 'R', packing: 'T', seats: 'T', ends: 'S', size: '200' },
+    '666RTTS-200');
+  assert.ok(checkConstraints(m600, { ball: '3', seats: 'T' }).length > 0, 'stainless trim takes RPTFE seats');
+  assert.ok(checkConstraints(m600, { ball: '3', port: 'R' }).length > 0, 'no stainless reduced port sheet is printed');
+  assert.ok(checkConstraints(m600, { ball: '3', size: '300' }).length > 0, 'the stainless sheet stops at 2 inch');
+  assert.ok(checkConstraints(m600, { port: 'R', size: '025' }).length > 0, 'the reduced port sheet starts at 1/2 inch');
+  assert.equal(checkConstraints(m600, { ball: '6', port: 'F', size: '400' }).length, 0, 'the full port brass sheet carries 4 inch');
+});
+
+check('the 4600 carries its optional lead free suffix', () => {
+  roundTrip(m4600, { series: '46', ball: '3', stem: '3', port: 'F', packing: 'T', seats: 'T', ends: 'S', size: '050', leadFree: 'LF' },
+    '4633FTTS-050LF');
+  roundTrip(m4600, { series: '46', ball: '6', stem: '6', port: 'F', packing: 'T', seats: 'T', ends: 'S', size: '250', leadFree: '' },
+    '4666FTTS-250');
+  assert.ok(checkConstraints(m4600, { ball: '3', stem: '6' }).length > 0, 'ball and stem are matched, flagged inferred');
+});
+
+check('the three-way trio round-trips against the price book shape', () => {
+  roundTrip(m3300, {
+    model: '3T-3300R', size: '100', body: 'BR', ends: 'AA', operation: 'S4',
+    pressure: '60', solenoid: '00', limitSwitch: '00', startPosition: '3A',
+  }, '3T-3300R-100-BR/AAS46000003A');
+  roundTrip(m3300, {
+    model: '3L-3400R', size: '100', body: 'BR', ends: 'AA', operation: 'S4',
+    pressure: '60', solenoid: '00', limitSwitch: '00', startPosition: 'A2',
+  }, '3L-3400R-100-BR/AAS4600000A2');
+  roundTrip(m3700, {
+    model: '3T-3700R', size: '050', body: 'S6', ends: 'AA', operation: 'S6',
+    pressure: '80', solenoid: '3A', limitSwitch: 'AB', startPosition: '4A',
+  }, '3T-3700R-050-S6/AAS6803AAB4A');
+  roundTrip(m3100, {
+    model: '3L-3200F', size: '300', body: 'BR', ends: 'AA', operation: 'HL',
+    pneumatic: 'NN0000', startPosition: 'LB',
+  }, '3L-3200F-300-BR/AAHLNN0000LB');
+  assert.ok(checkConstraints(m3300, { model: '3T-3300R', startPosition: 'A2' }).length > 0, 'the L start positions are the L port\'s');
+  assert.ok(checkConstraints(m3300, { operation: 'HL', pressure: '60' }).length > 0, 'a lever takes no air supply');
+  assert.ok(checkConstraints(m3300, { solenoid: '3A', operation: 'P1' }).length > 0, 'a three-way solenoid wants spring return');
+  assert.ok(checkConstraints(m3700, { solenoid: '3J', operation: 'S6' }).length > 0, 'the 8317 solenoids stop at UT-2.5');
+  assert.ok(checkConstraints(m3700, { limitSwitch: 'AA', operation: 'S7' }).length > 0, 'the small limit switches stop at UT-3');
+  assert.ok(checkConstraints(m3100, { model: '3T-3100F', startPosition: 'LA' }).length > 0, 'the bottom entry pair binds its ports too');
+  assert.ok(/Limit Swtich/.test(m3300.note) && /Limit Swtich/.test(m3700.note), 'the printed column heading slip is confessed');
+});
+
+console.log('\nThe hexblok schematics the extraction had lost, and the JRPH ruling:');
+
+check('the three hexblok grammars round-trip against their own sample rows', () => {
+  roundTrip(hkBall, {
+    model: 'HK22', bodyConfig: '2', bodyMaterial: '6', inletSize: '3', inletType: 'C',
+    outletSize: '3', outletType: '1', stem: '4', seatMaterial: '3', packing: '3',
+    option1: 'M', option2: '9',
+  }, 'HK22263C3143 3M9'.replace(' ', ''));
+  roundTrip(hkGlobe, {
+    model: 'HK10', bodyConfig: '2', bodyMaterial: 'U', inletSize: '3', inletType: 'C',
+    outletSize: '3', outletType: '1', stem: '4', seatMaterial: '1', packing: '3',
+    option1: 'M', option2: '8',
+  }, 'HK102U3C31413M8');
+  roundTrip(hkApi, {
+    model: 'HK22', bodyConfig: 'A', bodyMaterial: 'U', inletSize: 'N', inletType: 'A',
+    outletSize: 'D', outletType: 'S', stem: '4', seatMaterial: '3', packing: '2',
+    option1: 'M', option2: 'D',
+  }, 'HK22AUNADS432MD');
+  assert.ok(checkConstraints(hkGlobe, { bodyConfig: '3', model: 'HK10' }).length > 0, 'the hard/soft mix is the HK30 and HK31\'s');
+  assert.ok(checkConstraints(hkGlobe, { bodyConfig: '0', model: 'HK41' }).length > 0, 'the 10,000 psi build keeps its printed models');
+  assert.ok(checkConstraints(hkGlobe, { seatMaterial: '4', bodyConfig: '1' }).length > 0, 'C-PEEK needs a soft seat configuration');
+  assert.equal(checkCautions(hkGlobe, { bodyConfig: '2' }).length, 1, 'the soft seat pressure and temperature limit cautions');
+  assert.ok(checkConstraints(hkApi, { bodyConfig: '0', model: 'HK22' }).length > 0, 'the API sheet keeps its own asterisk');
+  assert.ok(/sample row pairs it with an HK22/.test(hkApi.note), 'and its sample contradiction is confessed');
+  assert.ok(/alpha-numerical order/.test(hkBall.note), 'the two-option rule is recorded, not enforced');
+});
+
+check('the JRPH is ruled out on the evidence of its own document', () => {
+  assert.ok(/there is no JRPH ordering schematic/.test(jrpl.note), 'the ruling is recorded');
+  assert.ok(/both print this same JRPL schematic/.test(jrpl.note), 'with the reason');
+  assert.ok(/stops at 1160 psi/.test(jrpl.note), 'and the spring evidence');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

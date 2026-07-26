@@ -1,0 +1,205 @@
+{
+  "model": "3T3100",
+  "line": "marwin",
+  "displayName": "Marwin 3T-3100F / 3L-3200F three-way brass bottom entry ball valve",
+  "match": [
+    "3t3100",
+    "3l3200",
+    "3t-3100f",
+    "3l-3200f",
+    "3100",
+    "3200"
+  ],
+  "source": {
+    "doc": "3T3100F-and-3L3200F-Series.pdf",
+    "page": 2,
+    "section": "Ordering matrix"
+  },
+  "note": "Extracted by hand from the ordering matrix on the sheet's second page. Bottom entry, 87 psi WOG, 3 inch only, so the size table prints the single 300. Twelve positions, but grouped as this sheet has them: ends, operation, a six character pneumatic actuator group printing the single NN0000 none, then the start position. The body material table is printed twice, identically, an artefact of the sheet carried as one slot. The sheet's own footnote says the valve has no integral 5211 pad and a clamp on pad is used for automation. The slash follows the 2100 family, which the price book prints for this series' siblings.",
+  "assembly": "{model}-{size}-{body}/{ends}{operation}{pneumatic}{startPosition}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "3T-3100F",
+          "label": "3 way bottom entry, T-port ball valve",
+          "aliases": [
+            "t-port"
+          ]
+        },
+        {
+          "code": "3L-3200F",
+          "label": "3 way bottom entry, L-port ball valve",
+          "aliases": [
+            "l-port"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "300",
+          "label": "3\"",
+          "aliases": [
+            "3\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "BR",
+          "label": "Brass",
+          "aliases": [
+            "brass"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "AA",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operation",
+      "label": "Operation (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "HL",
+          "label": "Handle",
+          "aliases": [
+            "handle"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "None",
+          "aliases": [
+            "no operator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pneumatic",
+      "label": "Pneumatic actuator (5 to 10)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "NN0000",
+          "label": "None",
+          "aliases": [
+            "no actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "startPosition",
+      "label": "Start position (11 and 12)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "TA",
+          "label": "3-way BT3A",
+          "aliases": [
+            "bt3a"
+          ]
+        },
+        {
+          "code": "TB",
+          "label": "3-way BT3B",
+          "aliases": [
+            "bt3b"
+          ]
+        },
+        {
+          "code": "TC",
+          "label": "3-way BT3C",
+          "aliases": [
+            "bt3c"
+          ]
+        },
+        {
+          "code": "LA",
+          "label": "3-way BL1A",
+          "aliases": [
+            "bl1a"
+          ]
+        },
+        {
+          "code": "LB",
+          "label": "3-way BL1B",
+          "aliases": [
+            "bl1b"
+          ]
+        },
+        {
+          "code": "LC",
+          "label": "3-way BL1C",
+          "aliases": [
+            "bl1c"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "model": "3T-3100F"
+      },
+      "forbid": {
+        "startPosition": [
+          "LA",
+          "LB",
+          "LC"
+        ]
+      },
+      "reason": "the BL start positions belong to the L-port model, per the sheet's own port arrangement"
+    },
+    {
+      "when": {
+        "model": "3L-3200F"
+      },
+      "forbid": {
+        "startPosition": [
+          "TA",
+          "TB",
+          "TC"
+        ]
+      },
+      "reason": "the BT start positions belong to the T-port model, per the sheet's own port arrangement"
+    }
+  ],
+  "cautions": []
+}

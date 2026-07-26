@@ -1,0 +1,301 @@
+{
+  "model": "600",
+  "line": "marwin",
+  "displayName": "Marwin 600 series two-piece brass ball valve",
+  "match": [
+    "600 series",
+    "666ftts",
+    "666rtts",
+    "633ftrs",
+    "marwin 600"
+  ],
+  "source": {
+    "doc": "666ftts.pdf, 666rtts.pdf and 600SeriesDataSheet.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order tables of the three 600 series sheets, which share one grammar: eight single character positions then a dash and the size, exactly as the price book prints them (666FTTS-025). Each sheet fixes its own trim, so the options are the union of the three and the constraints keep the printed combinations: brass ball and stem with PTFE seats on the two 666 sheets, stainless ball and stem with RPTFE seats on the 633, whose header names stainless steel trim. Only the full port brass sheet carries the 2-1/2, 3 and 4 inch sizes; the reduced port sheet starts at 1/2 inch and the stainless sheet stops at 2 inch.",
+  "assembly": "{body}{ball}{stem}{port}{packing}{seats}{ends}-{size}",
+  "slots": [
+    {
+      "id": "body",
+      "label": "Body",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "Brass",
+          "aliases": [
+            "brass body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ball",
+      "label": "Ball",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "Brass",
+          "aliases": [
+            "brass ball"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Stainless",
+          "aliases": [
+            "stainless ball"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "6",
+          "label": "Brass",
+          "aliases": [
+            "brass stem"
+          ]
+        },
+        {
+          "code": "3",
+          "label": "Stainless",
+          "aliases": [
+            "stainless stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "port",
+      "label": "Port",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "F",
+          "label": "Full port",
+          "aliases": [
+            "full port"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Reduced port",
+          "aliases": [
+            "reduced port"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "T",
+          "label": "PTFE",
+          "aliases": [
+            "ptfe packing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seats",
+      "label": "Seats",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "T",
+          "label": "PTFE",
+          "aliases": [
+            "ptfe seats"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "RPTFE",
+          "aliases": [
+            "rptfe seats"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "Ends",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\"",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\"",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\"",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\"",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\"",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "125",
+          "label": "1-1/4\"",
+          "aliases": [
+            "1-1/4\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\"",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "250",
+          "label": "2-1/2\"",
+          "aliases": [
+            "2-1/2\""
+          ]
+        },
+        {
+          "code": "300",
+          "label": "3\"",
+          "aliases": [
+            "3\""
+          ]
+        },
+        {
+          "code": "400",
+          "label": "4\"",
+          "aliases": [
+            "4\""
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "ball": "3"
+      },
+      "forbid": {
+        "stem": [
+          "6"
+        ],
+        "seats": [
+          "T"
+        ],
+        "port": [
+          "R"
+        ]
+      },
+      "reason": "the stainless trim sheet prints a stainless stem, RPTFE seats and full port alone"
+    },
+    {
+      "when": {
+        "ball": "6"
+      },
+      "forbid": {
+        "stem": [
+          "3"
+        ],
+        "seats": [
+          "R"
+        ]
+      },
+      "reason": "the brass trim sheets print a brass stem and PTFE seats"
+    },
+    {
+      "when": {
+        "ball": "3"
+      },
+      "forbid": {
+        "size": [
+          "250",
+          "300",
+          "400"
+        ]
+      },
+      "reason": "the stainless trim sheet's size table stops at 2 inch"
+    },
+    {
+      "when": {
+        "port": "R"
+      },
+      "forbid": {
+        "size": [
+          "025",
+          "038",
+          "250",
+          "300",
+          "400"
+        ]
+      },
+      "reason": "the reduced port sheet prints 1/2 inch to 2 inch"
+    }
+  ],
+  "cautions": []
+}

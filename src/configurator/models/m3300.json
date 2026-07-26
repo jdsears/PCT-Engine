@@ -1,0 +1,692 @@
+{
+  "model": "3T3300",
+  "line": "marwin",
+  "displayName": "Marwin 3T-3300R / 3L-3400R three-way brass multi-port ball valve",
+  "match": [
+    "3t3300",
+    "3l3400",
+    "3t-3300r",
+    "3l-3400r",
+    "3300",
+    "3400"
+  ],
+  "source": {
+    "doc": "3t3300_3l3400Series.pdf",
+    "page": 3,
+    "section": "Ordering matrix"
+  },
+  "note": "Extracted by hand from the ordering matrix on the sheet's final page, the 2100 family template: model dash size dash body material, then twelve character positions in six pairs with the slash the price book prints. Side entry, ISO 5211 direct mount, 400 psi WOG, brass. The price book prints codes for this series, 3T-3300R-100-BR/AAS46000003A among them, which is where the slash is evidenced. The limit switch column is headed Limit Swtich, the sheet's own slip. The solenoid and limit switch UT spans are enforced from the ranges printed in their own labels against the UT size named in the chosen operation code, and the start positions are bound to the port, T codes to the T port and L codes to the L port.",
+  "assembly": "{model}-{size}-{body}/{ends}{operation}{pressure}{solenoid}{limitSwitch}{startPosition}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "3T-3300R",
+          "label": "3 way ball valve (T port)",
+          "aliases": [
+            "3t-3300r"
+          ]
+        },
+        {
+          "code": "3L-3400R",
+          "label": "3 way ball valve (L port)",
+          "aliases": [
+            "3l-3400r"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\"",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\"",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\"",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\"",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\"",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "125",
+          "label": "1-1/4\"",
+          "aliases": [
+            "1-1/4\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\"",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "BR",
+          "label": "Brass",
+          "aliases": [
+            "brass"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "AA",
+          "label": "FNPT",
+          "aliases": [
+            "fnpt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operation",
+      "label": "Operation (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "HL",
+          "label": "Lever",
+          "aliases": [
+            "lever"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "None",
+          "aliases": [
+            "none"
+          ]
+        },
+        {
+          "code": "P1",
+          "label": "UT-0A-DA STD",
+          "aliases": [
+            "ut-0a-da std"
+          ]
+        },
+        {
+          "code": "P2",
+          "label": "UT-0-DA STD",
+          "aliases": [
+            "ut-0-da std"
+          ]
+        },
+        {
+          "code": "P3",
+          "label": "UT-1-DA STD",
+          "aliases": [
+            "ut-1-da std"
+          ]
+        },
+        {
+          "code": "P4",
+          "label": "UT-2-DA STD",
+          "aliases": [
+            "ut-2-da std"
+          ]
+        },
+        {
+          "code": "S1",
+          "label": "UT-0-SR STD",
+          "aliases": [
+            "ut-0-sr std"
+          ]
+        },
+        {
+          "code": "S2",
+          "label": "UT-1-SR STD",
+          "aliases": [
+            "ut-1-sr std"
+          ]
+        },
+        {
+          "code": "S3",
+          "label": "UT-2-SR STD",
+          "aliases": [
+            "ut-2-sr std"
+          ]
+        },
+        {
+          "code": "S4",
+          "label": "UT-2.5-SR STD",
+          "aliases": [
+            "ut-2.5-sr std"
+          ]
+        },
+        {
+          "code": "S5",
+          "label": "UT-3-SR-STD (the sheet's own extra dash)",
+          "aliases": [
+            "ut-3-sr-std (the sheet's own extra das"
+          ]
+        },
+        {
+          "code": "M1",
+          "label": "ER-1-2.5-4 110 VAC",
+          "aliases": [
+            "er-1-2.5-4 110 vac"
+          ]
+        },
+        {
+          "code": "M2",
+          "label": "ER-2-5-4 110 VAC",
+          "aliases": [
+            "er-2-5-4 110 vac"
+          ]
+        },
+        {
+          "code": "M3",
+          "label": "ER-3-5-4 110 VAC",
+          "aliases": [
+            "er-3-5-4 110 vac"
+          ]
+        },
+        {
+          "code": "M8",
+          "label": "ER-4-10-4 110 VAC",
+          "aliases": [
+            "er-4-10-4 110 vac"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pressure",
+      "label": "Actuator pressure (5 and 6)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "60",
+          "label": "60 psi",
+          "aliases": [
+            "60 psi"
+          ]
+        },
+        {
+          "code": "80",
+          "label": "80 psi",
+          "aliases": [
+            "80 psi"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "N/A (no pneumatic actuator)",
+          "aliases": [
+            "no pressure"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard pressure"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solenoid",
+      "label": "Solenoid feature (7 and 8)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "00"
+          ]
+        },
+        {
+          "code": "3A",
+          "label": "3W 8551-120VAC N4 UT-0/5, SR",
+          "aliases": [
+            "3a"
+          ]
+        },
+        {
+          "code": "3C",
+          "label": "3W EF8551-120VAc N7 UT-0/5 (the sheet's own lower case c), SR",
+          "aliases": [
+            "3c"
+          ]
+        },
+        {
+          "code": "3J",
+          "label": "3W 8317G35-120VAC N4 UT-0/2.5, SR",
+          "aliases": [
+            "3j"
+          ]
+        },
+        {
+          "code": "3M",
+          "label": "3W 8321G1-120VAC N4 UT-3/5, SR",
+          "aliases": [
+            "3m"
+          ]
+        },
+        {
+          "code": "3Q",
+          "label": "3W EF8317G35-120VAC N7 UT-0/2.5, SR",
+          "aliases": [
+            "3q"
+          ]
+        },
+        {
+          "code": "3R",
+          "label": "3W EF8321G1-120VAC N7 UT-3/5, SR",
+          "aliases": [
+            "3r"
+          ]
+        },
+        {
+          "code": "4A",
+          "label": "4W 8551-120VAC N4 UT-0A, DA",
+          "aliases": [
+            "4a"
+          ]
+        },
+        {
+          "code": "4B",
+          "label": "4W 8551-120VAC N4 UT-0/5, DA",
+          "aliases": [
+            "4b"
+          ]
+        },
+        {
+          "code": "4D",
+          "label": "4W EF8551-120VAC N7 UT-0A, DA",
+          "aliases": [
+            "4d"
+          ]
+        },
+        {
+          "code": "4E",
+          "label": "4W EF8551-120VAC N7 UT0/5 (the sheet prints no dash), DA",
+          "aliases": [
+            "4e"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "zz"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "limitSwitch",
+      "label": "Limit switch (9 and 10)",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "00",
+          "label": "None",
+          "aliases": [
+            "00"
+          ]
+        },
+        {
+          "code": "AA",
+          "label": "LS FMFB-5120-N4 to UT-0/3",
+          "aliases": [
+            "aa"
+          ]
+        },
+        {
+          "code": "AC",
+          "label": "LS AMFB-5120-N7 to UT-0/3",
+          "aliases": [
+            "ac"
+          ]
+        },
+        {
+          "code": "0Z",
+          "label": "Non-standard",
+          "aliases": [
+            "0z"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "startPosition",
+      "label": "Start position (11 and 12)",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "3A",
+          "label": "T3A start position (T port)",
+          "aliases": [
+            "t3a"
+          ]
+        },
+        {
+          "code": "3B",
+          "label": "T3B start position (T port)",
+          "aliases": [
+            "t3b"
+          ]
+        },
+        {
+          "code": "4A",
+          "label": "T4A start position (T port)",
+          "aliases": [
+            "t4a"
+          ]
+        },
+        {
+          "code": "4B",
+          "label": "T4B start position (T port)",
+          "aliases": [
+            "t4b"
+          ]
+        },
+        {
+          "code": "8A",
+          "label": "T8A start position (T port)",
+          "aliases": [
+            "t8a"
+          ]
+        },
+        {
+          "code": "8B",
+          "label": "T8B start position (T port)",
+          "aliases": [
+            "t8b"
+          ]
+        },
+        {
+          "code": "9A",
+          "label": "T9A start position (T port)",
+          "aliases": [
+            "t9a"
+          ]
+        },
+        {
+          "code": "9B",
+          "label": "T9B start position (T port)",
+          "aliases": [
+            "t9b"
+          ]
+        },
+        {
+          "code": "A2",
+          "label": "L2A start position (L port)",
+          "aliases": [
+            "l2a"
+          ]
+        },
+        {
+          "code": "B2",
+          "label": "L2B start position (L port)",
+          "aliases": [
+            "l2b"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "model": "3T-3300R"
+      },
+      "forbid": {
+        "startPosition": [
+          "A2",
+          "B2"
+        ]
+      },
+      "reason": "the L2A and L2B start positions belong to the L port; the T port takes the T start positions"
+    },
+    {
+      "when": {
+        "model": "3L-3400R"
+      },
+      "forbid": {
+        "startPosition": [
+          "3A",
+          "3B",
+          "4A",
+          "4B",
+          "8A",
+          "8B",
+          "9A",
+          "9B"
+        ]
+      },
+      "reason": "the T start positions belong to the T port; the L port takes L2A or L2B"
+    },
+    {
+      "when": {
+        "operation": [
+          "HL",
+          "NN",
+          "M1",
+          "M2",
+          "M3",
+          "M8"
+        ]
+      },
+      "forbid": {
+        "pressure": [
+          "60",
+          "80"
+        ]
+      },
+      "reason": "an air supply pressure applies only to a pneumatic actuator"
+    },
+    {
+      "when": {
+        "operation": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ]
+      },
+      "forbid": {
+        "pressure": [
+          "NN"
+        ]
+      },
+      "reason": "a pneumatic actuator needs its air supply pressure"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "3A",
+          "3C",
+          "3J",
+          "3M",
+          "3Q",
+          "3R"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "M1",
+          "M2",
+          "M3",
+          "M8",
+          "P1",
+          "P2",
+          "P3",
+          "P4"
+        ]
+      },
+      "reason": "a three-way solenoid pairs with a spring return actuator, as its own column marks"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "4A",
+          "4B",
+          "4D",
+          "4E"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "M1",
+          "M2",
+          "M3",
+          "M8",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5"
+        ]
+      },
+      "reason": "a four-way solenoid pairs with a double acting actuator, as its own column marks"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "3J",
+          "3Q"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "S5"
+        ]
+      },
+      "reason": "the 8317 solenoids cover UT-0 to UT-2.5, per their printed span"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "3M",
+          "3R"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "S1",
+          "S2",
+          "S3",
+          "S4"
+        ]
+      },
+      "reason": "the 8321 solenoids cover UT-3 to UT-5, per their printed span"
+    },
+    {
+      "when": {
+        "solenoid": [
+          "4A",
+          "4D"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "P2",
+          "P3",
+          "P4"
+        ]
+      },
+      "reason": "these solenoids are marked for the UT-0A actuator alone"
+    },
+    {
+      "when": {
+        "limitSwitch": [
+          "AA",
+          "AC"
+        ]
+      },
+      "forbid": {
+        "operation": [
+          "HL",
+          "NN",
+          "M1",
+          "M2",
+          "M3",
+          "M8"
+        ]
+      },
+      "reason": "a limit switch mounts to a pneumatic actuator"
+    }
+  ],
+  "cautions": []
+}
