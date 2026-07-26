@@ -1,4 +1,6 @@
 import { pool } from '../db.mjs';
+import { requireCampaign } from '../campaigns/registry.mjs';
+import { confidentialityRule } from '../campaigns/prompts.mjs';
 import { gatherGrounding } from './grounding.mjs';
 import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGreeting } from './draft.mjs';
 
@@ -9,6 +11,10 @@ import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGree
 // from then on drafts are responses. A follow-up is a draft like any other,
 // through the same review queue, the same grounding check and the same send
 // gates; nothing here sends.
+
+// The confidentiality ceiling is the campaign's, so a campaign cannot protect
+// its customers in the cold open and leak them three messages later.
+const CAMPAIGN_DEF = requireCampaign(process.env.DEFAULT_CAMPAIGN || 'marwin_dc');
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -62,7 +68,7 @@ export function reSubject(subject) {
 const FOLLOWUP_SYSTEM =
   "You write a short follow-up email for Premier Control Technologies (PCT), a UK supplier of flow control products. An earlier email (provided) got no reply; this is the next touch on the same thread. " +
   "HARD RULE: you may state only what the GROUNDING supports, which includes what the previous email already said. No new claims, no invented developments, no manufactured urgency, no invented deadline or reason to reply now. Never write 'just bumping', 'just checking in' or 'circling back', and never guilt the recipient for not replying. " +
-  "CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. No part-specific spec claims. " +
+  confidentialityRule(CAMPAIGN_DEF) + " No part-specific spec claims. " +
   "VOICE: plain technical British English, calm, an engineer briefly re-raising something with a peer. No em dashes or en dashes, never the word genuinely, no exclamation marks, no pleasantries, no pressure. " +
   "STRUCTURE, two or three sentences: a fresh, plain angle on why it is worth a look, drawn from the grounding rather than a restatement of the whole first email; the same single light ask (a short call, or whether they are specifying flow control on the project). Do not apologise for writing again. " +
   "NO SIGN-OFF, absolute: the email ends on the ask. No name, no team or company line, no web address, no contact details; the signature is appended by the system. " +

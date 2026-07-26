@@ -1,4 +1,5 @@
 import express from 'express';
+import { listCampaigns, getCampaign } from './campaigns/registry.mjs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -282,6 +283,63 @@ app.get('/api/insights/top-docs', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// Engine activity split by campaign.
+//
+// The three routes above read copilot_queries, which has no campaign and never
+// will: nobody asks the co-pilot a question on behalf of a campaign. So the
+// split cannot come from the query log. It comes from the tables that are
+// campaign-shaped, the register, the sweep, the funnel and the review queue,
+// and the co-pilot cards say plainly that they cover the whole engine rather
+// than wearing a campaign label they cannot honour.
+//
+// Every registered campaign appears, including one added this morning with
+// nothing behind it yet, because a campaign missing from the list reads as an
+// error where a row of zeroes reads as what it is.
+app.get('/api/insights/campaigns', async (req, res) => {
+  try {
+    const days = clampDays(req.query.days, 30);
+    const [sweep, funnel, drafts, register] = await Promise.all([
+      pool.query(
+        `SELECT campaign,
+                count(*)::int AS swept,
+                count(*) FILTER (WHERE COALESCE(relevant, dc_relevant))::int AS passed
+         FROM signals WHERE observed_at >= now() - make_interval(days => $1)
+         GROUP BY campaign`, [days]),
+      pool.query(
+        `SELECT campaign, stage, count(*)::int AS n
+         FROM leads WHERE stage = ANY($1) GROUP BY 1, 2`, [STAGES]),
+      pool.query(
+        `SELECT campaign,
+                count(*) FILTER (WHERE status = 'draft')::int AS in_review,
+                count(*) FILTER (WHERE status = 'approved')::int AS approved,
+                count(*) FILTER (WHERE status = 'sent')::int AS sent
+         FROM outbound_drafts GROUP BY campaign`, [])
+        .catch(() => ({ rows: [] })),
+      pool.query(`SELECT campaign, count(*)::int AS n FROM company_campaigns GROUP BY campaign`, []),
+    ]);
+
+    const by = (rows, key = 'campaign') => Object.fromEntries(rows.map(r => [r[key], r]));
+    const sweepBy = by(sweep.rows), draftBy = by(drafts.rows), regBy = by(register.rows);
+    const stageBy = {};
+    for (const r of funnel.rows) (stageBy[r.campaign] ||= {})[r.stage] = r.n;
+
+    res.json({
+      days,
+      campaigns: listCampaigns().map(c => {
+        const s = sweepBy[c.id] || {}, d = draftBy[c.id] || {}, stages = stageBy[c.id] || {};
+        return {
+          id: c.id, displayName: c.displayName, status: c.status,
+          accounts: regBy[c.id]?.n || 0,
+          signals: { swept: s.swept || 0, passed: s.passed || 0 },
+          leads: STAGES.reduce((n, st) => n + (stages[st] || 0), 0),
+          stages: STAGES.map(st => ({ stage: st, count: stages[st] || 0 })),
+          drafts: { inReview: d.in_review || 0, approved: d.approved || 0, sent: d.sent || 0 },
+        };
+      }),
+    });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 // Read-only views over the research stage for the web app. Same posture as the
 // insights routes: open now, behind the access gate with everything else later.
 const regionName = code => (code && REGIONS[code]?.name) || code || null;
@@ -304,24 +362,27 @@ app.get('/api/pipeline', async (req, res) => {
     const dir = req.query.dir === 'asc' ? 'ASC' : 'DESC';
     const q = String(req.query.q || '').trim();
 
+    const campaign = campaignFilter(req);
     const counts = await pool.query(
-      `SELECT stage, count(*)::int AS n FROM leads WHERE stage = ANY($1) GROUP BY stage`, [STAGES]);
+      `SELECT stage, count(*)::int AS n FROM leads
+       WHERE stage = ANY($1) AND ($2::text IS NULL OR campaign = $2) GROUP BY stage`, [STAGES, campaign]);
     const byStage = Object.fromEntries(counts.rows.map(r => [r.stage, r.n]));
 
     // The track keeps the unfiltered funnel counts; total is the match count for
     // the list, so "Showing x of n" stays honest under a search.
-    const where = `l.stage = $1 AND ($2 = '' OR co.name ILIKE '%' || $2 || '%' OR ct.full_name ILIKE '%' || $2 || '%')`;
+    const where = `l.stage = $1 AND ($2 = '' OR co.name ILIKE '%' || $2 || '%' OR ct.full_name ILIKE '%' || $2 || '%')
+      AND ($3::text IS NULL OR l.campaign = $3)`;
     const total = await pool.query(
       `SELECT count(*)::int AS n
        FROM leads l JOIN companies co ON co.id = l.company_id
-       LEFT JOIN contacts ct ON ct.id = l.contact_id WHERE ${where}`, [stage, q]);
+       LEFT JOIN contacts ct ON ct.id = l.contact_id WHERE ${where}`, [stage, q, campaign]);
     const { rows } = await pool.query(
       `SELECT co.name AS company, l.score, COALESCE(l.region, co.region) AS region,
-              ct.full_name, ct.role_title
+              l.campaign, ct.full_name, ct.role_title
        FROM leads l JOIN companies co ON co.id = l.company_id
        LEFT JOIN contacts ct ON ct.id = l.contact_id
        WHERE ${where}
-       ORDER BY ${LEAD_SORTS[sort]} ${dir} NULLS LAST, co.name ASC LIMIT $3`, [stage, q, limit]);
+       ORDER BY ${LEAD_SORTS[sort]} ${dir} NULLS LAST, co.name ASC LIMIT $4`, [stage, q, campaign, limit]);
     res.json({
       stage, limit, sort, dir: dir.toLowerCase(), q,
       stages: STAGES.map(s => ({ stage: s, count: byStage[s] || 0 })),
@@ -330,6 +391,7 @@ app.get('/api/pipeline', async (req, res) => {
         company: l.company,
         contact: l.full_name ? `${l.full_name}${l.role_title ? ', ' + l.role_title : ''}` : null,
         region: regionName(l.region),
+        campaign: l.campaign,
         score: l.score == null ? null : Math.round(Number(l.score)),
       })),
     });
@@ -338,13 +400,15 @@ app.get('/api/pipeline', async (req, res) => {
 
 // Read-only analytics over the live funnel: regions, score spread, coverage and
 // signal momentum across the active stages.
-app.get('/api/pipeline/analytics', async (_req, res) => {
+app.get('/api/pipeline/analytics', async (req, res) => {
   try {
+    const campaign = campaignFilter(req);
     const [regions, scores, coverage, momentum] = await Promise.all([
       pool.query(
         `SELECT COALESCE(l.region, co.region) AS region, count(*)::int AS n
          FROM leads l JOIN companies co ON co.id = l.company_id
-         WHERE l.stage = ANY($1) GROUP BY 1 ORDER BY n DESC`, [STAGES]),
+         WHERE l.stage = ANY($1) AND ($2::text IS NULL OR l.campaign = $2)
+         GROUP BY 1 ORDER BY n DESC`, [STAGES, campaign]),
       pool.query(
         `SELECT count(*) FILTER (WHERE score >= 70)::int AS strong,
                 count(*) FILTER (WHERE score >= 40 AND score < 70)::int AS middle,
@@ -352,7 +416,7 @@ app.get('/api/pipeline/analytics', async (_req, res) => {
                 count(*) FILTER (WHERE score IS NULL)::int AS unscored,
                 round(percentile_cont(0.5) WITHIN GROUP (ORDER BY score))::int AS median,
                 count(*)::int AS total
-         FROM leads WHERE stage = ANY($1)`, [STAGES]),
+         FROM leads WHERE stage = ANY($1) AND ($2::text IS NULL OR campaign = $2)`, [STAGES, campaign]),
       pool.query(
         `SELECT count(*)::int AS leads,
                 count(*) FILTER (WHERE EXISTS (
@@ -361,11 +425,17 @@ app.get('/api/pipeline/analytics', async (_req, res) => {
                 ))::int AS with_contact,
                 count(*) FILTER (WHERE co.domain IS NOT NULL)::int AS with_domain
          FROM leads l JOIN companies co ON co.id = l.company_id
-         WHERE l.stage = ANY($1)`, [STAGES]),
+         WHERE l.stage = ANY($1) AND ($2::text IS NULL OR l.campaign = $2)`, [STAGES, campaign]),
+      // A campaign's momentum counts that campaign's own signals against that
+      // campaign's leads. Unscoped, a quiet campaign would borrow a busy one's
+      // numbers and read as active when nothing had moved.
       pool.query(
         `SELECT count(*)::int AS n FROM signals s
          WHERE s.observed_at >= now() - interval '30 days'
-           AND s.company_id IN (SELECT company_id FROM leads WHERE stage = ANY($1))`, [STAGES]),
+           AND ($2::text IS NULL OR s.campaign = $2)
+           AND s.company_id IN (
+             SELECT company_id FROM leads
+             WHERE stage = ANY($1) AND ($2::text IS NULL OR campaign = $2))`, [STAGES, campaign]),
     ]);
     res.json({
       regions: regions.rows.map(r => ({ region: regionName(r.region) || 'Unassigned', n: r.n })),
@@ -380,19 +450,32 @@ app.get('/api/pipeline/analytics', async (_req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-app.get('/api/accounts', async (_req, res) => {
+app.get('/api/accounts', async (req, res) => {
   try {
+    // Companies are shared and membership is not, so a scoped view asks the
+    // membership table. On All the account still lists once, carrying every
+    // campaign it belongs to, because one account in two campaigns is one
+    // account, not two rows.
+    const campaign = campaignFilter(req);
     const { rows } = await pool.query(
       `SELECT c.id, c.name, c.company_type, c.region, c.domain, c.ch_number,
-              round(c.icp_score)::int AS score,
-              (SELECT count(*)::int FROM signals s WHERE s.company_id = c.id) AS signals,
+              round(COALESCE(cc.score, c.icp_score))::int AS score,
+              (SELECT count(*)::int FROM signals s WHERE s.company_id = c.id
+                 AND ($1::text IS NULL OR s.campaign = $1)) AS signals,
               (SELECT count(*)::int FROM contacts ct
-                WHERE ct.company_id = c.id AND ct.in_decision_orbit AND NOT ct.suppressed) AS people
-       FROM companies c WHERE c.named_account
-       ORDER BY c.icp_score DESC NULLS LAST, c.name LIMIT 200`);
+                WHERE ct.company_id = c.id AND ct.in_decision_orbit AND NOT ct.suppressed) AS people,
+              (SELECT array_agg(x.campaign ORDER BY x.campaign) FROM company_campaigns x
+                 WHERE x.company_id = c.id) AS campaigns
+       FROM companies c
+       LEFT JOIN company_campaigns cc ON cc.company_id = c.id AND cc.campaign = $1
+       WHERE c.named_account
+         AND ($1::text IS NULL OR EXISTS (
+           SELECT 1 FROM company_campaigns m WHERE m.company_id = c.id AND m.campaign = $1))
+       ORDER BY COALESCE(cc.score, c.icp_score) DESC NULLS LAST, c.name LIMIT 200`, [campaign]);
     res.json({ companies: rows.map(c => ({
       id: c.id, name: c.name, type: c.company_type, region: regionName(c.region),
       domain: c.domain, chNumber: c.ch_number, score: c.score, signals: c.signals, people: c.people,
+      campaigns: c.campaigns || [],
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -449,39 +532,66 @@ app.get('/api/accounts/:id', async (req, res) => {
 const SIGNAL_FILTERS = {
   filing: ['ch_filing', 'ch_incorporation'],
   director: ['ch_director_change'],
-  build: ['news_dc_build', 'planning'],
+  build: ['news_dc_build', 'news_pharma_build', 'planning'],
   contract: ['news_contract'],
 };
+// The campaign registry, for the UI switcher. Reading from the registry means
+// adding a campaign never means editing the front end.
+// The campaign filter a scoped endpoint reads. 'all' or absent means every
+// campaign, which is what the switcher's All position sends; anything else
+// narrows. Unknown ids narrow to nothing rather than silently widening, so a
+// stale bookmark cannot show one campaign's data under another's label.
+function campaignFilter(req) {
+  const c = String(req.query.campaign || '').trim();
+  return !c || c === 'all' ? null : c;
+}
+
+app.get('/api/campaigns', async (_req, res) => {
+  try { res.json({ campaigns: listCampaigns() }); }
+  catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 app.get('/api/signals', async (req, res) => {
   try {
     const types = SIGNAL_FILTERS[req.query.type] || null;
+    const campaign = req.query.campaign && req.query.campaign !== 'all' ? String(req.query.campaign) : null;
     const { rows } = await pool.query(
-      `SELECT s.id, s.signal_type, s.title, s.url, s.observed_at, s.geo_scope,
+      `SELECT s.id, s.signal_type, s.title, s.url, s.observed_at, s.geo_scope, s.campaign,
               c.id AS company_id, c.name AS company
        FROM signals s LEFT JOIN companies c ON c.id = s.company_id
-       WHERE s.dc_relevant IS NOT FALSE AND ($1::text[] IS NULL OR s.signal_type = ANY($1))
-       ORDER BY s.observed_at DESC LIMIT 50`, [types]);
+       WHERE COALESCE(s.relevant, s.dc_relevant) IS NOT FALSE
+         AND ($1::text[] IS NULL OR s.signal_type = ANY($1))
+         AND ($2::text IS NULL OR s.campaign = $2)
+       ORDER BY s.observed_at DESC LIMIT 50`, [types, campaign]);
     const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return null; } };
     res.json({ signals: rows.map(s => ({
-      id: s.id, type: s.signal_type, title: s.title, observedAt: s.observed_at, geoScope: s.geo_scope,
+      id: s.id, type: s.signal_type, title: s.title, observedAt: s.observed_at, geoScope: s.geo_scope, campaign: s.campaign,
       source: host(s.url) || (s.signal_type.startsWith('ch_') ? 'Companies House stream' : null),
       companyId: s.company_id, company: s.company,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-// The BD watchlist: data-centre operators the engine has spotted expanding, where
-// a UK move is plausible but not yet a project. Intelligence, not leads.
-app.get('/api/watchlist', async (_req, res) => {
+// The BD watchlist: organisations the engine has spotted expanding, where a UK
+// move is plausible but not yet a project. Intelligence, not leads.
+//
+// The standing copy comes from the campaign, because "data centre operators
+// expanding" is a true sentence about one campaign and a false one about the
+// next. On All the wording stays general rather than borrowing a campaign's.
+const WATCHLIST_INTRO_ALL = 'Organisations the engine has spotted expanding across every campaign, where a UK move is plausible but not yet a named project. These are business-development targets to approach or watch, not leads in the pipeline.';
+app.get('/api/watchlist', async (req, res) => {
   try {
+    const campaign = campaignFilter(req);
+    const intro = (campaign && getCampaign(campaign)?.watchlistCopy) || WATCHLIST_INTRO_ALL;
     const { rows } = await pool.query(
-      `SELECT id, signal_type, title, url, operator, observed_at FROM signals
-       WHERE dc_relevant AND geo_scope = 'expansion_watch'
-       ORDER BY observed_at DESC LIMIT 50`);
+      `SELECT id, signal_type, title, url, operator, observed_at, campaign FROM signals
+       WHERE COALESCE(relevant, dc_relevant) AND geo_scope = 'expansion_watch'
+         AND ($1::text IS NULL OR campaign = $1)
+       ORDER BY observed_at DESC LIMIT 50`, [campaign]);
     const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return null; } };
-    res.json({ watchlist: rows.map(s => ({
+    res.json({ intro, watchlist: rows.map(s => ({
       id: s.id, type: s.signal_type, title: s.title, operator: s.operator,
-      source: host(s.url), url: s.url, observedAt: s.observed_at,
+      source: host(s.url), url: s.url, observedAt: s.observed_at, campaign: s.campaign,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -1011,6 +1121,13 @@ app.post('/api/outbound/autodraft', async (req, res) => {
 app.get('/api/outbound/drafts', async (req, res) => {
   try {
     const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : null;
+    // The rehearsal lane is its own campaign and is never hidden by a campaign
+    // filter, since a rehearsal must stay visible to the person running it.
+    const campaign = campaignFilter(req);
+    const params = [];
+    const clauses = [];
+    if (status) { params.push(status); clauses.push(`d.status = $${params.length}`); }
+    if (campaign) { params.push(campaign); clauses.push(`(d.campaign = $${params.length} OR d.campaign = 'rehearsal')`); }
     const { rows } = await pool.query(
       `SELECT d.id, d.subject, d.body, d.status, d.rationale, d.grounding, d.grounding_flags,
               d.email_type, d.campaign, d.created_at, d.sent_at,
@@ -1019,13 +1136,13 @@ app.get('/api/outbound/drafts', async (req, res) => {
        FROM outbound_drafts d
        JOIN companies c ON c.id = d.company_id
        LEFT JOIN contacts ct ON ct.id = d.contact_id
-       ${status ? 'WHERE d.status = $1' : ''}
-       ORDER BY d.created_at DESC LIMIT 200`,
-      status ? [status] : []);
+       ${clauses.length ? 'WHERE ' + clauses.join(' AND ') : ''}
+       ORDER BY d.created_at DESC LIMIT 200`, params);
     res.json({ drafts: rows.map(r => ({
       id: r.id, subject: r.subject, body: r.body, status: r.status,
       rationale: r.rationale, grounding: r.grounding || null, groundingFlags: r.grounding_flags || [],
-      emailType: r.email_type, rehearsal: r.campaign === 'rehearsal', createdAt: r.created_at, sentAt: r.sent_at,
+      emailType: r.email_type, rehearsal: r.campaign === 'rehearsal', campaign: r.campaign,
+      createdAt: r.created_at, sentAt: r.sent_at,
       company: r.company, region: r.region, score: r.icp_score,
       contact: r.contact_name ? { name: r.contact_name, role: r.role_title, email: r.email } : null,
     })) });

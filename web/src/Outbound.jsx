@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from './api.js';
+import { withCampaign, CampaignChip, useCampaignList, isAll } from './CampaignSwitcher.jsx';
 import { fmtClockDay, companyLabel } from './labels.js';
 
 const FILTERS = [
@@ -29,7 +30,7 @@ const jsonOpts = (method, payload) => ({
   method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload || {}),
 });
 
-function DraftCard({ draft, recipients, testOn, onChanged }) {
+function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignList }) {
   const [subject, setSubject] = useState(draft.subject);
   const [body, setBody] = useState(draft.body);
   const [to, setTo] = useState(recipients[0] || '');
@@ -65,6 +66,7 @@ function DraftCard({ draft, recipients, testOn, onChanged }) {
       <div className="ob-head">
         <div className="ob-co">{companyLabel(draft.company)}</div>
         <div className="ob-pills">
+          {showChip && !draft.rehearsal && <CampaignChip campaign={draft.campaign} list={campaignList} />}
           {draft.rehearsal && <span className="pill">rehearsal</span>}
           {draft.emailType === 'followup' && <span className="pill">follow-up</span>}
           {draft.emailType === 'response' && <span className="pill">response</span>}
@@ -302,7 +304,8 @@ function ConversationCard({ convo, onChanged }) {
   );
 }
 
-export default function Outbound() {
+export default function Outbound({ campaign }) {
+  const campaignList = useCampaignList();
   const [status, setStatus] = useState(null);
   const [filter, setFilter] = useState('draft');
   const [drafts, setDrafts] = useState(null);
@@ -318,10 +321,10 @@ export default function Outbound() {
   // setState only inside the async callbacks, never synchronously in the effect:
   // the previous list stays until the new one arrives, matching the other views.
   const loadDrafts = useCallback((f) => {
-    apiFetch(`/api/outbound/drafts?status=${f}`).then(r => r.json())
+    apiFetch(withCampaign(`/api/outbound/drafts?status=${f}`, campaign)).then(r => r.json())
       .then(d => { setDrafts(d.drafts || []); setState('ready'); })
       .catch(() => setState('error'));
-  }, []);
+  }, [campaign]);
   const loadReplies = useCallback(() => {
     apiFetch('/api/outbound/replies').then(r => r.json())
       .then(d => { setReplies(d.replies || []); setState('ready'); })
@@ -338,7 +341,7 @@ export default function Outbound() {
     if (filter === 'replies') loadReplies();
     else if (filter === 'conversations') loadConvos();
     else loadDrafts(filter);
-  }, [filter, loadDrafts, loadReplies, loadConvos]);
+  }, [filter, campaign, loadDrafts, loadReplies, loadConvos]);
   const refresh = () => {
     loadStatus();
     if (filter === 'replies') loadReplies();
@@ -347,6 +350,9 @@ export default function Outbound() {
   };
 
   const killOn = status?.killSwitch !== 'off';
+  // The rehearsal lane already carries its own marker, so only real campaign
+  // drafts take a campaign chip, and only when the queue is showing every one.
+  const showChips = isAll(campaign) && campaignList.length > 1;
   const testOn = status?.testSends === 'on';
   const recipients = status?.testRecipients || [];
   const counts = status?.counts || {};
@@ -518,7 +524,8 @@ export default function Outbound() {
         </p>
       )}
       {state === 'ready' && filter !== 'replies' && filter !== 'conversations' && drafts && drafts.map(d => (
-        <DraftCard key={d.id} draft={d} recipients={recipients} testOn={testOn} onChanged={refresh} />
+        <DraftCard key={d.id} draft={d} recipients={recipients} testOn={testOn} onChanged={refresh}
+          showChip={showChips} campaignList={campaignList} />
       ))}
     </div>
   );

@@ -1,5 +1,6 @@
 import { pool } from '../db.mjs';
 import { search } from '../retrieve.mjs';
+import { requireCampaign } from '../campaigns/registry.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 
 // The highest-scoring component reason from the stored ICP breakdown, in the
@@ -18,7 +19,7 @@ function topReason(breakdown) {
 // recorded), and grounded product facts retrieved from the corpus with citations.
 // Missing pieces are reported in `missing`, never invented around; the drafter
 // must write less when grounding is thin, not fill the gap.
-export async function gatherGrounding(leadId, { k = 4 } = {}) {
+export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc' } = {}) {
   const lead = (await pool.query(
     `SELECT l.id, l.company_id, l.contact_id, l.campaign, l.score, l.score_breakdown,
             c.name AS company, c.company_type, c.region
@@ -52,8 +53,17 @@ export async function gatherGrounding(leadId, { k = 4 } = {}) {
   let product = [];
   let blockedSuppliers = [];
   try {
-    const q = `Marwin control valve data centre chilled water cooling ${lead.company_type || ''}`.trim();
-    const hits = await search(q, { filters: { line: 'marwin' }, k });
+    // The campaign's grounding scope, so a pharma draft cannot cite data centre
+    // material and a data centre draft cannot cite sanitary material. One line
+    // filters directly; several are searched in turn and merged, since the
+    // retrieval filter takes a single line.
+    const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
+    const q = `${def.grounding.retrievalFocus} ${lead.company_type || ''}`.trim();
+    const lines = def.grounding.lines;
+    const per = Math.max(1, Math.ceil(k / lines.length));
+    const gathered = [];
+    for (const line of lines) gathered.push(...await search(q, { filters: { line }, k: per }));
+    const hits = gathered.slice(0, k);
     product = hits.map(h => ({
       title: h.title, page: h.page ?? null, section: h.section ?? null, sourceId: h.sourceId,
       snippet: (h.content || h.snippet || '').slice(0, 400),

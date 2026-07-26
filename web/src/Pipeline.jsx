@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from './api.js';
 import { companyLabel } from './labels.js';
+import { withCampaign, CampaignChip, useCampaignList, isAll } from './CampaignSwitcher.jsx';
 
 const STAGE_DEFS = [
   { id: 'sourced', label: 'Sourced', left: '6%' },
@@ -31,7 +32,8 @@ function Head({ children }) {
   );
 }
 
-export default function Pipeline({ isMobile }) {
+export default function Pipeline({ isMobile, campaign }) {
+  const campaignList = useCampaignList();
   const [stage, setStage] = useState('researched');
   const [limit, setLimit] = useState(10);
   const [sort, setSort] = useState('score');
@@ -52,21 +54,21 @@ export default function Pipeline({ isMobile }) {
     let live = true;
     const params = new URLSearchParams({ stage, limit: String(limit), sort, dir });
     if (q) params.set('q', q);
-    apiFetch(`/api/pipeline?${params}`)
+    apiFetch(withCampaign(`/api/pipeline?${params}`, campaign))
       .then(r => r.json())
       .then(d => { if (live) { setData(d); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
-  }, [stage, limit, sort, dir, q]);
+  }, [stage, limit, sort, dir, q, campaign]);
 
   useEffect(() => {
     let live = true;
-    apiFetch('/api/pipeline/analytics')
+    apiFetch(withCampaign('/api/pipeline/analytics', campaign))
       .then(r => r.json())
       .then(d => { if (live) setAnalytics(d); })
       .catch(() => {});
     return () => { live = false; };
-  }, []);
+  }, [campaign]);
 
   function clickSort(s) {
     if (sort === s.id) setDir(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -82,6 +84,9 @@ export default function Pipeline({ isMobile }) {
   const total = data?.total ?? 0;
   const stageDef = STAGE_DEFS.find(s => s.id === stage);
   const hasLeads = leads.length > 0;
+  // Rows carry their campaign only when the view is mixed. Under a scoped label
+  // every row is that campaign and the marker would be noise.
+  const showChips = isAll(campaign) && campaignList.length > 1;
 
   const regionMax = Math.max(1, ...(analytics?.regions || []).map(r => r.n));
   const spread = analytics ? [
@@ -152,7 +157,10 @@ export default function Pipeline({ isMobile }) {
               <div className="lead-row" key={i}>
                 <div className="lead-main">
                   <div className="lead-company">{companyLabel(l.company)}</div>
-                  <div className="lead-contact">{l.contact || 'No contact yet'}</div>
+                  <div className="lead-contact">
+                    {l.contact || 'No contact yet'}
+                    {showChips && <CampaignChip campaign={l.campaign} list={campaignList} />}
+                  </div>
                 </div>
                 <div className="lead-side">
                   {l.region && <span className="pill">{l.region}</span>}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { TYPE_LABELS, fmtClockDay, fmtMonthYear, companyLabel } from './labels.js';
 import { CloseIcon } from './icons.jsx';
 import { apiFetch } from './api.js';
+import { withCampaign, CampaignChip, useCampaignList, isAll } from './CampaignSwitcher.jsx';
 
 const typeLabel = t => TYPE_LABELS[t] || '—';
 
@@ -106,19 +107,20 @@ function DetailPanel({ id, isMobile, onClose }) {
   );
 }
 
-export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) {
+export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, campaign }) {
   const [companies, setCompanies] = useState(null);
   const [state, setState] = useState('loading');
   const [selected, setSelected] = useState(null);
+  const campaignList = useCampaignList();
 
   useEffect(() => {
     let live = true;
-    apiFetch('/api/accounts')
+    apiFetch(withCampaign('/api/accounts', campaign))
       .then(r => r.json())
       .then(d => { if (live) { setCompanies(d.companies || []); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
-  }, []);
+  }, [campaign]);
 
   // A jump from Signals lands here with the company already chosen.
   useEffect(() => {
@@ -127,6 +129,23 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
 
   if (state === 'loading') return <div className="content-pad"><p className="muted-note">Loading accounts.</p></div>;
   if (state === 'error') return <div className="content-pad"><p className="muted-note">Accounts are not available right now.</p></div>;
+
+  // A company can belong to more than one campaign and still be one account, so
+  // the mixed view marks every membership rather than picking one.
+  const showChips = isAll(campaign) && campaignList.length > 1;
+  const chips = c => (showChips ? (c.campaigns || []) : []).map(id => (
+    <CampaignChip key={id} campaign={id} list={campaignList} />
+  ));
+
+  if (companies.length === 0) {
+    return (
+      <div className="content-pad">
+        <p className="muted-note">
+          No named accounts on this campaign's register yet. Accounts appear once the campaign has been seeded or a sweep has matched a company to it.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="content-pad">
@@ -144,7 +163,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
           </div>
           {companies.map(c => (
             <button className="acc-grid acc-row" key={c.id} onClick={() => setSelected(c.id)}>
-              <div className="acc-name">{companyLabel(c.name)}</div>
+              <div className="acc-name">{companyLabel(c.name)}{chips(c)}</div>
               <div className="acc-dim">{typeLabel(c.type)}</div>
               <div className="acc-dim">{c.region || '—'}</div>
               <div className={`acc-flagged${c.domain ? '' : ' missing'}`}>
@@ -176,6 +195,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed }) 
               <div className="acc-card-meta">
                 <span className="pill">{typeLabel(c.type)}</span>
                 {c.region && <span className="pill">{c.region}</span>}
+                {chips(c)}
                 <span className="acc-card-signals">{c.people ?? 0} people · {c.signals} signals</span>
                 {(!c.domain || !c.chNumber) && (
                   <span className="acc-card-flag"><span className="flag-dot" />{!c.domain ? 'No domain' : 'CH unmatched'}</span>

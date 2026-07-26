@@ -1,29 +1,35 @@
 import { useState, useEffect } from 'react';
 import { SIGNAL_TYPE_LABELS, fmtClockDay, companyLabel } from './labels.js';
 import { apiFetch } from './api.js';
+import { CampaignChip, useCampaignList, isAll } from './CampaignSwitcher.jsx';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'filing', label: 'Filings' },
   { id: 'director', label: 'Director changes' },
-  { id: 'build', label: 'DC build news' },
+  { id: 'build', label: 'Build news' },
   { id: 'contract', label: 'Contracts' },
 ];
 
-export default function Signals({ onOpenCompany }) {
+export default function Signals({ onOpenCompany , campaign }) {
   const [filter, setFilter] = useState('all');
   const [signals, setSignals] = useState(null);
   const [state, setState] = useState('loading');
+  const campaignList = useCampaignList();
+  const showChips = isAll(campaign) && campaignList.length > 1;
 
   useEffect(() => {
     let live = true;
-    const q = filter === 'all' ? '' : `?type=${filter}`;
+    const params = new URLSearchParams();
+    if (filter !== 'all') params.set('type', filter);
+    if (campaign && campaign !== 'all') params.set('campaign', campaign);
+    const q = params.toString() ? `?${params}` : '';
     apiFetch(`/api/signals${q}`)
       .then(r => r.json())
       .then(d => { if (live) { setSignals(d.signals || []); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
-  }, [filter]);
+  }, [filter, campaign]);
 
   return (
     <div className="content-pad">
@@ -53,6 +59,7 @@ export default function Signals({ onOpenCompany }) {
                   <span className="signal-nocompany"><span className="flag-dot" />No matched company</span>
                 )}
                 {s.source && <span className="signal-source">{s.source}</span>}
+                {showChips && <CampaignChip campaign={s.campaign} list={campaignList} />}
               </div>
             </div>
           ))}

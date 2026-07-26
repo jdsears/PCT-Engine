@@ -1,4 +1,6 @@
 import { pool } from '../db.mjs';
+import { requireCampaign } from '../campaigns/registry.mjs';
+import { confidentialityRule } from '../campaigns/prompts.mjs';
 import { search } from '../retrieve.mjs';
 import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGreeting } from './draft.mjs';
 import { reSubject } from './followups.mjs';
@@ -11,6 +13,10 @@ import { promptLinksBlock } from './links.mjs';
 // is a draft like any other: review queue, grounding check, guardrails, human
 // approval, and it sends as a threaded reply. The goal of every response is
 // the same, a short meeting, video or in person, then handoff.
+
+// The confidentiality ceiling is the campaign's, so a campaign cannot protect
+// its customers in the cold open and leak them three messages later.
+const CAMPAIGN_DEF = requireCampaign(process.env.DEFAULT_CAMPAIGN || 'marwin_dc');
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -38,7 +44,7 @@ const RESPOND_SYSTEM =
   "HARD RULE: you may state only what the GROUNDING supports: the thread so far, the prospect's reply, the corpus extracts from PCT's own documents, and the standing range facts. If their question cannot be answered from these, say plainly that you will confirm the detail with engineering and come back, and never guess or improvise a specification, price, lead time or capability. " +
   "OBJECTIONS: acknowledge the point plainly and answer only what the facts support. Never argue past them, never discount, never invent a counter-example. A price question gets no number unless one is in the extracts; offer to put a quotation together instead. " +
   "GOAL: every response works towards one thing, a short meeting, video call or a visit, where a specialist can take it properly. One light ask. If a booking link is provided in the grounding, include it exactly as given; otherwise offer to suggest times. " +
-  "CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. " +
+  confidentialityRule(CAMPAIGN_DEF) + " " +
   "VOICE: plain technical British English, calm, an engineer answering a peer. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hype. Three to six sentences. Do not use the recipient's name inside the body text; the greeting line carries it once, and repeating it reads like a telesales script. " +
   "NO SIGN-OFF, absolute: the reply ends on the ask. No name, no team or company line, no contact details; the signature is appended by the system. The only web address permitted is the booking link exactly as the grounding gives it; any other address you write would be invented. " +
   "SHAPE: two or three short paragraphs separated by blank lines, never one dense block. Answer their point first, then the one light ask. " +

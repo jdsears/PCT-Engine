@@ -1,5 +1,7 @@
 import { voiceGate } from '../answer.mjs';
 import { isOpenerGrade } from './openerGrade.mjs';
+import { requireCampaign } from '../campaigns/registry.mjs';
+import { buildDraftSystem, buildRangeLines } from '../campaigns/prompts.mjs';
 import { approvedLinkList } from './links.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
@@ -41,7 +43,8 @@ async function callClaude(system, user, { maxTokens = 700 } = {}) {
 // Render the grounding as the only facts the drafter is permitted to use. The
 // opener is chosen here: a real project event is given as the hook, while an
 // administrative filing is marked context-only and never the hook.
-export function renderGrounding(g) {
+export function renderGrounding(g, campaign = 'marwin_dc') {
+  const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
   const lines = [];
   lines.push(`Company: ${g.company?.name || 'unknown'}${g.company?.region ? ', region ' + g.company.region : ''}.`);
   lines.push(g.contact?.name
@@ -55,36 +58,25 @@ export function renderGrounding(g) {
   } else {
     if (g.signal) lines.push(`Context only, an administrative filing (${g.signal.type}). NEVER mention it to the recipient and never give it as a reason for contact; it only tells us the account is worth approaching.`);
     else lines.push('No project signal on file. Do not invent a reason for contact.');
-    lines.push('Open on profile fit: lead with why Marwin control valves are relevant to data centre chilled-water cooling specification, and a light reason a person in the contact\'s role might care. Be specific to the work, do not say they fit a profile.');
+    lines.push(`Open on profile fit: ${def.positioning.profileFitLine}`);
   }
   lines.push(g.icpReason ? `Why this account scored: ${g.icpReason}.` : `ICP reason: not recorded.`);
   // Range positioning, the cold open leads on this, not on one valve or its specs.
   // These are the standing, grounded facts the email may state.
-  lines.push('Range positioning, lead on this, not on a single part number or its specifications:');
-  lines.push('  PCT supplies the Marwin and Steriflow control valve ranges, suited to and trusted in data centre cooling.');
-  lines.push('  Track record, state in general form and with confidence: Marwin and Steriflow control valves are already used across some of the largest data centre builds.');
-  lines.push('  Hard limit: never name or imply a specific data centre operator or end customer. "Some of the largest data centre builds" is the ceiling of specificity.');
-  lines.push('  Do not make any part-specific spec claim (pressure rating, material, temperature) in the cold open.');
+  lines.push(...buildRangeLines(def));
   return lines.join('\n');
 }
 
-const DRAFT_SYSTEM =
-  "You write the first-touch cold-open email for Premier Control Technologies (PCT), a UK supplier of flow control products, for the data centre cooling campaign. PCT is a supplier, not a distributor. " +
-  "HARD RULE: you may state only what the GROUNDING supports. Do not invent or embellish anything about the prospect, their projects, sites or people beyond the signal given. Do not make a product claim that is not in the grounding. Do not reference proof, case studies, named customers or results unless they are in the grounding. Do not invent a mutual connection, prior conversation, referral or deadline. Do not manufacture urgency. If the grounding is thin, write less. " +
-  "OPENER RULE: an administrative or routine register filing (a confirmation statement, annual accounts, an officer or registered-office change) is never given to the recipient as a reason for contact and is never mentioned, even though it is true; it may only tell us the account is worth approaching. Open on a real project event only when the grounding gives one to open on. " +
-  "POSITIONING RULE: open a conversation about a trusted range, not a data sheet for one valve. Position the Marwin and Steriflow control valve ranges as suited to and trusted in the application. Do NOT lead on a single part number, and do NOT assert any part-specific specification in a cold open, no pressure rating, no material suitability, no temperature figure. Specifics belong in a live conversation, not a first approach. " +
-  "TRACK RECORD: you may state, confidently and in general form, that Marwin and Steriflow control valves are already used across some of the largest data centre builds. CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. No 'a major US hyperscaler', no 'a well-known search company', no named operator, nothing that points to a specific customer. " +
-  "VOICE: plain technical British English, calm and restrained, one engineer flagging something relevant to a peer then getting out of the way. No opening pleasantries such as hoping the email finds them well, no hype, no superlatives, no closing pressure. No em dashes or en dashes, never the word genuinely, no exclamation marks. " +
-  "GREETING: when the contact's name is given, the body begins 'Dear ' then their first name and a comma, on its own line. With no name given, begin with no greeting at all; never invent a name and never write Dear Sir or Madam. " +
-  "STRUCTURE, four or five sentences total: an opening chosen by the grounding (if it gives a signal to open on, open on that event the way a person would; otherwise open on profile fit as the grounding directs, and do not mention any filing or signal); one line positioning the Marwin and Steriflow control valve ranges as trusted for data centre cooling, including the general track record across some of the largest data centre builds, with no named customer and no part-specific spec; a single light specific ask (a short call, or whether they are specifying flow control on the project). " +
-  "NO SIGN-OFF, absolute: the email ends on the ask. No name, no team line, no company line, no web address, no phone number, no contact details of any kind; the sender's signature is appended by the system after approval, and a web address you write would be invented. " +
-  "Every factual sentence must trace to a grounding item. " +
-  "Return strict JSON only, no preamble: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|range|contact\"}]}. The body is plain text, short paragraphs separated by a blank line, no Markdown.";
+// The drafter's system prompt is assembled from the campaign's positioning
+// pack. Everything protecting the reader, the voice, the greeting, the
+// no-sign-off rule and the claim tracing is shared; the campaign supplies its
+// phrase, its positioning and its confidentiality ceiling.
 
 // Generate one grounded cold-open draft. Returns subject, body and the model's
 // own list of which grounding item supports each factual claim.
-export async function draftColdOpen(grounding, { callModel = callClaude } = {}) {
-  const raw = await callModel(DRAFT_SYSTEM, `GROUNDING (the only facts you may use):\n${renderGrounding(grounding)}\n\nWrite the cold-open email.`, { maxTokens: 700 });
+export async function draftColdOpen(grounding, { callModel = callClaude, campaign = 'marwin_dc' } = {}) {
+  const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
+  const raw = await callModel(buildDraftSystem(def), `GROUNDING (the only facts you may use):\n${renderGrounding(grounding, def)}\n\nWrite the cold-open email.`, { maxTokens: 700 });
   const parsed = parseJsonObject(raw);
   const subject = outboundVoice(parsed.subject || '');
   const body = outboundVoice(parsed.body || '');

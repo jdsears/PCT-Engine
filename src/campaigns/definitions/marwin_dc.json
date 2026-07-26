@@ -1,0 +1,79 @@
+{
+  "id": "marwin_dc",
+  "displayName": "Data centres",
+  "status": "active",
+  "note": "The original campaign, migrated into the registry on 26 July 2026 with its behaviour unchanged. Every string here was lifted from the code that held it, and the gate and drafter suites prove the assembled prompts match the originals byte for byte. The relevance gate's calibration is carried whole: the subject test, the event test and the exclusions each survived several rounds of real misclassification and must not be re-worded to suit a template.",
+
+  "grounding": {
+    "lines": ["marwin"],
+    "retrievalFocus": "Marwin control valve data centre chilled water cooling"
+  },
+
+  "links": { "rangePage": "marwin_page" },
+
+  "icp": {
+    "companyTypes": ["dc_developer", "me_contractor", "end_client"],
+    "signalTypes": ["news_dc_build", "news_contract", "planning"],
+    "noSignalReason": "no data centre build or contract signals",
+    "thresholds": { "minProjectSizeMW": 10, "minContractValueGBP": 250000, "ukOnly": true },
+    "buildStages": ["planning_granted", "construction", "fit_out"],
+    "weights": { "namedAccount": 25, "typeFit": 25, "signals": 30, "chHealth": 20 }
+  },
+
+  "signals": {
+    "sweepQueries": [
+      { "query": "UK data centre planning permission granted hyperscale colocation campus", "type": "news_dc_build" },
+      { "query": "UK data centre construction main contractor appointed", "type": "news_contract" },
+      { "query": "hyperscaler UK data centre campus capacity expansion announced", "type": "news_dc_build" },
+      { "query": "UK data centre M&E fit-out cooling contract awarded", "type": "news_contract" },
+      { "query": "new UK data centre campus site acquisition investment", "type": "news_dc_build" }
+    ],
+    "gate": {
+      "sector": "data centre",
+      "sellerDescription": "a UK flow-control distributor that sells into data centre cooling, through the contractors and engineers building UK data centres",
+      "subjectTest": "is the thing being built, financed or contracted a data centre, a data centre campus, or a hyperscale or colocation facility? A residential or resi (housing) scheme, a school, leisure, office, hospital, retail, fulfilment or distribution centre or care home, or any non data centre construction, fails here and is rejected even when the headline is a real construction or contract win. Resi means residential. If the subject is not a data centre, dcRelevant is false. On a construction, contract or job headline the subject must be recognisably a data centre to pass; if you cannot confirm the subject is a data centre, including an unfamiliar or abbreviated term, default to reject rather than pass on the strength of the event.",
+      "eventTest": "is this a real build event, the data centre being built, contracted, or financed, invested in or expanded as a specific data centre or campus? KEEP financing, investment, funding or expansion that attaches to an actual data centre or campus, for example a data centre campus securing financing, or a data centre operator funding an expansion or build-out. REJECT events that are not a build, and commentary not tied to a specific data centre or campus: an opposition or community meeting, a moratorium, ban or objection, a survey or report, an opinion or comment piece, a tax or policy debate, a court case, a leadership or staffing change, and generic sector financing, share, markets or outlook commentary not attached to a specific data centre build, for example convertible notes raised for a general data centre push. An equipment or component supply agreement to a data centre operator, for example generators or cooling kit, is a supplier's commercial news, not the data centre being built, and is rejected. The test for the event is whether the money or expansion attaches to an actual data centre or campus: if it does, keep; if it is sector mood music or a non-build event, reject.",
+      "subjectNoun": "a data centre",
+      "subjectNounPlural": "data centres",
+      "operatorNoun": "data centre operator or contractor",
+      "clearTitlePasses": "a title that clearly states a data centre build, financing for a build, or capacity expansion passes",
+      "confirmedSubject": "a real data centre operator with a build, financing or expansion event"
+    }
+  },
+
+  "positioning": {
+    "campaignPhrase": "the data centre cooling campaign",
+    "profileFitLine": "lead with why Marwin control valves are relevant to data centre chilled-water cooling specification, and a light reason a person in the contact's role might care. Be specific to the work, do not say they fit a profile.",
+    "rangeLine": "PCT supplies the Marwin and Steriflow control valve ranges, suited to and trusted in data centre cooling.",
+    "trustLine": "Marwin and Steriflow control valves are already used across some of the largest data centre builds.",
+    "trustLinePrefix": "Track record, state in general form and with confidence: ",
+    "confidentialityHardLimit": "Hard limit: never name or imply a specific data centre operator or end customer. \"Some of the largest data centre builds\" is the ceiling of specificity.",
+    "positioningRule": "Position the Marwin and Steriflow control valve ranges as suited to and trusted in the application.",
+    "trackRecordRule": "you may state, confidently and in general form, that Marwin and Steriflow control valves are already used across some of the largest data centre builds. CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity. No 'a major US hyperscaler', no 'a well-known search company', no named operator, nothing that points to a specific customer.",
+    "confidentialityRule": "CONFIDENTIALITY RULE, absolute: never name or imply any specific data centre operator or end customer. 'Some of the largest data centre builds' is the ceiling of specificity.",
+    "structurePositioning": "one line positioning the Marwin and Steriflow control valve ranges as trusted for data centre cooling, including the general track record across some of the largest data centre builds, with no named customer and no part-specific spec",
+    "ask": "a short call, or whether they are specifying flow control on the project"
+  },
+
+  "orbitTitles": [
+    "design engineer", "building services", "mechanical engineer", "mep",
+    "controls", "hvac", "project manager", "commissioning engineer",
+    "cooling", "chilled water", "water", "mechanical design", "project engineer",
+    "programme manager", "program manager", "m&e", "design manager", "design director",
+    "head of engineering", "engineering manager", "engineering director",
+    "technical director", "projects director", "project director", "construction director",
+    "data design",
+    "estimator", "contracts manager", "preconstruction", "pre-construction",
+    "pre construction", "cost manager", "cost management",
+    "specification", "procurement", "category manager"
+  ],
+
+  "signalLabels": {
+    "news_dc_build": "a data centre build announcement",
+    "news_contract": "a contract signal"
+  },
+
+  "watchlistCopy": "Data centre operators the engine has spotted expanding, where a UK move is plausible but not yet a named project. These are business-development targets to approach or watch, not leads in the pipeline.",
+
+  "geo": { "routing": "shared" }
+}

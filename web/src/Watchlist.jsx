@@ -1,30 +1,37 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from './api.js';
 import { fmtClockDay } from './labels.js';
+import { withCampaign, CampaignChip, useCampaignList, isAll } from './CampaignSwitcher.jsx';
 
-// The BD watchlist: data centre operators the engine has spotted expanding, where
-// a UK move is plausible but not yet a project. Intelligence to act on, kept
-// distinct from the lead pipeline. A short, high-value list, not a feed.
-export default function Watchlist() {
+// The BD watchlist: organisations the engine has spotted expanding, where a UK
+// move is plausible but not yet a project. Intelligence to act on, kept distinct
+// from the lead pipeline. A short, high-value list, not a feed.
+//
+// The standing sentence comes from the API, because it is the campaign's own
+// description of who it watches. Hardcoding the data centre wording here would
+// put "data centre operators" above a list of pharmaceutical manufacturers.
+export default function Watchlist({ campaign }) {
   const [items, setItems] = useState(null);
+  const [intro, setIntro] = useState('');
   const [state, setState] = useState('loading');
+  const campaignList = useCampaignList();
 
   useEffect(() => {
     let live = true;
-    apiFetch('/api/watchlist').then(r => r.json())
-      .then(d => { if (live) { setItems(d.watchlist || []); setState('ready'); } })
+    apiFetch(withCampaign('/api/watchlist', campaign)).then(r => r.json())
+      .then(d => { if (live) { setItems(d.watchlist || []); setIntro(d.intro || ''); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
-  }, []);
+  }, [campaign]);
 
   if (state === 'loading') return <div className="content-pad"><p className="muted-note">Loading the watchlist.</p></div>;
   if (state === 'error') return <div className="content-pad"><p className="muted-note">The watchlist is not available right now.</p></div>;
 
   return (
     <div className="content-pad watchlist">
-      <p className="wl-intro">Data centre operators the engine has spotted expanding, where a UK move is plausible but not yet a named project. These are business-development targets to approach or watch, not leads in the pipeline.</p>
+      {intro && <p className="wl-intro">{intro}</p>}
       {items.length === 0 ? (
-        <p className="muted-note">No expansion signals captured yet. Operators appear here as the news sweep finds them.</p>
+        <p className="muted-note">No expansion signals captured yet. Organisations appear here as the news sweep finds them.</p>
       ) : (
         <div className="wl-list">
           {items.map(w => (
@@ -36,6 +43,7 @@ export default function Watchlist() {
               <div className="wl-title">{w.title}</div>
               <div className="wl-foot">
                 <span className="pill">{w.type === 'news_contract' ? 'Contract' : 'Build-out'}</span>
+                {isAll(campaign) && campaignList.length > 1 && <CampaignChip campaign={w.campaign} list={campaignList} />}
                 {w.source && (w.url
                   ? <a className="wl-src" href={w.url} target="_blank" rel="noreferrer">{w.source}</a>
                   : <span className="wl-src">{w.source}</span>)}
