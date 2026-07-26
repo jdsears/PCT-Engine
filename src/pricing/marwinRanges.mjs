@@ -121,7 +121,7 @@ const SYM = { GBP: '£', EUR: '€', USD: '$' };
 export function renderSeriesSummary(s) {
   return `**Marwin ${s.series} series**, from the loaded book: ${s.count} part${s.count === 1 ? '' : 's'} priced, ` +
     `from ${SYM.GBP}${Number(s.min).toLocaleString('en-GB')} (${s.minPart}${s.minDesc ? ', ' + s.minDesc : ''}) ` +
-    `to ${SYM.GBP}${Number(s.max).toLocaleString('en-GB')}. These are guide prices at the calculator's standard settings; ` +
-    'the final margin is set per customer at quote, confirm with Andy or your area sales manager.\n\n' +
+    `to ${SYM.GBP}${Number(s.max).toLocaleString('en-GB')}. These are guide prices at the standard margin ` +
+    'the master price sheet sets, the single source for margin.\n\n' +
     'Combinations beyond the loaded book are priced per enquiry.';
 }

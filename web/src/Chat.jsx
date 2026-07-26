@@ -355,7 +355,7 @@ function PartNumberCard({ config, pricing }) {
           ))}
           <span className="pnprice-src">
             {priced.basis === 'guide'
-              ? `standard margin guide from the ${priced.listName}; final margin set per customer at quote`
+              ? `standard margin guide from the ${priced.listName}; the master price sheet sets the margin`
               : `from the ${priced.sourceTab} tab of the ${priced.listName}`}
           </span>
         </div>

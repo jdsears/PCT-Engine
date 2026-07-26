@@ -39,7 +39,7 @@ export function renderPriceAnswer(m) {
   const basis = m.basis === 'guide'
     ? `Guide price at the standard margin, computed from the ${m.listName}` +
       `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
-      'The final margin is set per customer at quote, so confirm with Andy or your area sales manager before quoting.'
+      'The margin is the standard one the master price sheet sets, the single source for margin.'
     : `Sell price from the ${m.sourceTab} tab of the ${m.listName}` +
       `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
       'Prices come from the loaded lists and are never estimated.';
@@ -52,7 +52,7 @@ export function renderPriceAnswer(m) {
 // Pure renderer, so the wording is provable offline.
 export function renderLineSummary(s) {
   const guide = s.anyGuide
-    ? ' These are guide prices at the standard margin; the final margin is set per customer at quote, confirm with Andy or your area sales manager.'
+    ? ' These are guide prices at the standard margin the master price sheet sets, the single source for margin.'
     : '';
   return `**${s.line}**, from the loaded lists: ${s.count} part${s.count === 1 ? '' : 's'} priced, ` +
     `from ${SYM.GBP}${Number(s.min).toLocaleString('en-GB')} (${s.minPart}${s.minDesc ? ', ' + s.minDesc : ''}) ` +
