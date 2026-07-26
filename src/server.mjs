@@ -1,5 +1,5 @@
 import express from 'express';
-import { listCampaigns, getCampaign } from './campaigns/registry.mjs';
+import { listCampaigns, getCampaign, activeCampaignIds } from './campaigns/registry.mjs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -814,7 +814,33 @@ async function runEngineOnce(trigger) {
   engineRunning = true;
   const startedAt = new Date().toISOString();
   try {
-    const r = await runResearch({ log: m => console.log('[engine]', m) });
+    // One research run per active campaign, sequentially, reported per
+    // campaign. A campaign whose registry status is not 'active' never
+    // auto-sweeps: pharma sits at 'manual' until its first sweep has been run
+    // and reviewed by hand as the calibration event, and flipping it to
+    // 'active' afterwards is a one-field edit in its definition.
+    const campaigns = activeCampaignIds();
+    const runs = [];
+    for (const id of campaigns) {
+      try {
+        runs.push({ campaign: id, ...(await runResearch({ campaign: id, log: m => console.log(`[engine:${id}]`, m) })) });
+      } catch (e) {
+        console.error(`[engine:${id}] run failed:`, e.message);
+        runs.push({ campaign: id, failed: String(e.message).slice(0, 200) });
+      }
+    }
+    // The aggregate keeps the Health card's shape; the per-campaign detail
+    // rides alongside so a quiet campaign is visibly quiet rather than
+    // averaged away.
+    const ok = runs.filter(r => !r.failed);
+    const sum = key => ok.reduce((n, r) => n + (key.split('.').reduce((v, k) => v?.[k], r) ?? 0), 0);
+    const r = {
+      newsCounts: { inserted: sum('newsCounts.inserted'), rejected: sum('newsCounts.rejected') },
+      chCounts: ok[0]?.chCounts || { ch_filing: 0, ch_director_change: 0 },
+      newsMatched: sum('newsMatched'), scored: sum('scored'),
+      leadsCreated: sum('leadsCreated'), leadsUpdated: sum('leadsUpdated'),
+      awaitingMatch: sum('awaitingMatch'),
+    };
     // With the people search on, a tiny batch of unsearched named accounts
     // gets its specifiers found each cycle, before email discovery so the new
     // orbit contacts can have their addresses resolved in the same pass. It
@@ -848,6 +874,12 @@ async function runEngineOnce(trigger) {
     }
     await kvSet('engine_last_run', {
       ok: true, at: startedAt, trigger,
+      // Per-campaign truth first, aggregates after.
+      campaigns: runs.map(x => x.failed
+        ? { campaign: x.campaign, failed: x.failed }
+        : { campaign: x.campaign, stored: x.newsCounts?.inserted ?? 0, rejected: x.newsCounts?.rejected ?? 0,
+            matched: x.newsMatched ?? 0, scored: x.scored ?? 0,
+            leadsCreated: x.leadsCreated ?? 0, leadsUpdated: x.leadsUpdated ?? 0 }),
       signalsStored: r.newsCounts.inserted ?? 0, signalsRejected: r.newsCounts.rejected ?? 0,
       filings: (r.chCounts.ch_filing ?? 0) + (r.chCounts.ch_director_change ?? 0),
       matched: r.newsMatched, scored: r.scored,

@@ -1,8 +1,8 @@
 {
   "id": "pharma_steriflow",
   "displayName": "Pharma",
-  "status": "active",
-  "note": "The second campaign, added 26 July 2026. The gate is a deliberately tight first cut, biased to reject, on John's instruction of the same date: a missed lead is recoverable, a bad draft is not. Its first live sweep is a calibration run to be reviewed line by line the way the data centre gate was calibrated, and it is to be loosened only from evidence found in that review, never pre-emptively. The trust line is the corpus-grounded general sentence and nothing stronger; James may approve a stronger one later, which is a single field edit here.",
+  "status": "manual",
+  "note": "The second campaign, added 26 July 2026. Status manual: the scheduler only auto-sweeps campaigns whose status is active, and pharma's first sweep is John's own calibration event, run by hand and reviewed line by line; set status to active once that review has passed. The gate is a deliberately tight first cut, biased to reject, on John's instruction of the same date: a missed lead is recoverable, a bad draft is not. Its first live sweep is a calibration run to be reviewed line by line the way the data centre gate was calibrated, and it is to be loosened only from evidence found in that review, never pre-emptively. The trust line is the corpus-grounded general sentence and nothing stronger; James may approve a stronger one later, which is a single field edit here.",
 
   "grounding": {
     "lines": ["steriflow", "steriflow_fb", "low_flow"],
