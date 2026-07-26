@@ -25,7 +25,11 @@ const STOP = new Set([
 ]);
 
 export function normalizeTokens(name) {
-  return [...new Set(String(name || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/)
+  // A trailing bracketed abbreviation is a restatement, not identity: "Al
+  // Moammar Information Systems Company (MIS)" is the same party without it,
+  // and keeping it split one company across two rows of the unmatched counter.
+  const base = String(name || '').replace(/\s*\([^()]*\)\s*$/, '');
+  return [...new Set(base.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/)
     .filter(t => t && !STOP.has(t)))];
 }
 

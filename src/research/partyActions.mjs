@@ -40,6 +40,13 @@ export function planPartyActions(signal, results, state) {
       continue;
     }
 
+    // When the operator field was empty the matcher was fed the headline as a
+    // fallback. A headline can confidently match an account; it is not a
+    // company name, so it must never become a proposal, an ambiguity for
+    // review, or a row in the unmatched counter. "10 UK data centre
+    // construction projects" is a story, not a prospect.
+    if (party === 'operator' && signal.operatorIsTitleFallback) continue;
+
     // Every non-match is counted, so the next alias worth adding is always
     // visible instead of invisible.
     actions.push({ act: 'count', party, name, norm });

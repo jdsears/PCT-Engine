@@ -28,8 +28,9 @@ async function chFetch(path) {
   return res.json();
 }
 
-export async function searchCompanies(name) {
-  const json = await chFetch(`/search/companies?q=${encodeURIComponent(name)}&items_per_page=10`);
+// Pure mapping from the Companies House search response, split out so the
+// gate can prove the shape without a network.
+export function searchResultRows(json) {
   return (json?.items || []).map(it => ({
     name: it.title,
     chNumber: it.company_number,
@@ -37,6 +38,21 @@ export async function searchCompanies(name) {
     address: it.address_snippet || null,
     postcode: it.address?.postal_code || null,
     incorporated: it.date_of_creation || null,
+  }));
+}
+
+export async function searchCompanies(name) {
+  return searchResultRows(await chFetch(`/search/companies?q=${encodeURIComponent(name)}&items_per_page=10`));
+}
+
+// The candidate rows a review proposal stores and the queue renders. This is
+// the ONLY place that shapes them: a first cut re-mapped searchCompanies
+// output reading the raw API field names, which are already gone by then, so
+// every candidate rendered as an empty pair of brackets. searchCompanies has
+// one shape and this passes it through.
+export function candidateRows(results) {
+  return (results || []).slice(0, 5).map(c => ({
+    name: c.name, chNumber: c.chNumber, status: c.status, address: c.address || null,
   }));
 }
 

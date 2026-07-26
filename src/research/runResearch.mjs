@@ -8,7 +8,7 @@ import { resolveDomain } from './domains.mjs';
 import { syncOfficerContacts } from './officerContacts.mjs';
 import { matchParty } from './match.mjs';
 import { planPartyActions, proposalsPerRun, normName } from './partyActions.mjs';
-import { searchCompanies } from './companiesHouse.mjs';
+import { searchCompanies, candidateRows } from './companiesHouse.mjs';
 import { getCampaign, listCampaigns } from '../campaigns/registry.mjs';
 
 // One research run FOR ONE CAMPAIGN: poll Companies House, sweep and gate that
@@ -76,7 +76,8 @@ export async function runResearch({ campaign, log = () => {} } = {}) {
       contractor: s.contractor ? matchParty(s.contractor, matchCompanies, { aliases }) : null,
     };
     const actions = planPartyActions(
-      { operator: s.operator || s.title, contractor: s.contractor, geo_scope: s.geo_scope },
+      { operator: s.operator || s.title, contractor: s.contractor, geo_scope: s.geo_scope,
+        operatorIsTitleFallback: !s.operator },
       results, state);
 
     for (const a of actions) {
@@ -99,12 +100,8 @@ export async function runResearch({ campaign, log = () => {} } = {}) {
         // Read-only enrichment, so the human decides over evidence: Companies
         // House candidates and a domain. No Findymail, no LinkedIn, no spend.
         let chCandidates = null, domain = null;
-        try {
-          const found = await searchCompanies(a.name);
-          chCandidates = (found || []).slice(0, 5).map(c => ({
-            chNumber: c.company_number, name: c.title, status: c.company_status, address: c.address_snippet || null,
-          }));
-        } catch { /* the proposal stands without candidates */ }
+        try { chCandidates = candidateRows(await searchCompanies(a.name)); }
+        catch { /* the proposal stands without candidates */ }
         try { domain = await resolveDomain(a.name); } catch { /* optional */ }
         await pool.query(
           `INSERT INTO party_reviews (kind, printed_name, name_norm, party, campaign, signal_id, ch_candidates, domain)
