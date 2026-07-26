@@ -20,7 +20,7 @@
     "page": 7,
     "section": "Ordering matrix, final page"
   },
-  "note": "Extracted by hand from the ordering matrices on the final pages of the flanged (FF) and threaded (FA) sheets, which share every table except 1&2 end connections: BF/GF are the flanged pair, BA/GA the threaded pair. The code reads model, size, body material, then twelve character positions in six pairs, printed with hyphens and a slash exactly as the price book prints them. The threaded sheet's size table stops at 4 inch while the flanged sheet carries 6 inch, held as a constraint. The electric operation table lists Nema 4 actuators only; a Nema 7 electric build has no designator in this matrix and is priced per enquiry. The price book's one code at two prices is the limit switch split at parts 9 and 10, per James, 24 July 2026: the Nema 4 switches, AA and AB, carry the lower list and the Nema 7 switches, AC and AD, the higher, the designators printed on this sheet's own final page. Solenoid and limit switch UT spans are enforced from the ranges printed in their own labels against the UT size named in the chosen operation code.",
+  "note": "Extracted by hand from the ordering matrices on the final pages of the flanged (FF) and threaded (FA) sheets, which share every table except 1&2 end connections: BF/GF are the flanged pair, BA/GA the threaded pair. The code reads model, size, body material, then twelve character positions in six pairs, printed with hyphens and a slash exactly as the price book prints them. The threaded sheet's size table stops at 4 inch while the flanged sheet carries 6 inch, held as a constraint. The electric operation table lists Nema 4 actuators only, every row an ER ending in 4; a Nema 7 electric build has no designator in this matrix. That is why the price book prints one code at two prices for electric builds: the book's own page 79 glosses the pair (ER2-5-4) at the lower list and (ER2-5-7) at the higher, so the difference is the actuator at positions 3 and 4, not anything the code itself records. James ruled on 24 July 2026 that Nema 4 carries the lower and Nema 7 the higher, which the book bears out; his note placed the split at the limit switch, parts 9 and 10, and the twenty conflicted codes all carry limit switch 00, no switch fitted, so the position is corrected here and the principle kept. A Nema 7 electric build is priced per enquiry until it has a designator of its own. Solenoid and limit switch UT spans are enforced from the ranges printed in their own labels against the UT size named in the chosen operation code.",
   "assembly": "{model}-{size}-{body}/{ends}{operation}{pressure}{solenoid}{limitSwitch}{startPosition}",
   "slots": [
     {
@@ -1041,7 +1041,7 @@
           "MA"
         ]
       },
-      "note": "The electric actuators in this matrix are Nema 4. A Nema 7 electric build exists but has no designator of its own here, so it is quoted per enquiry. The book's paired prices are not the electric split: per James, 24 July 2026, they are the limit switch at parts 9 and 10, Nema 4 lower, Nema 7 higher."
+      "note": "The electric actuators in this matrix are Nema 4, every ER row ending in 4. A Nema 7 electric build exists but has no designator of its own here, so it is quoted per enquiry. This is what the price book's paired prices are: page 79 prints the same code twice, glossed (ER2-5-4) at the lower list and (ER2-5-7) at the higher."
     },
     {
       "when": {

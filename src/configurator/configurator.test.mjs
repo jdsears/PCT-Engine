@@ -533,6 +533,21 @@ check('the price book\'s own code round-trips through assemble and decode, separ
   assert.equal(d2.state.pressure, '80', '80 psi supply');
 });
 
+check('the paired book prices are recorded against the actuator, not the limit switch', () => {
+  // The book's page 79 glosses one code twice, (ER2-5-4) and (ER2-5-7), and every
+  // conflicted code carries limit switch 00. The record must say so, because the
+  // first telling of it named the wrong position.
+  const nema = t2100.cautions.find(c => /Nema 4/.test(c.note || ''));
+  assert.ok(nema, 'the electric build still carries its caution');
+  assert.ok(/ER2-5-4/.test(nema.note) && /ER2-5-7/.test(nema.note), 'the book\'s own gloss is the evidence');
+  assert.ok(!/limit switch at parts 9 and 10/.test(nema.note), 'the limit switch attribution is gone');
+  assert.ok(/positions 3 and 4/.test(t2100.note), 'the note places the split at the operation position');
+  assert.ok(/limit switch 00/.test(t2100.note), 'and says why: no switch is fitted on any conflicted code');
+  const ls = t2100.slots.find(s => s.id === 'limitSwitch');
+  assert.ok(ls.options.some(o => o.code === 'AC') && ls.options.some(o => o.code === 'AD'),
+    'the Nema 7 switch designators are still carried, they are simply not the pricing split');
+});
+
 check('the matrix\'s own rules refuse the combinations it never printed', () => {
   const base = { size: '100', body: 'CS', ends: 'BA', pressure: 'NN', solenoid: '00', limitSwitch: '00' };
   for (const bad of [

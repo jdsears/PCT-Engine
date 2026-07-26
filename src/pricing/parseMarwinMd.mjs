@@ -18,11 +18,14 @@
 // collapsed extraction row and prices nothing. A priced row with no part
 // number (the book prints a few L-port twins this way) prices nothing. The
 // same code printed twice at different prices is two products under one
-// printed code, per James (24 July 2026): the limit switch at configurator
-// parts 9 and 10, Nema 4 (AA, AB) at the lower list, Nema 7 (AC, AD) at the
-// higher. They still price nothing here, because the printed code does not
-// say which switch it carries; the withheld codes are listed so the
-// designator-distinct resolution can be wired against their real shapes. CV3000 and CV4700 pages are
+// printed code. The book says which: page 79 glosses the pair (ER2-5-4) and
+// (ER2-5-7), the electric actuator in its Nema 4 and Nema 7 forms, at the
+// lower and higher list. James's 24 July 2026 ruling, Nema 4 lower and Nema 7
+// higher, holds; it placed the split at the limit switch, and the conflicted
+// codes all carry limit switch 00, so the actuator is the position. They still
+// price nothing here, because the printed code records only the Nema 4
+// operation and the gloss is not part of it; the withheld codes are listed so
+// the two-way resolution can be wired against their real shapes. CV3000 and CV4700 pages are
 // skipped here because the applied PDF ingest owns them; repair-kit and
 // accessory pages are skipped because a kit or a solenoid must never become
 // "the cheapest Marwin valve".

@@ -84,9 +84,9 @@ if (MD) {
   }
   if (r.conflicts) {
     console.log(`  ${r.conflicts} code(s) printed at two prices are two products under one printed code, per James (July 2026):`);
-    console.log(`  the limit switch differs at configurator parts 9 and 10, Nema 4 (AA, AB) carries the lower list, Nema 7 (AC, AD) the higher,`);
-    console.log(`  the designators confirmed on the Flanged Valves sheet's final page, per James, 24 July 2026.`);
-    console.log(`  They stay unpriced until the resolver maps each onto its two designator-distinct codes; send this list back to wire it:`);
+    console.log(`  the electric actuator differs at positions 3 and 4: the book's page 79 glosses the pair (ER2-5-4) at the lower list`);
+    console.log(`  and (ER2-5-7) at the higher, Nema 4 and Nema 7, which is James's 24 July 2026 ruling with the position corrected.`);
+    console.log(`  They stay unpriced until the resolver maps each onto its two forms; the codes are:`);
     for (const c of parsed.conflictParts) console.log(`    ${c}`);
   }
   if (r.spanRefused) console.log(`  ${r.spanRefused} row(s) with prices collapsed into one cell were refused rather than guessed.`);
