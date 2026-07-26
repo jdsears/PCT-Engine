@@ -194,8 +194,9 @@ await check('a guide price renders labelled as a guide, never as a firm sell', a
     prices: { GBP: 3433, EUR: 3948, USD: 4463 }, sourceTab: 'guide', listName: 'Marwin NA price list via Richards transform', effectiveDate: '2026-07-17',
   });
   assert(/Guide price at the standard margin/.test(text), 'the guide label leads');
-  assert(/margin is set per customer/.test(text), 'the per-customer caveat travels');
-  assert(/Andy|area sales manager/.test(text), 'the internal confirmation route travels');
+  assert(/single source for margin/.test(text), 'the single-source margin line travels');
+  assert(!/confirm with Andy|per customer/.test(text), 'no per-customer margin caveat survives');
+  assert(!/manufacturer|supplier|factory/i.test(text), 'pricing never routes outward');
   assert(!/never estimated/.test(text), 'the firm-sell promise is not made for a guide');
 });
 
@@ -499,7 +500,7 @@ await check('series questions route to their series, and only with intent words 
 await check('the series answer states what is loaded, the cheapest by name, and the honest edges', async () => {
   const text = renderSeriesSummary({ series: '600', count: 96, min: 11, max: 727, minPart: '666FTTS-025', minDesc: 'Marwin 600 series, 1/4", Full Port (Brass Internals)' });
   assert(text.includes('96 parts priced') && text.includes('£11') && text.includes('666FTTS-025'), 'the floor is named');
-  assert(text.includes('guide prices') && text.includes('margin is set per customer at quote'), 'the guide caveat holds');
+  assert(text.includes('guide prices') && text.includes('single source for margin'), 'the guide basis names the single source');
   assert(text.includes('per enquiry'), 'the beyond-the-book edge holds');
   assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
 });
@@ -542,7 +543,7 @@ await check('the cheapest decodable build reads back slot by slot with the guide
   assert(text.includes('The lowest priced Marwin valve in the loaded book is **4700F-05A-CS/FAHLNN0000NN**'), 'the answer names the code');
   assert(text.includes('£111'), 'the synthetic price renders as loaded');
   assert(text.includes('reads through the') && /- .*: .*\(4700F\)/.test(text), 'the spec lists each position with its code');
-  assert(text.includes("guide price at the calculator's standard settings") && text.includes('per enquiry'), 'the guide caveat and the enquiry edge hold');
+  assert(text.includes('guide price at the standard margin the master price sheet sets') && text.includes('per enquiry'), 'the single-source margin line and the enquiry edge hold');
   assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
 });
 

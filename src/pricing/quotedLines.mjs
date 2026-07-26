@@ -1,10 +1,10 @@
 import { normKey } from './parseMega.mjs';
 
 // The valve lines are priced per enquiry, not from a stored list: a spec goes
-// to the manufacturer, a quoted price comes back, and the margin is set per
-// customer in the mega sheet's calculator. That means there is no fixed
-// customer price for the lookup to hold, and a stored number would invite
-// quoting the wrong one. So a price query against these lines answers with
+// to the manufacturer, a quoted price comes back, and the mega sheet's
+// calculator applies the standard margin, the single source. That means there
+// is no fixed customer price for the lookup to hold, and a stored number would
+// invite quoting the wrong one. So a price query against these lines answers with
 // the process instead, taken from the mega sheet's own note pad. Plain data,
 // so corrections are one-line edits; margins and discounts appear nowhere.
 
@@ -14,7 +14,7 @@ import { normKey } from './parseMega.mjs';
 // checks with the factory before quoting, so the only safe pointer is the
 // internal one. No supplier names, addresses or order rules appear here.
 const ENQUIRY_NOTE =
-  'Priced per enquiry, no fixed list price is held here. Ask Andy or your area sales manager to price it; the quote comes through the internal calculator on the mega sheet, with the margin set per customer.';
+  'Priced per enquiry, no fixed list price is held here. Ask Andy or your area sales manager to price it; the quote comes through the internal calculator on the mega sheet, at the standard margin the sheet sets.';
 
 // Model-code prefixes are matched on the normalised query (upper case, spaces
 // stripped), brand words on whole words. Order matters, first match wins, and

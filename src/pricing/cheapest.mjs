@@ -53,6 +53,6 @@ export function renderCheapestValve({ scope, row, build }) {
       'This series has no ordering matrix in the engine, so the spec is the book\'s own description for the code rather than a slot by slot read-back.');
   }
   lines.push('',
-    "This is a guide price at the calculator's standard settings; the final margin is set per customer at quote, confirm with Andy or your area sales manager. Combinations beyond the loaded book are priced per enquiry.");
+    "This is a guide price at the standard margin the master price sheet sets, the single source for margin. Combinations beyond the loaded book are priced per enquiry.");
   return lines.join('\n');
 }
