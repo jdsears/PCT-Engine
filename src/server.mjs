@@ -14,7 +14,7 @@ import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
-import { searchCompanies } from './research/companiesHouse.mjs';
+import { searchCompanies, candidateRows } from './research/companiesHouse.mjs';
 import { staleDays, isStale } from './research/staleness.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
@@ -716,12 +716,8 @@ app.post('/api/reviews/:id/distinct', async (req, res) => {
     if (!r) return res.status(404).json({ error: 'review not open' });
     if (r.kind !== 'ambiguous') return res.status(409).json({ error: 'only an ambiguity can be marked distinct' });
     let chCandidates = null;
-    try {
-      const found = await searchCompanies(r.printed_name);
-      chCandidates = (found || []).slice(0, 5).map(c => ({
-        chNumber: c.company_number, name: c.title, status: c.company_status, address: c.address_snippet || null,
-      }));
-    } catch { /* the proposal stands without candidates */ }
+    try { chCandidates = candidateRows(await searchCompanies(r.printed_name)); }
+    catch { /* the proposal stands without candidates */ }
     await pool.query(
       `UPDATE party_reviews SET kind = 'proposal', ch_candidates = COALESCE($1::jsonb, ch_candidates) WHERE id = $2`,
       [chCandidates ? JSON.stringify(chCandidates) : null, r.id]);

@@ -199,6 +199,63 @@ await check('drafting excludes stale leads by default and only by default', asyn
   assert(/includeStale \? .TRUE. : `NOT \$\{staleSql/.test(src.replace(/\n/g, ' ')) || src.includes("includeStale ? 'TRUE' : `NOT ${staleSql"), 'the clause flips on the option, not on a constant');
 });
 
+console.log('\nThe confirm queue renders what Companies House returned:');
+
+await check('a rendered candidate option is never empty when the API returned a title', async () => {
+  const { searchResultRows, candidateRows } = await import('./companiesHouse.mjs');
+  // A realistic Companies House search response, raw field names as the API
+  // sends them. The bug this guards: re-mapping searchCompanies output with
+  // these raw names a second time, which yields undefined name and number and
+  // renders as an empty pair of brackets in the queue.
+  const api = { items: [
+    { title: 'KAO DATA LIMITED', company_number: '10870034', company_status: 'active', address_snippet: 'Harlow, Essex' },
+    { title: 'KAO DATA CAMPUS LIMITED', company_number: '11417538', company_status: 'active' },
+  ] };
+  const rows = candidateRows(searchResultRows(api));
+  assert(rows.length === 2, 'every returned entity survives');
+  for (const r of rows) {
+    assert(r.name && r.name.length > 0, 'the name is present');
+    assert(r.chNumber && r.chNumber.length > 0, 'the number is present');
+    assert(`${r.name} (${r.chNumber})`.length > 4, 'so the rendered option label cannot be empty');
+  }
+});
+
+await check('every candidate producer uses the one mapper, and the queue reads its fields', async () => {
+  const run = read('src/research/runResearch.mjs');
+  assert(/candidateRows\(await searchCompanies/.test(run), 'the research run shapes candidates through candidateRows');
+  assert(!/company_number|address_snippet/.test(run), 'and never re-reads raw API field names');
+  const server = read('src/server.mjs');
+  const reviewBlock = server.slice(server.indexOf('The review queue'), server.indexOf("app.get('/api/signals'"));
+  assert(/candidateRows\(await searchCompanies/.test(reviewBlock), 'the distinct route shapes candidates the same way');
+  assert(!/company_number|address_snippet/.test(reviewBlock), 'with no raw field names of its own');
+  const ui = read('web/src/ReviewQueue.jsx');
+  assert(/c\.name/.test(ui) && /c\.chNumber/.test(ui), 'the queue reads exactly the fields the mapper emits');
+});
+
+console.log('\nA headline is a story, not a prospect:');
+
+await check('the title fallback may link, and only link', async () => {
+  const fallback = { operator: '10 UK data centre construction projects', contractor: null,
+    geo_scope: 'uk_project', operatorIsTitleFallback: true };
+  const unknown = planPartyActions(fallback, { operator: { status: 'unknown' }, contractor: null }, state());
+  assert(unknown.length === 0, 'an unknown headline proposes nothing, counts nothing');
+  const ambiguous = planPartyActions(fallback, { operator: { status: 'ambiguous', candidates: [{ id: 3 }, { id: 4 }] }, contractor: null }, state());
+  assert(ambiguous.length === 0, 'an ambiguous headline files no review');
+  const matched = planPartyActions(fallback, { operator: { status: 'matched', company: { id: 2 } }, contractor: null }, state());
+  assert(matched.some(a => a.act === 'link' && a.companyId === 2), 'a confidently matched headline still links, the original behaviour');
+});
+
+await check('a trailing bracketed abbreviation folds into the same name', async () => {
+  assert(normName('Al Moammar Information Systems Company') === normName('Al Moammar Information Systems Company (MIS)'),
+    'the two printed forms are one counter row');
+  const register = [{ id: 9, name: 'AL MOAMMAR INFORMATION SYSTEMS LTD' }];
+  const bare = matchParty('Al Moammar Information Systems Company', register);
+  const bracketed = matchParty('Al Moammar Information Systems Company (MIS)', register);
+  assert(bare.status === bracketed.status, 'and the matcher treats them alike');
+  assert(normName('Volta (UK)') === normName('Volta'), 'a bracketed geography folds too');
+  assert(normName('MIS (Al Moammar) Systems') !== '', 'a bracket mid-name is untouched');
+});
+
 console.log('\nThe gate, the pacing and the spend rules, untouched (static):');
 
 await check('the gate path is wired to nothing from this work', async () => {
