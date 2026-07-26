@@ -148,13 +148,13 @@ check('the migrated sweep queries and ICP config match what the code held', () =
 
 console.log('\nThe pharma campaign, a deliberately tight first cut:');
 
-check('pharma is defined, held at manual, and scoped to the sanitary corpus', () => {
+check('pharma is defined, active after calibration, and scoped to the sanitary corpus', () => {
   const p = requireCampaign('pharma_steriflow');
-  // Manual until John's line-by-line calibration review of the first sweep:
-  // the scheduler only auto-sweeps active campaigns, so pharma cannot sweep
-  // by itself. Going live afterwards is a one-field edit.
-  assert(p.status === 'manual', 'pharma does not auto-sweep before its calibration run');
-  assert(!activeCampaignIds().includes('pharma_steriflow'), 'and the scheduler list excludes it');
+  // Held at manual through its first calibration sweep, then set active on
+  // John's instruction once that sweep was reviewed; the scheduler auto-sweeps
+  // it from now on, the same as the data centre campaign.
+  assert(p.status === 'active', 'pharma is live after its calibration review');
+  assert(activeCampaignIds().includes('pharma_steriflow'), 'and the scheduler now includes it');
   assert(JSON.stringify(p.grounding.lines) === JSON.stringify(['steriflow', 'steriflow_fb', 'low_flow']),
     'the grounding scope names the sanitary lines in the chunk vocabulary');
   assert(!p.grounding.lines.includes('marwin'), 'a pharma draft cannot ground in Marwin material');
