@@ -1,0 +1,79 @@
+{
+  "id": "pharma_steriflow",
+  "displayName": "Pharma",
+  "status": "active",
+  "note": "The second campaign, added 26 July 2026. The gate is a deliberately tight first cut, biased to reject, on John's instruction of the same date: a missed lead is recoverable, a bad draft is not. Its first live sweep is a calibration run to be reviewed line by line the way the data centre gate was calibrated, and it is to be loosened only from evidence found in that review, never pre-emptively. The trust line is the corpus-grounded general sentence and nothing stronger; James may approve a stronger one later, which is a single field edit here.",
+
+  "grounding": {
+    "lines": ["steriflow", "steriflow_fb", "low_flow"],
+    "retrievalFocus": "Steriflow sanitary process valve pharmaceutical biotech hygienic CIP SIP"
+  },
+
+  "links": { "rangePage": "steriflow_page" },
+
+  "icp": {
+    "companyTypes": ["pharma_manufacturer", "biotech_manufacturer", "me_contractor", "end_client"],
+    "signalTypes": ["news_pharma_build", "news_contract", "planning"],
+    "noSignalReason": "no pharmaceutical facility build or contract signals",
+    "thresholds": { "minContractValueGBP": 250000, "ukOnly": true },
+    "buildStages": ["planning_granted", "construction", "fit_out"],
+    "weights": { "namedAccount": 25, "typeFit": 25, "signals": 30, "chHealth": 20 }
+  },
+
+  "signals": {
+    "sweepQueries": [
+      { "query": "UK pharmaceutical manufacturing facility construction planning permission granted", "type": "news_pharma_build" },
+      { "query": "UK biotech manufacturing plant expansion investment announced", "type": "news_pharma_build" },
+      { "query": "UK sterile fill finish facility contract awarded main contractor", "type": "news_contract" },
+      { "query": "UK life sciences GMP cleanroom facility build contractor appointed", "type": "news_contract" },
+      { "query": "UK API plant bioprocessing facility new site investment", "type": "news_pharma_build" }
+    ],
+    "gate": {
+      "sector": "pharmaceutical or life sciences",
+      "sellerDescription": "a UK flow-control supplier that sells sanitary process valves into pharmaceutical and biotech manufacturing, through the manufacturers and the contractors who build their facilities",
+      "subjectTest": "is the thing being built, financed or contracted a pharmaceutical, biotech or life-sciences manufacturing or processing facility? That means a production plant, an API or drug substance plant, a bioprocessing or fermentation facility, a sterile or aseptic production suite, a fill-finish line, a GMP cleanroom, or a campus of these. A hospital, clinic, care home, retail pharmacy, university or teaching building, a pure research or discovery laboratory with no manufacturing, an office, a warehouse or distribution or logistics centre, a data centre, and any other non manufacturing construction all fail here and are rejected even when the headline is a real construction or contract win and even when a pharmaceutical company is the client. If the subject is not a pharmaceutical, biotech or life-sciences manufacturing or processing facility, dcRelevant is false. On a construction, contract or job headline the subject must be recognisably a manufacturing or processing facility to pass; if you cannot confirm that from the text, including an unfamiliar or abbreviated term, default to reject rather than pass on the strength of the event or the client's name.",
+      "eventTest": "is this a real build event, the facility being built, contracted, or financed, invested in or expanded as a specific facility or campus? KEEP financing, investment, funding or expansion that attaches to an actual facility or campus, for example a manufacturer funding a new production plant or expanding a existing site's capacity. REJECT everything that is not a build of a facility, however important it is to the company: a drug approval, a regulatory decision or submission, clinical trial results or a trial start, a product launch, a licensing, supply or distribution agreement, a merger, acquisition, divestment or partnership, company financial results, funding raised for research or a drug programme rather than for a named facility, a patent or litigation matter, a leadership or staffing change, a plant closure or job losses, an opposition or community meeting, a moratorium or objection, a survey, report, opinion or comment piece, and generic sector, market or policy commentary. Equipment or component supply to a manufacturer, for example bioreactors or isolators, is a supplier's commercial news, not the facility being built, and is rejected. The test for the event is whether the money or expansion attaches to an actual facility or campus: if it does, keep; if it is corporate, clinical, regulatory or commercial news, reject.",
+      "subjectNoun": "a pharmaceutical or life-sciences manufacturing facility",
+      "subjectNounPlural": "pharmaceutical or life-sciences manufacturing facilities",
+      "operatorNoun": "pharmaceutical or biotech manufacturer or the contractor named",
+      "clearTitlePasses": "a title that clearly states a pharmaceutical, biotech or life-sciences manufacturing facility being built, financed for a build, or expanded in capacity passes",
+      "confirmedSubject": "a real pharmaceutical or biotech manufacturer with a facility build, financing or expansion event"
+    }
+  },
+
+  "positioning": {
+    "campaignPhrase": "the pharmaceutical and biotech process campaign",
+    "profileFitLine": "lead with why Steriflow sanitary process valves are relevant to hygienic and sterile process specification on pharmaceutical and biotech production, and a light reason a person in the contact's role might care. Be specific to the work, do not say they fit a profile.",
+    "rangeLine": "PCT supplies the Steriflow sanitary valve range, built for hygienic and sterile process duty: 316L barstock construction, FDA and USP Class VI materials, Jorlon diaphragms, CIP and SIP capability, self-draining ASME BPE design, and Unicert traceability documentation.",
+    "trustLine": "Steriflow valves are widely used across pharmaceutical and biotech production.",
+    "trustLinePrefix": "Track record, state in general form and with confidence: ",
+    "confidentialityHardLimit": "Hard limit: never name or imply a specific pharmaceutical or biotech manufacturer or end customer. \"Widely used across pharmaceutical and biotech production\" is the ceiling of specificity.",
+    "positioningRule": "Position the Steriflow sanitary valve range as built for and trusted in hygienic and sterile process duty.",
+    "trackRecordRule": "you may state, confidently and in general form, that Steriflow valves are widely used across pharmaceutical and biotech production. CONFIDENTIALITY RULE, absolute: never name or imply any specific pharmaceutical or biotech manufacturer or end customer. 'Widely used across pharmaceutical and biotech production' is the ceiling of specificity. No 'a major vaccine manufacturer', no 'a well-known biotech', no named manufacturer, nothing that points to a specific customer.",
+    "confidentialityRule": "CONFIDENTIALITY RULE, absolute: never name or imply any specific pharmaceutical or biotech manufacturer or end customer. 'Widely used across pharmaceutical and biotech production' is the ceiling of specificity.",
+    "structurePositioning": "one line positioning the Steriflow sanitary valve range as built for hygienic and sterile process duty, including the general track record across pharmaceutical and biotech production, with no named customer and no part-specific spec",
+    "ask": "a short call, or whether they are specifying process valves on the facility"
+  },
+
+  "orbitTitles": [
+    "process engineer", "validation", "project engineer", "project manager",
+    "commissioning engineer", "utilities", "engineering manager", "cqv",
+    "process development", "manufacturing engineer", "automation", "controls",
+    "clean utilities", "cleanroom", "gmp", "qualification",
+    "technical services", "site engineering", "capital projects", "capex",
+    "head of engineering", "engineering director", "technical director",
+    "projects director", "project director", "construction director",
+    "mechanical engineer", "building services", "mep", "m&e", "design engineer",
+    "estimator", "contracts manager", "preconstruction", "pre-construction",
+    "pre construction", "cost manager", "specification", "procurement", "category manager"
+  ],
+
+  "signalLabels": {
+    "news_pharma_build": "a pharmaceutical facility build announcement",
+    "news_contract": "a contract signal"
+  },
+
+  "watchlistCopy": "Pharmaceutical and biotech manufacturers the engine has spotted expanding, where a UK facility move is plausible but not yet a named project. These are business-development targets to approach or watch, not leads in the pipeline.",
+
+  "geo": { "routing": "shared" }
+}
