@@ -21,6 +21,11 @@ const jr = JSON.parse(readFileSync(join(here, 'models', 'jr.json'), 'utf8'));
 const mark96 = JSON.parse(readFileSync(join(here, 'models', 'mark96.json'), 'utf8'));
 const t2100 = JSON.parse(readFileSync(join(here, 'models', '2100.json'), 'utf8'));
 const t3101 = JSON.parse(readFileSync(join(here, 'models', '3t3101.json'), 'utf8'));
+const m600 = JSON.parse(readFileSync(join(here, 'models', 'm600.json'), 'utf8'));
+const m4600 = JSON.parse(readFileSync(join(here, 'models', 'm4600.json'), 'utf8'));
+const m3100 = JSON.parse(readFileSync(join(here, 'models', 'm3100.json'), 'utf8'));
+const m3300 = JSON.parse(readFileSync(join(here, 'models', 'm3300.json'), 'utf8'));
+const m3700 = JSON.parse(readFileSync(join(here, 'models', 'm3700.json'), 'utf8'));
 const s3000 = JSON.parse(readFileSync(join(here, 'models', '3000.json'), 'utf8'));
 const ms3000 = JSON.parse(readFileSync(join(here, 'models', 'ms3000.json'), 'utf8'));
 const f2000 = JSON.parse(readFileSync(join(here, 'models', '2000.json'), 'utf8'));
@@ -2112,6 +2117,56 @@ check('the port pattern binds the start position to the model', () => {
   assert.ok(/with bushings/.test(t3101.slots.find(s => s.id === 'size').options.find(o => o.code === '025').label),
     'the starred small sizes keep the sheet\'s bushing note');
   assert.ok(/separator is held for John/.test(t3101.note), 'the missing slash is confessed, not invented');
+});
+
+console.log('\nThe brass and three-way sheets that were scans until today:');
+
+check('the 600 family holds its three printed trims apart', () => {
+  roundTrip(m600, { body: '6', ball: '6', stem: '6', port: 'F', packing: 'T', seats: 'T', ends: 'S', size: '025' },
+    '666FTTS-025');
+  roundTrip(m600, { body: '6', ball: '3', stem: '3', port: 'F', packing: 'T', seats: 'R', ends: 'S', size: '050' },
+    '633FTRS-050');
+  roundTrip(m600, { body: '6', ball: '6', stem: '6', port: 'R', packing: 'T', seats: 'T', ends: 'S', size: '200' },
+    '666RTTS-200');
+  assert.ok(checkConstraints(m600, { ball: '3', seats: 'T' }).length > 0, 'stainless trim takes RPTFE seats');
+  assert.ok(checkConstraints(m600, { ball: '3', port: 'R' }).length > 0, 'no stainless reduced port sheet is printed');
+  assert.ok(checkConstraints(m600, { ball: '3', size: '300' }).length > 0, 'the stainless sheet stops at 2 inch');
+  assert.ok(checkConstraints(m600, { port: 'R', size: '025' }).length > 0, 'the reduced port sheet starts at 1/2 inch');
+  assert.equal(checkConstraints(m600, { ball: '6', port: 'F', size: '400' }).length, 0, 'the full port brass sheet carries 4 inch');
+});
+
+check('the 4600 carries its optional lead free suffix', () => {
+  roundTrip(m4600, { series: '46', ball: '3', stem: '3', port: 'F', packing: 'T', seats: 'T', ends: 'S', size: '050', leadFree: 'LF' },
+    '4633FTTS-050LF');
+  roundTrip(m4600, { series: '46', ball: '6', stem: '6', port: 'F', packing: 'T', seats: 'T', ends: 'S', size: '250', leadFree: '' },
+    '4666FTTS-250');
+  assert.ok(checkConstraints(m4600, { ball: '3', stem: '6' }).length > 0, 'ball and stem are matched, flagged inferred');
+});
+
+check('the three-way trio round-trips against the price book shape', () => {
+  roundTrip(m3300, {
+    model: '3T-3300R', size: '100', body: 'BR', ends: 'AA', operation: 'S4',
+    pressure: '60', solenoid: '00', limitSwitch: '00', startPosition: '3A',
+  }, '3T-3300R-100-BR/AAS46000003A');
+  roundTrip(m3300, {
+    model: '3L-3400R', size: '100', body: 'BR', ends: 'AA', operation: 'S4',
+    pressure: '60', solenoid: '00', limitSwitch: '00', startPosition: 'A2',
+  }, '3L-3400R-100-BR/AAS4600000A2');
+  roundTrip(m3700, {
+    model: '3T-3700R', size: '050', body: 'S6', ends: 'AA', operation: 'S6',
+    pressure: '80', solenoid: '3A', limitSwitch: 'AB', startPosition: '4A',
+  }, '3T-3700R-050-S6/AAS6803AAB4A');
+  roundTrip(m3100, {
+    model: '3L-3200F', size: '300', body: 'BR', ends: 'AA', operation: 'HL',
+    pneumatic: 'NN0000', startPosition: 'LB',
+  }, '3L-3200F-300-BR/AAHLNN0000LB');
+  assert.ok(checkConstraints(m3300, { model: '3T-3300R', startPosition: 'A2' }).length > 0, 'the L start positions are the L port\'s');
+  assert.ok(checkConstraints(m3300, { operation: 'HL', pressure: '60' }).length > 0, 'a lever takes no air supply');
+  assert.ok(checkConstraints(m3300, { solenoid: '3A', operation: 'P1' }).length > 0, 'a three-way solenoid wants spring return');
+  assert.ok(checkConstraints(m3700, { solenoid: '3J', operation: 'S6' }).length > 0, 'the 8317 solenoids stop at UT-2.5');
+  assert.ok(checkConstraints(m3700, { limitSwitch: 'AA', operation: 'S7' }).length > 0, 'the small limit switches stop at UT-3');
+  assert.ok(checkConstraints(m3100, { model: '3T-3100F', startPosition: 'LA' }).length > 0, 'the bottom entry pair binds its ports too');
+  assert.ok(/Limit Swtich/.test(m3300.note) && /Limit Swtich/.test(m3700.note), 'the printed column heading slip is confessed');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);

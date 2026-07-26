@@ -1,0 +1,257 @@
+{
+  "model": "4600",
+  "line": "marwin",
+  "displayName": "Marwin 4600 series three-piece swing-out brass ball valve",
+  "match": [
+    "4600",
+    "4600f",
+    "4633ftts",
+    "swing-out"
+  ],
+  "source": {
+    "doc": "4600-Full.pdf",
+    "page": 2,
+    "section": "How to Order"
+  },
+  "note": "Extracted by hand from the how-to-order table. The valve series prints as the two characters 46, then ball, stem, port, packing, seats and ends, a dash and the size, the 600 series pattern one series longer. The lead free suffix is optional and the sheet's own footnote says to leave it blank when not needed, so the empty code is carried. Ball and stem are matched, stainless with stainless and brass with brass, as the table's rows pair them, held as an inferred coupling for John.",
+  "assembly": "{series}{ball}{stem}{port}{packing}{seats}{ends}-{size}{leadFree}",
+  "slots": [
+    {
+      "id": "series",
+      "label": "Valve series",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "46",
+          "label": "4600 series",
+          "aliases": [
+            "4600"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ball",
+      "label": "Ball",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "Stainless steel",
+          "aliases": [
+            "stainless ball"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Brass",
+          "aliases": [
+            "brass ball"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stem",
+      "label": "Stem",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "3",
+          "label": "316 stainless steel",
+          "aliases": [
+            "stainless stem"
+          ]
+        },
+        {
+          "code": "6",
+          "label": "Brass",
+          "aliases": [
+            "brass stem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "port",
+      "label": "Port",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "F",
+          "label": "Full port",
+          "aliases": [
+            "full port"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "T",
+          "label": "PTFE",
+          "aliases": [
+            "ptfe packing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seats",
+      "label": "Seats",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "T",
+          "label": "PTFE",
+          "aliases": [
+            "ptfe seats"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "S",
+          "label": "Threaded",
+          "aliases": [
+            "threaded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Valve size",
+      "position": 8,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\"",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\"",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\"",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\"",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\"",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "125",
+          "label": "1-1/4\"",
+          "aliases": [
+            "1-1/4\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\"",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        },
+        {
+          "code": "250",
+          "label": "2-1/2\"",
+          "aliases": [
+            "2-1/2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leadFree",
+      "label": "Lead free",
+      "position": 9,
+      "required": true,
+      "options": [
+        {
+          "code": "",
+          "label": "None (leave blank if not needed)",
+          "aliases": [
+            "no lead free"
+          ]
+        },
+        {
+          "code": "LF",
+          "label": "Lead free",
+          "aliases": [
+            "lead free"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "ball": "3"
+      },
+      "forbid": {
+        "stem": [
+          "6"
+        ]
+      },
+      "reason": "the table pairs the stainless ball with the stainless stem, held as an inferred coupling for John"
+    },
+    {
+      "when": {
+        "ball": "6"
+      },
+      "forbid": {
+        "stem": [
+          "3"
+        ]
+      },
+      "reason": "the table pairs the brass ball with the brass stem, held as an inferred coupling for John"
+    }
+  ],
+  "cautions": []
+}
