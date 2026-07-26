@@ -17,8 +17,12 @@
 // The refusals are the point. A cell holding more than one price is a
 // collapsed extraction row and prices nothing. A priced row with no part
 // number (the book prints a few L-port twins this way) prices nothing. The
-// same code printed twice at different prices prices nothing until James
-// rules, and the withheld codes are listed. CV3000 and CV4700 pages are
+// same code printed twice at different prices is two products under one
+// printed code, per James (24 July 2026): the limit switch at configurator
+// parts 9 and 10, Nema 4 (AA, AB) at the lower list, Nema 7 (AC, AD) at the
+// higher. They still price nothing here, because the printed code does not
+// say which switch it carries; the withheld codes are listed so the
+// designator-distinct resolution can be wired against their real shapes. CV3000 and CV4700 pages are
 // skipped here because the applied PDF ingest owns them; repair-kit and
 // accessory pages are skipped because a kit or a solenoid must never become
 // "the cheapest Marwin valve".
