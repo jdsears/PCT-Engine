@@ -1,0 +1,247 @@
+{
+  "model": "3T3101",
+  "line": "marwin",
+  "displayName": "Marwin 3T-3101F / 3L-3201F three-way brass multi-port ball valve",
+  "match": [
+    "3t3101",
+    "3l3201",
+    "3t-3101",
+    "3l-3201",
+    "3101",
+    "3201"
+  ],
+  "source": {
+    "doc": "3t3101_3l3201series.pdf",
+    "page": 2,
+    "section": "Ordering matrix"
+  },
+  "note": "Extracted by hand from the ordering matrix on the sheet's second page, the bottom entry ISO 5211 direct mount pair. The head reads model dash size dash body material, as the sheet's own quick spec prints it (3T-3101F-XXX-BR), then ten character positions in four groups. The sibling 2100 sheet's codes carry a slash before the numbered positions where the price book prints them; no price book row is held for this series, so the positions are assembled bare here and the separator is held for John. The start positions are matched to their port patterns from the sheet's own port arrangement tables, BT for the T-port model and BL for the L-port, so a T-port takes TA, TB or TC and an L-port LA, LB or LC. The pneumatic actuator group prints the single NN00 none, and the 1/4 and 3/8 inch sizes carry the sheet's own asterisk, a half inch valve with bushings.",
+  "assembly": "{model}-{size}-{bodyMaterial}{ends}{operation}{pneumatic}{startPosition}",
+  "slots": [
+    {
+      "id": "model",
+      "label": "Model number",
+      "position": 1,
+      "required": true,
+      "options": [
+        {
+          "code": "3T-3101F",
+          "label": "3 way ball valve (T-port)",
+          "aliases": [
+            "t-port"
+          ]
+        },
+        {
+          "code": "3L-3201F",
+          "label": "3 way ball valve (L-port)",
+          "aliases": [
+            "l-port"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
+      "options": [
+        {
+          "code": "025",
+          "label": "1/4\" (a 1/2\" valve with bushings, per the sheet's asterisk)",
+          "aliases": [
+            "1/4\""
+          ]
+        },
+        {
+          "code": "038",
+          "label": "3/8\" (a 1/2\" valve with bushings, per the sheet's asterisk)",
+          "aliases": [
+            "3/8\""
+          ]
+        },
+        {
+          "code": "050",
+          "label": "1/2\"",
+          "aliases": [
+            "1/2\""
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\"",
+          "aliases": [
+            "3/4\""
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\"",
+          "aliases": [
+            "1\""
+          ]
+        },
+        {
+          "code": "150",
+          "label": "1-1/2\"",
+          "aliases": [
+            "1-1/2\""
+          ]
+        },
+        {
+          "code": "200",
+          "label": "2\"",
+          "aliases": [
+            "2\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyMaterial",
+      "label": "Body material",
+      "position": 3,
+      "required": true,
+      "options": [
+        {
+          "code": "BR",
+          "label": "Brass",
+          "aliases": [
+            "brass"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ends",
+      "label": "End connections (1 and 2)",
+      "position": 4,
+      "required": true,
+      "options": [
+        {
+          "code": "PT",
+          "label": "Threaded",
+          "aliases": [
+            "threaded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operation",
+      "label": "Operation (3 and 4)",
+      "position": 5,
+      "required": true,
+      "options": [
+        {
+          "code": "HL",
+          "label": "Handle",
+          "aliases": [
+            "handle"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "None",
+          "aliases": [
+            "no operator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pneumatic",
+      "label": "Pneumatic actuator (5, 6, 7 and 8)",
+      "position": 6,
+      "required": true,
+      "options": [
+        {
+          "code": "NN00",
+          "label": "None",
+          "aliases": [
+            "no actuator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "startPosition",
+      "label": "Start position (9 and 10)",
+      "position": 7,
+      "required": true,
+      "options": [
+        {
+          "code": "TA",
+          "label": "3-way BT3A",
+          "aliases": [
+            "bt3a"
+          ]
+        },
+        {
+          "code": "TB",
+          "label": "3-way BT3B",
+          "aliases": [
+            "bt3b"
+          ]
+        },
+        {
+          "code": "TC",
+          "label": "3-way BT3C",
+          "aliases": [
+            "bt3c"
+          ]
+        },
+        {
+          "code": "LA",
+          "label": "3-way BL1A",
+          "aliases": [
+            "bl1a"
+          ]
+        },
+        {
+          "code": "LB",
+          "label": "3-way BL1B",
+          "aliases": [
+            "bl1b"
+          ]
+        },
+        {
+          "code": "LC",
+          "label": "3-way BL1C",
+          "aliases": [
+            "bl1c"
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "when": {
+        "model": "3T-3101F"
+      },
+      "forbid": {
+        "startPosition": [
+          "LA",
+          "LB",
+          "LC"
+        ]
+      },
+      "reason": "the BL start positions belong to the L-port model, per the sheet's own port arrangement tables"
+    },
+    {
+      "when": {
+        "model": "3L-3201F"
+      },
+      "forbid": {
+        "startPosition": [
+          "TA",
+          "TB",
+          "TC"
+        ]
+      },
+      "reason": "the BT start positions belong to the T-port model, per the sheet's own port arrangement tables"
+    }
+  ],
+  "cautions": []
+}

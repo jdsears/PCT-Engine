@@ -20,6 +20,7 @@ const cv4700 = JSON.parse(readFileSync(join(here, 'models', 'cv4700.json'), 'utf
 const jr = JSON.parse(readFileSync(join(here, 'models', 'jr.json'), 'utf8'));
 const mark96 = JSON.parse(readFileSync(join(here, 'models', 'mark96.json'), 'utf8'));
 const t2100 = JSON.parse(readFileSync(join(here, 'models', '2100.json'), 'utf8'));
+const t3101 = JSON.parse(readFileSync(join(here, 'models', '3t3101.json'), 'utf8'));
 const s3000 = JSON.parse(readFileSync(join(here, 'models', '3000.json'), 'utf8'));
 const ms3000 = JSON.parse(readFileSync(join(here, 'models', 'ms3000.json'), 'utf8'));
 const f2000 = JSON.parse(readFileSync(join(here, 'models', '2000.json'), 'utf8'));
@@ -2093,6 +2094,24 @@ check('the buckets, sanitary traps and stations round-trip', () => {
   assert.ok(checkConstraints(dt711, { specials: '1', bodyType: '1' }).length > 0, 'the DTC is the strainer body alone');
   roundTrip(totaltrap, { model: 'TT3HP-4' }, 'TT3HP-4');
   roundTrip(pr3g, { model: 'PR3G', material: 'S', size: '4', cv: 'F', range: 'M' }, 'PR3GS4FM');
+});
+
+console.log('\nThe 3T-3101/3L-3201 bottom entry pair:');
+
+check('the port pattern binds the start position to the model', () => {
+  roundTrip(t3101, {
+    model: '3T-3101F', size: '050', bodyMaterial: 'BR', ends: 'PT',
+    operation: 'HL', pneumatic: 'NN00', startPosition: 'TA',
+  }, '3T-3101F-050-BRPTHLNN00TA');
+  roundTrip(t3101, {
+    model: '3L-3201F', size: '200', bodyMaterial: 'BR', ends: 'PT',
+    operation: 'NN', pneumatic: 'NN00', startPosition: 'LC',
+  }, '3L-3201F-200-BRPTNNNN00LC');
+  assert.ok(checkConstraints(t3101, { model: '3T-3101F', startPosition: 'LA' }).length > 0, 'the L positions are the L-port\'s');
+  assert.ok(checkConstraints(t3101, { model: '3L-3201F', startPosition: 'TA' }).length > 0, 'and the T positions the T-port\'s');
+  assert.ok(/with bushings/.test(t3101.slots.find(s => s.id === 'size').options.find(o => o.code === '025').label),
+    'the starred small sizes keep the sheet\'s bushing note');
+  assert.ok(/separator is held for John/.test(t3101.note), 'the missing slash is confessed, not invented');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
