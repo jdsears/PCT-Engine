@@ -53,6 +53,32 @@ export function buildPartiesSystem(campaign) {
   );
 }
 
+// A comma-or-and list of firms in one field, "Turner Construction, DPR
+// Construction and Mortenson", is a joint venture reported as one string. The
+// party columns hold one name a side, and the matcher cannot place a list, so
+// it would count as a phantom unknown in the telemetry. We keep the first
+// named as the primary party: on a build the first-named contractor is the
+// lead or main contractor, the most sellable and the one a follow-up would
+// name, and the same holds for a lead developer. The rest are dropped rather
+// than invented into party rows the single-field model has no room for.
+export function primaryParty(name) {
+  const s = String(name || '').trim();
+  if (!s) return null;
+  // Split on commas and semicolons only. A reported joint venture is written
+  // as a comma list, "Turner Construction, DPR Construction and Mortenson",
+  // and the first named is the lead. An ampersand or a bare "and" with no
+  // comma is left alone, because "Larsen & Toubro" and "Balfour Beatty and
+  // Vinci" are single names, not lists, and splitting them would lose a real
+  // company. The trailing "and Mortenson" of a comma list rides on the last
+  // fragment, which is dropped anyway.
+  const parts = s.split(/\s*[;,]\s*/).map(p => p.trim()).filter(Boolean);
+  if (parts.length <= 1) return s;
+  // A bare corporate suffix after a comma ("Turner Construction, Inc.") is
+  // punctuation, not a list; keep the pair joined.
+  if (/^(inc|inc\.|llc|ltd|ltd\.|limited|plc|llp|co|co\.|corp|corp\.|gmbh)$/i.test(parts[1])) return `${parts[0]}, ${parts[1]}`;
+  return parts[0];
+}
+
 // Extract both parties from a kept signal. Injectable model call, offline
 // testable; returns { operator, contractor }, either null, both null on any
 // failure. The caller decides what to do with them; nothing is written here.
@@ -63,5 +89,11 @@ export async function extractParties(result, { callModel = callClaude, campaign 
   try { parsed = parseJson(await callModel(buildPartiesSystem(def), user, { maxTokens: 200 })); }
   catch { return { operator: null, contractor: null }; }
   const clean = v => (typeof v === 'string' && v.trim() && v.trim().toLowerCase() !== 'null' ? v.trim() : null);
-  return { operator: clean(parsed.operator), contractor: clean(parsed.contractor) };
+  let operator = primaryParty(clean(parsed.operator));
+  let contractor = primaryParty(clean(parsed.contractor));
+  // A single-party event whose one party the model returned in both fields, as
+  // the OXB manufacturing-partner signal did, is one party, not two. Keep the
+  // operator and drop the echo, so the contractor side is not a duplicate.
+  if (operator && contractor && operator.toLowerCase() === contractor.toLowerCase()) contractor = null;
+  return { operator, contractor };
 }
