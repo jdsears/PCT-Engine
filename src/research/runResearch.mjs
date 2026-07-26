@@ -7,6 +7,7 @@ import { regionForPostcode } from './region.mjs';
 import { resolveDomain } from './domains.mjs';
 import { syncOfficerContacts } from './officerContacts.mjs';
 import { matchParty } from './match.mjs';
+import { primaryParty } from './parties.mjs';
 import { planPartyActions, proposalsPerRun, normName } from './partyActions.mjs';
 import { searchCompanies, candidateRows } from './companiesHouse.mjs';
 import { getCampaign, listCampaigns } from '../campaigns/registry.mjs';
@@ -71,12 +72,19 @@ export async function runResearch({ campaign, log = () => {} } = {}) {
     // clear headline match without an extracted name. The contractor never
     // falls back: a title is not a contractor.
     state.known = { has: k => known.has(`${s.campaign}:${k}`), add: k => known.add(`${s.campaign}:${k}`) };
+    // A stored party may still be a joint-venture list on a row written before
+    // this rule, or an echo of the same name on both sides; primaryParty keeps
+    // the first named and the same-name guard drops a duplicate, so telemetry
+    // and proposals see one clean name a side, not a phantom.
+    const opName = s.operator ? primaryParty(s.operator) : s.title;
+    let conName = s.contractor ? primaryParty(s.contractor) : null;
+    if (opName && conName && opName.toLowerCase() === conName.toLowerCase()) conName = null;
     const results = {
-      operator: matchParty(s.operator || s.title, matchCompanies, { aliases }),
-      contractor: s.contractor ? matchParty(s.contractor, matchCompanies, { aliases }) : null,
+      operator: matchParty(opName, matchCompanies, { aliases }),
+      contractor: conName ? matchParty(conName, matchCompanies, { aliases }) : null,
     };
     const actions = planPartyActions(
-      { operator: s.operator || s.title, contractor: s.contractor, geo_scope: s.geo_scope,
+      { operator: opName, contractor: conName, geo_scope: s.geo_scope,
         operatorIsTitleFallback: !s.operator },
       results, state);
 

@@ -2,7 +2,7 @@
 // three honest outcomes, proposals that only a human turns into accounts, and
 // staleness as a computed flag. The relevance gate appears here only to prove
 // it was not touched.
-import { buildPartiesSystem, extractParties } from './parties.mjs';
+import { buildPartiesSystem, extractParties, primaryParty } from './parties.mjs';
 import { matchParty, matchOperator, OPERATOR_ALIASES } from './match.mjs';
 import { planPartyActions, proposalsPerRun, normName } from './partyActions.mjs';
 import { staleDays, isStale, staleSql } from './staleness.mjs';
@@ -47,6 +47,31 @@ await check('any failure returns both null, never a guess', async () => {
   assert(bad.operator === null && bad.contractor === null, 'a parse failure is both null');
   const thrown = await extractParties({ title: 'x' }, { callModel: async () => { throw new Error('down'); } });
   assert(thrown.operator === null && thrown.contractor === null, 'a thrown call is both null');
+});
+
+await check('the same name on both sides is one party, operator kept, contractor dropped', async () => {
+  // The OXB manufacturing-partner signal returned OXB as both operator and
+  // contractor on a single-party event.
+  const p = await extractParties({ title: 'OXB selected as manufacturing partner' },
+    { callModel: asModel({ operator: 'OXB', contractor: 'OXB' }) });
+  assert(p.operator === 'OXB' && p.contractor === null, 'one party, not a duplicate');
+});
+
+await check('a joint-venture list keeps the first-named as the primary party', async () => {
+  assert(primaryParty('Turner Construction, DPR Construction and Mortenson') === 'Turner Construction',
+    'the lead contractor is the first named');
+  assert(primaryParty('Larsen & Toubro, Shapoorji Pallonji, Tata Projects and NCC') === 'Larsen & Toubro',
+    'a four-name comma list reduces to the first, and the ampersand inside that first name is left intact');
+  assert(primaryParty('Balfour Beatty and Vinci') === 'Balfour Beatty and Vinci',
+    'a two-firm name with no comma is left alone, not split on a bare and');
+  assert(primaryParty('Turner Construction, Inc.') === 'Turner Construction, Inc.',
+    'a corporate suffix after a comma is punctuation, not a list');
+  assert(primaryParty('Skanska') === 'Skanska', 'a single name is unchanged');
+  assert(primaryParty('') === null && primaryParty(null) === null, 'empty is null');
+  // The extraction applies it, so a list never reaches the matcher as one name.
+  const p = await extractParties({ title: 'JV appointed' },
+    { callModel: asModel({ operator: 'Mercer County Authority', contractor: 'Turner, DPR and Mortenson' }) });
+  assert(p.contractor === 'Turner', 'the stored contractor is a single matchable name');
 });
 
 await check('the extraction prompt is its own, and the gate prompt is untouched', async () => {

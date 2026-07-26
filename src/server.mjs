@@ -587,6 +587,39 @@ app.get('/api/campaigns', async (_req, res) => {
   catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// Read-only campaigns view for the Health page: one row per registered
+// campaign, its status and last sweep, and the cumulative state behind it. It
+// is deliberately not a control surface. Status is set in the campaign
+// definition and changed by a reviewed edit, never from a screen, and the card
+// says so, so a reader is not left hunting for a toggle. A campaign with
+// nothing behind it shows honest zeroes rather than being hidden.
+app.get('/api/health/campaigns', async (_req, res) => {
+  try {
+    const lastRun = await kvGet('engine_last_run');
+    // All campaigns sweep in one cycle, so the run's timestamp is the last
+    // sweep for every campaign that was in it. A campaign absent from the last
+    // run (a manual one, or one added since) has no auto sweep to report.
+    const sweptIds = new Set((lastRun?.campaigns || []).map(c => c.campaign));
+    const [accounts, signals, leads, drafts] = await Promise.all([
+      pool.query(`SELECT campaign, count(*)::int AS n FROM company_campaigns GROUP BY campaign`),
+      pool.query(`SELECT campaign, count(*) FILTER (WHERE COALESCE(relevant, dc_relevant))::int AS n FROM signals GROUP BY campaign`),
+      pool.query(`SELECT campaign, count(*)::int AS n FROM leads WHERE stage = ANY($1) GROUP BY campaign`, [STAGES]),
+      pool.query(`SELECT campaign, count(*)::int AS n FROM outbound_drafts WHERE status IN ('draft','approved') GROUP BY campaign`)
+        .catch(() => ({ rows: [] })),
+    ]);
+    const by = rows => Object.fromEntries(rows.map(r => [r.campaign, r.n]));
+    const A = by(accounts.rows), S = by(signals.rows), L = by(leads.rows), D = by(drafts.rows);
+    res.json({
+      lastRunAt: lastRun?.at || null,
+      campaigns: listCampaigns().map(c => ({
+        id: c.id, displayName: c.displayName, status: c.status,
+        lastSweptAt: sweptIds.has(c.id) ? (lastRun?.at || null) : null,
+        accounts: A[c.id] || 0, signalsPassed: S[c.id] || 0, leads: L[c.id] || 0, drafts: D[c.id] || 0,
+      })),
+    });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 // ----- The review queue -----
 // Proposals from unknown parties and ambiguities the matcher refuses to
 // resolve alone. This is the human step between discovery and the register:
@@ -665,9 +698,15 @@ app.post('/api/reviews/:id/confirm', async (req, res) => {
         `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, 'queue_confirm') ON CONFLICT (alias) DO NOTHING`,
         [r.printed_name.toLowerCase(), name]);
     }
+    // Record why: an unlinked confirm means no confident Companies House match
+    // was chosen at review, a decision to add the printed entity as it stands,
+    // not an entity that was overlooked.
+    const decisionNote = chNumber
+      ? `confirmed against Companies House ${chNumber}`
+      : 'confirmed as printed: no confident Companies House match chosen at review';
     await pool.query(
-      `UPDATE party_reviews SET status = 'confirmed', company_id = $1, decided_at = now() WHERE id = $2`,
-      [companyId, r.id]);
+      `UPDATE party_reviews SET status = 'confirmed', company_id = $1, decision_note = $2, decided_at = now() WHERE id = $3`,
+      [companyId, decisionNote, r.id]);
     res.json({ ok: true, companyId });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -691,8 +730,9 @@ app.post('/api/reviews/:id/merge', async (req, res) => {
       [companyId, r.campaign]);
     await linkReviewSignal(r, companyId);
     await pool.query(
-      `UPDATE party_reviews SET status = 'merged', company_id = $1, decided_at = now() WHERE id = $2`,
-      [companyId, r.id]);
+      `UPDATE party_reviews SET status = 'merged', company_id = $1,
+         decision_note = $2, decided_at = now() WHERE id = $3`,
+      [companyId, `${r.kind === 'ambiguous' ? 'resolved' : 'merged'} into ${co[0].name}, alias recorded`, r.id]);
     res.json({ ok: true, companyId });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -702,7 +742,9 @@ app.post('/api/reviews/:id/dismiss', async (req, res) => {
   try {
     const r = await openReview(req.params.id);
     if (!r) return res.status(404).json({ error: 'review not open' });
-    await pool.query(`UPDATE party_reviews SET status = 'dismissed', decided_at = now() WHERE id = $1`, [r.id]);
+    await pool.query(
+      `UPDATE party_reviews SET status = 'dismissed',
+         decision_note = 'dismissed at review; not proposed again', decided_at = now() WHERE id = $1`, [r.id]);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -891,6 +933,11 @@ async function runEngineOnce(trigger) {
       docsUpdated: spSync && !spSync.skipped ? spSync.updated : undefined,
       docsRemoved: spSync && !spSync.skipped ? spSync.removed : undefined,
       docsErrors: spSync?.errors?.length ? spSync.errors.length : undefined,
+      // The failing documents by name, not only their count. The count alone
+      // is what let sixteen errors sit unread in a stat line; the detail lets
+      // the Health page name them and a reader see whether a datasheet failed
+      // or an image-only PDF did. Capped so a bad sync cannot bloat the record.
+      docErrorList: spSync?.errors?.length ? spSync.errors.slice(0, 40) : undefined,
       docsSkipped: spSync?.skipped || undefined,
     });
     // With auto-draft on, freshly researched leads get a grounded draft into
@@ -1736,13 +1783,25 @@ app.get('/api/marwin/range/:series', async (req, res) => {
 
 app.get('/api/health/cards', async (_req, res) => {
   try {
+    // The corpus card counts the whole corpus, every source; the SharePoint
+    // card counts only what the sync manages. Both are true and they differ,
+    // so the corpus query also measures the SharePoint-sourced subset, and the
+    // card states the split rather than leaving a reader to conclude documents
+    // were lost.
     const corpus = await pool.query(
-      `SELECT count(*)::int AS chunks, count(DISTINCT metadata->>'source_id')::int AS documents,
+      `SELECT count(*)::int AS chunks,
+              count(DISTINCT metadata->>'source_id')::int AS documents,
+              count(*) FILTER (WHERE metadata->>'corpus' = 'sharepoint')::int AS sp_chunks,
+              count(DISTINCT metadata->>'source_id') FILTER (WHERE metadata->>'corpus' = 'sharepoint')::int AS sp_documents,
               max(created_at) AS last FROM kb_chunks`);
+    // Every line, including the explicit 'general' tag and the untagged
+    // remainder, so the breakdown accounts for the whole corpus rather than
+    // the four busiest lines. The chunk vocabulary has eight product lines
+    // plus general and the data centre tag; null is shown honestly as untagged.
     const byLine = await pool.query(
-      `SELECT metadata->>'line' AS line, count(DISTINCT metadata->>'source_id')::int AS docs
-       FROM kb_chunks WHERE metadata->>'line' IS NOT NULL
-       GROUP BY 1 ORDER BY docs DESC LIMIT 4`);
+      `SELECT COALESCE(metadata->>'line', 'untagged') AS line,
+              count(DISTINCT metadata->>'source_id')::int AS docs
+       FROM kb_chunks GROUP BY 1 ORDER BY docs DESC`);
     const ext = await pool.query(`SELECT extversion FROM pg_extension WHERE extname = 'vector'`);
     const size = await pool.query(
       `SELECT round(pg_database_size(current_database()) / 1048576.0)::int AS mb`);
@@ -1761,6 +1820,7 @@ app.get('/api/health/cards', async (_req, res) => {
     res.json({
       corpus: {
         chunks: corpus.rows[0].chunks, documents: corpus.rows[0].documents,
+        sharepointChunks: corpus.rows[0].sp_chunks, sharepointDocuments: corpus.rows[0].sp_documents,
         lastIngestedAt: corpus.rows[0].last, byLine: byLine.rows,
       },
       database: { engine: 'PostgreSQL', pgvector: ext.rows[0]?.extversion ?? null, sizeMB: size.rows[0].mb },

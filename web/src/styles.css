@@ -526,3 +526,34 @@ button, input { font: inherit; }
 .rq-tag b { color: var(--navy); }
 .rq-caption { font-size: 12px; color: var(--ink2); margin: 0; }
 .pill-stale { opacity: 0.7; }
+
+/* Health: attention block above routine stats, campaigns table, collapsed
+   SharePoint card, sync-error disclosure. Existing tokens only, no flow line. */
+.engine-attention { display: flex; flex-direction: column; gap: 8px; }
+.sync-err-toggle { font: inherit; font-size: 13px; color: inherit; background: none; border: none; padding: 0; text-align: left; cursor: pointer; text-decoration: underline; }
+.sync-err-list { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.sync-err-list li { font-size: 12px; word-break: break-word; }
+.sp-line { color: var(--ink2); }
+
+.camp-table { display: flex; flex-direction: column; }
+.camp-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 10px 0; border-top: 1px solid var(--line); }
+.camp-row:first-child { border-top: none; }
+.camp-id { display: flex; align-items: baseline; gap: 8px; flex: 1 1 auto; min-width: 0; }
+.camp-name { font-weight: 600; color: var(--navy); }
+.camp-status { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink2); }
+.camp-status--active { color: var(--teal); border-color: var(--teal); }
+.camp-figs { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink2); }
+.camp-figs b { color: var(--navy); font-weight: 600; }
+.camp-swept { font-size: 12px; color: var(--ink2); width: 100%; }
+
+/* Insights, two labelled zones so the campaign/whole-engine split is structure. */
+.ins-zone { display: flex; flex-direction: column; gap: 18px; }
+.ins-zone + .ins-zone { margin-top: 28px; padding-top: 22px; border-top: 2px solid var(--line); }
+.ins-zone-head { display: flex; flex-direction: column; gap: 2px; }
+.ins-zone-title { font-size: 18px; font-weight: 700; color: var(--navy); }
+.ins-zone-sub { font-size: 13px; color: var(--ink2); }
+
+/* At phone widths the campaign figures stack rather than crowd the row. */
+@media (max-width: 420px) {
+  .camp-figs { width: 100%; }
+}

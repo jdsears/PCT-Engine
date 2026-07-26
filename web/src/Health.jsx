@@ -94,9 +94,39 @@ function EngineCard() {
     ({ companiesHouse: 'Companies House', tavily: 'Tavily', anthropic: 'Anthropic', findymail: 'Findymail' }[k] || k));
   const lr = engine.lastRun;
 
+  // Anything wrong or worth attention is gathered first and rendered above the
+  // routine numbers, because a page that reports everything and flags nothing
+  // is where sixteen sync errors sat unread in a stat line. Missing keys, a
+  // failed run, sync errors, a stood-down people search: each is an amber note
+  // at the top, and sync errors open to name the failing documents.
+  const attentions = [];
+  if (missing.length > 0) {
+    attentions.push({ key: 'keys', text: `Missing keys on this service: ${missing.join(', ')}. Runs find nothing from those sources until they are set.` });
+  }
+  if (lr && !lr.ok) {
+    attentions.push({ key: 'run', text: `The last run failed: ${lr.error}` });
+  }
+  if (lr?.ok && lr.docsErrors) {
+    attentions.push({
+      key: 'sync',
+      text: `${lr.docsErrors} document${lr.docsErrors === 1 ? '' : 's'} failed to sync on the last run.`,
+      detail: lr.docErrorList || null,
+    });
+  }
+  if (lr?.ok && lr.peopleStopped) {
+    attentions.push({ key: 'people', text: `The people search stood down on ${lr.peopleStopped} during the last run.` });
+  }
+
   return (
     <div className="card health-card gap-10">
       <div className="eyebrow">Signal engine</div>
+      {attentions.length > 0 && (
+        <div className="engine-attention">
+          {attentions.map(a => a.detail
+            ? <SyncErrors key={a.key} text={a.text} detail={a.detail} />
+            : <div className="engine-warn" key={a.key}>{a.text}</div>)}
+        </div>
+      )}
       <div className="engine-row">
         <div className="status-big">
           <span className="status-dot" style={{ background: engine.running ? 'var(--blue)' : engine.enabled ? 'var(--teal)' : 'var(--stop-muted)' }} />
@@ -125,17 +155,72 @@ function EngineCard() {
           ? `Finding signals and pulling leads every ${engine.intervalHours} hours.`
           : 'Automatic signal finding and lead pulling is off. Manual runs still work.'}
       </div>
-      {missing.length > 0 && (
-        <div className="engine-warn">Missing keys on this service: {missing.join(', ')}. Runs will find nothing from those sources until they are set.</div>
-      )}
-      {lr && (
+      {lr?.ok && (
         <div className="muted-small">
-          Last run {fmtClockDay(lr.at)}{lr.trigger ? ` (${lr.trigger})` : ''}: {lr.ok
-            ? `${lr.signalsStored ?? 0} signals stored, ${lr.signalsRejected ?? 0} rejected, ${lr.matched ?? 0} matched, ${lr.leadsCreated ?? 0} leads created, ${lr.leadsUpdated ?? 0} refreshed${lr.peopleSearched != null ? `, ${lr.peopleSearched} account(s) people-searched, ${lr.peopleFound ?? 0} contacts (${lr.peopleOrbit ?? 0} in orbit)${lr.peopleStopped ? `, stopped on ${lr.peopleStopped}` : ''}` : ''}${lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}${lr.docsChecked != null ? `, ${lr.docsChecked} document(s) checked, ${lr.docsUpdated ?? 0} refreshed${lr.docsRemoved ? `, ${lr.docsRemoved} withdrawn` : ''}${lr.docsErrors ? `, ${lr.docsErrors} sync error(s)` : ''}` : ''}${lr.docsSkipped ? `, document sync skipped: ${lr.docsSkipped}` : ''}.`
-            : `failed, ${lr.error}`}
+          Last run {fmtClockDay(lr.at)}{lr.trigger ? ` (${lr.trigger})` : ''}: {lr.signalsStored ?? 0} signals stored, {lr.signalsRejected ?? 0} rejected, {lr.matched ?? 0} matched, {lr.leadsCreated ?? 0} leads created, {lr.leadsUpdated ?? 0} refreshed{lr.peopleSearched != null ? `, ${lr.peopleSearched} account(s) people-searched, ${lr.peopleFound ?? 0} contacts (${lr.peopleOrbit ?? 0} in orbit)` : ''}{lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}{lr.docsChecked != null ? `, ${lr.docsChecked} document(s) checked, ${lr.docsUpdated ?? 0} refreshed${lr.docsRemoved ? `, ${lr.docsRemoved} withdrawn` : ''}` : ''}{lr.docsSkipped ? `, document sync skipped: ${lr.docsSkipped}` : ''}.
         </div>
       )}
       {note && <div className="muted-small">{note}</div>}
+    </div>
+  );
+}
+
+// Sync errors, counted at the top and openable to name the failing documents,
+// because the count alone is what let them go unread. Each row is a document
+// and its error, so a reader can tell a datasheet that failed to extract from
+// an image-only PDF that never had text.
+function SyncErrors({ text, detail }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="engine-warn">
+      <button className="sync-err-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        {text} {open ? 'Hide' : 'Show'} the {detail.length} named.
+      </button>
+      {open && (
+        <ul className="sync-err-list">
+          {detail.map((e, i) => <li key={i} className="mono-sm">{e}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// The campaigns view, read only. One row per registered campaign: name, status,
+// last sweep, and the cumulative state behind it. Not a control surface; status
+// is set in the campaign definition and changed by a reviewed edit, which the
+// footer says so a reader does not hunt for a toggle that is not here. A
+// campaign with nothing behind it shows honest zeroes.
+function CampaignsCard() {
+  const [d, setD] = useState(null);
+  useEffect(() => {
+    apiFetch('/api/health/campaigns').then(r => (r.ok ? r.json() : null)).then(setD).catch(() => setD(null));
+  }, []);
+  if (!d || !(d.campaigns || []).length) return null;
+  return (
+    <div className="card health-card gap-10">
+      <div className="eyebrow">Campaigns</div>
+      <div className="camp-table">
+        {d.campaigns.map(c => (
+          <div className="camp-row" key={c.id}>
+            <div className="camp-id">
+              <span className="camp-name">{c.displayName}</span>
+              <span className={`camp-status camp-status--${c.status}`}>{c.status}</span>
+            </div>
+            <div className="camp-figs">
+              <span><b>{c.accounts}</b> accounts</span>
+              <span><b>{c.signalsPassed}</b> signals</span>
+              <span><b>{c.leads}</b> leads</span>
+              <span><b>{c.drafts}</b> drafts</span>
+            </div>
+            <div className="camp-swept">
+              {c.lastSweptAt ? `swept ${fmtClockDay(c.lastSweptAt)}` : (c.status === 'active' ? 'not yet swept' : 'manual, swept by hand')}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="muted-small">
+        Status is set in the campaign definition and changed by a reviewed edit, not from this screen. An active campaign sweeps on the engine cycle; a manual one is run by hand.
+      </div>
     </div>
   );
 }
@@ -273,29 +358,53 @@ function RangeBuilder() {
 // SharePoint's own UI, because the engine's access is read-only by design.
 function SharePointDocsCard() {
   const [d, setD] = useState(null);
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     apiFetch('/api/sharepoint/docs').then(r => (r.ok ? r.json() : null)).then(setD).catch(() => setD(null));
   }, []);
   if (!d || d.migrationPending) return null;
   if (!d.configured && !(d.totals?.docs > 0)) return null;
+  // A directory listing is not a health signal. The count and last sync are,
+  // and the few most recently changed documents are worth a glance; the rest
+  // sit behind a disclosure rather than filling the card with twenty links.
+  const docs = d.docs || [];
+  const recent = docs.slice(0, 3);
+  const rest = docs.slice(3);
+  const docLink = doc => doc.url
+    ? <a href={doc.url} target="_blank" rel="noreferrer">{doc.name}</a>
+    : doc.name;
   return (
     <div className="card health-card gap-10">
       <div className="eyebrow">SharePoint documents</div>
-      <div className="muted-small">
-        {d.totals.docs > 0
-          ? `${d.totals.docs} document${d.totals.docs === 1 ? '' : 's'} synced from the site (${d.totals.chunks.toLocaleString('en-GB')} chunks), last sync ${d.totals.lastSync ? fmtClockDay(d.totals.lastSync) : 'unknown'}.${d.enabled ? '' : ' The sync switch is off; the engine cycle is not refreshing them.'}`
-          : `Nothing synced yet. ${d.enabled ? 'The next engine cycle (or Run now) does the first sync.' : 'Turn SharePoint sync on from the Signal engine card.'}`}
-      </div>
-      {d.docs.length > 0 && (
-        <div className="muted-small">
-          {d.docs.map(doc => (
-            <div key={doc.path}>
-              {doc.url
-                ? <a href={doc.url} target="_blank" rel="noreferrer">{doc.name}</a>
-                : doc.name}
-              {' '}({lineLabel(doc.line)}, {fmtClockDay(doc.syncedAt)})
+      {d.totals.docs > 0 ? (
+        <>
+          <div className="health-hero">{d.totals.docs.toLocaleString('en-GB')}</div>
+          <div className="health-sub">
+            documents synced, {d.totals.chunks.toLocaleString('en-GB')} chunks, last sync {d.totals.lastSync ? fmtClockDay(d.totals.lastSync) : 'unknown'}.
+            {d.enabled ? '' : ' The sync switch is off; the cycle is not refreshing them.'}
+          </div>
+          {recent.length > 0 && (
+            <div className="muted-small">
+              <div className="camp-swept">Most recently changed</div>
+              {recent.map(doc => (
+                <div key={doc.path}>{docLink(doc)} <span className="sp-line">({lineLabel(doc.line)}, {fmtClockDay(doc.syncedAt)})</span></div>
+              ))}
             </div>
-          ))}
+          )}
+          {rest.length > 0 && (
+            <div className="muted-small">
+              <button className="sync-err-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+                {open ? 'Hide' : 'Show'} {rest.length} more
+              </button>
+              {open && rest.map(doc => (
+                <div key={doc.path}>{docLink(doc)} <span className="sp-line">({lineLabel(doc.line)}, {fmtClockDay(doc.syncedAt)})</span></div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="muted-small">
+          Nothing synced yet. {d.enabled ? 'The next engine cycle (or Run now) does the first sync.' : 'Turn SharePoint sync on from the Signal engine card.'}
         </div>
       )}
       <div className="muted-small">
@@ -324,11 +433,17 @@ export default function Health() {
   const byLine = corpus.byLine || [];
   const maxDocs = Math.max(1, ...byLine.map(l => l.docs));
   const checked = graph.checkedAt ? fmtClockDay(graph.checkedAt).split(' · ')[0] : null;
+  // The corpus is every source; the SharePoint card counts only the sync's
+  // own subset. Naming the split here stops a reader subtracting one from the
+  // other and concluding documents were lost.
+  const spDocs = corpus.sharepointDocuments ?? null;
+  const otherDocs = spDocs != null ? Math.max(0, (corpus.documents ?? 0) - spDocs) : null;
 
   return (
     <div className="content-pad">
       <div className="health-grid">
         <EngineCard />
+        <CampaignsCard />
         <PriceCard />
         <RangeBuilder />
         <SharePointDocsCard />
@@ -336,7 +451,12 @@ export default function Health() {
         <div className="card health-card">
           <div className="eyebrow">Corpus</div>
           <div className="health-hero">{(corpus.chunks ?? 0).toLocaleString('en-GB')}</div>
-          <div className="health-sub">chunks across <span className="mono-sm">{corpus.documents ?? 0}</span> documents</div>
+          <div className="health-sub">chunks across <span className="mono-sm">{corpus.documents ?? 0}</span> documents, every source.</div>
+          {spDocs != null && (
+            <div className="muted-small">
+              {spDocs.toLocaleString('en-GB')} from the SharePoint sync, {otherDocs.toLocaleString('en-GB')} from earlier ingests. The SharePoint card counts the first group only.
+            </div>
+          )}
         </div>
 
         <div className="card health-card gap-10">
@@ -344,7 +464,7 @@ export default function Health() {
           {byLine.length === 0 && <div className="muted-small">No line metadata yet.</div>}
           {byLine.map((l, i) => (
             <div className="line-row" key={i}>
-              <span className="line-label">{lineLabel(l.line)}</span>
+              <span className="line-label">{l.line === 'untagged' ? 'Untagged' : lineLabel(l.line)}</span>
               <span className="meter"><span style={{ width: `${Math.round((l.docs / maxDocs) * 100)}%` }} /></span>
               <span className="line-count">{l.docs}</span>
             </div>

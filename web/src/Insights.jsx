@@ -150,12 +150,15 @@ export default function Insights({ campaign }) {
   return (
     <div className="content-pad">
       <div className="insights-col">
-        {/* Campaign activity. This is the section the switcher controls, so it
-            leads. The co-pilot sections below read the query log, which has no
-            campaign, and say so rather than wearing a label they cannot keep. */}
+        {/* Two zones, labelled, so the distinction is structure rather than a
+            caveat sentence a reader might miss. The first answers to the
+            switcher; the second reads the query log, which has no campaign. */}
         {showCampaigns && (
-          <div className="ins-section">
-            <Head>{scoped ? 'This campaign, last 30 days' : 'Campaigns, last 30 days'}</Head>
+          <section className="ins-zone">
+            <div className="ins-zone-head">
+              <div className="ins-zone-title">Campaign funnel</div>
+              <div className="ins-zone-sub">{scoped ? 'This campaign, last 30 days. Scoped to the switcher.' : 'Last 30 days, one block per campaign. Scoped to the switcher.'}</div>
+            </div>
             {shown.length === 0 ? (
               <p className="muted-note">This campaign is registered but has no activity recorded yet.</p>
             ) : scoped ? (
@@ -181,20 +184,21 @@ export default function Insights({ campaign }) {
                 ))}
               </div>
             )}
-          </div>
+          </section>
         )}
 
-        {young && <p className="muted-note">Early days. These build as the team uses the co-pilot.</p>}
+        <section className="ins-zone">
+          <div className="ins-zone-head">
+            <div className="ins-zone-title">Co-pilot usage, whole engine</div>
+            <div className="ins-zone-sub">Every question the team asks the co-pilot, across all campaigns. Not scoped by the switcher, because a question is not asked on behalf of a campaign.</div>
+          </div>
 
-        {/* Reading cards */}
-        <div className="ins-section ins-section--cards">
-          <Head>This month</Head>
-          {scoped && (
-            <p className="ins-caption">
-              Co-pilot questions are not recorded against a campaign, so the figures below cover the whole engine, not {campaignList.find(c => c.id === campaign)?.displayName || campaign}.
-            </p>
-          )}
-          <div className="ins-cards">
+          {young && <p className="muted-note">Early days. These build as the team uses the co-pilot.</p>}
+
+          {/* Reading cards */}
+          <div className="ins-section ins-section--cards">
+            <Head>This month</Head>
+            <div className="ins-cards">
             <div className="ins-card ins-card--spark">
               <div className="ins-card-figure">
                 <div className="ins-hero">{questions}</div>
@@ -282,11 +286,12 @@ export default function Insights({ campaign }) {
           </div>
         </div>
 
-        {/* Engine metrics */}
-        <div className="ins-section">
-          <Head>Engine metrics</Head>
-          <p className="muted-note">Reply rates, deliverability and pipeline timing arrive with the outbound stage.</p>
-        </div>
+          {/* Engine metrics */}
+          <div className="ins-section">
+            <Head>Engine metrics</Head>
+            <p className="muted-note">Reply rates, deliverability and pipeline timing arrive with the outbound stage.</p>
+          </div>
+        </section>
       </div>
     </div>
   );
