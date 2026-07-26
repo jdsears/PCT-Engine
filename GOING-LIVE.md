@@ -79,6 +79,11 @@ part, not the capitalisation (capitals in email addresses are cosmetic):
       tests the access and prints the exact grant steps for James when it is
       missing. `SHAREPOINT_SITE` overrides the default site if it is ever
       renamed.
+- [ ] `PRICE_WORKBOOK`: the customer pricing workbook's `sharepoint:` path, so
+      every price ingest reads the live sheet rather than someone's download.
+      Find the exact path with `scripts/sharepoint-probe.mjs --path "..."`. The
+      Richards and Equilibar margins live on its Equilibar-Richards tab, which
+      reads through to the hidden Master Formulas rows the ingest parses.
 - [ ] `TEAM_EMAILS`: confirm the live list (James, Andy, John during the
       transition). This drives the digest, intel senders, test recipients and
       the reply and meeting notifications.

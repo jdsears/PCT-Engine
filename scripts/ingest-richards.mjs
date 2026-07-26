@@ -16,7 +16,7 @@ import { parseRichardsBook } from '../src/pricing/parseRichardsPdf.mjs';
 import { parseBestobell, parseHex } from '../src/pricing/parseBooksSpecial.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
 import { storeGuideRows } from '../src/pricing/storeGuide.mjs';
-import { materialiseSource } from '../src/sharepoint.mjs';
+import { materialiseSource, resolveWorkbook } from '../src/sharepoint.mjs';
 import { pool } from '../src/db.mjs';
 
 const SUPPORTED = ['steriflow', 'lowflow', 'jordan', 'bestobell', 'hex'];
@@ -34,13 +34,15 @@ const src = async v => {
   try { return await materialiseSource(v, { log: m => console.log(m) }); }
   catch (e) { console.error(`SharePoint fetch failed: ${String(e.message).slice(0, 200)}`); process.exit(1); }
 };
-const WORKBOOK = await src(flag('--workbook'));
+const WORKBOOK = await resolveWorkbook(flag('--workbook'), { log: m => console.log(m) })
+  .catch(e => { console.error(`Workbook fetch failed: ${String(e.message).slice(0, 200)}`); process.exit(1); });
 const PDF = await src(flag('--pdf'));
 const LINE = (flag('--line') || '').toLowerCase();
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 
 if (!WORKBOOK || !PDF || !LINE) {
-  console.error('Usage: node --env-file=.env scripts/ingest-richards.mjs --workbook "<xlsx>" --line <steriflow|lowflow|jordan> --pdf "<price list pdf>" [--apply]');
+  console.error('Usage: node --env-file=.env scripts/ingest-richards.mjs [--workbook "sharepoint:<path>"] --line <steriflow|lowflow|jordan> --pdf "<price list pdf>" [--apply]');
+  console.error('Set PRICE_WORKBOOK to the workbook\'s sharepoint: path and --workbook becomes optional.');
   process.exit(1);
 }
 if (REFUSED[LINE]) {

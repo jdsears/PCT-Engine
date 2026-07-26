@@ -26,7 +26,7 @@ import { parseMarwinPages } from '../src/pricing/parseMarwinPdf.mjs';
 import { parseMarwinMd } from '../src/pricing/parseMarwinMd.mjs';
 import { normKey } from '../src/pricing/parseMega.mjs';
 import { storeGuideRows } from '../src/pricing/storeGuide.mjs';
-import { materialiseSource } from '../src/sharepoint.mjs';
+import { materialiseSource, resolveWorkbook } from '../src/sharepoint.mjs';
 import { pool } from '../src/db.mjs';
 
 const args = process.argv.slice(2);
@@ -40,7 +40,8 @@ const src = async v => {
   try { return await materialiseSource(v, { log: m => console.log(m) }); }
   catch (e) { console.error(`SharePoint fetch failed: ${String(e.message).slice(0, 200)}`); process.exit(1); }
 };
-const WORKBOOK = await src(flag('--workbook'));
+const WORKBOOK = await resolveWorkbook(flag('--workbook'), { log: m => console.log(m) })
+  .catch(e => { console.error(`Workbook fetch failed: ${String(e.message).slice(0, 200)}`); process.exit(1); });
 const CSV = await src(flag('--csv'));
 const PDF = await src(flag('--pdf'));
 const MD = await src(flag('--md'));
@@ -48,7 +49,8 @@ const PAGES = flag('--pages') || '27-34';
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 
 if (!WORKBOOK) {
-  console.error('Usage: node --env-file=.env scripts/ingest-marwin.mjs --workbook "<Mega Price List.xlsx>" [--probe | --csv <file> [--apply]]');
+  console.error('Usage: node --env-file=.env scripts/ingest-marwin.mjs [--workbook "sharepoint:<path>"] [--probe | --csv <file> | --md <file> [--apply]]');
+  console.error('Set PRICE_WORKBOOK to the workbook\'s sharepoint: path and --workbook becomes optional.');
   process.exit(1);
 }
 
