@@ -148,9 +148,13 @@ check('the migrated sweep queries and ICP config match what the code held', () =
 
 console.log('\nThe pharma campaign, a deliberately tight first cut:');
 
-check('pharma is defined, active, and scoped to the sanitary corpus', () => {
+check('pharma is defined, held at manual, and scoped to the sanitary corpus', () => {
   const p = requireCampaign('pharma_steriflow');
-  assert(p.status === 'active', 'pharma is active');
+  // Manual until John's line-by-line calibration review of the first sweep:
+  // the scheduler only auto-sweeps active campaigns, so pharma cannot sweep
+  // by itself. Going live afterwards is a one-field edit.
+  assert(p.status === 'manual', 'pharma does not auto-sweep before its calibration run');
+  assert(!activeCampaignIds().includes('pharma_steriflow'), 'and the scheduler list excludes it');
   assert(JSON.stringify(p.grounding.lines) === JSON.stringify(['steriflow', 'steriflow_fb', 'low_flow']),
     'the grounding scope names the sanitary lines in the chunk vocabulary');
   assert(!p.grounding.lines.includes('marwin'), 'a pharma draft cannot ground in Marwin material');
@@ -283,6 +287,35 @@ check('every statement in 023 is guarded, so the file re-runs clean', () => {
       || (/^INSERT /.test(st) && /ON CONFLICT/.test(st));
     assert(ok, `unguarded statement: ${st.slice(0, 60)}`);
   }
+});
+
+console.log('\nThe research run takes its campaign as a parameter:');
+
+// The sync check helper would mark an async body as passed before it ran, so
+// this one is awaited explicitly.
+await (async () => {
+  const name = 'runResearch resolves the campaign and refuses an unknown id with the known list';
+  try {
+    const { runResearch } = await import('../research/runResearch.mjs');
+    let threw = null;
+    try { await runResearch({ campaign: 'no_such_campaign' }); } catch (e) { threw = e; }
+    assert(threw, 'an unknown campaign is refused');
+    assert(/unknown campaign/.test(threw.message) && /marwin_dc/.test(threw.message) && /pharma_steriflow/.test(threw.message),
+      'and the refusal names the known campaigns');
+    console.log(`  pass  ${name}`); pass++;
+  } catch (e) { console.log(`  FAIL  ${name}: ${e.message}`); fail++; }
+})();
+
+check('the hardcoded campaign constant is gone and the callers pass one through', () => {
+  const run = read('src/research/runResearch.mjs');
+  assert(!/const CAMPAIGN = /.test(run), 'no hardcoded campaign constant');
+  assert(/defaulted \? 'marwin_dc'/.test(run) || /campaign == null/.test(run), 'the bare-call default is explicit');
+  assert(/the default because none was named/.test(run), 'and stated in the first line of output');
+  const script = read('scripts/research-run.mjs');
+  assert(/--campaign/.test(script) && /runResearch\(\{ campaign/.test(script), 'the manual script takes --campaign and passes it');
+  const server = read('src/server.mjs');
+  assert(/activeCampaignIds\(\)/.test(server), 'the scheduler iterates the active campaigns from the registry');
+  assert(/runResearch\(\{ campaign: id/.test(server), 'and passes each one through');
 });
 
 console.log(`\n=== Campaign gate: ${pass} passed, ${fail} failed ===`);
