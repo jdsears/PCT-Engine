@@ -557,3 +557,8 @@ button, input { font: inherit; }
 @media (max-width: 420px) {
   .camp-figs { width: 100%; }
 }
+
+/* Acknowledged sync failures: calm text, never the amber attention treatment,
+   with the reason carried on each row of the disclosure. */
+.ack-block { line-height: 1.5; }
+.ack-reason { margin: 2px 0 8px; color: var(--ink2); }

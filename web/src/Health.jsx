@@ -99,6 +99,13 @@ function EngineCard() {
   // is where sixteen sync errors sat unread in a stat line. Missing keys, a
   // failed run, sync errors, a stood-down people search: each is an amber note
   // at the top, and sync errors open to name the failing documents.
+  // Acknowledged sync failures are a known condition and never take the amber
+  // treatment; only what is left unacknowledged does. If the run predates the
+  // detailed error list, fall back to the raw count so nothing is lost.
+  const se = engine.syncErrors;
+  const unackErrors = se ? se.unacknowledged : (lr?.docErrorList || []);
+  const unackCount = se ? se.counts.unacknowledged : (lr?.docsErrors || 0);
+
   const attentions = [];
   if (missing.length > 0) {
     attentions.push({ key: 'keys', text: `Missing keys on this service: ${missing.join(', ')}. Runs find nothing from those sources until they are set.` });
@@ -106,16 +113,21 @@ function EngineCard() {
   if (lr && !lr.ok) {
     attentions.push({ key: 'run', text: `The last run failed: ${lr.error}` });
   }
-  if (lr?.ok && lr.docsErrors) {
+  if (lr?.ok && unackCount > 0) {
     attentions.push({
       key: 'sync',
-      text: `${lr.docsErrors} document${lr.docsErrors === 1 ? '' : 's'} failed to sync on the last run.`,
-      detail: lr.docErrorList || null,
+      text: `${unackCount} document${unackCount === 1 ? '' : 's'} failed to sync on the last run.`,
+      detail: unackErrors.map(e => (typeof e === 'string' ? e : `${e.path}: ${e.message}`)),
     });
   }
   if (lr?.ok && lr.peopleStopped) {
     attentions.push({ key: 'people', text: `The people search stood down on ${lr.peopleStopped} during the last run.` });
   }
+
+  // The calm summary of what is acknowledged: one line, plain text, with the
+  // full list behind a disclosure. Counted, never dropped.
+  const ackGroups = se?.summary || [];
+  const ackList = se?.acknowledged || [];
 
   return (
     <div className="card health-card gap-10">
@@ -127,6 +139,7 @@ function EngineCard() {
             : <div className="engine-warn" key={a.key}>{a.text}</div>)}
         </div>
       )}
+      {ackList.length > 0 && <AcknowledgedSyncErrors groups={ackGroups} list={ackList} />}
       <div className="engine-row">
         <div className="status-big">
           <span className="status-dot" style={{ background: engine.running ? 'var(--blue)' : engine.enabled ? 'var(--teal)' : 'var(--stop-muted)' }} />
@@ -179,6 +192,33 @@ function SyncErrors({ text, detail }) {
       {open && (
         <ul className="sync-err-list">
           {detail.map((e, i) => <li key={i} className="mono-sm">{e}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// Acknowledged sync failures: a known condition, so calm text rather than
+// amber, one line summarising the classes with the full list behind a
+// disclosure. Counted and inspectable, never silently dropped, and anything
+// unacknowledged is still in the amber block above this.
+function AcknowledgedSyncErrors({ groups, list }) {
+  const [open, setOpen] = useState(false);
+  const phrase = groups.map(g => `${g.count} ${g.summary}${g.count === 1 ? '' : 's'}`).join(', ');
+  return (
+    <div className="muted-small ack-block">
+      {list.length} document{list.length === 1 ? ' is a known exception' : 's are known exceptions'}: {phrase}.{' '}
+      <button className="sync-err-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        {open ? 'Hide' : 'Show'} them
+      </button>
+      {open && (
+        <ul className="sync-err-list">
+          {list.map((e, i) => (
+            <li key={i}>
+              <span className="mono-sm">{e.path}</span>
+              <div className="ack-reason">{e.reason}</div>
+            </li>
+          ))}
         </ul>
       )}
     </div>
