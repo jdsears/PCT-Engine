@@ -4,6 +4,7 @@
 // be swallowed by an acknowledgement, these fail.
 
 import { classifySyncErrors, parseSyncError, loadAcknowledgements } from './acknowledgements.mjs';
+import { decisionUpdate, decisionValues } from './reviewDecision.mjs';
 
 let pass = 0, fail = 0;
 function check(name, fn) {
@@ -86,6 +87,38 @@ check('an empty registry acknowledges nothing, so the fallback is amber not sile
   const r = classifySyncErrors(LIVE_ERRORS, []);
   assert(r.counts.unacknowledged === LIVE_ERRORS.length, 'with no registry every error surfaces');
   assert(r.counts.acknowledged === 0, 'nothing is quietly acknowledged by default');
+});
+
+console.log('\nA review decision survives a schema that has not caught up:');
+
+// The live fault this guards: confirming an account hard-failed because an
+// audit-only column was missing, the app having deployed from main before the
+// migration was applied by hand. An audit note must never take a human action
+// down with it.
+check('with the column present the note is written', () => {
+  const u = decisionUpdate({ status: 'confirmed', withNote: true });
+  assert(/decision_note = \$2/.test(u.sql), 'the note is set');
+  assert(/company_id = \$1/.test(u.sql) && /WHERE id = \$3/.test(u.sql), 'and the placeholders are in order');
+  const v = decisionValues(u.order, { company: 7, note: 'because', id: 42 });
+  assert(JSON.stringify(v) === JSON.stringify([7, 'because', 42]), 'values bind in the declared order');
+});
+
+check('with the column absent the decision still records, without the note', () => {
+  const u = decisionUpdate({ status: 'confirmed', withNote: false });
+  assert(!/decision_note/.test(u.sql), 'no reference to a column that does not exist');
+  assert(/status = 'confirmed'/.test(u.sql) && /decided_at = now\(\)/.test(u.sql), 'the decision itself is still recorded');
+  assert(/WHERE id = \$2/.test(u.sql), 'and the placeholders renumber, so nothing binds to a missing column');
+  const v = decisionValues(u.order, { company: 7, note: 'because', id: 42 });
+  assert(JSON.stringify(v) === JSON.stringify([7, 42]), 'the note value is not bound');
+});
+
+check('dismiss sets no company, in either schema', () => {
+  for (const withNote of [true, false]) {
+    const u = decisionUpdate({ status: 'dismissed', setCompany: false, withNote });
+    assert(!/company_id/.test(u.sql), 'a dismissal does not claim a company');
+    const v = decisionValues(u.order, { note: 'n', id: 5 });
+    assert(v[v.length - 1] === 5, 'the id is always the last parameter');
+  }
 });
 
 console.log(`\n=== Sync acknowledgement gate: ${pass} passed, ${fail} failed ===`);

@@ -17,6 +17,7 @@ import { runResearch } from './research/runResearch.mjs';
 import { searchCompanies, candidateRows } from './research/companiesHouse.mjs';
 import { staleDays, isStale } from './research/staleness.mjs';
 import { classifySyncErrors } from './sync/acknowledgements.mjs';
+import { decisionUpdate, decisionValues } from './sync/reviewDecision.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
 import { pollReplies } from './outbound/replies.mjs';
@@ -664,6 +665,31 @@ app.get('/api/reviews', async (req, res) => {
 // old schema for a window. One transaction per decision closes that window,
 // the same property the migration runner itself has. A retry after the schema
 // catches up then starts from clean state.
+// Is a column present? The service deploys from main automatically while
+// migrations are applied by hand, so there is always a window where new code
+// meets an older schema. An audit-only column must never take a human action
+// down with it when it is missing, so the writes below ask first.
+//
+// Cache semantics matter: a present column is cached forever, since a column
+// does not vanish, while an absent one is re-checked, so the moment the
+// migration is applied the notes start being written with no redeploy or
+// restart. These are human-paced actions, so the extra lookup costs nothing.
+const columnCache = new Map();
+async function hasColumn(table, column) {
+  const key = `${table}.${column}`;
+  if (columnCache.get(key)) return true;
+  try {
+    const { rowCount } = await pool.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`,
+      [table, column]);
+    const present = rowCount > 0;
+    if (present) columnCache.set(key, true);
+    return present;
+  } catch {
+    return false; // unknown means do without, never fail the action
+  }
+}
+
 async function withTransaction(fn) {
   const client = await pool.connect();
   try {
@@ -705,6 +731,9 @@ app.post('/api/reviews/:id/confirm', async (req, res) => {
     if (r.kind !== 'proposal') return res.status(409).json({ error: 'only a proposal can be confirmed; resolve an ambiguity to an account or mark it distinct' });
     const { chNumber = null, registeredName = null } = req.body || {};
     const name = (registeredName || r.printed_name).trim();
+    // Asked before the transaction opens: a failed statement inside one aborts
+    // it, so the shape is decided up front rather than discovered by failing.
+    const noteColumn = await hasColumn('party_reviews', 'decision_note');
     const companyId = await withTransaction(async client => {
       const { rows: created } = await client.query(
         `INSERT INTO companies (name, ch_number, domain, named_account, source)
@@ -729,9 +758,8 @@ app.post('/api/reviews/:id/confirm', async (req, res) => {
       const decisionNote = chNumber
         ? `confirmed against Companies House ${chNumber}`
         : 'confirmed as printed: no confident Companies House match chosen at review';
-      await client.query(
-        `UPDATE party_reviews SET status = 'confirmed', company_id = $1, decision_note = $2, decided_at = now() WHERE id = $3`,
-        [id, decisionNote, r.id]);
+      const upd = decisionUpdate({ status: 'confirmed', withNote: noteColumn });
+      await client.query(upd.sql, decisionValues(upd.order, { company: id, note: decisionNote, id: r.id }));
       return id;
     });
     res.json({ ok: true, companyId });
@@ -749,6 +777,7 @@ app.post('/api/reviews/:id/merge', async (req, res) => {
     if (!Number.isFinite(companyId)) return res.status(400).json({ error: 'companyId required' });
     const { rows: co } = await pool.query(`SELECT id, name FROM companies WHERE id = $1`, [companyId]);
     if (!co.length) return res.status(404).json({ error: 'no such company' });
+    const noteColumn = await hasColumn('party_reviews', 'decision_note');
     await withTransaction(async client => {
       await client.query(
         `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, $3) ON CONFLICT (alias) DO NOTHING`,
@@ -757,10 +786,12 @@ app.post('/api/reviews/:id/merge', async (req, res) => {
         `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
         [companyId, r.campaign]);
       await linkReviewSignal(client, r, companyId);
-      await client.query(
-        `UPDATE party_reviews SET status = 'merged', company_id = $1,
-           decision_note = $2, decided_at = now() WHERE id = $3`,
-        [companyId, `${r.kind === 'ambiguous' ? 'resolved' : 'merged'} into ${co[0].name}, alias recorded`, r.id]);
+      const upd = decisionUpdate({ status: 'merged', withNote: noteColumn });
+      await client.query(upd.sql, decisionValues(upd.order, {
+        company: companyId,
+        note: `${r.kind === 'ambiguous' ? 'resolved' : 'merged'} into ${co[0].name}, alias recorded`,
+        id: r.id,
+      }));
     });
     res.json({ ok: true, companyId });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -771,9 +802,13 @@ app.post('/api/reviews/:id/dismiss', async (req, res) => {
   try {
     const r = await openReview(req.params.id);
     if (!r) return res.status(404).json({ error: 'review not open' });
-    await pool.query(
-      `UPDATE party_reviews SET status = 'dismissed',
-         decision_note = 'dismissed at review; not proposed again', decided_at = now() WHERE id = $1`, [r.id]);
+    const upd = decisionUpdate({
+      status: 'dismissed', setCompany: false,
+      withNote: await hasColumn('party_reviews', 'decision_note'),
+    });
+    await pool.query(upd.sql, decisionValues(upd.order, {
+      note: 'dismissed at review; not proposed again', id: r.id,
+    }));
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
