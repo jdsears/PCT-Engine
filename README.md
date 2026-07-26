@@ -578,6 +578,10 @@ Migration 018 adds the `prices` table, holding customer sell prices only.
   list columns precisely so the parser provably skips them: excluded and
   reported, never ingested, the standing rule. The calculator tabs are not
   lists and are out of scope; the hidden Master Formulas tab is never read.
+- `PRICE_WORKBOOK` names the one price workbook every ingest reads, as a
+  `sharepoint:` path so it is always the live sheet and never a download. Each
+  ingest still takes an explicit flag to override it, and warns plainly when
+  the source it ends up reading is a local file.
 - `scripts/ingest-prices.mjs --file "<Mega_Price_List.xlsx>"` is a dry run
   showing per-tab counts, samples and the excluded columns; `--apply` replaces
   each tab's rows wholesale, so re-running is safe and vanished parts vanish.

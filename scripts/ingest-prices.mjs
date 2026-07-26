@@ -14,15 +14,21 @@
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook } from '../src/pricing/parseMega.mjs';
 import { pool } from '../src/db.mjs';
+import { resolveWorkbook } from '../src/sharepoint.mjs';
 
 const args = process.argv.slice(2);
 const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : (args[i + 1] || null); };
 const APPLY = args.includes('--apply');
-const FILE = flag('--file');
+// --file, else PRICE_WORKBOOK, and a sharepoint: reference is fetched at run
+// time so the ingest always reads the live sheet rather than a download.
+let FILE;
+try { FILE = await resolveWorkbook(flag('--file'), { log: m => console.log(m) }); }
+catch (e) { console.error(`Workbook fetch failed: ${String(e.message).slice(0, 200)}`); process.exit(1); }
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 
 if (!FILE) {
-  console.error('Usage: node --env-file=.env scripts/ingest-prices.mjs --file "<Mega_Price_List.xlsx>" [--effective YYYY-MM-DD] [--apply]');
+  console.error('Usage: node --env-file=.env scripts/ingest-prices.mjs [--file "sharepoint:<path>" | <local xlsx>] [--effective YYYY-MM-DD] [--apply]');
+  console.error('Set PRICE_WORKBOOK to the workbook\'s sharepoint: path and --file becomes optional.');
   process.exit(1);
 }
 if (!/^\d{4}-\d{2}-\d{2}$/.test(EFFECTIVE)) {

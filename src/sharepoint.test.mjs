@@ -2,7 +2,7 @@
 // addressing and the sharepoint: source references the ingest scripts take.
 // The network side is proven by scripts/sharepoint-probe.mjs on a machine
 // with credentials; nothing here touches the network.
-import { spSite, encodeDrivePath, isSharepointRef, sharepointPath, docWebUrl } from './sharepoint.mjs';
+import { spSite, encodeDrivePath, isSharepointRef, sharepointPath, docWebUrl, chooseWorkbookSource } from './sharepoint.mjs';
 import { lineForPath, syncDecision, chunkText } from './sharepointSync.mjs';
 
 let pass = 0, fail = 0;
@@ -74,6 +74,20 @@ await check('chunking splits on paragraphs, hard-splits monsters, and caps the f
   const flood = chunkText(Array.from({ length: 900 }, (_, i) => `Para ${i} ${'y'.repeat(1400)}`).join('\n\n'));
   assert(flood.chunks.length === 400 && flood.truncated, 'one enormous document cannot flood the corpus');
   assert(chunkText('').chunks.length === 0, 'empty text yields nothing');
+});
+
+await check('the price workbook resolves to one source, and a local one is called out', async () => {
+  const env = 'sharepoint:Pricing/Customer Pricing/Mega Price List.xlsx';
+  const byEnv = chooseWorkbookSource(null, env);
+  assert(byEnv.from === 'env' && byEnv.value === env, 'the env default supplies the workbook');
+  assert(byEnv.local === false, 'a sharepoint reference is not local');
+  const byFlag = chooseWorkbookSource('sharepoint:Other/Book.xlsx', env);
+  assert(byFlag.from === 'flag', 'an explicit flag overrides the default');
+  const local = chooseWorkbookSource('/Users/someone/Downloads/Mega Price List.xlsx', env);
+  assert(local.from === 'flag' && local.local === true, 'a local path is allowed but flagged as local');
+  const none = chooseWorkbookSource(null, null);
+  assert(none.value === null && none.from === null, 'no flag and no default means no workbook');
+  assert(chooseWorkbookSource('   ', env).from === 'env', 'blank flags fall through to the default');
 });
 
 console.log(`\n=== SharePoint gate: ${pass} passed, ${fail} failed ===`);

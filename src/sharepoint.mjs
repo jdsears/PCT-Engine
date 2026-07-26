@@ -75,6 +75,33 @@ export async function downloadFile(path) {
 // Resolve an ingest source to a local file path: a sharepoint: reference is
 // downloaded to a temporary file (transient, outside the repo) and a plain
 // path passes through untouched.
+// The price workbook is one file, and every ingest must read the same one.
+// The live copy lives on SharePoint, so PRICE_WORKBOOK holds its sharepoint:
+// reference and an explicit --workbook overrides it only when someone means
+// to. Pure so the gate can prove the precedence and the warning without a
+// network or a workbook: it decides which source wins and whether that source
+// is a local file, which is worth saying out loud because a download goes
+// stale the moment the sheet is edited.
+export function chooseWorkbookSource(flagValue, envValue) {
+  const flag = String(flagValue || '').trim();
+  const env = String(envValue || '').trim();
+  if (flag) return { value: flag, from: 'flag', local: !isSharepointRef(flag) };
+  if (env) return { value: env, from: 'env', local: !isSharepointRef(env) };
+  return { value: null, from: null, local: false };
+}
+
+// Resolve the workbook to a readable path, fetching from SharePoint when the
+// reference says so. A local source is allowed, never silent.
+export async function resolveWorkbook(flagValue, { log = () => {} } = {}) {
+  const chosen = chooseWorkbookSource(flagValue, process.env.PRICE_WORKBOOK);
+  if (!chosen.value) return null;
+  if (chosen.local) {
+    log(`WARNING: reading the price workbook from a local file, which may be a stale download: ${chosen.value}`);
+    log('         The live copy is on SharePoint; set PRICE_WORKBOOK to its sharepoint: path, or pass --workbook "sharepoint:<path>".');
+  }
+  return materialiseSource(chosen.value, { log });
+}
+
 export async function materialiseSource(value, { log = () => {} } = {}) {
   if (!isSharepointRef(value)) return value;
   const path = sharepointPath(value);
