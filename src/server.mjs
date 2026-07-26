@@ -1,4 +1,5 @@
 import express from 'express';
+import { listCampaigns } from './campaigns/registry.mjs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -452,18 +453,28 @@ const SIGNAL_FILTERS = {
   build: ['news_dc_build', 'planning'],
   contract: ['news_contract'],
 };
+// The campaign registry, for the UI switcher. Reading from the registry means
+// adding a campaign never means editing the front end.
+app.get('/api/campaigns', async (_req, res) => {
+  try { res.json({ campaigns: listCampaigns() }); }
+  catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 app.get('/api/signals', async (req, res) => {
   try {
     const types = SIGNAL_FILTERS[req.query.type] || null;
+    const campaign = req.query.campaign && req.query.campaign !== 'all' ? String(req.query.campaign) : null;
     const { rows } = await pool.query(
-      `SELECT s.id, s.signal_type, s.title, s.url, s.observed_at, s.geo_scope,
+      `SELECT s.id, s.signal_type, s.title, s.url, s.observed_at, s.geo_scope, s.campaign,
               c.id AS company_id, c.name AS company
        FROM signals s LEFT JOIN companies c ON c.id = s.company_id
-       WHERE s.dc_relevant IS NOT FALSE AND ($1::text[] IS NULL OR s.signal_type = ANY($1))
-       ORDER BY s.observed_at DESC LIMIT 50`, [types]);
+       WHERE COALESCE(s.relevant, s.dc_relevant) IS NOT FALSE
+         AND ($1::text[] IS NULL OR s.signal_type = ANY($1))
+         AND ($2::text IS NULL OR s.campaign = $2)
+       ORDER BY s.observed_at DESC LIMIT 50`, [types, campaign]);
     const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return null; } };
     res.json({ signals: rows.map(s => ({
-      id: s.id, type: s.signal_type, title: s.title, observedAt: s.observed_at, geoScope: s.geo_scope,
+      id: s.id, type: s.signal_type, title: s.title, observedAt: s.observed_at, geoScope: s.geo_scope, campaign: s.campaign,
       source: host(s.url) || (s.signal_type.startsWith('ch_') ? 'Companies House stream' : null),
       companyId: s.company_id, company: s.company,
     })) });

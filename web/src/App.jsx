@@ -11,6 +11,7 @@ import Studio from './Studio.jsx';
 import Gate from './Gate.jsx';
 import { ICONS, LockIcon, ChevronLeft, ChevronRight } from './icons.jsx';
 import { setUnauthorizedHandler } from './api.js';
+import CampaignSwitcher, { useCampaign, ALL } from './CampaignSwitcher.jsx';
 
 const META = {
   copilot: { title: 'Co-Pilot', sub: 'Ask the knowledge base. Answers cite their sources.', short: 'Co-Pilot' },
@@ -24,6 +25,10 @@ const META = {
   health: { title: 'Health', sub: 'System state at a glance', short: 'Health' },
 };
 const ORDER = ['copilot', 'insights', 'pipeline', 'accounts', 'signals', 'watchlist', 'studio', 'outbound', 'health'];
+// Campaign-shaped sections take the switcher; the co-pilot, studio and health
+// are campaign-neutral and ignore it, so the control is hidden rather than
+// shown doing nothing.
+const CAMPAIGN_SCOPED = new Set(['insights', 'pipeline', 'accounts', 'signals', 'watchlist', 'outbound']);
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 720);
@@ -49,6 +54,7 @@ export default function App() {
   const [gateOpen, setGateOpen] = useState(false);
   const [gateForced, setGateForced] = useState(false);
   const [focusCompanyId, setFocusCompanyId] = useState(null);
+  const [campaign, setCampaign] = useCampaign();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -109,6 +115,9 @@ export default function App() {
             {isMobile && <img className="head-logo" src="/assets/pct-logo-color.svg" alt="PCT" />}
             <h1>{META[section].title}</h1>
             {!isMobile && <div className="head-sub">{META[section].sub}</div>}
+            {CAMPAIGN_SCOPED.has(section) && (
+              <CampaignSwitcher campaign={campaign} onChange={setCampaign} isMobile={isMobile} />
+            )}
           </div>
           <div className="wave" aria-hidden="true">
             <svg width="1600" height="22" viewBox="0 0 1600 22">
@@ -123,16 +132,16 @@ export default function App() {
           <div className="copilot-wrap" style={section === 'copilot' ? undefined : { display: 'none' }}>
             <Chat isMobile={isMobile} />
           </div>
-          {section === 'insights' && <Insights />}
-          {section === 'pipeline' && <Pipeline isMobile={isMobile} />}
+          {section === 'insights' && <Insights campaign={campaign} />}
+          {section === 'pipeline' && <Pipeline isMobile={isMobile} campaign={campaign} />}
           {section === 'accounts' && (
-            <Accounts isMobile={isMobile} focusCompanyId={focusCompanyId}
+            <Accounts isMobile={isMobile} campaign={campaign} focusCompanyId={focusCompanyId}
               onFocusConsumed={() => setFocusCompanyId(null)} />
           )}
-          {section === 'signals' && <Signals onOpenCompany={openCompany} />}
-          {section === 'watchlist' && <Watchlist />}
+          {section === 'signals' && <Signals onOpenCompany={openCompany} campaign={campaign} />}
+          {section === 'watchlist' && <Watchlist campaign={campaign} />}
           {section === 'studio' && <Studio />}
-          {section === 'outbound' && <Outbound isMobile={isMobile} />}
+          {section === 'outbound' && <Outbound isMobile={isMobile} campaign={campaign} />}
           {section === 'health' && <Health />}
         </div>
 

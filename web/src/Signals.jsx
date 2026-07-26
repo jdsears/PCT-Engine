@@ -10,20 +10,23 @@ const FILTERS = [
   { id: 'contract', label: 'Contracts' },
 ];
 
-export default function Signals({ onOpenCompany }) {
+export default function Signals({ onOpenCompany , campaign }) {
   const [filter, setFilter] = useState('all');
   const [signals, setSignals] = useState(null);
   const [state, setState] = useState('loading');
 
   useEffect(() => {
     let live = true;
-    const q = filter === 'all' ? '' : `?type=${filter}`;
+    const params = new URLSearchParams();
+    if (filter !== 'all') params.set('type', filter);
+    if (campaign && campaign !== 'all') params.set('campaign', campaign);
+    const q = params.toString() ? `?${params}` : '';
     apiFetch(`/api/signals${q}`)
       .then(r => r.json())
       .then(d => { if (live) { setSignals(d.signals || []); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
-  }, [filter]);
+  }, [filter, campaign]);
 
   return (
     <div className="content-pad">
