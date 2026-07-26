@@ -35,6 +35,15 @@ export function useCampaignList() {
   return list;
 }
 
+// One place decides how the campaign reaches the API, so no section can quietly
+// omit the parameter and show every campaign's rows under a scoped label.
+export function withCampaign(path, campaign) {
+  if (!campaign || campaign === ALL) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}campaign=${encodeURIComponent(campaign)}`;
+}
+
+export const isAll = campaign => !campaign || campaign === ALL;
+
 export default function CampaignSwitcher({ campaign, onChange, isMobile }) {
   const list = useCampaignList();
   // With one campaign there is nothing to switch between, so the control stays

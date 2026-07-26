@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { SIGNAL_TYPE_LABELS, fmtClockDay, companyLabel } from './labels.js';
 import { apiFetch } from './api.js';
+import { CampaignChip, useCampaignList, isAll } from './CampaignSwitcher.jsx';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'filing', label: 'Filings' },
   { id: 'director', label: 'Director changes' },
-  { id: 'build', label: 'DC build news' },
+  { id: 'build', label: 'Build news' },
   { id: 'contract', label: 'Contracts' },
 ];
 
@@ -14,6 +15,8 @@ export default function Signals({ onOpenCompany , campaign }) {
   const [filter, setFilter] = useState('all');
   const [signals, setSignals] = useState(null);
   const [state, setState] = useState('loading');
+  const campaignList = useCampaignList();
+  const showChips = isAll(campaign) && campaignList.length > 1;
 
   useEffect(() => {
     let live = true;
@@ -56,6 +59,7 @@ export default function Signals({ onOpenCompany , campaign }) {
                   <span className="signal-nocompany"><span className="flag-dot" />No matched company</span>
                 )}
                 {s.source && <span className="signal-source">{s.source}</span>}
+                {showChips && <CampaignChip campaign={s.campaign} list={campaignList} />}
               </div>
             </div>
           ))}

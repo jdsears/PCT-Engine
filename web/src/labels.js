@@ -17,6 +17,7 @@ export const TYPE_LABELS = {
 export const SIGNAL_TYPE_LABELS = {
   ch_filing: 'Filing', ch_incorporation: 'Incorporation',
   ch_director_change: 'Director change', news_dc_build: 'DC build news',
+  news_pharma_build: 'Pharma build news',
   news_contract: 'Contract', planning: 'Planning',
 };
 

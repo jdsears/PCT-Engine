@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { lineLabel, fmtDay } from './labels.js';
 import { apiFetch } from './api.js';
+import { useCampaignList, isAll } from './CampaignSwitcher.jsx';
 
 // A grounded answer cites a source; a decline cites none. We never log who asked,
 // so the "when" on a gap is the only time we surface, and only ever relative.
@@ -46,9 +47,48 @@ function Head({ children }) {
   );
 }
 
-export default function Insights() {
+// One campaign's month, read as figures rather than a table: what is on its
+// register, what its sweep found, what reached the funnel, what is waiting to be
+// reviewed and what has gone out.
+function CampaignFigures({ c }) {
+  const quiet = !c.accounts && !c.signals.swept && !c.leads && !c.drafts.inReview && !c.drafts.sent;
+  return (
+    <>
+      <div className="ins-cards">
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{c.accounts}</div>
+          <div className="eyebrow">Accounts on the register</div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{c.signals.passed} / {c.signals.swept}</div>
+          <div className="eyebrow">Signals past the gate</div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{c.leads}</div>
+          <div className="eyebrow">Leads in the funnel</div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{c.drafts.inReview}</div>
+          <div className="eyebrow">Drafts in review</div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{c.drafts.sent}</div>
+          <div className="eyebrow">Sent</div>
+        </div>
+      </div>
+      {quiet && (
+        <p className="ins-caption">
+          Nothing recorded for this campaign yet. Figures appear once it has been seeded and its first sweep has run.
+        </p>
+      )}
+    </>
+  );
+}
+
+export default function Insights({ campaign }) {
   const [state, setState] = useState('loading');
   const [data, setData] = useState(null);
+  const campaignList = useCampaignList();
 
   useEffect(() => {
     let live = true;
@@ -56,8 +96,9 @@ export default function Insights() {
       apiFetch('/api/insights/summary?days=30').then(r => r.json()),
       apiFetch('/api/insights/gaps?days=90').then(r => r.json()),
       apiFetch('/api/insights/top-docs?days=90').then(r => r.json()),
+      apiFetch('/api/insights/campaigns?days=30').then(r => (r.ok ? r.json() : { campaigns: [] })).catch(() => ({ campaigns: [] })),
     ])
-      .then(([summary, gaps, docs]) => { if (live) { setData({ summary, gaps, docs }); setState('ready'); } })
+      .then(([summary, gaps, docs, camp]) => { if (live) { setData({ summary, gaps, docs, camp }); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
   }, []);
@@ -69,7 +110,11 @@ export default function Insights() {
     return <div className="content-pad"><p className="muted-note">Insights are not available right now.</p></div>;
   }
 
-  const { summary, gaps, docs } = data;
+  const { summary, gaps, docs, camp } = data;
+  const allCampaigns = camp?.campaigns || [];
+  const scoped = !isAll(campaign);
+  const shown = scoped ? allCampaigns.filter(c => c.id === campaign) : allCampaigns;
+  const showCampaigns = allCampaigns.length > 1 || scoped;
   const questions = summary.questions || 0;
   const declined = summary.declined || 0;
   const young = questions < 10;
@@ -99,11 +144,48 @@ export default function Insights() {
   return (
     <div className="content-pad">
       <div className="insights-col">
+        {/* Campaign activity. This is the section the switcher controls, so it
+            leads. The co-pilot sections below read the query log, which has no
+            campaign, and say so rather than wearing a label they cannot keep. */}
+        {showCampaigns && (
+          <div className="ins-section">
+            <Head>{scoped ? 'This campaign, last 30 days' : 'Campaigns, last 30 days'}</Head>
+            {shown.length === 0 ? (
+              <p className="muted-note">This campaign is registered but has no activity recorded yet.</p>
+            ) : scoped ? (
+              <CampaignFigures c={shown[0]} />
+            ) : (
+              <div className="ins-campaigns">
+                {shown.map(c => (
+                  <div className="ins-campaign" key={c.id}>
+                    <div className="ins-campaign-head">
+                      <span className="ins-campaign-name">{c.displayName}</span>
+                      {c.status && c.status !== 'active' && <span className="pill">{c.status}</span>}
+                    </div>
+                    <div className="ins-campaign-figs">
+                      <span><b>{c.accounts}</b> accounts</span>
+                      <span><b>{c.signals.passed}</b> of {c.signals.swept} signals past the gate</span>
+                      <span><b>{c.leads}</b> leads</span>
+                      <span><b>{c.drafts.inReview}</b> in review</span>
+                      <span><b>{c.drafts.sent}</b> sent</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {young && <p className="muted-note">Early days. These build as the team uses the co-pilot.</p>}
 
         {/* Reading cards */}
         <div className="ins-section ins-section--cards">
           <Head>This month</Head>
+          {scoped && (
+            <p className="ins-caption">
+              Co-pilot questions are not recorded against a campaign, so the figures below cover the whole engine, not {campaignList.find(c => c.id === campaign)?.displayName || campaign}.
+            </p>
+          )}
           <div className="ins-cards">
             <div className="ins-card ins-card--spark">
               <div className="ins-card-figure">

@@ -490,3 +490,13 @@ button, input { font: inherit; }
    chips that wrap rather than scroll. */
 .campaign-switch.is-mobile { width: 100%; gap: 8px; margin-top: 8px; }
 .campaign-switch.is-mobile .campaign-chip { flex: 1 1 auto; min-height: 44px; text-align: center; }
+
+/* The per-campaign split on Insights. One block per campaign, read across in a
+   line on a desktop and stacked on a phone, so two campaigns compare at a
+   glance without becoming a table nobody reads. */
+.ins-campaigns { display: flex; flex-direction: column; gap: 10px; }
+.ins-campaign { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.ins-campaign-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ins-campaign-name { font-weight: 600; color: var(--navy); }
+.ins-campaign-figs { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink2); }
+.ins-campaign-figs b { color: var(--navy); font-weight: 600; }

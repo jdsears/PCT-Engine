@@ -7,6 +7,12 @@
 import { allCampaigns, getCampaign, requireCampaign, activeCampaignIds, listCampaigns } from './registry.mjs';
 import { buildGateSystem, buildDraftSystem, buildRangeLines, confidentialityRule } from './prompts.mjs';
 import { canColdOpen, crossCampaignDays } from '../outbound/crossCampaign.mjs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const read = rel => readFileSync(join(ROOT, rel), 'utf8');
 
 let pass = 0, fail = 0;
 function check(name, fn) {
@@ -196,6 +202,46 @@ check('a contact cold-opened by another campaign is held for the window', () => 
     lastColdOpenCampaign: 'marwin_dc', campaign: 'marwin_dc', now });
   assert(same.ok, 'the same campaign is governed by its own cadence, not this window');
   assert(crossCampaignDays() === 90, 'the default window is ninety days');
+});
+
+console.log('\nThe scoped views, so a switcher never labels mixed data:');
+
+// A working switcher over a section that receives the campaign and does not
+// filter on it is worse than no switcher: it puts one campaign's name above
+// every campaign's rows. These two checks are static reads of the front end and
+// the API, because the gate runs with no database and no browser.
+check('every campaign-scoped section actually scopes its data', () => {
+  const app = read('web/src/App.jsx');
+  const m = app.match(/CAMPAIGN_SCOPED = new Set\(\[([^\]]*)\]/);
+  assert(m, 'App declares which sections are campaign-scoped');
+  const sections = [...m[1].matchAll(/'([a-z]+)'/g)].map(x => x[1]);
+  assert(sections.length >= 6, 'and names them');
+  for (const section of sections) {
+    const file = `web/src/${section[0].toUpperCase()}${section.slice(1)}.jsx`;
+    const src = read(file);
+    assert(/function \w+\(\{[^}]*\bcampaign\b/.test(src), `${file} takes the campaign prop`);
+    assert(new RegExp(`<${section[0].toUpperCase()}${section.slice(1)}[^>]*campaign=\\{campaign\\}`, 's').test(app),
+      `App passes the campaign to ${section}`);
+    // Insights fetches every campaign at once and splits client-side, which is
+    // still scoping; everything else must send the campaign to the API.
+    if (/\/api\/insights\/campaigns/.test(src)) continue;
+    assert(/withCampaign\(|params\.set\('campaign'/.test(src), `${file} sends the campaign to the API`);
+    const deps = [...src.matchAll(/\}, \[([^\]]*)\]\)/g)].map(x => x[1]);
+    assert(deps.some(d => /\bcampaign\b/.test(d)), `${file} refetches when the campaign changes`);
+  }
+});
+
+check('every signal type a campaign declares is filterable and has a label', () => {
+  const server = read('src/server.mjs');
+  const labels = read('web/src/labels.js');
+  const filters = server.match(/const SIGNAL_FILTERS = \{([\s\S]*?)\};/);
+  assert(filters, 'the server declares the signal filter buckets');
+  for (const c of allCampaigns()) {
+    for (const type of c.icp?.signalTypes || []) {
+      assert(filters[1].includes(`'${type}'`), `${c.id} signal type ${type} is in a filter bucket`);
+      assert(new RegExp(`\\b${type}:`).test(labels), `${c.id} signal type ${type} has a UI label`);
+    }
+  }
 });
 
 console.log(`\n=== Campaign gate: ${pass} passed, ${fail} failed ===`);
