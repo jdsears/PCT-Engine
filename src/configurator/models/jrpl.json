@@ -2,162 +2,763 @@
   "model": "JRPL",
   "line": "low_flow",
   "displayName": "LowFlow JRPL Series piston operated pressure reducing regulator",
-  "match": ["jrpl series", "jrpl-series", "jrplseries", "lowflow jrpl", "jrpl regulator", "jrpl valve"],
-  "source": { "doc": "JRPL_JRPH_series.pdf", "page": "4 to 7", "section": "JRPL Series ordering schematic" },
-  "note": "Extracted by hand from the JRPL ordering schematic, which the combined JRPL/JRPH sheet prints twice, both printings agreeing. Piston operated, so the diaphragm position carries the sheet's single 00 None code. Range springs are colour coded on the sheet, silver, beige, purple and black, kept in the labels. The sister JRPH schematic's own enumerations are not present in the text extraction, only its header and the shared 16 and 17 sections, so no JRPH model is built; its specification page lists different spring ranges by colour alone, black 0-2150, orange 0-4060, green 0-5800, without ordering codes. JRPH needs the PDF before it can be modelled. The gauge-span liability note is encoded as cautions, stated plainly and never blocking.",
+  "match": [
+    "jrpl series",
+    "jrpl-series",
+    "jrplseries",
+    "lowflow jrpl",
+    "jrpl regulator",
+    "jrpl valve"
+  ],
+  "source": {
+    "doc": "JRPL_JRPH_series.pdf",
+    "page": "4 to 7",
+    "section": "JRPL Series ordering schematic"
+  },
+  "note": "Extracted by hand from the JRPL ordering schematic, which the combined JRPL/JRPH sheet prints twice, both printings agreeing. Piston operated, so the diaphragm position carries the sheet's single 00 None code. Range springs are colour coded on the sheet, silver, beige, purple and black, kept in the labels. The PDF was read on 26 July 2026 and settles the JRPH question: there is no JRPH ordering schematic. Pages 5 to 6 and 7 to 8 both print this same JRPL schematic, headed JRPL SERIES ORDERING SCHEMATIC on all four, with only the footer of the second printing marked JRPH/0120. The JRPH's own specification page lists different spring ranges by colour alone, black 0-2150, orange 0-4060 and green 0-5800, none of which appear in the range spring table printed here, which stops at 1160 psi. So a JRPH cannot be ordered from this document and no JRPH model is built; how LowFlow codes its springs is a question for them. The gauge-span liability note is encoded as cautions, stated plainly and never blocking.",
   "assembly": "{model}{size}{material}{endConnection}{portConfig}{trim}{seat}{rangeSpring}{diaphragm}{actuator}{inletGauge}{outletGauge}{sep}{accessories}",
   "slots": [
     {
-      "id": "model", "label": "Model", "position": 1, "required": true,
+      "id": "model",
+      "label": "Model",
+      "position": 1,
+      "required": true,
       "options": [
-        { "code": "JRPL", "label": "Low range piston operated pressure reducing valve", "aliases": ["jrpl", "low range", "piston operated"] }
+        {
+          "code": "JRPL",
+          "label": "Low range piston operated pressure reducing valve",
+          "aliases": [
+            "jrpl",
+            "low range",
+            "piston operated"
+          ]
+        }
       ]
     },
     {
-      "id": "size", "label": "Size", "position": 2, "required": true,
+      "id": "size",
+      "label": "Size",
+      "position": 2,
+      "required": true,
       "options": [
-        { "code": "050", "label": "1/2\" (DN15)", "aliases": ["1/2\"", "0.5\"", "half inch", "DN15"] },
-        { "code": "075", "label": "3/4\" (DN20)", "aliases": ["3/4\"", "0.75\"", "DN20"] },
-        { "code": "100", "label": "1\" (DN25)", "aliases": ["1\"", "one inch", "DN25"] }
+        {
+          "code": "050",
+          "label": "1/2\" (DN15)",
+          "aliases": [
+            "1/2\"",
+            "0.5\"",
+            "half inch",
+            "DN15"
+          ]
+        },
+        {
+          "code": "075",
+          "label": "3/4\" (DN20)",
+          "aliases": [
+            "3/4\"",
+            "0.75\"",
+            "DN20"
+          ]
+        },
+        {
+          "code": "100",
+          "label": "1\" (DN25)",
+          "aliases": [
+            "1\"",
+            "one inch",
+            "DN25"
+          ]
+        }
       ]
     },
     {
-      "id": "material", "label": "Material", "position": 3, "required": true,
+      "id": "material",
+      "label": "Material",
+      "position": 3,
+      "required": true,
       "options": [
-        { "code": "6L", "label": "Stainless steel 316L", "aliases": ["316l", "stainless", "stainless steel", "sst"] }
+        {
+          "code": "6L",
+          "label": "Stainless steel 316L",
+          "aliases": [
+            "316l",
+            "stainless",
+            "stainless steel",
+            "sst"
+          ]
+        }
       ]
     },
     {
-      "id": "endConnection", "label": "End connection", "position": 4, "required": true,
+      "id": "endConnection",
+      "label": "End connection",
+      "position": 4,
+      "required": true,
       "options": [
-        { "code": "C", "label": "FNPT 1/2\"", "aliases": ["fnpt 1/2", "1/2 npt"] },
-        { "code": "D", "label": "FNPT 3/4\"", "aliases": ["fnpt 3/4", "3/4 npt"] },
-        { "code": "E", "label": "FNPT 1\"", "aliases": ["fnpt 1", "1 npt"] },
-        { "code": "F", "label": "BSPP 1/2\"", "aliases": ["bspp 1/2"] },
-        { "code": "G", "label": "BSPP 3/4\"", "aliases": ["bspp 3/4"] },
-        { "code": "H", "label": "BSPP 1\"", "aliases": ["bspp 1"] },
-        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard end connection"] }
+        {
+          "code": "C",
+          "label": "FNPT 1/2\"",
+          "aliases": [
+            "fnpt 1/2",
+            "1/2 npt"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "FNPT 3/4\"",
+          "aliases": [
+            "fnpt 3/4",
+            "3/4 npt"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "FNPT 1\"",
+          "aliases": [
+            "fnpt 1",
+            "1 npt"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "BSPP 1/2\"",
+          "aliases": [
+            "bspp 1/2"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "BSPP 3/4\"",
+          "aliases": [
+            "bspp 3/4"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "BSPP 1\"",
+          "aliases": [
+            "bspp 1"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard end connection"
+          ]
+        }
       ]
     },
     {
-      "id": "portConfig", "label": "Port configuration", "position": 5, "required": true,
+      "id": "portConfig",
+      "label": "Port configuration",
+      "position": 5,
+      "required": true,
       "options": [
-        { "code": "A", "label": "Port A", "aliases": ["port a"] },
-        { "code": "B", "label": "Port B", "aliases": ["port b"] },
-        { "code": "C", "label": "Port C", "aliases": ["port c"] },
-        { "code": "D", "label": "Port D", "aliases": ["port d"] },
-        { "code": "E", "label": "Port E", "aliases": ["port e"] },
-        { "code": "F", "label": "Port F", "aliases": ["port f"] },
-        { "code": "G", "label": "Port G", "aliases": ["port g"] },
-        { "code": "H", "label": "Port H", "aliases": ["port h"] },
-        { "code": "J", "label": "Port J", "aliases": ["port j"] },
-        { "code": "K", "label": "Port K", "aliases": ["port k"] },
-        { "code": "L", "label": "Port L", "aliases": ["port l"] },
-        { "code": "M", "label": "Port M", "aliases": ["port m"] },
-        { "code": "N", "label": "Port N", "aliases": ["port n"] },
-        { "code": "V", "label": "Port V", "aliases": ["port v"] },
-        { "code": "R", "label": "Port R", "aliases": ["port r"] }
+        {
+          "code": "A",
+          "label": "Port A",
+          "aliases": [
+            "port a"
+          ]
+        },
+        {
+          "code": "B",
+          "label": "Port B",
+          "aliases": [
+            "port b"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Port C",
+          "aliases": [
+            "port c"
+          ]
+        },
+        {
+          "code": "D",
+          "label": "Port D",
+          "aliases": [
+            "port d"
+          ]
+        },
+        {
+          "code": "E",
+          "label": "Port E",
+          "aliases": [
+            "port e"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "Port F",
+          "aliases": [
+            "port f"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "Port G",
+          "aliases": [
+            "port g"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "Port H",
+          "aliases": [
+            "port h"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "Port J",
+          "aliases": [
+            "port j"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "Port K",
+          "aliases": [
+            "port k"
+          ]
+        },
+        {
+          "code": "L",
+          "label": "Port L",
+          "aliases": [
+            "port l"
+          ]
+        },
+        {
+          "code": "M",
+          "label": "Port M",
+          "aliases": [
+            "port m"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "Port N",
+          "aliases": [
+            "port n"
+          ]
+        },
+        {
+          "code": "V",
+          "label": "Port V",
+          "aliases": [
+            "port v"
+          ]
+        },
+        {
+          "code": "R",
+          "label": "Port R",
+          "aliases": [
+            "port r"
+          ]
+        }
       ]
     },
     {
-      "id": "trim", "label": "Trim", "position": 6, "required": true,
+      "id": "trim",
+      "label": "Trim",
+      "position": 6,
+      "required": true,
       "options": [
-        { "code": "BB", "label": "Buna-N", "aliases": ["buna-n", "buna"] },
-        { "code": "EE", "label": "EPDM", "aliases": ["epdm"] },
-        { "code": "VV", "label": "Viton", "aliases": ["viton"] },
-        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard trim"] }
+        {
+          "code": "BB",
+          "label": "Buna-N",
+          "aliases": [
+            "buna-n",
+            "buna"
+          ]
+        },
+        {
+          "code": "EE",
+          "label": "EPDM",
+          "aliases": [
+            "epdm"
+          ]
+        },
+        {
+          "code": "VV",
+          "label": "Viton",
+          "aliases": [
+            "viton"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard trim"
+          ]
+        }
       ]
     },
     {
-      "id": "seat", "label": "Seat", "position": 7, "required": true,
+      "id": "seat",
+      "label": "Seat",
+      "position": 7,
+      "required": true,
       "options": [
-        { "code": "K5", "label": "KEL-F, Cv 2.1 (1.81 Kv)", "aliases": ["kel-f", "kelf"] },
-        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard seat"] }
+        {
+          "code": "K5",
+          "label": "KEL-F, Cv 2.1 (1.81 Kv)",
+          "aliases": [
+            "kel-f",
+            "kelf"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard seat"
+          ]
+        }
       ]
     },
     {
-      "id": "rangeSpring", "label": "Range spring / outlet pressure", "position": 8, "required": true,
+      "id": "rangeSpring",
+      "label": "Range spring / outlet pressure",
+      "position": 8,
+      "required": true,
       "options": [
-        { "code": "EC", "label": "0-275 psi (0-19 bar), silver", "aliases": ["0-275", "0 to 275", "silver"] },
-        { "code": "E1", "label": "0-400 psi (0-28 bar), beige", "aliases": ["0-400", "0 to 400", "beige"] },
-        { "code": "E2", "label": "0-580 psi (0-40 bar), purple", "aliases": ["0-580", "0 to 580", "purple"] },
-        { "code": "E3", "label": "0-1160 psi (0-80 bar), black", "aliases": ["0-1160", "0 to 1160", "black"] },
-        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard range"] }
+        {
+          "code": "EC",
+          "label": "0-275 psi (0-19 bar), silver",
+          "aliases": [
+            "0-275",
+            "0 to 275",
+            "silver"
+          ]
+        },
+        {
+          "code": "E1",
+          "label": "0-400 psi (0-28 bar), beige",
+          "aliases": [
+            "0-400",
+            "0 to 400",
+            "beige"
+          ]
+        },
+        {
+          "code": "E2",
+          "label": "0-580 psi (0-40 bar), purple",
+          "aliases": [
+            "0-580",
+            "0 to 580",
+            "purple"
+          ]
+        },
+        {
+          "code": "E3",
+          "label": "0-1160 psi (0-80 bar), black",
+          "aliases": [
+            "0-1160",
+            "0 to 1160",
+            "black"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard range"
+          ]
+        }
       ]
     },
     {
-      "id": "diaphragm", "label": "Diaphragm", "position": 9, "required": true,
+      "id": "diaphragm",
+      "label": "Diaphragm",
+      "position": 9,
+      "required": true,
       "options": [
-        { "code": "00", "label": "None (piston operated)", "aliases": ["none", "no diaphragm", "piston"] }
+        {
+          "code": "00",
+          "label": "None (piston operated)",
+          "aliases": [
+            "none",
+            "no diaphragm",
+            "piston"
+          ]
+        }
       ]
     },
     {
-      "id": "actuator", "label": "Actuator", "position": 10, "required": true,
+      "id": "actuator",
+      "label": "Actuator",
+      "position": 10,
+      "required": true,
       "options": [
-        { "code": "SK", "label": "Standard", "aliases": ["standard", "standard knob"] },
-        { "code": "PM", "label": "Panel mount", "aliases": ["panel mount"] },
-        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard actuator"] }
+        {
+          "code": "SK",
+          "label": "Standard",
+          "aliases": [
+            "standard",
+            "standard knob"
+          ]
+        },
+        {
+          "code": "PM",
+          "label": "Panel mount",
+          "aliases": [
+            "panel mount"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard actuator"
+          ]
+        }
       ]
     },
     {
-      "id": "inletGauge", "label": "Inlet gauge", "position": 11, "required": true,
+      "id": "inletGauge",
+      "label": "Inlet gauge",
+      "position": 11,
+      "required": true,
       "options": [
-        { "code": "FF", "label": "0-300 psig/bar (dual)", "aliases": ["inlet 0-300"] },
-        { "code": "GG", "label": "0-400 psig/bar (dual)", "aliases": ["inlet 0-400"] },
-        { "code": "HH", "label": "0-600 psig/bar (dual)", "aliases": ["inlet 0-600"] },
-        { "code": "JJ", "label": "0-1000 psig/bar (dual)", "aliases": ["inlet 0-1000"] },
-        { "code": "KK", "label": "0-2000 psig/bar (dual)", "aliases": ["inlet 0-2000"] },
-        { "code": "LL", "label": "0-3000 psig/bar (dual)", "aliases": ["inlet 0-3000"] },
-        { "code": "MM", "label": "0-5000 psig/bar (dual)", "aliases": ["inlet 0-5000"] },
-        { "code": "NN", "label": "None", "aliases": ["no inlet gauge"] },
-        { "code": "ZZ", "label": "Non-standard", "aliases": ["non-standard inlet gauge"] }
+        {
+          "code": "FF",
+          "label": "0-300 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-300"
+          ]
+        },
+        {
+          "code": "GG",
+          "label": "0-400 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-400"
+          ]
+        },
+        {
+          "code": "HH",
+          "label": "0-600 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-600"
+          ]
+        },
+        {
+          "code": "JJ",
+          "label": "0-1000 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-1000"
+          ]
+        },
+        {
+          "code": "KK",
+          "label": "0-2000 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-2000"
+          ]
+        },
+        {
+          "code": "LL",
+          "label": "0-3000 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-3000"
+          ]
+        },
+        {
+          "code": "MM",
+          "label": "0-5000 psig/bar (dual)",
+          "aliases": [
+            "inlet 0-5000"
+          ]
+        },
+        {
+          "code": "NN",
+          "label": "None",
+          "aliases": [
+            "no inlet gauge"
+          ]
+        },
+        {
+          "code": "ZZ",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard inlet gauge"
+          ]
+        }
       ]
     },
     {
-      "id": "outletGauge", "label": "Outlet gauge", "position": 12, "required": true,
+      "id": "outletGauge",
+      "label": "Outlet gauge",
+      "position": 12,
+      "required": true,
       "options": [
-        { "code": "E", "label": "0-200 psig/bar (dual)", "aliases": ["outlet 0-200"] },
-        { "code": "F", "label": "0-300 psig/bar (dual)", "aliases": ["outlet 0-300"] },
-        { "code": "G", "label": "0-400 psig/bar (dual)", "aliases": ["outlet 0-400"] },
-        { "code": "H", "label": "0-600 psig/bar (dual)", "aliases": ["outlet 0-600"] },
-        { "code": "J", "label": "0-1000 psig/bar (dual)", "aliases": ["outlet 0-1000"] },
-        { "code": "K", "label": "0-2000 psig/bar (dual)", "aliases": ["outlet 0-2000"] },
-        { "code": "N", "label": "None", "aliases": ["no outlet gauge"] },
-        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard outlet gauge"] }
+        {
+          "code": "E",
+          "label": "0-200 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-200"
+          ]
+        },
+        {
+          "code": "F",
+          "label": "0-300 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-300"
+          ]
+        },
+        {
+          "code": "G",
+          "label": "0-400 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-400"
+          ]
+        },
+        {
+          "code": "H",
+          "label": "0-600 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-600"
+          ]
+        },
+        {
+          "code": "J",
+          "label": "0-1000 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-1000"
+          ]
+        },
+        {
+          "code": "K",
+          "label": "0-2000 psig/bar (dual)",
+          "aliases": [
+            "outlet 0-2000"
+          ]
+        },
+        {
+          "code": "N",
+          "label": "None",
+          "aliases": [
+            "no outlet gauge"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard outlet gauge"
+          ]
+        }
       ]
     },
     {
-      "id": "sep", "label": "SEP compliance", "position": 13, "required": true,
+      "id": "sep",
+      "label": "SEP compliance",
+      "position": 13,
+      "required": true,
       "options": [
-        { "code": "G", "label": "SEP compliant", "aliases": ["sep", "sep compliant"] },
-        { "code": "0", "label": "None", "aliases": ["none", "no sep"] },
-        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard sep"] }
+        {
+          "code": "G",
+          "label": "SEP compliant",
+          "aliases": [
+            "sep",
+            "sep compliant"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none",
+            "no sep"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard sep"
+          ]
+        }
       ]
     },
     {
-      "id": "accessories", "label": "Accessories", "position": 14, "required": true,
+      "id": "accessories",
+      "label": "Accessories",
+      "position": 14,
+      "required": true,
       "options": [
-        { "code": "B", "label": "Standard, preset, with locking wire (specify pressure at order entry)", "aliases": ["standard preset", "locking wire preset"] },
-        { "code": "C", "label": "Panel mount, preset, with locking wire (specify pressure at order entry)", "aliases": ["panel mount preset"] },
-        { "code": "S", "label": "Clean for oil free (consult factory for compatible gauges)", "aliases": ["oil free", "clean for oil free"] },
-        { "code": "X", "label": "Clean for oxygen (consult factory for compatible gauges)", "aliases": ["oxygen", "clean for oxygen"] },
-        { "code": "0", "label": "None", "aliases": ["none", "no accessories"] },
-        { "code": "Z", "label": "Non-standard", "aliases": ["non-standard accessories"] }
+        {
+          "code": "B",
+          "label": "Standard, preset, with locking wire (specify pressure at order entry)",
+          "aliases": [
+            "standard preset",
+            "locking wire preset"
+          ]
+        },
+        {
+          "code": "C",
+          "label": "Panel mount, preset, with locking wire (specify pressure at order entry)",
+          "aliases": [
+            "panel mount preset"
+          ]
+        },
+        {
+          "code": "S",
+          "label": "Clean for oil free (consult factory for compatible gauges)",
+          "aliases": [
+            "oil free",
+            "clean for oil free"
+          ]
+        },
+        {
+          "code": "X",
+          "label": "Clean for oxygen (consult factory for compatible gauges)",
+          "aliases": [
+            "oxygen",
+            "clean for oxygen"
+          ]
+        },
+        {
+          "code": "0",
+          "label": "None",
+          "aliases": [
+            "none",
+            "no accessories"
+          ]
+        },
+        {
+          "code": "Z",
+          "label": "Non-standard",
+          "aliases": [
+            "non-standard accessories"
+          ]
+        }
       ]
     }
   ],
   "constraints": [
-    { "when": { "size": "050" }, "forbid": { "endConnection": ["D", "E", "G", "H"] }, "reason": "the end connection matches the valve size: C is FNPT and F is BSPP in 1/2 inch, per the body feature list" },
-    { "when": { "size": "075" }, "forbid": { "endConnection": ["C", "E", "F", "H"] }, "reason": "the end connection matches the valve size: D is FNPT and G is BSPP in 3/4 inch, per the body feature list" },
-    { "when": { "size": "100" }, "forbid": { "endConnection": ["C", "D", "F", "G"] }, "reason": "the end connection matches the valve size: E is FNPT and H is BSPP in 1 inch, per the body feature list" }
+    {
+      "when": {
+        "size": "050"
+      },
+      "forbid": {
+        "endConnection": [
+          "D",
+          "E",
+          "G",
+          "H"
+        ]
+      },
+      "reason": "the end connection matches the valve size: C is FNPT and F is BSPP in 1/2 inch, per the body feature list"
+    },
+    {
+      "when": {
+        "size": "075"
+      },
+      "forbid": {
+        "endConnection": [
+          "C",
+          "E",
+          "F",
+          "H"
+        ]
+      },
+      "reason": "the end connection matches the valve size: D is FNPT and G is BSPP in 3/4 inch, per the body feature list"
+    },
+    {
+      "when": {
+        "size": "100"
+      },
+      "forbid": {
+        "endConnection": [
+          "C",
+          "D",
+          "F",
+          "G"
+        ]
+      },
+      "reason": "the end connection matches the valve size: E is FNPT and H is BSPP in 1 inch, per the body feature list"
+    }
   ],
   "cautions": [
-    { "when": { "rangeSpring": "EC", "outletGauge": ["E"] }, "note": "The selected outlet gauge does not fully cover the 0-275 psi range spring; the datasheet states the customer assumes all responsibility for possible damage or injury when the gauge span does not cover the range spring or outlet pressure option." },
-    { "when": { "rangeSpring": "E1", "outletGauge": ["E", "F"] }, "note": "The selected outlet gauge does not fully cover the 0-400 psi range spring; the datasheet states the customer assumes all responsibility for possible damage or injury when the gauge span does not cover the range spring or outlet pressure option." },
-    { "when": { "rangeSpring": "E2", "outletGauge": ["E", "F", "G"] }, "note": "The selected outlet gauge does not fully cover the 0-580 psi range spring; the datasheet states the customer assumes all responsibility for possible damage or injury when the gauge span does not cover the range spring or outlet pressure option." },
-    { "when": { "rangeSpring": "E3", "outletGauge": ["E", "F", "G", "H", "J"] }, "note": "The selected outlet gauge does not fully cover the 0-1160 psi range spring; the datasheet states the customer assumes all responsibility for possible damage or injury when the gauge span does not cover the range spring or outlet pressure option." },
-    { "when": { "rangeSpring": "E1", "inletGauge": ["FF"] }, "note": "The selected inlet gauge span is below the top of the 0-400 psi range spring, so it cannot cover the working inlet pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection." },
-    { "when": { "rangeSpring": "E2", "inletGauge": ["FF", "GG"] }, "note": "The selected inlet gauge span is below the top of the 0-580 psi range spring, so it cannot cover the working inlet pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection." },
-    { "when": { "rangeSpring": "E3", "inletGauge": ["FF", "GG", "HH", "JJ"] }, "note": "The selected inlet gauge span is below the top of the 0-1160 psi range spring, so it cannot cover the working inlet pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection." }
+    {
+      "when": {
+        "rangeSpring": "EC",
+        "outletGauge": [
+          "E"
+        ]
+      },
+      "note": "The selected outlet gauge does not fully cover the 0-275 psi range spring; the datasheet states the customer assumes all responsibility for possible damage or injury when the gauge span does not cover the range spring or outlet pressure option."
+    },
+    {
+      "when": {
+        "rangeSpring": "E1",
+        "outletGauge": [
+          "E",
+          "F"
+        ]
+      },
+      "note": "The selected outlet gauge does not fully cover the 0-400 psi range spring; the datasheet states the customer assumes all responsibility for possible damage or injury when the gauge span does not cover the range spring or outlet pressure option."
+    },
+    {
+      "when": {
+        "rangeSpring": "E2",
+        "outletGauge": [
+          "E",
+          "F",
+          "G"
+        ]
+      },
+      "note": "The selected outlet gauge does not fully cover the 0-580 psi range spring; the datasheet states the customer assumes all responsibility for possible damage or injury when the gauge span does not cover the range spring or outlet pressure option."
+    },
+    {
+      "when": {
+        "rangeSpring": "E3",
+        "outletGauge": [
+          "E",
+          "F",
+          "G",
+          "H",
+          "J"
+        ]
+      },
+      "note": "The selected outlet gauge does not fully cover the 0-1160 psi range spring; the datasheet states the customer assumes all responsibility for possible damage or injury when the gauge span does not cover the range spring or outlet pressure option."
+    },
+    {
+      "when": {
+        "rangeSpring": "E1",
+        "inletGauge": [
+          "FF"
+        ]
+      },
+      "note": "The selected inlet gauge span is below the top of the 0-400 psi range spring, so it cannot cover the working inlet pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    },
+    {
+      "when": {
+        "rangeSpring": "E2",
+        "inletGauge": [
+          "FF",
+          "GG"
+        ]
+      },
+      "note": "The selected inlet gauge span is below the top of the 0-580 psi range spring, so it cannot cover the working inlet pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    },
+    {
+      "when": {
+        "rangeSpring": "E3",
+        "inletGauge": [
+          "FF",
+          "GG",
+          "HH",
+          "JJ"
+        ]
+      },
+      "note": "The selected inlet gauge span is below the top of the 0-1160 psi range spring, so it cannot cover the working inlet pressure; the datasheet places responsibility on the customer when a gauge span does not fully cover the selection."
+    }
   ]
 }

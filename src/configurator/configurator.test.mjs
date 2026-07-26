@@ -26,6 +26,9 @@ const m4600 = JSON.parse(readFileSync(join(here, 'models', 'm4600.json'), 'utf8'
 const m3100 = JSON.parse(readFileSync(join(here, 'models', 'm3100.json'), 'utf8'));
 const m3300 = JSON.parse(readFileSync(join(here, 'models', 'm3300.json'), 'utf8'));
 const m3700 = JSON.parse(readFileSync(join(here, 'models', 'm3700.json'), 'utf8'));
+const hkBall = JSON.parse(readFileSync(join(here, 'models', 'hexblok_ball.json'), 'utf8'));
+const hkGlobe = JSON.parse(readFileSync(join(here, 'models', 'hexblok_globe.json'), 'utf8'));
+const hkApi = JSON.parse(readFileSync(join(here, 'models', 'hexblok_api.json'), 'utf8'));
 const s3000 = JSON.parse(readFileSync(join(here, 'models', '3000.json'), 'utf8'));
 const ms3000 = JSON.parse(readFileSync(join(here, 'models', 'ms3000.json'), 'utf8'));
 const f2000 = JSON.parse(readFileSync(join(here, 'models', '2000.json'), 'utf8'));
@@ -2167,6 +2170,39 @@ check('the three-way trio round-trips against the price book shape', () => {
   assert.ok(checkConstraints(m3700, { limitSwitch: 'AA', operation: 'S7' }).length > 0, 'the small limit switches stop at UT-3');
   assert.ok(checkConstraints(m3100, { model: '3T-3100F', startPosition: 'LA' }).length > 0, 'the bottom entry pair binds its ports too');
   assert.ok(/Limit Swtich/.test(m3300.note) && /Limit Swtich/.test(m3700.note), 'the printed column heading slip is confessed');
+});
+
+console.log('\nThe hexblok schematics the extraction had lost, and the JRPH ruling:');
+
+check('the three hexblok grammars round-trip against their own sample rows', () => {
+  roundTrip(hkBall, {
+    model: 'HK22', bodyConfig: '2', bodyMaterial: '6', inletSize: '3', inletType: 'C',
+    outletSize: '3', outletType: '1', stem: '4', seatMaterial: '3', packing: '3',
+    option1: 'M', option2: '9',
+  }, 'HK22263C3143 3M9'.replace(' ', ''));
+  roundTrip(hkGlobe, {
+    model: 'HK10', bodyConfig: '2', bodyMaterial: 'U', inletSize: '3', inletType: 'C',
+    outletSize: '3', outletType: '1', stem: '4', seatMaterial: '1', packing: '3',
+    option1: 'M', option2: '8',
+  }, 'HK102U3C31413M8');
+  roundTrip(hkApi, {
+    model: 'HK22', bodyConfig: 'A', bodyMaterial: 'U', inletSize: 'N', inletType: 'A',
+    outletSize: 'D', outletType: 'S', stem: '4', seatMaterial: '3', packing: '2',
+    option1: 'M', option2: 'D',
+  }, 'HK22AUNADS432MD');
+  assert.ok(checkConstraints(hkGlobe, { bodyConfig: '3', model: 'HK10' }).length > 0, 'the hard/soft mix is the HK30 and HK31\'s');
+  assert.ok(checkConstraints(hkGlobe, { bodyConfig: '0', model: 'HK41' }).length > 0, 'the 10,000 psi build keeps its printed models');
+  assert.ok(checkConstraints(hkGlobe, { seatMaterial: '4', bodyConfig: '1' }).length > 0, 'C-PEEK needs a soft seat configuration');
+  assert.equal(checkCautions(hkGlobe, { bodyConfig: '2' }).length, 1, 'the soft seat pressure and temperature limit cautions');
+  assert.ok(checkConstraints(hkApi, { bodyConfig: '0', model: 'HK22' }).length > 0, 'the API sheet keeps its own asterisk');
+  assert.ok(/sample row pairs it with an HK22/.test(hkApi.note), 'and its sample contradiction is confessed');
+  assert.ok(/alpha-numerical order/.test(hkBall.note), 'the two-option rule is recorded, not enforced');
+});
+
+check('the JRPH is ruled out on the evidence of its own document', () => {
+  assert.ok(/there is no JRPH ordering schematic/.test(jrpl.note), 'the ruling is recorded');
+  assert.ok(/both print this same JRPL schematic/.test(jrpl.note), 'with the reason');
+  assert.ok(/stops at 1160 psi/.test(jrpl.note), 'and the spring evidence');
 });
 
 console.log(`\n=== Configurator gate: ${pass} passed, ${fail} failed ===`);
