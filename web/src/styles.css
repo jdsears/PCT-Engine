@@ -500,3 +500,29 @@ button, input { font: inherit; }
 .ins-campaign-name { font-weight: 600; color: var(--navy); }
 .ins-campaign-figs { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink2); }
 .ins-campaign-figs b { color: var(--navy); font-weight: 600; }
+
+/* The review queue inside Accounts, and the stale badge. Same tokens, nothing
+   louder than the decision deserves; 44px targets at phone widths and rows
+   that stack rather than scroll sideways. */
+.rq-card { padding: 14px 16px; margin-bottom: 14px; }
+.rq-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.rq-count { font-size: 13px; color: var(--ink2); }
+.rq-intro { font-size: 13px; color: var(--ink2); margin: 8px 0 4px; }
+.rq-list { display: flex; flex-direction: column; }
+.rq-row { display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.rq-main { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.rq-name { font-weight: 600; color: var(--navy); }
+.rq-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rq-domain { font-size: 12px; color: var(--ink2); }
+.rq-signal { font-size: 13px; color: var(--ink2); }
+.rq-signal a { color: var(--blue); text-decoration: none; }
+.rq-select { font: inherit; font-size: 13px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; max-width: 100%; min-height: 44px; }
+.rq-err { font-size: 12px; color: var(--amber); }
+.rq-actions { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+.rq-actions .ob-btn { min-height: 44px; }
+.rq-unmatched { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 10px; }
+.rq-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.rq-tag { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; color: var(--ink2); }
+.rq-tag b { color: var(--navy); }
+.rq-caption { font-size: 12px; color: var(--ink2); margin: 0; }
+.pill-stale { opacity: 0.7; }

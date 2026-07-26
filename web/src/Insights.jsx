@@ -76,6 +76,12 @@ function CampaignFigures({ c }) {
           <div className="eyebrow">Sent</div>
         </div>
       </div>
+      {(c.staleLeads > 0 || c.openReviews > 0) && (
+        <p className="ins-caption">
+          {c.staleLeads > 0 ? `${c.staleLeads} lead${c.staleLeads === 1 ? '' : 's'} gone stale, held out of new drafting. ` : ''}
+          {c.openReviews > 0 ? `${c.openReviews} discovered compan${c.openReviews === 1 ? 'y' : 'ies'} awaiting review in Accounts.` : ''}
+        </p>
+      )}
       {quiet && (
         <p className="ins-caption">
           Nothing recorded for this campaign yet. Figures appear once it has been seeded and its first sweep has run.
@@ -166,7 +172,9 @@ export default function Insights({ campaign }) {
                       <span><b>{c.accounts}</b> accounts</span>
                       <span><b>{c.signals.passed}</b> of {c.signals.swept} signals past the gate</span>
                       <span><b>{c.leads}</b> leads</span>
+                      {c.staleLeads > 0 && <span><b>{c.staleLeads}</b> stale</span>}
                       <span><b>{c.drafts.inReview}</b> in review</span>
+                      {c.openReviews > 0 && <span><b>{c.openReviews}</b> to review</span>}
                       <span><b>{c.drafts.sent}</b> sent</span>
                     </div>
                   </div>

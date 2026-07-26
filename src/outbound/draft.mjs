@@ -55,6 +55,14 @@ export function renderGrounding(g, campaign = 'marwin_dc') {
   const openerGrade = g.openerGrade ?? isOpenerGrade(g.signal);
   if (g.signal && openerGrade) {
     lines.push(`Signal to open on, a real project event the recipient could have noticed: ${g.signal.text}${g.signal.source ? ' [source: ' + g.signal.source + ']' : ''}. Open on this.`);
+    // Which side of the story the recipient sits on. Without this a contractor
+    // gets addressed as if they owned the campus, which reads as not having
+    // read the article at all.
+    if (g.signal.matchedAs === 'contractor') {
+      lines.push('The recipient is at the contractor appointed or delivering the work in this signal, not the client whose facility it is. Write to the delivery side: their project, their specification decisions. Do not congratulate them on building their own facility.');
+    } else if (g.signal.matchedAs === 'operator') {
+      lines.push('The recipient is at the operator or end client whose facility this signal describes. Write to the owner side of it.');
+    }
   } else {
     if (g.signal) lines.push(`Context only, an administrative filing (${g.signal.type}). NEVER mention it to the recipient and never give it as a reason for contact; it only tells us the account is worth approaching.`);
     else lines.push('No project signal on file. Do not invent a reason for contact.');
@@ -101,7 +109,9 @@ export function findUnsupported(claims) {
 // response may draw on the reply and the corpus extracts) without touching the
 // cold-open path.
 export async function checkGrounding(draft, grounding, { callModel = callClaude, groundingText = null } = {}) {
-  const user = `GROUNDING:\n${groundingText || renderGrounding(grounding)}\n\nEMAIL:\nSubject: ${draft.subject}\n\n${draft.body}`;
+  // The checker judges against the same campaign's permitted facts the drafter
+  // wrote from; the grounding carries which campaign that is.
+  const user = `GROUNDING:\n${groundingText || renderGrounding(grounding, grounding.campaign || 'marwin_dc')}\n\nEMAIL:\nSubject: ${draft.subject}\n\n${draft.body}`;
   const parsed = parseJsonObject(await callModel(CHECK_SYSTEM, user, { maxTokens: 700 }));
   const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
   return { claims, unsupported: findUnsupported(claims) };
@@ -112,7 +122,7 @@ const REVISE_SYSTEM =
   "Return strict JSON only: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"...\",\"supportedBy\":\"signal|icp|product|contact\"}]}.";
 
 async function reviseDraft(draft, grounding, unsupported, { callModel = callClaude, groundingText = null } = {}) {
-  const user = `GROUNDING:\n${groundingText || renderGrounding(grounding)}\n\nCURRENT EMAIL:\nSubject: ${draft.subject}\n\n${draft.body}\n\nUNSUPPORTED CLAIMS TO REMOVE OR CORRECT:\n${unsupported.map(u => '- ' + u).join('\n')}`;
+  const user = `GROUNDING:\n${groundingText || renderGrounding(grounding, grounding.campaign || 'marwin_dc')}\n\nCURRENT EMAIL:\nSubject: ${draft.subject}\n\n${draft.body}\n\nUNSUPPORTED CLAIMS TO REMOVE OR CORRECT:\n${unsupported.map(u => '- ' + u).join('\n')}`;
   const parsed = parseJsonObject(await callModel(REVISE_SYSTEM, user, { maxTokens: 700 }));
   return { subject: outboundVoice(parsed.subject || ''), body: outboundVoice(parsed.body || ''), claims: Array.isArray(parsed.claims) ? parsed.claims : [], model: MODEL };
 }
@@ -274,7 +284,10 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
 // The cold-open pipeline: draft, the shared finishing pass, then the
 // guaranteed greeting.
 export async function composeDraft(grounding, { callModel = callClaude } = {}) {
-  const draft = await draftColdOpen(grounding, { callModel });
+  // The grounding carries the lead's campaign; drafting on the default here
+  // would write a pharma lead with the data centre positioning.
+  const campaign = grounding.campaign || 'marwin_dc';
+  const draft = await draftColdOpen(grounding, { callModel, campaign });
   const finished = await finaliseDraft(draft, grounding, { callModel });
   return { ...finished, body: ensureGreeting(finished.body, grounding.contact?.name, { dear: true }) };
 }

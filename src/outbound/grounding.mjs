@@ -38,11 +38,21 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc' }
          ORDER BY email_verified_at IS NULL, email_confidence DESC NULLS LAST LIMIT 1`, [lead.company_id]);
   if (row) contact = { id: row.id, name: row.full_name || null, role: row.role_title || null, email: row.email || null };
 
-  // The triggering signal: the most recent real, titled signal for the company.
+  // The triggering signal: the most recent real, titled signal linked to the
+  // company on either side. Which side matters: a contractor contact reads
+  // about the project they were appointed to, an operator contact about their
+  // build, and the drafter must know which it is writing to, so the linkage
+  // travels with the signal as matchedAs.
   const sig = await pick(
-    `SELECT id, signal_type, title, url, observed_at FROM signals
-     WHERE company_id = $1 AND title IS NOT NULL ORDER BY observed_at DESC LIMIT 1`, [lead.company_id]);
-  const signal = sig ? { id: sig.id, type: sig.signal_type, text: sig.title, source: sig.url || null, observedAt: sig.observed_at } : null;
+    `SELECT id, signal_type, title, url, observed_at,
+            (contractor_company_id = $1) AS via_contractor
+     FROM signals
+     WHERE (company_id = $1 OR contractor_company_id = $1) AND title IS NOT NULL
+     ORDER BY observed_at DESC LIMIT 1`, [lead.company_id]);
+  const signal = sig ? {
+    id: sig.id, type: sig.signal_type, text: sig.title, source: sig.url || null, observedAt: sig.observed_at,
+    matchedAs: sig.via_contractor ? 'contractor' : 'operator',
+  } : null;
   // A grounded signal can be true and still be unfit to open a cold email on. An
   // administrative filing informs that the account is worth approaching; it is
   // never the hook. The grade decides the opening; the note travels for review.

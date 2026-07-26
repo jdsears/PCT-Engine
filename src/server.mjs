@@ -14,6 +14,8 @@ import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
+import { searchCompanies } from './research/companiesHouse.mjs';
+import { staleDays, isStale } from './research/staleness.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
 import { pollReplies } from './outbound/replies.mjs';
@@ -298,7 +300,7 @@ app.get('/api/insights/top-docs', async (req, res) => {
 app.get('/api/insights/campaigns', async (req, res) => {
   try {
     const days = clampDays(req.query.days, 30);
-    const [sweep, funnel, drafts, register] = await Promise.all([
+    const [sweep, funnel, drafts, register, activity, reviews] = await Promise.all([
       pool.query(
         `SELECT campaign,
                 count(*)::int AS swept,
@@ -316,12 +318,30 @@ app.get('/api/insights/campaigns', async (req, res) => {
          FROM outbound_drafts GROUP BY campaign`, [])
         .catch(() => ({ rows: [] })),
       pool.query(`SELECT campaign, count(*)::int AS n FROM company_campaigns GROUP BY campaign`, []),
+      // Last activity per active lead; the stale decision is per campaign
+      // because the window is campaign config, so it happens in code.
+      pool.query(
+        `SELECT l.campaign, GREATEST(l.updated_at, COALESCE((
+            SELECT max(s.observed_at) FROM signals s
+            WHERE (s.company_id = l.company_id OR s.contractor_company_id = l.company_id)
+              AND s.campaign = l.campaign), l.updated_at)) AS last_activity
+         FROM leads l WHERE l.stage = ANY($1)`, [STAGES])
+        .catch(() => ({ rows: [] })),
+      pool.query(
+        `SELECT campaign, count(*)::int AS n FROM party_reviews WHERE status = 'open' GROUP BY campaign`, [])
+        .catch(() => ({ rows: [] })),
     ]);
 
     const by = (rows, key = 'campaign') => Object.fromEntries(rows.map(r => [r[key], r]));
-    const sweepBy = by(sweep.rows), draftBy = by(drafts.rows), regBy = by(register.rows);
+    const sweepBy = by(sweep.rows), draftBy = by(drafts.rows), regBy = by(register.rows), revBy = by(reviews.rows);
     const stageBy = {};
     for (const r of funnel.rows) (stageBy[r.campaign] ||= {})[r.stage] = r.n;
+    const staleBy = {};
+    for (const r of activity.rows) {
+      if (isStale({ updatedAt: r.last_activity, days: campaignStaleDays(r.campaign) })) {
+        staleBy[r.campaign] = (staleBy[r.campaign] || 0) + 1;
+      }
+    }
 
     res.json({
       days,
@@ -334,6 +354,8 @@ app.get('/api/insights/campaigns', async (req, res) => {
           leads: STAGES.reduce((n, st) => n + (stages[st] || 0), 0),
           stages: STAGES.map(st => ({ stage: st, count: stages[st] || 0 })),
           drafts: { inReview: d.in_review || 0, approved: d.approved || 0, sent: d.sent || 0 },
+          staleLeads: staleBy[c.id] || 0,
+          openReviews: revBy[c.id]?.n || 0,
         };
       }),
     });
@@ -378,7 +400,11 @@ app.get('/api/pipeline', async (req, res) => {
        LEFT JOIN contacts ct ON ct.id = l.contact_id WHERE ${where}`, [stage, q, campaign]);
     const { rows } = await pool.query(
       `SELECT co.name AS company, l.score, COALESCE(l.region, co.region) AS region,
-              l.campaign, ct.full_name, ct.role_title
+              l.campaign, ct.full_name, ct.role_title,
+              GREATEST(l.updated_at, COALESCE((
+                SELECT max(s.observed_at) FROM signals s
+                WHERE (s.company_id = l.company_id OR s.contractor_company_id = l.company_id)
+                  AND s.campaign = l.campaign), l.updated_at)) AS last_activity
        FROM leads l JOIN companies co ON co.id = l.company_id
        LEFT JOIN contacts ct ON ct.id = l.contact_id
        WHERE ${where}
@@ -393,6 +419,9 @@ app.get('/api/pipeline', async (req, res) => {
         region: regionName(l.region),
         campaign: l.campaign,
         score: l.score == null ? null : Math.round(Number(l.score)),
+        // Stale is computed, never stored, so any new signal or human action
+        // clears it by existing. The window is the lead's own campaign's.
+        stale: isStale({ updatedAt: l.last_activity, days: campaignStaleDays(l.campaign) }),
       })),
     });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -546,9 +575,158 @@ function campaignFilter(req) {
   return !c || c === 'all' ? null : c;
 }
 
+// The staleness window is campaign-level config; an unknown campaign (the
+// rehearsal lane, a retired id) takes the default rather than throwing.
+function campaignStaleDays(id) {
+  const def = getCampaign(id);
+  return def ? staleDays(def) : 120;
+}
+
 app.get('/api/campaigns', async (_req, res) => {
   try { res.json({ campaigns: listCampaigns() }); }
   catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// ----- The review queue -----
+// Proposals from unknown parties and ambiguities the matcher refuses to
+// resolve alone. This is the human step between discovery and the register:
+// nothing here scores, drafts or spends until a person confirms it. The
+// surface lives inside Accounts, because the queue's output is accounts and
+// its actions edit the register.
+
+app.get('/api/reviews', async (req, res) => {
+  try {
+    const campaign = campaignFilter(req);
+    const { rows } = await pool.query(
+      `SELECT r.id, r.kind, r.printed_name, r.party, r.campaign, r.ch_candidates,
+              r.account_candidates, r.domain, r.created_at,
+              s.title AS signal_title, s.url AS signal_url, s.geo_scope
+       FROM party_reviews r LEFT JOIN signals s ON s.id = r.signal_id
+       WHERE r.status = 'open' AND ($1::text IS NULL OR r.campaign = $1)
+       ORDER BY r.created_at DESC LIMIT 100`, [campaign]);
+    // The unmatched-name counter rides along, so the next alias worth adding
+    // is always visible on the same surface.
+    const { rows: unmatched } = await pool.query(
+      `SELECT printed, name_norm, campaign, n, last_seen FROM unmatched_parties
+       WHERE ($1::text IS NULL OR campaign = $1)
+       ORDER BY n DESC, last_seen DESC LIMIT 12`, [campaign]);
+    res.json({
+      reviews: rows.map(r => ({
+        id: r.id, kind: r.kind, name: r.printed_name, party: r.party, campaign: r.campaign,
+        chCandidates: r.ch_candidates || [], accountCandidates: r.account_candidates || [],
+        domain: r.domain, createdAt: r.created_at,
+        signal: r.signal_title ? { title: r.signal_title, url: r.signal_url, geoScope: r.geo_scope } : null,
+      })),
+      unmatched: unmatched.map(u => ({ name: u.printed, campaign: u.campaign, n: u.n, lastSeen: u.last_seen })),
+    });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Link the review's triggering signal to the account it resolved to, on the
+// side the review was about.
+async function linkReviewSignal(review, companyId) {
+  const col = review.party === 'contractor' ? 'contractor_company_id' : 'company_id';
+  if (review.signal_id) {
+    await pool.query(`UPDATE signals SET ${col} = $1 WHERE id = $2 AND ${col} IS NULL`, [companyId, review.signal_id]);
+  }
+}
+
+const openReview = async id => (await pool.query(
+  `SELECT * FROM party_reviews WHERE id = $1 AND status = 'open'`, [id])).rows[0] || null;
+
+// Confirm a proposal: the human accepts the discovered company onto the
+// register, choosing the Companies House entity when several were plausible.
+// The account is seeded into the campaign that proposed it and flows into the
+// existing scoring on the next research run. It joins as a named account:
+// confirmation is the human curation step, the same red pen that built the
+// seed list, and only named accounts get domain resolution and officer sync,
+// without which a discovery would sit permanently contactless.
+app.post('/api/reviews/:id/confirm', async (req, res) => {
+  try {
+    const r = await openReview(req.params.id);
+    if (!r) return res.status(404).json({ error: 'review not open' });
+    if (r.kind !== 'proposal') return res.status(409).json({ error: 'only a proposal can be confirmed; resolve an ambiguity to an account or mark it distinct' });
+    const { chNumber = null, registeredName = null } = req.body || {};
+    const name = (registeredName || r.printed_name).trim();
+    const { rows: created } = await pool.query(
+      `INSERT INTO companies (name, ch_number, domain, named_account, source)
+       VALUES ($1, $2, $3, true, 'signal_proposal')
+       ON CONFLICT (ch_number) DO UPDATE SET updated_at = now()
+       RETURNING id`, [name, chNumber, r.domain]);
+    const companyId = created[0].id;
+    await pool.query(
+      `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [companyId, r.campaign]);
+    await linkReviewSignal(r, companyId);
+    // The printed form becomes an alias for the registered name, so the next
+    // story naming this company matches without the queue.
+    if (name.toLowerCase() !== r.printed_name.toLowerCase()) {
+      await pool.query(
+        `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, 'queue_confirm') ON CONFLICT (alias) DO NOTHING`,
+        [r.printed_name.toLowerCase(), name]);
+    }
+    await pool.query(
+      `UPDATE party_reviews SET status = 'confirmed', company_id = $1, decided_at = now() WHERE id = $2`,
+      [companyId, r.id]);
+    res.json({ ok: true, companyId });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Merge a proposal into an existing account (an alias miss), or resolve an
+// ambiguity to one of its candidates. Either way the alias is recorded, which
+// is how the matcher learns and the queue shrinks.
+app.post('/api/reviews/:id/merge', async (req, res) => {
+  try {
+    const r = await openReview(req.params.id);
+    if (!r) return res.status(404).json({ error: 'review not open' });
+    const companyId = parseInt((req.body || {}).companyId, 10);
+    if (!Number.isFinite(companyId)) return res.status(400).json({ error: 'companyId required' });
+    const { rows: co } = await pool.query(`SELECT id, name FROM companies WHERE id = $1`, [companyId]);
+    if (!co.length) return res.status(404).json({ error: 'no such company' });
+    await pool.query(
+      `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, $3) ON CONFLICT (alias) DO NOTHING`,
+      [r.printed_name.toLowerCase(), co[0].name, r.kind === 'ambiguous' ? 'queue_resolve' : 'queue_merge']);
+    await pool.query(
+      `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [companyId, r.campaign]);
+    await linkReviewSignal(r, companyId);
+    await pool.query(
+      `UPDATE party_reviews SET status = 'merged', company_id = $1, decided_at = now() WHERE id = $2`,
+      [companyId, r.id]);
+    res.json({ ok: true, companyId });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Dismiss: a decision, remembered. The row stays and blocks re-proposal.
+app.post('/api/reviews/:id/dismiss', async (req, res) => {
+  try {
+    const r = await openReview(req.params.id);
+    if (!r) return res.status(404).json({ error: 'review not open' });
+    await pool.query(`UPDATE party_reviews SET status = 'dismissed', decided_at = now() WHERE id = $1`, [r.id]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// An ambiguity whose printed name is none of its candidates becomes a
+// proposal: the same row changes kind, keeps its history, and picks up
+// read-only Companies House candidates where the key allows.
+app.post('/api/reviews/:id/distinct', async (req, res) => {
+  try {
+    const r = await openReview(req.params.id);
+    if (!r) return res.status(404).json({ error: 'review not open' });
+    if (r.kind !== 'ambiguous') return res.status(409).json({ error: 'only an ambiguity can be marked distinct' });
+    let chCandidates = null;
+    try {
+      const found = await searchCompanies(r.printed_name);
+      chCandidates = (found || []).slice(0, 5).map(c => ({
+        chNumber: c.company_number, name: c.title, status: c.company_status, address: c.address_snippet || null,
+      }));
+    } catch { /* the proposal stands without candidates */ }
+    await pool.query(
+      `UPDATE party_reviews SET kind = 'proposal', ch_candidates = COALESCE($1::jsonb, ch_candidates) WHERE id = $2`,
+      [chCandidates ? JSON.stringify(chCandidates) : null, r.id]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
 app.get('/api/signals', async (req, res) => {

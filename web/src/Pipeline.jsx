@@ -163,6 +163,7 @@ export default function Pipeline({ isMobile, campaign }) {
                   </div>
                 </div>
                 <div className="lead-side">
+                  {l.stale && <span className="pill pill-stale" title="No new signal or human action inside the campaign's staleness window. Excluded from new drafting until something moves.">Stale</span>}
                   {l.region && <span className="pill">{l.region}</span>}
                   <span className="lead-score">{l.score ?? '—'}</span>
                 </div>

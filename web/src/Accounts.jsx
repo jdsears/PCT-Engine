@@ -3,6 +3,7 @@ import { TYPE_LABELS, fmtClockDay, fmtMonthYear, companyLabel } from './labels.j
 import { CloseIcon } from './icons.jsx';
 import { apiFetch } from './api.js';
 import { withCampaign, CampaignChip, useCampaignList, isAll } from './CampaignSwitcher.jsx';
+import ReviewQueue from './ReviewQueue.jsx';
 
 const typeLabel = t => TYPE_LABELS[t] || '—';
 
@@ -113,6 +114,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
   const [selected, setSelected] = useState(null);
   const campaignList = useCampaignList();
 
+  const [reloads, setReloads] = useState(0);
   useEffect(() => {
     let live = true;
     apiFetch(withCampaign('/api/accounts', campaign))
@@ -120,7 +122,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
       .then(d => { if (live) { setCompanies(d.companies || []); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
-  }, [campaign]);
+  }, [campaign, reloads]);
 
   // A jump from Signals lands here with the company already chosen.
   useEffect(() => {
@@ -137,11 +139,17 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
     <CampaignChip key={id} campaign={id} list={campaignList} />
   ));
 
+  const queue = (
+    <ReviewQueue campaign={campaign} accounts={companies}
+      onChanged={() => setReloads(n => n + 1)} />
+  );
+
   if (companies.length === 0) {
     return (
       <div className="content-pad">
+        {queue}
         <p className="muted-note">
-          No named accounts on this campaign's register yet. Accounts appear once the campaign has been seeded or a sweep has matched a company to it.
+          No named accounts on this campaign's register yet. Accounts appear once the campaign has been seeded, a sweep has matched a company to it, or a proposal above is confirmed.
         </p>
       </div>
     );
@@ -149,6 +157,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
 
   return (
     <div className="content-pad">
+      {queue}
       {!isMobile ? (
         <div className="card accounts-table">
           <div className="acc-grid acc-head">
