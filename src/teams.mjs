@@ -78,10 +78,10 @@ bot.onMessage(async (context, next) => {
     }
     await context.sendActivity({ type: 'typing' });
     const convId = context.activity.conversation?.id || null;
-    const { history, configState } = conversations.get(convId);
+    const { history, configState, quoteState } = conversations.get(convId);
     try {
       const result = await Promise.race([
-        ask(question, { history, configState }),
+        ask(question, { history, configState, quoteState }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('ask-timeout')), ASK_TIMEOUT_MS)),
       ]);
       conversations.remember(convId, question, result);

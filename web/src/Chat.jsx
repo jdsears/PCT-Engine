@@ -13,6 +13,7 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [configState, setConfigState] = useState(null);
+  const [quoteState, setQuoteState] = useState(null);
   const [priceMode, setPriceMode] = useState(false);
   const [priceReady, setPriceReady] = useState(false);
   const endRef = useRef(null);
@@ -37,7 +38,7 @@ export default function Chat() {
     try {
       const res = await apiFetch('/ask', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question: q, history, configState }),
+        body: JSON.stringify({ question: q, history, configState, quoteState }),
       });
       const data = await res.json();
       // An error body parses as JSON too, so the catch below never sees it. It
@@ -51,6 +52,7 @@ export default function Chat() {
         return;
       }
       setConfigState(data.configState ?? null);
+      setQuoteState(data.quoteState ?? null);
       setMessages(m => [...m, {
         role: 'copilot', text: data.answer, citations: data.citations || [],
         options: data.configOptions || null, config: data.configurator || null,

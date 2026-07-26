@@ -50,6 +50,16 @@ check('history is capped and the oldest conversation is evicted at the cap', () 
   assert(s.get('c1').history.length === 0, 'the oldest-touched conversation was evicted');
 });
 
+check('a quote basket carries across turns and a discard clears it', () => {
+  const s = createConversationStore();
+  s.remember('c1', 'start a quote', { answer: 'Quote', quoteState: { reference: null, currency: 'GBP', lines: [] } });
+  assert(Array.isArray(s.get('c1').quoteState?.lines), 'the basket carries to the next turn');
+  s.remember('c1', 'how does the seat work?', { answer: 'From the documents.', quoteState: s.get('c1').quoteState });
+  assert(s.get('c1').quoteState !== null, 'an ordinary turn does not drop the basket');
+  s.remember('c1', 'discard the quote', { answer: 'Discarded.', quoteState: null });
+  assert(s.get('c1').quoteState === null, 'a discard leaves no basket');
+});
+
 check('a missing conversation id is a safe no-op', () => {
   const s = createConversationStore();
   s.remember(null, 'q', { answer: 'a', configState: { active: true } });

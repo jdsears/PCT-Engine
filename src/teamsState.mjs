@@ -7,7 +7,7 @@
 // logs; state evaporates on restart and after the TTL. Attribution remains a
 // future decision to take with PCT.
 export function createConversationStore({ ttlMs = 30 * 60_000, maxConversations = 500, maxTurns = 12, now = Date.now } = {}) {
-  const conversations = new Map(); // id -> { history, configState, last }
+  const conversations = new Map(); // id -> { history, configState, quoteState, last }
 
   function sweep() {
     const cutoff = now() - ttlMs;
@@ -24,19 +24,20 @@ export function createConversationStore({ ttlMs = 30 * 60_000, maxConversations 
     // The state to hand to ask(): recent turns and any build in progress.
     get(id) {
       sweep();
-      if (!id) return { history: [], configState: null };
+      if (!id) return { history: [], configState: null, quoteState: null };
       const c = conversations.get(id);
-      if (!c || c.last < now() - ttlMs) return { history: [], configState: null };
-      return { history: [...c.history], configState: c.configState };
+      if (!c || c.last < now() - ttlMs) return { history: [], configState: null, quoteState: null };
+      return { history: [...c.history], configState: c.configState, quoteState: c.quoteState ?? null };
     },
     // Record a completed turn. The build state is replaced, never merged, since
     // ask() returns the full next state or null when a build ends.
     remember(id, userText, result) {
       if (!id) return;
       sweep();
-      const c = conversations.get(id) || { history: [], configState: null, last: 0 };
+      const c = conversations.get(id) || { history: [], configState: null, quoteState: null, last: 0 };
       c.history = [...c.history, { role: 'user', text: userText }, { role: 'copilot', text: result.answer }].slice(-maxTurns);
       c.configState = result.configState ?? null;
+      c.quoteState = result.quoteState ?? null;
       c.last = now();
       conversations.delete(id);
       conversations.set(id, c);

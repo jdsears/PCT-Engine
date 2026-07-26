@@ -1,6 +1,7 @@
 import { search } from './retrieve.mjs';
 import { route } from './configurator/converse.mjs';
 import { priceTurn } from './pricing/priceAnswer.mjs';
+import { quoteTurn } from './pricing/quote.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6'; // configurable; confirm against Anthropic docs if it errors
@@ -48,8 +49,22 @@ function buildContext(results) {
   ).join('\n\n');
 }
 
-export async function ask(question, { history = [], k = 10, configState = null } = {}) {
+export async function ask(question, { history = [], k = 10, configState = null, quoteState = null } = {}) {
   const startedAt = Date.now();
+
+  // The quote basket runs first, on its own verbs alone: start, add, remove,
+  // show, switch currency, discard. Anything else falls through untouched, and
+  // an open basket rides along every other kind of turn unchanged, so a rep
+  // can ask ordinary questions mid-quote without losing it.
+  const basket = await quoteTurn(question, quoteState).catch(() => null);
+  if (basket) {
+    return {
+      answer: basket.answer,
+      filters: {}, citations: [], declined: false, citationsUsed: [],
+      sourcesOffered: 0, latencyMs: Date.now() - startedAt,
+      configState: configState ?? null, quoteState: basket.quoteState, quoteHandled: true,
+    };
+  }
 
   // The part-number configurator runs ahead of retrieval. It either continues a
   // guided build, answers a reply to an offer, or makes a conservative offer when
@@ -63,6 +78,7 @@ export async function ask(question, { history = [], k = 10, configState = null }
       filters: {}, citations: [], declined: false, citationsUsed: [],
       sourcesOffered: 0, latencyMs: Date.now() - startedAt,
       configState: routed.configState ?? null,
+      quoteState: quoteState ?? null,
       configurator: routed.config || null,
       configOptions: routed.options || null,
       configLog: routed.configLog || null,
@@ -79,6 +95,7 @@ export async function ask(question, { history = [], k = 10, configState = null }
       answer: priced.answer,
       filters: {}, citations: [], declined: false, citationsUsed: [],
       sourcesOffered: 0, latencyMs: Date.now() - startedAt, configState: null,
+      quoteState: quoteState ?? null,
     };
   }
 
@@ -152,6 +169,8 @@ export async function ask(question, { history = [], k = 10, configState = null }
     latencyMs: Date.now() - startedAt,
     // routed was not handled, so any prior offer is dropped by returning null.
     configState: routed.configState ?? null,
+    // An open quote basket is never dropped by an ordinary turn.
+    quoteState: quoteState ?? null,
     configurator: null,
     configOptions: null,
     configLog: null,
