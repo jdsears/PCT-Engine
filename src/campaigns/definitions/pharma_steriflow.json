@@ -75,5 +75,7 @@
 
   "watchlistCopy": "Pharmaceutical and biotech manufacturers the engine has spotted expanding, where a UK facility move is plausible but not yet a named project. These are business-development targets to approach or watch, not leads in the pipeline.",
 
-  "geo": { "routing": "shared" }
+  "geo": { "routing": "shared" },
+
+  "staleness": { "days": 120 }
 }

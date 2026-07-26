@@ -2,6 +2,7 @@ import { pool } from '../db.mjs';
 import { gatherGrounding } from './grounding.mjs';
 import { composeDraft } from './draft.mjs';
 import { crossCampaignClause, crossCampaignDays } from './crossCampaign.mjs';
+import { staleDays, staleSql } from '../research/staleness.mjs';
 
 // Generate grounded cold-open drafts for researched leads and queue them as
 // 'draft' for a human to approve. Extracted from scripts/draft-coldopen.mjs so
@@ -32,14 +33,24 @@ const HAS_CONTACT_IGNORING_WINDOW = `EXISTS (
     AND ct.in_decision_orbit AND NOT ct.suppressed AND NOT ct.rehearsal
     AND ct.email IS NOT NULL AND ct.email_bounced_at IS NULL)`;
 
-export async function generateDrafts({ limit = 5, leadId = null, campaign = 'marwin_dc', log = () => {} } = {}) {
+export async function generateDrafts({ limit = 5, leadId = null, campaign = 'marwin_dc', includeStale = false, log = () => {} } = {}) {
   const windowDays = String(crossCampaignDays());
+  // A stale lead is excluded from new drafting by default: opening cold on
+  // research the recipient's world has moved past reads as exactly that. A
+  // targeted leadId ignores the flag, since a human choosing one lead is
+  // itself the human action that clears staleness.
+  const staleWindow = String(staleDays(campaign));
+  const notStale = includeStale ? 'TRUE' : `NOT ${staleSql('l', '$4')}`;
   const leadIds = leadId ? [leadId] : (await pool.query(
     `SELECT l.id FROM leads l
      WHERE l.campaign = $1 AND l.stage = 'researched'
        AND NOT EXISTS (SELECT 1 FROM outbound_drafts d WHERE d.lead_id = l.id AND d.campaign = $1 AND d.status IN ('draft','approved'))
        AND ${HAS_CONTACT}
-     ORDER BY l.score DESC NULLS LAST LIMIT $2`, [campaign, Math.min(Math.max(1, limit), 20), windowDays])).rows.map(r => r.id);
+       AND ${notStale}
+     ORDER BY l.score DESC NULLS LAST LIMIT $2`,
+    includeStale
+      ? [campaign, Math.min(Math.max(1, limit), 20), windowDays]
+      : [campaign, Math.min(Math.max(1, limit), 20), windowDays, staleWindow])).rows.map(r => r.id);
 
   // Leads whose only reachable contact sits inside another campaign's window.
   let heldByWindow = 0;
@@ -64,7 +75,10 @@ export async function generateDrafts({ limit = 5, leadId = null, campaign = 'mar
   const report = { considered: leadIds.length, drafted: 0, flagged: 0, failed: 0, waitingContact: waiting };
   for (const id of leadIds) {
     try {
-      const grounding = await gatherGrounding(id);
+      // The campaign travels: retrieval scope, drafter positioning and the
+      // checker's permitted facts all follow it. Left to default here, a
+      // pharma lead would ground and draft as a data centre one.
+      const grounding = await gatherGrounding(id, { campaign });
       const d = await composeDraft(grounding);
       const rationale = { reason: grounding.signal?.text || grounding.icpReason || null, score: grounding.icpReason || null };
       await pool.query(

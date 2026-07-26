@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { pool } from '../db.mjs';
 import { classifySignal } from './relevance.mjs';
+import { extractParties } from './parties.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 
 // Tavily news research. The sweep queries are plain data so the campaign focus
@@ -43,7 +44,7 @@ const hash = (s) => createHash('sha256').update(s).digest('hex');
 // is routed by its UK dimension: uk_project and expansion_watch are stored,
 // foreign-only builds are dropped as context. The classifier is injectable so the
 // sweep can be tested offline.
-export async function dcSignalSweep({ classify = classifySignal, campaign = 'marwin_dc' } = {}) {
+export async function dcSignalSweep({ classify = classifySignal, extract = extractParties, campaign = 'marwin_dc' } = {}) {
   const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
   const queries = def.signals.sweepQueries;
   const counts = { campaign: def.id, queries: queries.length, seen: 0, inserted: 0, rejected: 0, foreignOnly: 0 };
@@ -59,12 +60,18 @@ export async function dcSignalSweep({ classify = classifySignal, campaign = 'mar
       catch { cls = { dcRelevant: false }; }
       if (!cls.dcRelevant) { counts.rejected++; console.log(`  reject, not ${def.signals.gate.subjectNoun}: ${(r.title || '').slice(0, 80)}`); continue; }
       if (cls.geoScope === 'foreign_only') { counts.foreignOnly++; console.log(`  drop, foreign only: ${(r.title || '').slice(0, 80)}`); continue; }
+      // A kept signal names its parties in a second, smaller call. The gate's
+      // operator stands as given; the extraction adds the contractor, and may
+      // fill an operator the gate left null, never overwrite one.
+      let parties = { operator: null, contractor: null };
+      try { parties = await extract({ title: r.title, content: r.content }, { campaign: def }); }
+      catch { /* both stay null; the signal is still stored */ }
       const { rowCount } = await pool.query(
-        `INSERT INTO signals (signal_type, title, url, url_hash, payload, dc_relevant, relevant, geo_scope, operator, campaign)
-         VALUES ($1, $2, $3, $4, $5::jsonb, true, true, $6, $7, $8) ON CONFLICT (url_hash) DO NOTHING`,
+        `INSERT INTO signals (signal_type, title, url, url_hash, payload, dc_relevant, relevant, geo_scope, operator, contractor, campaign)
+         VALUES ($1, $2, $3, $4, $5::jsonb, true, true, $6, $7, $8, $9) ON CONFLICT (url_hash) DO NOTHING`,
         [type, (r.title || '').slice(0, 300), r.url, hash(r.url),
          JSON.stringify({ query, content: (r.content || '').slice(0, 1000), published: r.published_date ?? null }),
-         cls.geoScope, cls.operator, def.id]);
+         cls.geoScope, cls.operator || parties.operator, parties.contractor, def.id]);
       if (rowCount) counts.inserted++;
     }
   }
