@@ -6,6 +6,7 @@
 // gate that took several calibration rounds to get right.
 import { allCampaigns, getCampaign, requireCampaign, activeCampaignIds, listCampaigns } from './registry.mjs';
 import { buildGateSystem, buildDraftSystem, buildRangeLines, confidentialityRule } from './prompts.mjs';
+import { canColdOpen, crossCampaignDays } from '../outbound/crossCampaign.mjs';
 
 let pass = 0, fail = 0;
 function check(name, fn) {
@@ -137,6 +138,64 @@ check('the migrated sweep queries and ICP config match what the code held', () =
     'the orbit titles are the original list, in the original order');
   assert(c.orbitTitles.slice(0, 8).join('|') === 'design engineer|building services|mechanical engineer|mep|controls|hvac|project manager|commissioning engineer',
     'the first eight still lead with the cooling roles the people-search keys on');
+});
+
+console.log('\nThe pharma campaign, a deliberately tight first cut:');
+
+check('pharma is defined, active, and scoped to the sanitary corpus', () => {
+  const p = requireCampaign('pharma_steriflow');
+  assert(p.status === 'active', 'pharma is active');
+  assert(JSON.stringify(p.grounding.lines) === JSON.stringify(['steriflow', 'steriflow_fb', 'low_flow']),
+    'the grounding scope names the sanitary lines in the chunk vocabulary');
+  assert(!p.grounding.lines.includes('marwin'), 'a pharma draft cannot ground in Marwin material');
+  assert(!requireCampaign('marwin_dc').grounding.lines.some(l => p.grounding.lines.includes(l)),
+    'and the two scopes do not overlap, so neither campaign can cite the other');
+  assert(p.links.rangePage === 'steriflow_page', 'it offers the Steriflow range page');
+});
+
+check('the pharma trust line is the corpus-grounded sentence and nothing stronger', () => {
+  const p = requireCampaign('pharma_steriflow');
+  assert(p.positioning.trustLine === 'Steriflow valves are widely used across pharmaceutical and biotech production.',
+    'the approved sentence, exactly');
+  assert(!/largest|leading|world|biggest|top /i.test(p.positioning.trustLine), 'no superlative crept in');
+  const draft = buildDraftSystem(p);
+  assert(/never name or imply any specific pharmaceutical or biotech manufacturer or end customer/.test(draft),
+    'the confidentiality rule names the right kind of customer');
+  assert(/ceiling of specificity/.test(draft), 'and states the ceiling');
+  assert(!/data centre/i.test(draft), 'no data centre wording leaks into the pharma drafter');
+});
+
+check('the pharma gate is biased to reject and refuses non-facility events', () => {
+  const g = buildGateSystem(requireCampaign('pharma_steriflow'));
+  for (const phrase of ['default to reject', 'hospital', 'university', 'warehouse', 'pure research',
+                        'drug approval', 'clinical trial results', 'company financial results',
+                        'merger, acquisition']) {
+    assert(g.toLowerCase().includes(phrase.toLowerCase()), `the gate names ${phrase}`);
+  }
+  assert(/even when a pharmaceutical company is the client/i.test(g),
+    'a real client on a non-facility build does not carry the subject test');
+  assert(!/data centre campus securing financing/i.test(g), 'the DC calibration examples do not leak in');
+});
+
+console.log('\nCross-campaign contact protection:');
+
+check('a contact cold-opened by another campaign is held for the window', () => {
+  const now = Date.parse('2026-07-26T09:00:00Z');
+  const day = 86_400_000;
+  const fresh = canColdOpen({ lastColdOpenAt: null, campaign: 'pharma_steriflow', now });
+  assert(fresh.ok, 'a contact never cold-opened is open to any campaign');
+  const held = canColdOpen({ lastColdOpenAt: new Date(now - 10 * day).toISOString(),
+    lastColdOpenCampaign: 'marwin_dc', campaign: 'pharma_steriflow', now });
+  assert(!held.ok, 'ten days after a data centre open, pharma is held');
+  assert(/another campaign/.test(held.reason) && /marwin_dc/.test(held.reason), 'and the reason names the campaign');
+  assert(held.waitDays === 80, 'with the days remaining of the ninety day window');
+  const past = canColdOpen({ lastColdOpenAt: new Date(now - 91 * day).toISOString(),
+    lastColdOpenCampaign: 'marwin_dc', campaign: 'pharma_steriflow', now });
+  assert(past.ok, 'past the window it is open again');
+  const same = canColdOpen({ lastColdOpenAt: new Date(now - 2 * day).toISOString(),
+    lastColdOpenCampaign: 'marwin_dc', campaign: 'marwin_dc', now });
+  assert(same.ok, 'the same campaign is governed by its own cadence, not this window');
+  assert(crossCampaignDays() === 90, 'the default window is ninety days');
 });
 
 console.log(`\n=== Campaign gate: ${pass} passed, ${fail} failed ===`);
