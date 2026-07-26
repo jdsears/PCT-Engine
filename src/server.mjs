@@ -16,6 +16,7 @@ import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { searchCompanies, candidateRows } from './research/companiesHouse.mjs';
 import { staleDays, isStale } from './research/staleness.mjs';
+import { classifySyncErrors } from './sync/acknowledgements.mjs';
 import { shouldRun } from './research/schedule.mjs';
 import { generateDrafts } from './outbound/generateDrafts.mjs';
 import { pollReplies } from './outbound/replies.mjs';
@@ -655,12 +656,35 @@ app.get('/api/reviews', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// Deciding a review writes to four tables: companies, company_campaigns,
+// signals and party_reviews. Run as separate statements a failure part way
+// through leaves the account created but the review still open, which is how a
+// missing column turned into a half-made account: the app deploys from main
+// automatically while migrations are applied by hand, so new code can meet an
+// old schema for a window. One transaction per decision closes that window,
+// the same property the migration runner itself has. A retry after the schema
+// catches up then starts from clean state.
+async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const out = await fn(client);
+    await client.query('COMMIT');
+    return out;
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => { /* the original error is the one to report */ });
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 // Link the review's triggering signal to the account it resolved to, on the
 // side the review was about.
-async function linkReviewSignal(review, companyId) {
+async function linkReviewSignal(client, review, companyId) {
   const col = review.party === 'contractor' ? 'contractor_company_id' : 'company_id';
   if (review.signal_id) {
-    await pool.query(`UPDATE signals SET ${col} = $1 WHERE id = $2 AND ${col} IS NULL`, [companyId, review.signal_id]);
+    await client.query(`UPDATE signals SET ${col} = $1 WHERE id = $2 AND ${col} IS NULL`, [companyId, review.signal_id]);
   }
 }
 
@@ -681,32 +705,35 @@ app.post('/api/reviews/:id/confirm', async (req, res) => {
     if (r.kind !== 'proposal') return res.status(409).json({ error: 'only a proposal can be confirmed; resolve an ambiguity to an account or mark it distinct' });
     const { chNumber = null, registeredName = null } = req.body || {};
     const name = (registeredName || r.printed_name).trim();
-    const { rows: created } = await pool.query(
-      `INSERT INTO companies (name, ch_number, domain, named_account, source)
-       VALUES ($1, $2, $3, true, 'signal_proposal')
-       ON CONFLICT (ch_number) DO UPDATE SET updated_at = now()
-       RETURNING id`, [name, chNumber, r.domain]);
-    const companyId = created[0].id;
-    await pool.query(
-      `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-      [companyId, r.campaign]);
-    await linkReviewSignal(r, companyId);
-    // The printed form becomes an alias for the registered name, so the next
-    // story naming this company matches without the queue.
-    if (name.toLowerCase() !== r.printed_name.toLowerCase()) {
-      await pool.query(
-        `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, 'queue_confirm') ON CONFLICT (alias) DO NOTHING`,
-        [r.printed_name.toLowerCase(), name]);
-    }
-    // Record why: an unlinked confirm means no confident Companies House match
-    // was chosen at review, a decision to add the printed entity as it stands,
-    // not an entity that was overlooked.
-    const decisionNote = chNumber
-      ? `confirmed against Companies House ${chNumber}`
-      : 'confirmed as printed: no confident Companies House match chosen at review';
-    await pool.query(
-      `UPDATE party_reviews SET status = 'confirmed', company_id = $1, decision_note = $2, decided_at = now() WHERE id = $3`,
-      [companyId, decisionNote, r.id]);
+    const companyId = await withTransaction(async client => {
+      const { rows: created } = await client.query(
+        `INSERT INTO companies (name, ch_number, domain, named_account, source)
+         VALUES ($1, $2, $3, true, 'signal_proposal')
+         ON CONFLICT (ch_number) DO UPDATE SET updated_at = now()
+         RETURNING id`, [name, chNumber, r.domain]);
+      const id = created[0].id;
+      await client.query(
+        `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [id, r.campaign]);
+      await linkReviewSignal(client, r, id);
+      // The printed form becomes an alias for the registered name, so the next
+      // story naming this company matches without the queue.
+      if (name.toLowerCase() !== r.printed_name.toLowerCase()) {
+        await client.query(
+          `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, 'queue_confirm') ON CONFLICT (alias) DO NOTHING`,
+          [r.printed_name.toLowerCase(), name]);
+      }
+      // Record why: an unlinked confirm means no confident Companies House match
+      // was chosen at review, a decision to add the printed entity as it stands,
+      // not an entity that was overlooked.
+      const decisionNote = chNumber
+        ? `confirmed against Companies House ${chNumber}`
+        : 'confirmed as printed: no confident Companies House match chosen at review';
+      await client.query(
+        `UPDATE party_reviews SET status = 'confirmed', company_id = $1, decision_note = $2, decided_at = now() WHERE id = $3`,
+        [id, decisionNote, r.id]);
+      return id;
+    });
     res.json({ ok: true, companyId });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -722,17 +749,19 @@ app.post('/api/reviews/:id/merge', async (req, res) => {
     if (!Number.isFinite(companyId)) return res.status(400).json({ error: 'companyId required' });
     const { rows: co } = await pool.query(`SELECT id, name FROM companies WHERE id = $1`, [companyId]);
     if (!co.length) return res.status(404).json({ error: 'no such company' });
-    await pool.query(
-      `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, $3) ON CONFLICT (alias) DO NOTHING`,
-      [r.printed_name.toLowerCase(), co[0].name, r.kind === 'ambiguous' ? 'queue_resolve' : 'queue_merge']);
-    await pool.query(
-      `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-      [companyId, r.campaign]);
-    await linkReviewSignal(r, companyId);
-    await pool.query(
-      `UPDATE party_reviews SET status = 'merged', company_id = $1,
-         decision_note = $2, decided_at = now() WHERE id = $3`,
-      [companyId, `${r.kind === 'ambiguous' ? 'resolved' : 'merged'} into ${co[0].name}, alias recorded`, r.id]);
+    await withTransaction(async client => {
+      await client.query(
+        `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, $3) ON CONFLICT (alias) DO NOTHING`,
+        [r.printed_name.toLowerCase(), co[0].name, r.kind === 'ambiguous' ? 'queue_resolve' : 'queue_merge']);
+      await client.query(
+        `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [companyId, r.campaign]);
+      await linkReviewSignal(client, r, companyId);
+      await client.query(
+        `UPDATE party_reviews SET status = 'merged', company_id = $1,
+           decision_note = $2, decided_at = now() WHERE id = $3`,
+        [companyId, `${r.kind === 'ambiguous' ? 'resolved' : 'merged'} into ${co[0].name}, alias recorded`, r.id]);
+    });
     res.json({ ok: true, companyId });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -830,8 +859,15 @@ const kvSet = (key, value) => pool.query(
 async function engineStatus() {
   const enabled = (await kvGet('engine_enabled')) === 'on';
   const lastRun = await kvGet('engine_last_run');
+  // Split the last run's sync errors into acknowledged (a known condition, shown
+  // calmly) and unacknowledged (still amber). Only the current errors are
+  // classified, so an acknowledgement for a document that now syncs clean is
+  // inert. Absent a detailed list, this stays null and the count-only path holds.
+  const syncErrors = lastRun?.ok && Array.isArray(lastRun.docErrorList)
+    ? classifySyncErrors(lastRun.docErrorList)
+    : null;
   return {
-    enabled, running: engineRunning,
+    enabled, running: engineRunning, syncErrors,
     autoDiscover: (await kvGet('autodiscover_enabled')) === 'on',
     autoPeople: (await kvGet('autopeople_enabled')) === 'on',
     autoSync: (await kvGet('sharepoint_sync_enabled')) === 'on',

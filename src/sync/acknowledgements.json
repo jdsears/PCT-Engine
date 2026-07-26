@@ -1,0 +1,14 @@
+[
+  {
+    "errorMatch": "no extractable text",
+    "summary": "image-only scan handled another way",
+    "reason": "Image-only scan with no text layer, so the parser correctly finds nothing to ingest. These are the Marwin brass valve and three-way sheets, the Steriflow white paper and the other scanned PDFs. The ordering side of these ranges is captured separately through the configurator matrices, so the failed text sync leaves no gap the configurator does not already cover. See docs/known-gaps.md for the co-pilot text gap this leaves and its two possible fixes.",
+    "acknowledgedAt": "2026-07-26"
+  },
+  {
+    "path": "PCT Information/Policies/External Sales Process Policy.docx",
+    "summary": "ingested separately",
+    "reason": "OfficeParser rejects the file as an unsupported format, so the sync cannot read it. The document is already in the corpus by another route, so the failed sync leaves no gap.",
+    "acknowledgedAt": "2026-07-26"
+  }
+]
