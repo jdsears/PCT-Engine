@@ -244,5 +244,46 @@ check('every signal type a campaign declares is filterable and has a label', () 
   }
 });
 
+console.log('\nMigration 023, checked against the schema the earlier migrations declare:');
+
+// The gate has no database, so it cannot run the migration; but the columns a
+// backfill reads must exist in the tables the earlier migration files create,
+// and that is a static fact. This exists because the first cut of the 023
+// backfill selected score and score_reason from companies, the leads table's
+// column names, and failed against the live database. companies holds
+// icp_score and icp_breakdown.
+check('the company_campaigns backfill selects only real companies columns', () => {
+  const schema = read('src/migrations/003_research.sql');
+  const table = schema.match(/CREATE TABLE IF NOT EXISTS companies \(([\s\S]*?)\n\);/);
+  assert(table, '003 declares the companies table');
+  const columns = new Set(table[1].split('\n')
+    .map(l => l.replace(/--.*$/, '').trim())
+    .filter(l => /^[a-z_]+\s/.test(l))
+    .map(l => l.split(/\s+/)[0]));
+  assert(columns.has('icp_score') && columns.has('icp_breakdown'), 'the parse found the scoring columns');
+
+  const mig = read('src/migrations/023_campaigns.sql');
+  const backfill = mig.match(/INSERT INTO company_campaigns[\s\S]*?SELECT ([\s\S]*?) FROM companies/);
+  assert(backfill, '023 backfills company_campaigns from companies');
+  for (const item of backfill[1].split(',').map(x => x.trim())) {
+    if (/^'.*'$/.test(item)) continue; // a literal, the campaign id
+    assert(item.startsWith('companies.'), `${item} is table-qualified`);
+    const col = item.slice('companies.'.length);
+    assert(columns.has(col), `companies.${col} exists in the declared schema`);
+  }
+});
+
+check('every statement in 023 is guarded, so the file re-runs clean', () => {
+  // Comments go first: a semicolon inside one would otherwise split a statement.
+  const mig = read('src/migrations/023_campaigns.sql').replace(/--[^\n]*/g, '');
+  const statements = mig.split(';').map(x => x.trim()).filter(Boolean);
+  for (const st of statements) {
+    const ok = /^(ALTER TABLE \w+ ADD COLUMN IF NOT EXISTS|CREATE TABLE IF NOT EXISTS|CREATE INDEX IF NOT EXISTS)/.test(st)
+      || (/^UPDATE /.test(st) && /IS NULL/.test(st))
+      || (/^INSERT /.test(st) && /ON CONFLICT/.test(st));
+    assert(ok, `unguarded statement: ${st.slice(0, 60)}`);
+  }
+});
+
 console.log(`\n=== Campaign gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);

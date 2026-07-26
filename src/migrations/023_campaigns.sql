@@ -27,9 +27,15 @@ CREATE TABLE IF NOT EXISTS company_campaigns (
 );
 
 -- Every company currently on the register belongs to the campaign that seeded
--- it, which until today was the only one.
-INSERT INTO company_campaigns (company_id, campaign, score, score_reason)
-SELECT id, 'marwin_dc', score, score_reason FROM companies
+-- it, which until today was the only one. The company-level score lives in
+-- companies.icp_score (score and score_reason are the leads table's names; a
+-- first cut of this backfill used them here and failed against the live
+-- database). score_reason starts null: companies carries its audit trail as
+-- icp_breakdown jsonb, and the text reason is written per campaign by the
+-- scorer, not invented from the jsonb here. Columns are table-qualified so a
+-- name that resolves against the wrong table can never pass silently again.
+INSERT INTO company_campaigns (company_id, campaign, score)
+SELECT companies.id, 'marwin_dc', companies.icp_score FROM companies
 ON CONFLICT (company_id, campaign) DO NOTHING;
 
 -- Cross-campaign contact protection. A contact must never receive cold opens
