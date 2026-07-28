@@ -74,9 +74,20 @@ const SOCIAL_POST = /['’]s\s+post\s*$/i;
 // Digests and periodicals: a collection, never one project event.
 const DIGEST = /\b(?:round[- ]?up|roundup|digest|newsletter|weekly wrap|week in review|this week in|in pictures|photo gallery)\b/i;
 
-// Marketing and calendar items rather than build events. "awards" is plural
-// and word-bounded on purpose: "contract awarded" must never match.
-const PROMOTIONAL = /\b(?:webinar|podcast|whitepaper|white paper|case study|brochure|awards|shortlist(?:ed|ing)?|nominat(?:ed|ion)|sponsor(?:ed|ship)|advertorial|now hiring|we are hiring|join our team|open day|trade show|exhibition stand|book your place|register now)\b/i;
+// Marketing and calendar items rather than build events.
+//
+// "awards" is NOT here. The first cut had it, guarded only against the past
+// participle, and the live sweep produced "UK awards $26m hypersonic target
+// contract to Lockheed Martin", where awards is a VERB and the story is a
+// contract win. "MoD awards £200m data centre contract" would have been
+// screened and the lead lost. The ceremony sense is covered below by patterns
+// that cannot be read as a verb, and by shortlist and nominate, which have no
+// contract sense at all.
+const PROMOTIONAL = /\b(?:webinar|podcast|whitepaper|white paper|case study|brochure|shortlist(?:ed|ing)?|nominat(?:ed|ion)|sponsor(?:ed|ship)|advertorial|now hiring|we are hiring|join our team|open day|trade show|exhibition stand|book your place|register now)\b/i;
+
+// The awards ceremony sense only: a noun phrase or a following ceremony word,
+// never "X awards a contract to Y".
+const AWARDS_CEREMONY = /\b(?:industry|regional|national|annual|excellence|design|construction|business)\s+awards?\b|\bawards?\s+(?:ceremony|night|dinner|shortlist|finalists?|winners?)\b|\baward[- ]winning\b/i;
 
 // Each rule names itself, so a rejection can say which genre it matched and a
 // reviewer can judge the screen rather than trust it.
@@ -86,7 +97,7 @@ const RULES = [
   { name: 'social post', test: t => SOCIAL_POST.test(t) },
   { name: 'page furniture', test: FURNITURE },
   { name: 'digest or roundup', test: t => DIGEST.test(t) || MONTHLY.test(t) },
-  { name: 'marketing or calendar item', test: t => PROMOTIONAL.test(t) },
+  { name: 'marketing or calendar item', test: t => PROMOTIONAL.test(t) || AWARDS_CEREMONY.test(t) },
 ];
 
 // Returns the genre matched, or null. Pure. Decoration is stripped first, so a
