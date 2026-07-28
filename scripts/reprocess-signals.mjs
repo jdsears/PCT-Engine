@@ -50,14 +50,17 @@ const { rows } = await pool.query(
   `SELECT id, title, payload FROM signals
    WHERE signal_type IN ('news_dc_build','news_contract') ORDER BY id`);
 
-const report = { total: rows.length, kept: 0, rejected: 0, uk_project: 0, expansion_watch: 0, foreign_only: 0, failed: 0 };
+const report = { total: rows.length, kept: 0, rejected: 0, screened: 0, uk_project: 0, expansion_watch: 0, foreign_only: 0, failed: 0 };
 for (const s of rows) {
   let cls;
   try { cls = await classifySignal({ title: s.title, content: s.payload?.content, query: s.payload?.query }); }
   catch (e) { report.failed++; console.log(`  classify failed for ${s.id}: ${String(e.message).slice(0, 100)}`); continue; }
-  if (!cls.dcRelevant) report.rejected++;
+  if (!cls.dcRelevant) { report.rejected++; if (cls.screened) report.screened++; }
   else { report.kept++; report[cls.geoScope] = (report[cls.geoScope] || 0) + 1; }
-  console.log(`  [${cls.dcRelevant ? cls.geoScope : 'REJECT'}] ${(s.title || '').slice(0, 80)}`);
+  // A screened rejection names its genre, so the dry run can be read as a
+  // judgement on the screen rather than an unexplained list of drops.
+  const verdict = cls.dcRelevant ? cls.geoScope : (cls.screened ? `SCREENED, ${cls.screened}` : 'REJECT');
+  console.log(`  [${verdict}] ${(s.title || '').slice(0, 80)}`);
   if (APPLY) {
     await pool.query(
       `UPDATE signals SET dc_relevant = $1, geo_scope = $2, operator = COALESCE(operator, $3) WHERE id = $4`,
@@ -68,7 +71,7 @@ for (const s of rows) {
 console.log('\n=== Reprocess signals ===');
 console.log(`Total news signals: ${report.total}`);
 console.log(`Kept (DC-relevant): ${report.kept}  [uk_project ${report.uk_project}, expansion_watch ${report.expansion_watch}, foreign_only ${report.foreign_only}]`);
-console.log(`Rejected (not a data centre): ${report.rejected}   Classify failures: ${report.failed}`);
+console.log(`Rejected: ${report.rejected} (of which ${report.screened} screened as promotional or roundup)   Classify failures: ${report.failed}`);
 if (!APPLY) console.log('Dry run, no writes. Re-run with --apply to persist (reversible: only dc_relevant/geo_scope/operator change).');
 else console.log('Applied. Run scripts/research-run.mjs next to match the surviving UK-project signals to accounts.');
 await pool.end();

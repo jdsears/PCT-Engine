@@ -114,10 +114,32 @@ check('a campaign definition carries every field the machinery reads', () => {
   }
 });
 
-console.log('\nThe data centre campaign, migrated and unchanged:');
+// The one reviewed change to the calibrated gate since the migration: the
+// promotional and roundup guard on the title-only path, added 26 July 2026
+// after three promos and a listicle were kept as signals. The original above
+// stays frozen and this is expressed as a delta spliced in at a stated point,
+// so the audit trail survives: you can read exactly what was added to the
+// calibrated text, and any drift beyond it still fails loudly. Rewriting the
+// baseline instead would have turned the proof into "the prompt equals
+// itself", which proves nothing.
+const PROMO_GUARD_ANCHOR = 'and thin content is not by itself a reason to reject a clear title. ';
+const PROMO_GUARD =
+  "Judging on the title alone does not lower the genre bar, it raises it: a promotional or collective title fails whatever it names. Reject a numbered or ranked list of projects, companies or trends, for example a title beginning with a count and offering projects to watch; a first-person supplier, contractor or consultancy post, for example a team pleased or delighted to have supported or delivered something; a social media post captured with its platform furniture; a digest, roundup, newsletter or week in review; and a marketing or calendar item such as a webinar, podcast, case study, award shortlist, sponsorship or hiring post. None of these report one real project event, which is what the event test requires, and on a title alone there is no body to prove otherwise. Where a thin-content title cannot be told apart from these genres, reject rather than pass. ";
 
-check('the assembled gate prompt is the original, byte for byte', () => {
-  assertSame(buildGateSystem(requireCampaign('marwin_dc')), ORIGINAL_GATE_SYSTEM, 'the gate system prompt');
+console.log('\nThe data centre campaign, its calibration intact:');
+
+check('the assembled gate prompt is the original plus the promo guard, byte for byte', () => {
+  assert(ORIGINAL_GATE_SYSTEM.includes(PROMO_GUARD_ANCHOR), 'the anchor is still in the original text');
+  const expected = ORIGINAL_GATE_SYSTEM.replace(PROMO_GUARD_ANCHOR, PROMO_GUARD_ANCHOR + PROMO_GUARD);
+  assertSame(buildGateSystem(requireCampaign('marwin_dc')), expected, 'the gate system prompt');
+  // Everything the calibration earned is still present, unaltered.
+  for (const clause of [
+    'QUESTION 1, the subject', 'QUESTION 2, the event', 'Resi means residential',
+    'default to reject rather than pass on the strength of the event',
+    'foreign_only requires positive evidence of a specific foreign location',
+  ]) {
+    assert(buildGateSystem(requireCampaign('marwin_dc')).includes(clause), `the calibrated clause "${clause}" survives`);
+  }
 });
 
 check('the assembled drafter prompt is the original, byte for byte', () => {
