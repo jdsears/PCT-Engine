@@ -1,4 +1,5 @@
 import { pool } from '../src/db.mjs';
+import { pairDuplicates } from '../src/research/duplicateAccounts.mjs';
 
 // Cleanup for duplicated named accounts: a row with no Companies House number
 // alongside its CH-matched twin. It pairs them by normalised name, moves every
@@ -37,17 +38,10 @@ const { rows: accounts } = await pool.query(
 const matched = accounts.filter(a => a.ch_number);
 const unmatched = accounts.filter(a => !a.ch_number);
 
-const pairs = [];
-const leftovers = [];
-for (const u of unmatched) {
-  const nu = norm(u.name);
-  if (nu.length < 4) { leftovers.push(u); continue; }
-  // Prefer an exact normalised match, then containment either way.
-  const twin = matched.find(m => norm(m.name) === nu)
-    || matched.find(m => { const nm = norm(m.name); return nm.length >= 4 && (nm.includes(nu) || nu.includes(nm)); });
-  if (twin) pairs.push({ u, m: twin });
-  else leftovers.push(u);
-}
+// Pairing is the dangerous half of this script, so it lives in a tested module
+// rather than here. See duplicateAccounts.mjs for what the old rule did to four
+// real operators on the live register.
+const { pairs, leftovers, contested } = pairDuplicates(accounts);
 
 // With --id, only that duplicate is merged. Everything else is listed and left
 // alone, so a single known pair can be fixed without a broad sweep.
@@ -64,8 +58,14 @@ for (const { u, m } of pairs) {
   const mark = ONLY_ID ? (String(u.id) === ONLY_ID ? '  MERGE' : '  skip ') : '  ';
   console.log(`${mark}"${u.name}" (id ${u.id})  ->  "${m.name}" (${m.ch_number}, id ${m.id})`);
 }
-console.log(`\nUnmatched rows kept, no twin found: ${leftovers.length}`);
+console.log(`\nUnmatched rows kept, no confident twin: ${leftovers.length}`);
 for (const u of leftovers) console.log(`  - ${u.name}`);
+if (contested.length) {
+  console.log(`\nContested, left for a human: ${contested.length}`);
+  for (const c of contested) {
+    console.log(`  "${c.twin.name}" is claimed by ${c.claimants.length}: ${c.claimants.map(x => `"${x.name}"`).join(', ')}`);
+  }
+}
 
 if (!APPLY) {
   console.log('\nDry run only. Review the pairs above, then run with --apply to merge.');
