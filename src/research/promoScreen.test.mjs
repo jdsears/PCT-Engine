@@ -57,6 +57,21 @@ await check('a leading emoji or bullet cannot defeat an anchored pattern', () =>
   assert(promoGenre('\u2022 10 projects to watch') === 'listicle', 'with a bullet');
 });
 
+await check('a section label is a prefix, not furniture: the story after it survives', () => {
+  // From the third live run: "News | Colliers promotes 72 employees in the UK -
+  // CoStar" was screened as page furniture because everything after the first
+  // separator was stripped. The verdict was right by luck; the same rule would
+  // have eaten a real lead carrying the same section prefix.
+  assert(promoGenre('News | Colliers promotes 72 employees in the UK - CoStar') === null,
+    'a real headline behind a section label is left for the gate');
+  assert(promoGenre('News | Skanska wins £158m London data centre fit-out') === null,
+    'and so is a real lead behind the same prefix');
+  // A trailing publisher suffix is still stripped, so a bare index page is
+  // still caught, and an index page IS furniture however it is labelled.
+  assert(promoGenre('Newsroom - CoStar') === 'page furniture', 'a bare section with a publisher suffix');
+  assert(promoGenre('Press releases | Ark Data Centres') === 'page furniture', 'an index page with no story');
+});
+
 console.log('\nThe genres, each named so a rejection can be judged:');
 
 const SHOULD_SCREEN = [
