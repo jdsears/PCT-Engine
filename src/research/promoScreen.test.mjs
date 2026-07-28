@@ -30,6 +30,33 @@ for (const [title, genre] of LIVE_ESCAPES) {
   });
 }
 
+console.log('\nFrom the live reprocess run, the titles as they really arrive:');
+
+// The first cut of this screen caught only one of these, because it was tested
+// against titles typed by hand rather than the ones the sweep actually stores.
+// These are copied from the 26 July dry run, decoration and all.
+const LIVE_KEPT_JUNK = [
+  ['\u{1F4CA} 10 UK data centre construction projects to watch The ...', 'listicle'],
+  ["It's all systems go at our Hatfield Integration Center, as the ...", 'first-person promotion'],
+  ['Instagram', 'page furniture'],
+  ['Newsroom', 'page furniture'],
+  ['New Data Center Developments: July 2026', 'digest or roundup'],
+];
+for (const [title, genre] of LIVE_KEPT_JUNK) {
+  await check(`screened as ${genre}: ${title.slice(0, 44)}`, () => {
+    assert(promoGenre(title) === genre, `expected ${genre}, got ${promoGenre(title)}`);
+  });
+}
+
+await check('a leading emoji or bullet cannot defeat an anchored pattern', () => {
+  // The exact fault: the listicle pattern anchors the count at the start, and
+  // a chart emoji pushed it off position zero.
+  assert(promoGenre('10 projects to watch') === 'listicle', 'plain');
+  assert(promoGenre('\u{1F4CA} 10 projects to watch') === 'listicle', 'with an emoji');
+  assert(promoGenre('| 10 projects to watch') === 'listicle', 'with a pipe');
+  assert(promoGenre('\u2022 10 projects to watch') === 'listicle', 'with a bullet');
+});
+
 console.log('\nThe genres, each named so a rejection can be judged:');
 
 const SHOULD_SCREEN = [
@@ -52,6 +79,24 @@ console.log('\nThe half that matters more: real signals are untouched:');
 // Every one of these is the shape of a signal the engine exists to find, and
 // several are near misses for the patterns above on purpose.
 const MUST_NOT_SCREEN = [
+  // The 34 genuine signals from the same live run that must stay untouched.
+  "Glencar lands final phase of Pure DC's £1bn Brent Cross data centre campus",
+  'VIRTUS Expands Slough Campus With New 32.5MW AI-ready Data Centre',
+  'IIAs 2026 | QTS data centre campus in Northumberland, England',
+  'Former Unilever factory to become data centre',
+  'Green Mountain: East is the New West - Bolstering UK Growth',
+  'Skanska wins £158m London data centre fit-out',
+  'Hochtief lands £250m Blackpool data centre - Construction News',
+  'Brookfield wants to build AI data centers in London\u2019s answer to Wall Street - CNBC',
+  'Pure DC Receives Additional €1.3 Billion in Senior Debt',
+  'Polar Data Centers announces DRA02 Expansion in Norway - Techerati',
+  'Meta commits $50B to Louisiana data center and surrounding area',
+  "Australia's Macquarie DC acquires 34,200 sqm site in Sydney for 200MW data centre",
+  'Plug Power sells Texas site to Stream Data Centers - DCD',
+  'ON.Energy and Crusoe Partner for 5GW AI UPS Deployment Across US Hyperscale Campuses',
+  'Crusoe secures 5 gigawatts of data center contracts, pauses Wyoming project',
+  'MIS may develop data centres in three Saudi cities - Developing Telecoms',
+  'Maharashtra announces possible data centre deal with AirTrunk - Developing Telecoms',
   "Glencar lands final phase of Pure DC's Brent Cross data centre campus",
   'Mace wins fit-out contract on Stellium Newcastle campus',
   'Ark Data Centres awarded contract for Farnborough expansion',
