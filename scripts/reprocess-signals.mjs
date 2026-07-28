@@ -16,6 +16,14 @@ import { extractParties } from '../src/research/parties.mjs';
 
 const APPLY = process.argv.includes('--apply');
 const PARTIES = process.argv.includes('--parties');
+// Optional campaign filter. Absent, every campaign's signals are re-judged,
+// each by its own campaign's gate.
+const campaignAt = process.argv.indexOf('--campaign');
+const ONLY = campaignAt !== -1 ? process.argv[campaignAt + 1] : null;
+if (campaignAt !== -1 && !ONLY) {
+  console.error('usage: node scripts/reprocess-signals.mjs [--campaign <id>] [--parties] [--apply]');
+  process.exit(1);
+}
 
 if (PARTIES) {
   const { rows } = await pool.query(
@@ -46,31 +54,49 @@ if (PARTIES) {
   await pool.end();
   process.exit(0);
 }
+// Every signal is re-judged by ITS OWN campaign's gate. This script predates
+// multi-campaign and judged everything with the default, so a pharmaceutical
+// contract signal was being read by the data centre gate, which of course
+// rejects it; an --apply would have marked the pharma corpus rejected. The
+// campaign now travels, and news_pharma_build joins the type list so pharma's
+// own build signals are re-judged rather than silently skipped.
 const { rows } = await pool.query(
-  `SELECT id, title, payload FROM signals
-   WHERE signal_type IN ('news_dc_build','news_contract') ORDER BY id`);
+  `SELECT id, title, campaign, payload FROM signals
+   WHERE signal_type IN ('news_dc_build','news_pharma_build','news_contract')
+     AND ($1::text IS NULL OR campaign = $1)
+   ORDER BY campaign, id`, [ONLY]);
 
 const report = { total: rows.length, kept: 0, rejected: 0, screened: 0, uk_project: 0, expansion_watch: 0, foreign_only: 0, failed: 0 };
 for (const s of rows) {
   let cls;
-  try { cls = await classifySignal({ title: s.title, content: s.payload?.content, query: s.payload?.query }); }
+  try { cls = await classifySignal({ title: s.title, content: s.payload?.content, query: s.payload?.query },
+    { campaign: s.campaign || 'marwin_dc' }); }
   catch (e) { report.failed++; console.log(`  classify failed for ${s.id}: ${String(e.message).slice(0, 100)}`); continue; }
   if (!cls.dcRelevant) { report.rejected++; if (cls.screened) report.screened++; }
   else { report.kept++; report[cls.geoScope] = (report[cls.geoScope] || 0) + 1; }
   // A screened rejection names its genre, so the dry run can be read as a
   // judgement on the screen rather than an unexplained list of drops.
   const verdict = cls.dcRelevant ? cls.geoScope : (cls.screened ? `SCREENED, ${cls.screened}` : 'REJECT');
-  console.log(`  [${verdict}] ${(s.title || '').slice(0, 80)}`);
+  // The campaign is printed when the run spans more than one, so a verdict can
+  // never be read against the wrong gate.
+  const tag = ONLY ? '' : `${s.campaign || 'marwin_dc'} `;
+  console.log(`  ${tag}[${verdict}] ${(s.title || '').slice(0, 80)}`);
   if (APPLY) {
+    // Both relevance columns are written. Migration 023 added the neutral
+    // `relevant` alongside `dc_relevant`, and the views read
+    // COALESCE(relevant, dc_relevant); writing only the old one would leave a
+    // freshly rejected signal still displaying as kept.
     await pool.query(
-      `UPDATE signals SET dc_relevant = $1, geo_scope = $2, operator = COALESCE(operator, $3) WHERE id = $4`,
+      `UPDATE signals SET dc_relevant = $1, relevant = $1, geo_scope = $2,
+         operator = COALESCE(operator, $3) WHERE id = $4`,
       [cls.dcRelevant, cls.dcRelevant ? cls.geoScope : null, cls.operator, s.id]);
   }
 }
 
 console.log('\n=== Reprocess signals ===');
+console.log(`Campaign: ${ONLY || 'all, each judged by its own gate'}`);
 console.log(`Total news signals: ${report.total}`);
-console.log(`Kept (DC-relevant): ${report.kept}  [uk_project ${report.uk_project}, expansion_watch ${report.expansion_watch}, foreign_only ${report.foreign_only}]`);
+console.log(`Kept: ${report.kept}  [uk_project ${report.uk_project}, expansion_watch ${report.expansion_watch}, foreign_only ${report.foreign_only}]`);
 console.log(`Rejected: ${report.rejected} (of which ${report.screened} screened as promotional or roundup)   Classify failures: ${report.failed}`);
 if (!APPLY) console.log('Dry run, no writes. Re-run with --apply to persist (reversible: only dc_relevant/geo_scope/operator change).');
 else console.log('Applied. Run scripts/research-run.mjs next to match the surviving UK-project signals to accounts.');
