@@ -14,6 +14,7 @@
   "icp": {
     "companyTypes": ["dc_developer", "me_contractor", "end_client"],
     "signalTypes": ["news_dc_build", "news_contract", "planning"],
+    "partyTypes": { "operator": "dc_developer", "contractor": "me_contractor" },
     "noSignalReason": "no data centre build or contract signals",
     "thresholds": { "minProjectSizeMW": 10, "minContractValueGBP": 250000, "ukOnly": true },
     "buildStages": ["planning_granted", "construction", "fit_out"],

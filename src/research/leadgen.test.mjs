@@ -6,6 +6,8 @@ import { buildPartiesSystem, extractParties, primaryParty } from './parties.mjs'
 import { matchParty, matchOperator, OPERATOR_ALIASES } from './match.mjs';
 import { planPartyActions, proposalsPerRun, normName } from './partyActions.mjs';
 import { staleDays, isStale, staleSql } from './staleness.mjs';
+import { companyTypeForParty } from './partyType.mjs';
+import { scoreCompany } from './icp.mjs';
 import { buildGateSystem } from '../campaigns/prompts.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 import { readFileSync } from 'node:fs';
@@ -198,6 +200,46 @@ await check('only the confirm and merge routes touch the register, and no spend 
   assert(/INSERT INTO companies/.test(reviewBlock), 'confirm creates the account');
   assert(!/findymail|linkedin|unipile/i.test(reviewBlock), 'no Findymail, no LinkedIn at proposal or confirm');
   assert(/searchCompanies/.test(reviewBlock), 'Companies House enrichment is the read-only kind');
+});
+
+console.log('\nA confirmed account must be able to become a lead:');
+
+await check('the 35-point dead end is real, and the type is what fixes it', async () => {
+  // The live run showed seven confirmed accounts at exactly 35 against a
+  // threshold of 40: named 25, type 0, signals 0, CH health 10 neutral. The
+  // queue could add an account but never produce a lead, which is its purpose.
+  const untyped = { named_account: true, company_type: null, ch_profile: null };
+  assert(scoreCompany(untyped, [], null, 'marwin_dc').score === 35,
+    'an untyped confirmed account scores 35, under the 40 threshold');
+  const typed = { ...untyped, company_type: 'me_contractor' };
+  assert(scoreCompany(typed, [], null, 'marwin_dc').score === 60,
+    'and 60 once typed, which clears it');
+});
+
+await check('each campaign declares what its parties are, and unknowns are null', async () => {
+  assert(companyTypeForParty('marwin_dc', 'operator') === 'dc_developer', 'a DC operator develops data centres');
+  assert(companyTypeForParty('marwin_dc', 'contractor') === 'me_contractor', 'a DC contractor is M&E');
+  assert(companyTypeForParty('pharma_steriflow', 'operator') === 'pharma_manufacturer', 'a pharma operator manufactures');
+  assert(companyTypeForParty('pharma_steriflow', 'contractor') === 'me_contractor', 'a pharma contractor is M&E too');
+  assert(companyTypeForParty('no_such_campaign', 'operator') === null, 'an unknown campaign types nothing');
+  // Declared, not positional: reordering companyTypes must not silently change
+  // what a confirmed account becomes.
+  for (const id of ['marwin_dc', 'pharma_steriflow']) {
+    const def = requireCampaign(id);
+    assert(def.icp.partyTypes?.operator && def.icp.partyTypes?.contractor, `${id} declares both parties`);
+    for (const t of Object.values(def.icp.partyTypes)) {
+      assert(def.icp.companyTypes.includes(t), `${id} maps a party to ${t}, which is in its own ICP vocabulary`);
+    }
+  }
+});
+
+await check('the confirm and merge routes set the type, and merge never overwrites one', async () => {
+  const src = read('src/server.mjs');
+  const block = src.slice(src.indexOf('The review queue'), src.indexOf("app.get('/api/signals'"));
+  assert(/companyTypeForParty\(r\.campaign, r\.party\)/.test(block), 'the party decides the type');
+  assert(/company_type = COALESCE\(company_type, \$2\)/.test(block), 'merge fills a missing type only');
+  assert(/COALESCE\(companies\.company_type, EXCLUDED\.company_type\)/.test(block),
+    'and a conflicting insert keeps the type already on the row');
 });
 
 console.log('\nStaleness, a flag over the scoring, not a formula:');

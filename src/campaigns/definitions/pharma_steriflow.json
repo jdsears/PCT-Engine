@@ -14,6 +14,7 @@
   "icp": {
     "companyTypes": ["pharma_manufacturer", "biotech_manufacturer", "me_contractor", "end_client"],
     "signalTypes": ["news_pharma_build", "news_contract", "planning"],
+    "partyTypes": { "operator": "pharma_manufacturer", "contractor": "me_contractor" },
     "noSignalReason": "no pharmaceutical facility build or contract signals",
     "thresholds": { "minContractValueGBP": 250000, "ukOnly": true },
     "buildStages": ["planning_granted", "construction", "fit_out"],
