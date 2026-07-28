@@ -89,6 +89,21 @@ for (const [title, genre] of SHOULD_SCREEN) {
   });
 }
 
+await check('"awards" as a verb is a contract win, not a ceremony', () => {
+  // From the live research run: "UK awards $26m hypersonic target contract to
+  // Lockheed Martin" was screened as a marketing item. The word is a verb
+  // there, and the same rule would have eaten a real data centre contract award.
+  assert(promoGenre('UK awards $26m hypersonic target contract to Lockheed Martin') === null,
+    'a government awarding a contract is not a ceremony');
+  assert(promoGenre('MoD awards £200m data centre contract to Skanska') === null,
+    'nor is the shape that would have cost a real lead');
+  assert(promoGenre('Council awards contract for Slough data centre') === null, 'nor this one');
+  // The ceremony sense still screens, through phrasings a verb cannot take.
+  assert(promoGenre('Kao Data shortlisted for regional awards') === 'marketing or calendar item', 'a shortlist');
+  assert(promoGenre('Data centre industry awards open for entries') === 'marketing or calendar item', 'a named awards programme');
+  assert(promoGenre('Awards ceremony celebrates the year in construction') === 'marketing or calendar item', 'a ceremony');
+});
+
 console.log('\nThe half that matters more: real signals are untouched:');
 
 // Every one of these is the shape of a signal the engine exists to find, and
