@@ -1,5 +1,6 @@
 import { requireCampaign } from '../campaigns/registry.mjs';
 import { buildGateSystem } from '../campaigns/prompts.mjs';
+import { promoGenre } from './promoScreen.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -36,6 +37,15 @@ const SCOPES = new Set(['uk_project', 'expansion_watch', 'foreign_only']);
 // noise is never stored as a data centre signal.
 export async function classifySignal(result, { callModel = callClaude, campaign = 'marwin_dc' } = {}) {
   const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
+  // Promotional posts, listicles, social posts and digests are refused on the
+  // title before a model is called. They are the genre the event test exists
+  // to fail, and they were slipping through the thin-content path where the
+  // model judges the title alone. Rejecting here costs no tokens and is
+  // provable offline; the accompanying prompt rule catches what the patterns
+  // deliberately do not, since the screen is kept narrow enough that it cannot
+  // drop a real project report.
+  const genre = promoGenre(result.title);
+  if (genre) return { dcRelevant: false, geoScope: null, operator: null, screened: genre };
   // The search query is never shown to the classifier. It reads "UK data centre
   // construction contract awarded" and anchors a plain construction win into the
   // keep pile, which is how a residential job survived four calibrations. The

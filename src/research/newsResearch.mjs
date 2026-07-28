@@ -47,7 +47,7 @@ const hash = (s) => createHash('sha256').update(s).digest('hex');
 export async function dcSignalSweep({ classify = classifySignal, extract = extractParties, campaign = 'marwin_dc' } = {}) {
   const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
   const queries = def.signals.sweepQueries;
-  const counts = { campaign: def.id, queries: queries.length, seen: 0, inserted: 0, rejected: 0, foreignOnly: 0 };
+  const counts = { campaign: def.id, queries: queries.length, seen: 0, inserted: 0, rejected: 0, screened: 0, foreignOnly: 0 };
   for (const { query, type } of queries) {
     let results = [];
     try { results = await tavily(query); }
@@ -58,7 +58,15 @@ export async function dcSignalSweep({ classify = classifySignal, extract = extra
       let cls;
       try { cls = await classify({ title: r.title, content: r.content, query }, { campaign: def }); }
       catch { cls = { dcRelevant: false }; }
-      if (!cls.dcRelevant) { counts.rejected++; console.log(`  reject, not ${def.signals.gate.subjectNoun}: ${(r.title || '').slice(0, 80)}`); continue; }
+      if (!cls.dcRelevant) {
+        counts.rejected++;
+        // A screened rejection is counted separately and says which genre it
+        // matched, so a dry run shows what the promo screen caught rather than
+        // burying it in the reject total where a false positive would hide.
+        if (cls.screened) { counts.screened++; console.log(`  reject, ${cls.screened}: ${(r.title || '').slice(0, 80)}`); }
+        else console.log(`  reject, not ${def.signals.gate.subjectNoun}: ${(r.title || '').slice(0, 80)}`);
+        continue;
+      }
       if (cls.geoScope === 'foreign_only') { counts.foreignOnly++; console.log(`  drop, foreign only: ${(r.title || '').slice(0, 80)}`); continue; }
       // A kept signal names its parties in a second, smaller call. The gate's
       // operator stands as given; the extraction adds the contractor, and may
