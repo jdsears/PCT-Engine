@@ -50,7 +50,16 @@ const FIRST_PERSON_PROMO = t => FIRST_PERSON.test(t) && PROMO_CUE.test(t);
 // real headline like "Skanska wins £158m London data centre fit-out" is
 // untouched by construction.
 const FURNITURE_WORDS = /^(?:instagram|facebook|linkedin|x|twitter|youtube|tiktok|newsroom|news|home|homepage|blog|posts?|updates?|media|press|press releases?|insights?|articles?|events?|about|contact|untitled|page not found|404)$/i;
-const FURNITURE = t => FURNITURE_WORDS.test(t.replace(/\s*[|\-–—]\s*.*$/, '').trim());
+// Only a TRAILING publisher suffix is stripped, never a leading section label.
+// The first cut stripped everything after the first separator, so
+// "News | Colliers promotes 72 employees in the UK - CoStar" collapsed to
+// "News" and was called furniture. The verdict was right by luck, the reason
+// was wrong, and the same rule would have screened
+// "News | Skanska wins £158m London data centre fit-out", which is a real lead.
+// A publisher suffix is short and last; a section label is a prefix and the
+// story follows it, so only the tail is removed.
+const stripPublisher = t => t.replace(/\s*[|\-–—]\s*[^|\-–—]{1,30}$/, '').trim();
+const FURNITURE = t => FURNITURE_WORDS.test(t) || FURNITURE_WORDS.test(stripPublisher(t));
 
 // A periodical digest titled by its month: "New Data Center Developments:
 // July 2026" is a monthly collection, not one project event. A digest noun and
