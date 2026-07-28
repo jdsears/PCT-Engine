@@ -16,6 +16,7 @@ import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { searchCompanies, candidateRows } from './research/companiesHouse.mjs';
 import { staleDays, isStale } from './research/staleness.mjs';
+import { companyTypeForParty } from './research/partyType.mjs';
 import { classifySyncErrors } from './sync/acknowledgements.mjs';
 import { decisionUpdate, decisionValues } from './sync/reviewDecision.mjs';
 import { shouldRun } from './research/schedule.mjs';
@@ -735,11 +736,16 @@ app.post('/api/reviews/:id/confirm', async (req, res) => {
     // it, so the shape is decided up front rather than discovered by failing.
     const noteColumn = await hasColumn('party_reviews', 'decision_note');
     const companyId = await withTransaction(async client => {
+      // The type comes from the party the review recorded, so a confirmed
+      // account scores for type fit instead of landing at 35, just under the
+      // lead threshold, which is where every earlier confirmation stopped.
       const { rows: created } = await client.query(
-        `INSERT INTO companies (name, ch_number, domain, named_account, source)
-         VALUES ($1, $2, $3, true, 'signal_proposal')
-         ON CONFLICT (ch_number) DO UPDATE SET updated_at = now()
-         RETURNING id`, [name, chNumber, r.domain]);
+        `INSERT INTO companies (name, ch_number, domain, company_type, named_account, source)
+         VALUES ($1, $2, $3, $4, true, 'signal_proposal')
+         ON CONFLICT (ch_number) DO UPDATE SET
+           company_type = COALESCE(companies.company_type, EXCLUDED.company_type),
+           updated_at = now()
+         RETURNING id`, [name, chNumber, r.domain, companyTypeForParty(r.campaign, r.party)]);
       const id = created[0].id;
       await client.query(
         `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
@@ -785,6 +791,11 @@ app.post('/api/reviews/:id/merge', async (req, res) => {
       await client.query(
         `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
         [companyId, r.campaign]);
+      // An account merged into may predate typing. Fill a missing type from the
+      // party, never overwrite one a human or an earlier run has set.
+      await client.query(
+        `UPDATE companies SET company_type = COALESCE(company_type, $2), updated_at = now() WHERE id = $1`,
+        [companyId, companyTypeForParty(r.campaign, r.party)]);
       await linkReviewSignal(client, r, companyId);
       const upd = decisionUpdate({ status: 'merged', withNote: noteColumn });
       await client.query(upd.sql, decisionValues(upd.order, {
