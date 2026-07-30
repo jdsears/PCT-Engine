@@ -7,6 +7,7 @@ import { matchParty, matchOperator, OPERATOR_ALIASES } from './match.mjs';
 import { planPartyActions, proposalsPerRun, normName } from './partyActions.mjs';
 import { staleDays, isStale, staleSql } from './staleness.mjs';
 import { companyTypeForParty } from './partyType.mjs';
+import { pairDuplicates, sameCompany } from './duplicateAccounts.mjs';
 import { scoreCompany } from './icp.mjs';
 import { buildGateSystem } from '../campaigns/prompts.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
@@ -240,6 +241,53 @@ await check('the confirm and merge routes set the type, and merge never overwrit
   assert(/company_type = COALESCE\(company_type, \$2\)/.test(block), 'merge fills a missing type only');
   assert(/COALESCE\(companies\.company_type, EXCLUDED\.company_type\)/.test(block),
     'and a conflicting insert keeps the type already on the row');
+});
+
+console.log('\nDuplicate pairing, where a wrong pair deletes a real account:');
+
+// The live register, exactly as the dry run printed it. The old rule stripped
+// "uk" and "ltd" from "DATA CENTRE UK LTD", leaving "datacentre", then matched
+// on bare substring containment, so every operator with "Data Centres" in its
+// name paired with it. Applied without scoping, four real accounts would have
+// been deleted and merged into one.
+const LIVE_REGISTER = [
+  { id: 119, name: 'DATA CENTRE UK LTD', ch_number: '06485189' },
+  { id: 121, name: "PP O'CONNOR LIMITED", ch_number: '10411214' },
+  { id: 13, name: 'Echelon Data Centres', ch_number: null },
+  { id: 22, name: '4D Data Centres', ch_number: null },
+  { id: 24, name: 'Custodian Data Centres', ch_number: null },
+  { id: 118, name: 'Equans Data Centres', ch_number: null },
+  { id: 132, name: "PP O'Connor", ch_number: null },
+];
+
+await check('four unrelated operators are never merged into one generic name', async () => {
+  const { pairs, leftovers } = pairDuplicates(LIVE_REGISTER);
+  assert(pairs.length === 1, `exactly one real duplicate, got ${pairs.length}`);
+  assert(pairs[0].u.id === 132 && pairs[0].m.id === 121, 'and it is the PP O\u2019Connor pair');
+  for (const name of ['Echelon Data Centres', '4D Data Centres', 'Custodian Data Centres', 'Equans Data Centres']) {
+    assert(leftovers.some(l => l.name === name), `${name} is left alone`);
+  }
+});
+
+await check('a name of only generic words identifies nothing', async () => {
+  assert(sameCompany('DATA CENTRE UK LTD', 'Echelon Data Centres') === false, 'no distinctive tokens, no pair');
+  assert(sameCompany('DATA CENTRE UK LTD', 'DATA CENTRE UK LTD') === false, 'not even with itself');
+  assert(sameCompany("PP O'Connor", "PP O'CONNOR LIMITED") === true, 'the real duplicate still pairs');
+});
+
+await check('pairing is exact, so a longer real name is not eaten', async () => {
+  assert(sameCompany('Skanska', 'Skanska Rail') === false, 'a subsidiary is a different company');
+  assert(sameCompany('Mace', 'Mace Group Limited') === true, 'a corporate suffix and group are not identity');
+});
+
+await check('a twin claimed by two rows is left for a human, never guessed', async () => {
+  const { pairs, contested } = pairDuplicates([
+    { id: 1, name: 'ACME LIMITED', ch_number: '111' },
+    { id: 2, name: 'Acme', ch_number: null },
+    { id: 3, name: 'ACME', ch_number: null },
+  ]);
+  assert(pairs.length === 0, 'a contested twin pairs with neither');
+  assert(contested.length === 1 && contested[0].claimants.length === 2, 'and is reported as contested');
 });
 
 console.log('\nStaleness, a flag over the scoring, not a formula:');
