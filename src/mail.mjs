@@ -43,6 +43,13 @@ export function signatureBlock(sender = null) {
   const name = String(sender?.name || process.env.SENDER_NAME || '').trim();
   const title = String(sender?.title || (sender ? '' : process.env.SENDER_TITLE) || '').trim();
   const lines = [];
+  // The human close, James's request of 30 July 2026: a valediction and the
+  // first name, then the block beneath reads as letterhead. It lives here, in
+  // the deterministic append, so the drafters' no-sign-off rule and the
+  // guardrails behind it stay exactly as they are; no model ever writes a
+  // close, the system does. Sentence case per the house style.
+  const first = name.split(/\s+/)[0];
+  if (first) lines.push('Kind regards,', '', first, '');
   if (name) lines.push(name);
   if (title) lines.push(title);
   lines.push('Premier Control Technologies');

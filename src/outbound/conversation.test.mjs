@@ -179,9 +179,15 @@ await check('the signature and the reply sweep follow the regional sender', asyn
   process.env.SENDER_NAME = 'James Blythe';
   delete process.env.SENDER_SIGNATURE;
   const sig = signatureBlock({ name: 'Guy Beavan', title: 'Area sales manager, Scotland' });
-  assert(sig.startsWith('Guy Beavan\nArea sales manager, Scotland'), 'the rep signs their own mail');
+  // The human close, then the letterhead: valediction and first name above the
+  // block, James's request, sentence case per the house style.
+  assert(sig.startsWith('Kind regards,\n\nGuy\n\nGuy Beavan\nArea sales manager, Scotland'),
+    'the rep closes with kind regards and their first name, then signs their own block');
   assert(sig.includes('Premier Control Technologies') && sig.includes('pctflow.com'), 'the company lines hold');
-  assert(signatureBlock().startsWith('James Blythe'), 'with no sender the single identity holds');
+  assert(signatureBlock().startsWith('Kind regards,\n\nJames\n\nJames Blythe'), 'with no sender the single identity closes the same way');
+  process.env.SENDER_SIGNATURE = 'Custom block';
+  assert(signatureBlock() === 'Custom block', 'a custom SENDER_SIGNATURE is used verbatim, valediction and all its own');
+  delete process.env.SENDER_SIGNATURE;
   assert(prospectHtml('Short note.', { name: 'Guy Beavan' }).includes('Guy Beavan'), 'the footer carries the rep');
   process.env.ENGINE_MAILBOX = 'johnsears@pctflow.com';
   process.env.OUTBOUND_SENDERS = JSON.stringify([{ areas: ['1'], name: 'Guy Beavan', mailbox: 'guy.beavan@pctflow.com' }]);
