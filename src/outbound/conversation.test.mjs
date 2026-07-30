@@ -10,7 +10,7 @@ import { pollFloor, effectiveSince } from './replies.mjs';
 import { rotateCooldownDays, rotateMaxContacts } from './rotation.mjs';
 import { wipeStatements, standInName, STAND_IN_UPSERT } from './rehearsal.mjs';
 import { ensureGreeting } from './draft.mjs';
-import { senderList, senderFor, replyMailboxes } from './senders.mjs';
+import { senderList, senderFor, replyMailboxes, meetingLinks } from './senders.mjs';
 import { pollCursorKey } from './replies.mjs';
 import { responseGroundingText } from './respond.mjs';
 import { renderHandoffPack } from './handoff.mjs';
@@ -137,6 +137,38 @@ await check('regional senders map sales areas to reps and fall back to the singl
   process.env.OUTBOUND_SENDERS = 'not json';
   assert(senderList().length === 0 && senderFor('RA-1') === null, 'malformed config disables itself, never throws');
   if (old === undefined) delete process.env.OUTBOUND_SENDERS; else process.env.OUTBOUND_SENDERS = old;
+});
+
+await check('the booking link follows the signer, and only https links count', async () => {
+  const olds = { o: process.env.OUTBOUND_SENDERS, m: process.env.MEETING_LINK };
+  process.env.MEETING_LINK = 'https://book.example/james';
+  process.env.OUTBOUND_SENDERS = JSON.stringify([
+    { areas: ['1'], name: 'Guy Beavan', mailbox: 'guy.beavan@pctflow.com',
+      meetingLink: 'https://bookings.cloud.microsoft/bookwithme/user/abc@pctflow.com/meetingtype/x?anonymous' },
+    { areas: ['2', '3'], name: 'Craig Downs', mailbox: 'craig.downs@pctflow.com' },
+    { areas: ['4', '6'], name: 'Patrick Mangell', mailbox: 'patrick.mangell@pctflow.com',
+      meetingLink: 'http://insecure.example/patrick' },
+  ]);
+  assert(senderFor('RA-1')?.meetingLink?.includes('bookings.cloud.microsoft'), 'a rep carries their own link');
+  assert(senderFor('RA-2')?.meetingLink === null, 'a rep without one carries none');
+  assert(senderFor('RA-4')?.meetingLink === null, 'a plain-http link is refused, never sent to a prospect');
+  assert(JSON.stringify(meetingLinks()) === JSON.stringify(['https://book.example/james',
+    'https://bookings.cloud.microsoft/bookwithme/user/abc@pctflow.com/meetingtype/x?anonymous']),
+    'the guardrail list is the global link plus every valid rep link');
+
+  // The response grounding offers the signer's own diary, or none, never
+  // another person's.
+  const base = { campaign: 'marwin_dc', company: { name: 'Acme', region: 'RA-1' }, contact: null, signal: null, product: [], blockedSuppliers: [], missing: [] };
+  const guy = responseGroundingText(base, [], 'their reply', []);
+  assert(guy.includes('bookings.cloud.microsoft'), "Guy's email offers Guy's link");
+  assert(!guy.includes('book.example/james'), 'and never the global one');
+  const craig = responseGroundingText({ ...base, company: { name: 'Acme', region: 'RA-2' } }, [], 'their reply', []);
+  assert(craig.includes('No booking link is configured'), 'Craig without a link offers to suggest times, not another diary');
+  const unmapped = responseGroundingText({ ...base, company: { name: 'Acme', region: 'RA-5' } }, [], 'their reply', []);
+  assert(unmapped.includes('book.example/james'), 'no regional sender means the engine identity signs, so the global link applies');
+  for (const [k, v] of [['OUTBOUND_SENDERS', olds.o], ['MEETING_LINK', olds.m]]) {
+    if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
 });
 
 await check('the signature and the reply sweep follow the regional sender', async () => {

@@ -4,6 +4,7 @@ import { requireCampaign } from '../campaigns/registry.mjs';
 import { buildDraftSystem, buildRangeLines } from '../campaigns/prompts.mjs';
 import { approvedLinkList } from './links.mjs';
 import { writtenCompanyName } from './companyName.mjs';
+import { meetingLinks } from './senders.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -152,8 +153,10 @@ const sameLink = (a, b) => {
 // query parameters) or an approved PCT page matched exactly, so a deeper
 // path invented under an approved page still blocks.
 export function allowedLink(u) {
-  const meetingLink = String(process.env.MEETING_LINK || '').trim();
-  if (meetingLink && sameLink(u, meetingLink)) return true;
+  // Any configured booking link passes, the global one or a rep's own: the
+  // drafter is only ever shown the signer's, and a booking page is a PCT
+  // destination whichever diary it lands in. Everything else still blocks.
+  if (meetingLinks().some(l => sameLink(u, l))) return true;
   return approvedLinkList().some(a => normLink(u) === normLink(a));
 }
 
