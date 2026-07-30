@@ -1,4 +1,5 @@
 import { pool } from '../db.mjs';
+import { senderFor } from './senders.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 import { confidentialityRule } from '../campaigns/prompts.mjs';
 import { search } from '../retrieve.mjs';
@@ -68,7 +69,12 @@ export function responseGroundingText(grounding, thread, replyText, extracts) {
   } else {
     lines.push('No corpus extract matched their question. Technical detail must be deferred to engineering, not improvised.');
   }
-  const link = String(process.env.MEETING_LINK || '').trim();
+  // The link follows the signer. A regional rep's email offers that rep's own
+  // booking page; a rep without one gets the offer-to-suggest-times wording,
+  // never someone else's diary. Only when no regional sender applies, so the
+  // single engine identity signs, does the global MEETING_LINK apply.
+  const sender = senderFor(grounding?.company?.region);
+  const link = sender ? (sender.meetingLink || '') : String(process.env.MEETING_LINK || '').trim();
   lines.push(link
     ? `Booking link you may include, exactly as given: ${link}`
     : 'No booking link is configured; offer to suggest times for a short call instead.');

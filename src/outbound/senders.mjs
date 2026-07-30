@@ -6,11 +6,17 @@
 //
 // Configuration is one Railway variable, OUTBOUND_SENDERS, a JSON list:
 //
-//   [{"areas":["1"],"name":"Guy Beavan","mailbox":"guy.beavan@pctflow.com"},
+//   [{"areas":["1"],"name":"Guy Beavan","mailbox":"guy.beavan@pctflow.com",
+//     "meetingLink":"https://bookings.cloud.microsoft/bookwithme/user/..."},
 //    {"areas":["2","3"],"name":"Craig Downs","mailbox":"craig.downs@pctflow.com"},
 //    {"areas":["4","6"],"name":"Patrick Mangell","mailbox":"patrick.mangell@pctflow.com"}]
 //
-// Areas accept "1" or "RA-1"; "title" is optional per sender. With the
+// Areas accept "1" or "RA-1"; "title" and "meetingLink" are optional per
+// sender. The link is the rep's own booking page and must be https; it is
+// offered only in emails that rep signs, because a booking link that lands on
+// someone else's calendar is worse than none. A sender without a link gets
+// the offer-to-suggest-times wording instead, never another person's diary.
+// With the
 // variable unset, malformed, or a lead's area unmapped, everything falls
 // back to the single ENGINE_MAILBOX and the SENDER_* identity, so the
 // testing shape keeps working untouched and a config mistake can never
@@ -35,7 +41,10 @@ export function senderList() {
     const name = String(s?.name || '').trim();
     const areas = (Array.isArray(s?.areas) ? s.areas : []).map(normArea).filter(Boolean);
     if (!mailbox || !mailbox.includes('@') || !name || !areas.length) continue;
-    list.push({ mailbox, name, title: String(s?.title || '').trim() || null, areas });
+    // https only: a typo'd or plain-http link must never reach a prospect.
+    const rawLink = String(s?.meetingLink || '').trim();
+    const meetingLink = /^https:\/\//i.test(rawLink) ? rawLink : null;
+    list.push({ mailbox, name, title: String(s?.title || '').trim() || null, areas, meetingLink });
   }
   return list;
 }
@@ -53,4 +62,12 @@ export function replyMailboxes() {
   const engine = String(process.env.ENGINE_MAILBOX || '').trim().toLowerCase();
   const all = [engine, ...senderList().map(s => s.mailbox)].filter(Boolean);
   return [...new Set(all)];
+}
+
+// Every configured booking link, for the link guardrail: a draft may carry
+// any rep's own link (the drafter is only ever shown the right one), plus the
+// global MEETING_LINK, and nothing else.
+export function meetingLinks() {
+  const global = String(process.env.MEETING_LINK || '').trim();
+  return [...new Set([global, ...senderList().map(s => s.meetingLink)].filter(Boolean))];
 }
