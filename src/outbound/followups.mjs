@@ -13,8 +13,11 @@ import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGree
 // gates; nothing here sends.
 
 // The confidentiality ceiling is the campaign's, so a campaign cannot protect
-// its customers in the cold open and leak them three messages later.
-const CAMPAIGN_DEF = requireCampaign(process.env.DEFAULT_CAMPAIGN || 'marwin_dc');
+// its customers in the cold open and leak them three messages later. It is the
+// LEAD'S campaign, resolved per draft from the grounding: a module-level
+// default here meant a pharma follow-up would have carried the data centre
+// ceiling, protecting the wrong customers.
+const campaignDef = grounding => requireCampaign(grounding?.campaign || process.env.DEFAULT_CAMPAIGN || 'marwin_dc');
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -65,30 +68,62 @@ export function reSubject(subject) {
   return /^re:/i.test(s) ? s : `Re: ${s}`;
 }
 
-const FOLLOWUP_SYSTEM =
-  "You write a short follow-up email for Premier Control Technologies (PCT), a UK supplier of flow control products. An earlier email (provided) got no reply; this is the next touch on the same thread. " +
-  "HARD RULE: you may state only what the GROUNDING supports, which includes what the previous email already said. No new claims, no invented developments, no manufactured urgency, no invented deadline or reason to reply now. Never write 'just bumping', 'just checking in' or 'circling back', and never guilt the recipient for not replying. " +
-  confidentialityRule(CAMPAIGN_DEF) + " No part-specific spec claims. " +
-  "VOICE: plain technical British English, calm, an engineer briefly re-raising something with a peer. No em dashes or en dashes, never the word genuinely, no exclamation marks, no pleasantries, no pressure. " +
-  "STRUCTURE, two or three sentences: a fresh, plain angle on why it is worth a look, drawn from the grounding rather than a restatement of the whole first email; the same single light ask (a short call, or whether they are specifying flow control on the project). Do not apologise for writing again. " +
-  "NO SIGN-OFF, absolute: the email ends on the ask. No name, no team or company line, no web address, no contact details; the signature is appended by the system. " +
-  "Return strict JSON only: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|range|contact|previous_email\"}]}. The body is plain text, no Markdown.";
+export function buildFollowupSystem(def) {
+  return (
+    "You write a short follow-up email for Premier Control Technologies (PCT), a UK supplier of flow control products. An earlier email (provided) got no reply; this is the next touch on the same thread. " +
+    "HARD RULE: you may state only what the GROUNDING supports, which includes what the previous email already said. No new claims, no invented developments, no manufactured urgency, no invented deadline or reason to reply now. Never write 'just bumping', 'just checking in' or 'circling back', and never guilt the recipient for not replying. " +
+    confidentialityRule(def) + " No part-specific spec claims. " +
+    "VOICE: plain technical British English, calm, an engineer briefly re-raising something with a peer. No em dashes or en dashes, never the word genuinely, no exclamation marks, no pleasantries, no pressure. " +
+    "STRUCTURE, two or three sentences: a fresh, plain angle on why it is worth a look, drawn from the grounding rather than a restatement of the whole first email; the same single light ask (a short call, or whether they are specifying flow control on the project). Do not apologise for writing again. " +
+    "NO SIGN-OFF, absolute: the email ends on the ask. No name, no team or company line, no web address, no contact details; the signature is appended by the system. " +
+    "Return strict JSON only: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|range|contact|previous_email\"}]}. The body is plain text, no Markdown.");
+}
+
+// The final touch is a break-up email, agreed with James on 27 July 2026: the
+// PCT voice stays, and the sequence ends by saying so. The hook is the truth
+// of the finality, not theatre. The classic devices are banned by name because
+// each one is a lie or a lever: there is no file to close, no feigned
+// confusion, and no debt owed by someone who never replied. The statement
+// "this is the last email on this" is true, the engine stops after it, and a
+// one-word no being welcome is the lowest-effort reply a sequence can invite,
+// which is why break-up emails get answers at all.
+export function buildBreakupSystem(def) {
+  return (
+    "You write the FINAL email of a short outreach sequence for Premier Control Technologies (PCT), a UK supplier of flow control products. Earlier emails (the last one is provided) got no reply. This is a break-up email: it says plainly that it is the last one, and it is telling the truth, because the sequence ends here and no further email follows. " +
+    "HARD RULE: you may state only what the GROUNDING supports, which includes what the previous email already said. No new claims, no invented developments, no manufactured urgency, no invented deadline. " +
+    "BREAK-UP RULES, absolute: state in one plain sentence that this is the last email from PCT on this; never dress the ending up as 'closing your file', 'last chance' or any device that manufactures loss; never feign confusion about the silence, never guilt the recipient for it, and never apologise for having written. Say a one-line reply, even a no or a not now, is welcome. End by leaving the door open in general terms: if flow control comes up on their side later, PCT is easy to find. That door-open line must stay general, no invented event, date or offer. " +
+    confidentialityRule(def) + " No part-specific spec claims. " +
+    "VOICE: plain technical British English, calm, an engineer closing a loop with a peer. No em dashes or en dashes, never the word genuinely, no exclamation marks, no pleasantries, no pressure. " +
+    "STRUCTURE, three sentences or so: the plain statement that this is the last email; the one-line-reply-welcome offer with the same light ask as before (" + def.positioning.ask + "); the general door left open. " +
+    "NO SIGN-OFF, absolute: no name, no team or company line, no web address, no contact details; the signature is appended by the system. " +
+    "Return strict JSON only: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|range|contact|previous_email\"}]}. The body is plain text, no Markdown.");
+}
+
+// True when `step` is the sequence's last permitted touch, which is the one
+// written as the break-up. Derived from the cadence, so lengthening
+// FOLLOWUP_DAYS moves the break-up to the new end without a code change.
+export const isFinalStep = (step, delays = followupDelays()) => step >= 1 + delays.length;
 
 // The grounding a follow-up may draw on: everything the cold open could use,
 // plus the previous email itself, so a restatement is supported rather than
 // flagged as an invention.
 export function followupGroundingText(grounding, prev) {
   // The previous email is shown without any sign-off it may carry, so the
-  // model never has a bad example to copy over the no-sign-off rule.
-  return `${renderGrounding(grounding)}\nPrevious email on this thread (sent, no reply). Restating its supported facts is permitted:\nSubject: ${prev.subject}\n${stripSignoff(String(prev.body || '')).body}`;
+  // model never has a bad example to copy over the no-sign-off rule. The
+  // campaign travels, so the range lines are the lead's own campaign's.
+  return `${renderGrounding(grounding, grounding?.campaign || 'marwin_dc')}\nPrevious email on this thread (sent, no reply). Restating its supported facts is permitted:\nSubject: ${prev.subject}\n${stripSignoff(String(prev.body || '')).body}`;
 }
 
 // Draft one follow-up through the shared finishing pass: grounding check, one
 // revision if needed, supplier and end-customer guardrails.
 export async function draftFollowup(grounding, prev, { step, callModel = callClaude } = {}) {
+  const def = campaignDef(grounding);
   const groundingText = followupGroundingText(grounding, prev);
-  const user = `GROUNDING (the only facts you may use):\n${groundingText}\n\nThis is touch ${step} on the thread. Write the follow-up email.`;
-  const raw = await callModel(FOLLOWUP_SYSTEM, user, { maxTokens: 700 });
+  // The last permitted touch is the break-up; every earlier one is an ordinary
+  // follow-up. Same thread, same guardrails, different closing register.
+  const finalTouch = isFinalStep(step);
+  const user = `GROUNDING (the only facts you may use):\n${groundingText}\n\nThis is touch ${step} on the thread${finalTouch ? ', the final one' : ''}. Write the ${finalTouch ? 'break-up' : 'follow-up'} email.`;
+  const raw = await callModel(finalTouch ? buildBreakupSystem(def) : buildFollowupSystem(def), user, { maxTokens: 700 });
   const parsed = parseJsonObject(raw);
   const draft = {
     subject: reSubject(outboundVoice(parsed.subject || prev.subject)),

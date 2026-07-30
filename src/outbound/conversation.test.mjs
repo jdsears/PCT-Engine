@@ -2,7 +2,9 @@
 // triage decisions, the footer, the handoff pack and the digest line. The
 // decisions that suppress a person or stop a sequence are pure functions here,
 // so the cautious defaults are provable without a database or a key.
-import { followupDelays, followupDueAt, maxSequenceSteps, reSubject, followupGroundingText, draftFollowup } from './followups.mjs';
+import { followupDelays, followupDueAt, maxSequenceSteps, reSubject, followupGroundingText, draftFollowup, buildFollowupSystem, buildBreakupSystem, isFinalStep } from './followups.mjs';
+import { writtenCompanyName } from './companyName.mjs';
+import { requireCampaign } from '../campaigns/registry.mjs';
 import { looksLikeBounce, decideAction, classifyReply } from './triage.mjs';
 import { pollFloor, effectiveSince } from './replies.mjs';
 import { rotateCooldownDays, rotateMaxContacts } from './rotation.mjs';
@@ -51,6 +53,63 @@ await check('Re: prefixes once and only once', async () => {
   assert(reSubject('Flow control for the Slough scheme') === 'Re: Flow control for the Slough scheme');
   assert(reSubject('Re: Flow control') === 'Re: Flow control', 'no Re: Re:');
   assert(reSubject('RE: shouting') === 'RE: shouting', 'case-insensitive');
+});
+
+await check('the final touch is the break-up, wherever the cadence ends', async () => {
+  assert(!isFinalStep(2, [4, 7]), 'the middle touch is an ordinary follow-up');
+  assert(isFinalStep(3, [4, 7]), 'the third touch on the default cadence is the break-up');
+  assert(!isFinalStep(3, [4, 7, 14]) && isFinalStep(4, [4, 7, 14]),
+    'lengthening FOLLOWUP_DAYS moves the break-up to the new end without a code change');
+  // The finality claim is true: after the break-up step nothing falls due.
+  assert(followupDueAt('2026-07-01T09:00:00Z', 3, [4, 7]) === null,
+    'the sequence exhausts after the break-up, so its last-email statement is honest');
+});
+
+await check('the break-up prompt states the truth and bans the theatre', async () => {
+  for (const id of ['marwin_dc', 'pharma_steriflow']) {
+    const b = buildBreakupSystem(requireCampaign(id));
+    assert(/it is the last one, and it is telling the truth/.test(b), `${id}: finality stated as fact`);
+    assert(/never dress the ending up as 'closing your file', 'last chance'/.test(b), `${id}: loss theatre banned by name`);
+    assert(/never feign confusion/.test(b) && /never guilt/.test(b), `${id}: no confusion, no guilt`);
+    assert(/a one-line reply, even a no or a not now, is welcome/.test(b), `${id}: the lowest-effort reply is invited`);
+    assert(/door open in general terms/.test(b) && /no invented event, date or offer/.test(b), `${id}: the door-open line cannot invent`);
+    assert(/no exclamation marks/.test(b) && /never the word genuinely/.test(b), `${id}: the voice holds`);
+  }
+  // The confidentiality ceiling is the lead's own campaign's, on both email
+  // types: a pharma follow-up must not carry the data centre ceiling.
+  assert(/pharmaceutical or biotech manufacturer/.test(buildBreakupSystem(requireCampaign('pharma_steriflow'))),
+    'the pharma break-up protects pharma customers');
+  assert(/data centre/.test(buildFollowupSystem(requireCampaign('marwin_dc'))),
+    'the DC follow-up keeps its own ceiling');
+  assert(!/data centre/i.test(buildBreakupSystem(requireCampaign('pharma_steriflow'))),
+    'and no data centre wording leaks into the pharma break-up');
+});
+
+await check('the break-up drafts through the same pipeline at the final step', async () => {
+  let system = null;
+  const model = async (sys) => {
+    if (system === null) system = sys; // the drafter call; later calls are the checker
+    return JSON.stringify({ subject: 'Flow control on the campus', body: 'This is the last email from me on this. A one line reply, even a not now, is welcome. If flow control comes up on the project later, PCT is easy to find.', claims: [] });
+  };
+  const grounding = { campaign: 'marwin_dc', company: { name: "PP O'CONNOR LIMITED" }, contact: { name: 'Pat' }, signal: null, product: [], blockedSuppliers: [], missing: [] };
+  const d = await draftFollowup(grounding, { subject: 'Flow control', body: 'First email.' }, { step: 3, callModel: model });
+  assert(/FINAL email of a short outreach sequence/.test(system), 'step three drafts with the break-up prompt');
+  assert(d.subject.startsWith('Re: '), 'the thread continues, Re: once');
+  assert(/^Pat,/.test(d.body), 'the thread greeting holds, the bare first name, since Dear is the cold-open convention');
+});
+
+await check('a Companies House name reaches the drafter in written form', async () => {
+  assert(writtenCompanyName("PP O'CONNOR LIMITED") === "PP O'Connor", 'caps recased, suffix dropped');
+  assert(writtenCompanyName('HOCHTIEF DATA CENTRE PARTNER UK LTD') === 'Hochtief Data Centre Partner UK', 'acronyms and initials survive');
+  assert(writtenCompanyName('Pure DC') === 'Pure DC' && writtenCompanyName('SubZero') === 'SubZero', 'chosen styling is never touched');
+  assert(writtenCompanyName('Mace Group Limited') === 'Mace Group', 'the suffix goes in any case');
+  assert(writtenCompanyName('MIS') === 'MIS', 'a short lone acronym is unknowable and left alone');
+  // Through the grounding, so no draft ever quotes the register form.
+  const text = followupGroundingText(
+    { campaign: 'marwin_dc', company: { name: "PP O'CONNOR LIMITED" }, contact: null, signal: null, product: [], missing: [] },
+    { subject: 's', body: 'b' });
+  assert(text.includes("Company: PP O'Connor."), 'the grounding presents the written form');
+  assert(!text.includes('LIMITED'), 'and the register form never reaches the model');
 });
 
 await check('a rehearsal thread runs the same cadence in minutes', async () => {

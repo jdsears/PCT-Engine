@@ -3,6 +3,7 @@ import { isOpenerGrade } from './openerGrade.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 import { buildDraftSystem, buildRangeLines } from '../campaigns/prompts.mjs';
 import { approvedLinkList } from './links.mjs';
+import { writtenCompanyName } from './companyName.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -46,7 +47,10 @@ async function callClaude(system, user, { maxTokens = 700 } = {}) {
 export function renderGrounding(g, campaign = 'marwin_dc') {
   const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
   const lines = [];
-  lines.push(`Company: ${g.company?.name || 'unknown'}${g.company?.region ? ', region ' + g.company.region : ''}.`);
+  // The written form, so a Companies House name in capitals with LIMITED after
+  // it never reaches a draft. The stored form stays on the register and in the
+  // guardrails; only the prose the model may quote is presented.
+  lines.push(`Company: ${writtenCompanyName(g.company?.name) || 'unknown'}${g.company?.region ? ', region ' + g.company.region : ''}.`);
   lines.push(g.contact?.name
     ? `Contact: ${g.contact.name}${g.contact.role ? ', ' + g.contact.role : ', role not recorded'}.`
     : `Contact: not recorded. Address a specifier or buyer in neutral terms, do not assume a role.`);
