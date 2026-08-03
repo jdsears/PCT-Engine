@@ -2,7 +2,7 @@
 // it is exercised on the deploy; the note builder and its invite-length bound
 // are provable here.
 import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText } from './liPosts.mjs';
-import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays } from '../research/freshness.mjs';
+import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -150,7 +150,15 @@ await check('a story is stale on evidence only, never on a guess', async () => {
   assert(!isStaleStory('not a date', { now }), 'junk is unknown, not stale, and never an error');
   assert(parsePublished('Tue, 14 May 2024 09:00:00 GMT') !== null, 'RFC dates parse');
   assert(!isStaleStory('2026-03-01', { now, maxAgeDays: 200 }), 'the window is configurable');
-  assert(signalMaxAgeDays() >= 7 && signalMaxAgeDays() <= 365, 'and clamped to sane bounds');
+  // Two windows, per John: signals may be old because builds run for years, a
+  // post must be current because a feed is a claim about now. The Feb 2025
+  // story that reached LinkedIn sits exactly between them: a valid signal, an
+  // invalid post.
+  assert(signalMaxAgeDays() === 730, 'signals default to two years');
+  assert(postMaxAgeDays() === 30, 'posts default to thirty days');
+  const feb25 = '2025-02-15';
+  assert(!isStaleStory(feb25, { now, maxAgeDays: signalMaxAgeDays() }), 'the Feb 2025 story is still a valid signal');
+  assert(isStaleStory(feb25, { now, maxAgeDays: postMaxAgeDays() }), 'and is refused as a post');
 });
 
 await check('the filter keeps undated stories and drops evidenced-stale ones', async () => {
@@ -166,7 +174,7 @@ await check('the filter keeps undated stories and drops evidenced-stale ones', a
 });
 
 await check('every consumer reads the published date (static)', async () => {
-  assert(/freshOnly/.test(freshRead('src/studio/liPosts.mjs')), 'the studio filters before drafting a post');
+  assert(/postMaxAgeDays/.test(freshRead('src/studio/liPosts.mjs')), 'the studio filters on the POST window, not the signal one');
   assert(/freshOnly/.test(freshRead('src/outbound/grounding.mjs')), 'the cold-open signal pick filters');
   assert(/isStaleStory/.test(freshRead('src/research/newsResearch.mjs')), 'the sweep drops evidenced-stale stories');
   assert(/publishedAt/.test(freshRead('src/studio/liPosts.mjs')), 'the story date travels with the post');

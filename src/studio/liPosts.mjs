@@ -1,5 +1,5 @@
 import { pool } from '../db.mjs';
-import { freshOnly } from '../research/freshness.mjs';
+import { freshOnly, postMaxAgeDays } from '../research/freshness.mjs';
 import { outboundVoice, flagEndCustomers } from '../outbound/draft.mjs';
 import { unipile, ROUTES, unipileConfigured } from '../research/unipile.mjs';
 
@@ -99,8 +99,11 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
      WHERE s.dc_relevant AND s.geo_scope IN ('uk_project', 'expansion_watch') AND s.title IS NOT NULL
        AND NOT EXISTS (SELECT 1 FROM li_posts p WHERE p.signal_id = s.id AND p.status IN ('draft', 'posted'))
      ORDER BY s.observed_at DESC LIMIT $1`, [take * 3]);
-  const signals = freshOnly(fetched, r => r.published).slice(0, take);
-  const staleSkipped = fetched.length - freshOnly(fetched, r => r.published).length;
+  // The POST window, not the signal window: an old story can still be a good
+  // lead, it cannot be a good post.
+  const fresh = freshOnly(fetched, r => r.published, { maxAgeDays: postMaxAgeDays() });
+  const signals = fresh.slice(0, take);
+  const staleSkipped = fetched.length - fresh.length;
 
   const report = { considered: signals.length, staleSkipped, drafted: 0, flagged: 0, failed: 0 };
   for (const s of signals) {

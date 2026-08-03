@@ -20,9 +20,18 @@
 // failed timestamp cast aborts a whole query. Consumers over-fetch a little
 // and filter here in code, where a junk date is just null.
 
+// Two windows, John's design, told to James on 30 July 2026: signals are
+// allowed to be old, because builds run for years and an eighteen-month-old
+// planning story can still be this quarter's lead, while a LinkedIn post must
+// be current, because a feed is a claim about now. Both env-tunable.
 export function signalMaxAgeDays() {
-  const n = parseInt(process.env.SIGNAL_MAX_AGE_DAYS || '90', 10);
-  return Math.max(7, Math.min(365, Number.isNaN(n) ? 90 : n));
+  const n = parseInt(process.env.SIGNAL_MAX_AGE_DAYS || '730', 10);
+  return Math.max(30, Math.min(1095, Number.isNaN(n) ? 730 : n));
+}
+
+export function postMaxAgeDays() {
+  const n = parseInt(process.env.POST_MAX_AGE_DAYS || '30', 10);
+  return Math.max(7, Math.min(365, Number.isNaN(n) ? 30 : n));
 }
 
 // A published value as a timestamp, or null. Tavily dates arrive in several
