@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { pool } from '../db.mjs';
 import { classifySignal } from './relevance.mjs';
 import { extractParties } from './parties.mjs';
+import { isStaleStory, signalMaxAgeDays } from './freshness.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 
 // Tavily news research. The sweep queries are plain data so the campaign focus
@@ -47,7 +48,7 @@ const hash = (s) => createHash('sha256').update(s).digest('hex');
 export async function dcSignalSweep({ classify = classifySignal, extract = extractParties, campaign = 'marwin_dc' } = {}) {
   const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
   const queries = def.signals.sweepQueries;
-  const counts = { campaign: def.id, queries: queries.length, seen: 0, inserted: 0, rejected: 0, screened: 0, foreignOnly: 0 };
+  const counts = { campaign: def.id, queries: queries.length, seen: 0, inserted: 0, rejected: 0, screened: 0, stale: 0, foreignOnly: 0 };
   for (const { query, type } of queries) {
     let results = [];
     try { results = await tavily(query); }
@@ -68,6 +69,16 @@ export async function dcSignalSweep({ classify = classifySignal, extract = extra
         continue;
       }
       if (cls.geoScope === 'foreign_only') { counts.foreignOnly++; console.log(`  drop, foreign only: ${(r.title || '').slice(0, 80)}`); continue; }
+      // Republished stories arrive through fresh URLs, so Tavily's day window
+      // is not enough: a story with a printed published date older than the
+      // freshness window is dropped on that evidence, before the party
+      // extraction spends a model call on it. An undated story is not guessed
+      // at; the date is carried and shown wherever a human decides.
+      if (isStaleStory(r.published_date)) {
+        counts.stale++;
+        console.log(`  drop, stale story: published ${r.published_date}, older than ${signalMaxAgeDays()} days: ${(r.title || '').slice(0, 70)}`);
+        continue;
+      }
       // A kept signal names its parties in a second, smaller call. The gate's
       // operator stands as given; the extraction adds the contractor, and may
       // fill an operator the gate left null, never overwrite one.

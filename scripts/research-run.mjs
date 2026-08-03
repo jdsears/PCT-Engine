@@ -20,7 +20,7 @@ const r = await runResearch({ campaign, log: console.log });
 
 console.log('\n=== Research run report ===');
 console.log(`Companies House: ${r.chCounts.companies} tracked, ${r.chCounts.ch_filing} filings, ${r.chCounts.ch_director_change} director changes inserted`);
-console.log(`News sweep: ${r.newsCounts.queries} queries, ${r.newsCounts.seen} seen, ${r.newsCounts.inserted} stored, ${r.newsCounts.rejected ?? 0} rejected by the gate, ${r.newsCounts.foreignOnly ?? 0} dropped (foreign only)`);
+console.log(`News sweep: ${r.newsCounts.queries} queries, ${r.newsCounts.seen} seen, ${r.newsCounts.inserted} stored, ${r.newsCounts.rejected ?? 0} rejected by the gate, ${r.newsCounts.stale ?? 0} stale, ${r.newsCounts.foreignOnly ?? 0} dropped (foreign only)`);
 console.log(`News signals matched to accounts: ${r.newsMatched}`);
 console.log(`Companies scored: ${r.scored}`);
 console.log(`Domains resolved: ${r.domains}`);

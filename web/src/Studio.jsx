@@ -60,6 +60,9 @@ function PostCard({ post, onChanged }) {
       <div className="ob-head">
         <div className="ob-co">{post.topic || 'Post'}</div>
         {post.source && <a className="ob-ev-src" href={post.source} target="_blank" rel="noreferrer">source story</a>}
+        {/* The story's own date, beside the link, so age is visible before a
+            post goes out; a source that states no date says so plainly. */}
+        <span className="muted-small">{post.storyDate ? `story date ${String(post.storyDate).slice(0, 10)}` : 'story date not stated by the source'}</span>
       </div>
       {post.flags.length > 0 && (
         <div className="ob-flags">

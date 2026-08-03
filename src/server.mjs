@@ -1256,6 +1256,9 @@ app.get('/api/studio/posts', async (req, res) => {
     res.json({ posts: rows.map(p => ({
       id: p.id, topic: p.topic, body: p.body, status: p.status,
       source: p.grounding?.signal?.source ?? null, flags: p.grounding?.flags ?? [],
+      // The story's own date, so a reader sees age before posting; null means
+      // the source stated none, which is shown as unknown rather than hidden.
+      storyDate: p.grounding?.signal?.publishedAt ?? null,
       hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
       preview: renderPostText({
         body: p.body, sourceUrl: p.grounding?.signal?.source || null,

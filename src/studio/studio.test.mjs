@@ -2,6 +2,12 @@
 // it is exercised on the deploy; the note builder and its invite-length bound
 // are provable here.
 import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText } from './liPosts.mjs';
+import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays } from '../research/freshness.mjs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const FRESH_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const freshRead = rel => readFileSync(join(FRESH_ROOT, rel), 'utf8');
 import { htmlToText, splitNewsletter, intelSenders } from './intelInbox.mjs';
 import { linkedinSlug, canInvite, inviteDailyCap } from './liInvite.mjs';
 
@@ -132,6 +138,39 @@ check('the full post text puts the story link then the hashtags at the bottom', 
   assert(!/[—–]/.test(text) && !/!/.test(text), 'voice rules hold in the assembled text');
   const noLink = renderPostText({ body: 'A point.', sourceUrl: null, hashtags: ['#valves'] });
   assert(!/Story:/.test(noLink), 'no link line is invented when the signal has no url');
+});
+
+console.log('\nStory freshness, the three-year-old post that started it:');
+
+await check('a story is stale on evidence only, never on a guess', async () => {
+  const now = Date.parse('2026-07-30T12:00:00Z');
+  assert(isStaleStory('2023-06-14', { now }), 'a three-year-old printed date is stale');
+  assert(!isStaleStory('2026-07-01', { now }), 'a recent date is fresh');
+  assert(!isStaleStory(null, { now }) && !isStaleStory('', { now }), 'no date is unknown, not stale');
+  assert(!isStaleStory('not a date', { now }), 'junk is unknown, not stale, and never an error');
+  assert(parsePublished('Tue, 14 May 2024 09:00:00 GMT') !== null, 'RFC dates parse');
+  assert(!isStaleStory('2026-03-01', { now, maxAgeDays: 200 }), 'the window is configurable');
+  assert(signalMaxAgeDays() >= 7 && signalMaxAgeDays() <= 365, 'and clamped to sane bounds');
+});
+
+await check('the filter keeps undated stories and drops evidenced-stale ones', async () => {
+  const now = Date.parse('2026-07-30T12:00:00Z');
+  const rows = [
+    { t: 'fresh', published: '2026-07-20' },
+    { t: 'ancient', published: '2023-05-01' },
+    { t: 'undated', published: null },
+  ];
+  const kept = freshOnly(rows, r => r.published, { now }).map(r => r.t);
+  assert(JSON.stringify(kept) === JSON.stringify(['fresh', 'undated']),
+    'the three-year-old story is the only one dropped');
+});
+
+await check('every consumer reads the published date (static)', async () => {
+  assert(/freshOnly/.test(freshRead('src/studio/liPosts.mjs')), 'the studio filters before drafting a post');
+  assert(/freshOnly/.test(freshRead('src/outbound/grounding.mjs')), 'the cold-open signal pick filters');
+  assert(/isStaleStory/.test(freshRead('src/research/newsResearch.mjs')), 'the sweep drops evidenced-stale stories');
+  assert(/publishedAt/.test(freshRead('src/studio/liPosts.mjs')), 'the story date travels with the post');
+  assert(/storyDate/.test(freshRead('web/src/Studio.jsx')), 'and the Studio shows it, or says it is not stated');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);
