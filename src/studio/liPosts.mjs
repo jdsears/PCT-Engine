@@ -1,4 +1,5 @@
 import { pool } from '../db.mjs';
+import { freshOnly, postMaxAgeDays } from '../research/freshness.mjs';
 import { outboundVoice, flagEndCustomers } from '../outbound/draft.mjs';
 import { unipile, ROUTES, unipileConfigured } from '../research/unipile.mjs';
 
@@ -85,21 +86,33 @@ export async function writePost({ headline, story, operator }, { callModel = cal
 // classifier and gate upstream mean everything here is a real data centre story.
 // callModel is injectable so the pipeline is testable offline.
 export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}) {
-  const { rows: signals } = await pool.query(
-    `SELECT s.id, s.title, s.operator, s.url, s.geo_scope, s.payload->>'content' AS content
+  const take = Math.min(Math.max(1, limit), 5);
+  // Over-fetch, then keep only stories that are not evidenced stale: a signal
+  // is stored when WE saw it, and a republished three-year-old story carries a
+  // recent observed_at. The published date decides, in code rather than SQL,
+  // since a third-party date string must never abort the query. That is how a
+  // three-year-old story became a live post: nothing read the date it carried.
+  const { rows: fetched } = await pool.query(
+    `SELECT s.id, s.title, s.operator, s.url, s.geo_scope,
+            s.payload->>'content' AS content, s.payload->>'published' AS published
      FROM signals s
      WHERE s.dc_relevant AND s.geo_scope IN ('uk_project', 'expansion_watch') AND s.title IS NOT NULL
        AND NOT EXISTS (SELECT 1 FROM li_posts p WHERE p.signal_id = s.id AND p.status IN ('draft', 'posted'))
-     ORDER BY s.observed_at DESC LIMIT $1`, [Math.min(Math.max(1, limit), 5)]);
+     ORDER BY s.observed_at DESC LIMIT $1`, [take * 3]);
+  // The POST window, not the signal window: an old story can still be a good
+  // lead, it cannot be a good post.
+  const fresh = freshOnly(fetched, r => r.published, { maxAgeDays: postMaxAgeDays() });
+  const signals = fresh.slice(0, take);
+  const staleSkipped = fetched.length - fresh.length;
 
-  const report = { considered: signals.length, drafted: 0, flagged: 0, failed: 0 };
+  const report = { considered: signals.length, staleSkipped, drafted: 0, flagged: 0, failed: 0 };
   for (const s of signals) {
     try {
       const { body, flags } = await writePost({ headline: s.title, story: s.content, operator: s.operator }, { callModel });
       await pool.query(
         `INSERT INTO li_posts (signal_id, topic, body, grounding, status)
          VALUES ($1, $2, $3, $4::jsonb, 'draft')`,
-        [s.id, s.title, body, JSON.stringify({ signal: { id: s.id, title: s.title, operator: s.operator, source: s.url, geoScope: s.geo_scope }, flags })]);
+        [s.id, s.title, body, JSON.stringify({ signal: { id: s.id, title: s.title, operator: s.operator, source: s.url, geoScope: s.geo_scope, publishedAt: s.published || null }, flags })]);
       report.drafted++;
       if (flags.length) report.flagged++;
     } catch (e) {

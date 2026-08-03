@@ -59,7 +59,7 @@ export function renderGrounding(g, campaign = 'marwin_dc') {
   // an older grounding without the flag still classifies correctly.
   const openerGrade = g.openerGrade ?? isOpenerGrade(g.signal);
   if (g.signal && openerGrade) {
-    lines.push(`Signal to open on, a real project event the recipient could have noticed: ${g.signal.text}${g.signal.source ? ' [source: ' + g.signal.source + ']' : ''}. Open on this.`);
+    lines.push(`Signal to open on, a real project event the recipient could have noticed: ${g.signal.text}${g.signal.source ? ' [source: ' + g.signal.source + ']' : ''}${g.signal.publishedAt ? ' [story date: ' + String(g.signal.publishedAt).slice(0, 10) + ']' : ''}. Open on this and do not present the story as newer than its date.`);
     // Which side of the story the recipient sits on. Without this a contractor
     // gets addressed as if they owned the campus, which reads as not having
     // read the article at all.

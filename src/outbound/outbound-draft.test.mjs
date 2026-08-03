@@ -234,6 +234,17 @@ await check('the review note reads correctly for an event and for a filing', () 
   assert(fit.kind === 'fit' && /profile fit/.test(fit.text) && /routine filing/.test(fit.text), fit.text);
 });
 
+await check('the story date reaches the drafter, so age is never presented as news', () => {
+  const base = { company: { name: 'Acme' }, contact: null, icpReason: null, product: [], blockedSuppliers: [], missing: [] };
+  const dated = renderGrounding({ ...base, openerGrade: true,
+    signal: { type: 'news_dc_build', text: 'campus approved', publishedAt: '2026-05-12T00:00:00Z' } });
+  assert(dated.includes('[story date: 2026-05-12]'), 'a known date is shown to the drafter');
+  assert(dated.includes('do not present the story as newer than its date'), 'with the instruction that goes with it');
+  const undated = renderGrounding({ ...base, openerGrade: true,
+    signal: { type: 'news_dc_build', text: 'campus approved' } });
+  assert(!undated.includes('story date'), 'no date, no invented one');
+});
+
 await check('renderGrounding opens on a project event but marks a filing never-mention', () => {
   const base = { company: { name: 'Datum' }, contact: null, product: [], icpReason: null };
   const event = renderGrounding({ ...base, signal: { type: 'planning', text: 'planning granted for a Slough data centre' }, openerGrade: true });

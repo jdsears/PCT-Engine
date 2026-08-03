@@ -2,6 +2,7 @@ import { pool } from '../db.mjs';
 import { search } from '../retrieve.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
+import { freshOnly } from '../research/freshness.mjs';
 
 // The highest-scoring component reason from the stored ICP breakdown, in the
 // engine's own recorded terms. Nothing inferred.
@@ -43,14 +44,20 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc' }
   // about the project they were appointed to, an operator contact about their
   // build, and the drafter must know which it is writing to, so the linkage
   // travels with the signal as matchedAs.
-  const sig = await pick(
-    `SELECT id, signal_type, title, url, observed_at,
+  // A few candidates, freshest observed first, then the published date
+  // decides: a story with a printed date older than the freshness window is
+  // never the opener, because a cold email built on a three-year-old article
+  // reads as exactly that. An undated story keeps today's behaviour.
+  const sigs = (await pool.query(
+    `SELECT id, signal_type, title, url, observed_at, payload->>'published' AS published,
             (contractor_company_id = $1) AS via_contractor
      FROM signals
      WHERE (company_id = $1 OR contractor_company_id = $1) AND title IS NOT NULL
-     ORDER BY observed_at DESC LIMIT 1`, [lead.company_id]);
+     ORDER BY observed_at DESC LIMIT 5`, [lead.company_id])).rows;
+  const sig = freshOnly(sigs, r => r.published)[0] || null;
   const signal = sig ? {
     id: sig.id, type: sig.signal_type, text: sig.title, source: sig.url || null, observedAt: sig.observed_at,
+    publishedAt: sig.published || null,
     matchedAs: sig.via_contractor ? 'contractor' : 'operator',
   } : null;
   // A grounded signal can be true and still be unfit to open a cold email on. An
