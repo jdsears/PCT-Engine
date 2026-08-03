@@ -26,6 +26,10 @@ export const ROUTES = {
   profile: { method: 'GET', path: '/api/v1/users' },           // /{identifier}?account_id=
   invite: { method: 'POST', path: '/api/v1/users/invite' },    // { account_id, provider_id, message }
   createPost: { method: 'POST', path: '/api/v1/posts' },       // multipart form fields account_id and text; the endpoint's own 400 echoed a file-upload schema at JSON, which is how the shape was pinned down without posting
+  // Who reacted to a post: GET /api/v1/posts/{post_id}/reactions, a read on
+  // our own published posts through the connected account, the same thing a
+  // person sees under their post. rawSuffix carries the nested path.
+  listPostReactions: { method: 'GET', path: '/api/v1/posts' },
 };
 
 export const unipileConfigured = () => Boolean(DSN && KEY);
@@ -67,7 +71,7 @@ export function unipile(route, opts = {}) {
   return task;
 }
 
-async function doCall(route, { pathSuffix = '', query = {}, body, form, target } = {}) {
+async function doCall(route, { pathSuffix = '', rawSuffix = false, query = {}, body, form, target } = {}) {
   if (!unipileConfigured()) throw new Error('UNIPILE_DSN and UNIPILE_API_KEY are not set');
   const endpoint = `${route.method} ${route.path}${pathSuffix ? '/{id}' : ''}`;
 
@@ -80,7 +84,9 @@ async function doCall(route, { pathSuffix = '', query = {}, body, form, target }
   calledBefore = true;
 
   const qs = new URLSearchParams(query).toString();
-  const url = `${DSN}${route.path}${pathSuffix ? '/' + encodeURIComponent(pathSuffix) : ''}${qs ? '?' + qs : ''}`;
+  // rawSuffix is for nested paths like {id}/reactions: the caller encodes the
+  // id itself and the path structure passes through intact.
+  const url = `${DSN}${route.path}${pathSuffix ? '/' + (rawSuffix ? pathSuffix : encodeURIComponent(pathSuffix)) : ''}${qs ? '?' + qs : ''}`;
 
   // A form option sends multipart/form-data (fetch sets the boundary
   // itself, so no content-type header here); body stays JSON as before.

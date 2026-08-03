@@ -92,7 +92,72 @@ function PostCard({ post, onChanged }) {
           </button>
         </div>
       )}
+      {post.status === 'posted' && <Engagers postId={post.id} />}
       {msg && <div className="muted-small">{msg}</div>}
+    </div>
+  );
+}
+
+// Who engaged with a published post, on one click: each row analysed, orbit
+// fit and register match, strongest prospects first. Adding one as a contact
+// is the only action, and only on a matched account; everyone else is Sales
+// Navigator material, which the row says.
+function Engagers({ postId }) {
+  const [state, setState] = useState('idle');
+  const [data, setData] = useState(null);
+  const [notes, setNotes] = useState({});
+
+  const load = async () => {
+    setState('loading');
+    try {
+      const r = await apiFetch(`/api/studio/posts/${postId}/engagers`);
+      const d = await r.json();
+      setData(d); setState('ready');
+    } catch { setState('error'); }
+  };
+
+  const addContact = async (i, e) => {
+    try {
+      const r = await action('/api/studio/engagers/contact', jsonOpts('POST', {
+        companyId: e.matchedCompanyId, name: e.name, roleTitle: e.role,
+        linkedinUrl: e.profileUrl, campaign: data.campaign,
+      }));
+      setNotes(n => ({ ...n, [i]: r.created ? `added to ${e.matchedCompanyName}${r.inOrbit ? ', in the decision orbit' : ''}` : r.note }));
+    } catch (err) { setNotes(n => ({ ...n, [i]: String(err.message || err) })); }
+  };
+
+  if (state === 'idle') {
+    return <div><button className="ob-btn" onClick={load}
+      title="Reads who reacted to this post through the connected account. One call, counted against the daily cap.">Who engaged</button></div>;
+  }
+  if (state === 'loading') return <div className="muted-small">Reading reactions.</div>;
+  if (state === 'error') return <div className="muted-small">Engagement is not available right now.</div>;
+  if (!data.ok) return <div className="muted-small">{data.reason}</div>;
+  if (!data.engagers.length) {
+    return <div className="muted-small">No reactions yet{data.raw > 0 ? ` (${data.unparsed} could not be read)` : ''}.</div>;
+  }
+  return (
+    <div className="eng-list">
+      <div className="eyebrow">Engagement, strongest prospects first</div>
+      {data.engagers.map((e, i) => (
+        <div className="eng-row" key={i}>
+          <div className="eng-main">
+            <span className="eng-name">{e.profileUrl
+              ? <a href={e.profileUrl} target="_blank" rel="noreferrer">{e.name}</a> : e.name}</span>
+            {e.role && <span className="muted-small">{e.role}</span>}
+            {e.company && <span className="muted-small">{e.company}</span>}
+          </div>
+          <div className="eng-side">
+            {e.orbitFit && <span className="pill">Orbit fit</span>}
+            {e.matchedCompanyName && <span className="pill">{e.matchedCompanyName}</span>}
+            {e.matchedCompanyId
+              ? <button className="ob-btn" onClick={() => addContact(i, e)}>Add as contact</button>
+              : <span className="muted-small">Sales Navigator material</span>}
+          </div>
+          {notes[i] && <div className="muted-small eng-note">{notes[i]}</div>}
+        </div>
+      ))}
+      {data.unparsed > 0 && <div className="muted-small">{data.unparsed} reaction(s) could not be read into a name and were not shown.</div>}
     </div>
   );
 }

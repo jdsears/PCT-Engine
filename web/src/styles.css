@@ -562,3 +562,12 @@ button, input { font: inherit; }
    with the reason carried on each row of the disclosure. */
 .ack-block { line-height: 1.5; }
 .ack-reason { margin: 2px 0 8px; color: var(--ink2); }
+
+/* Post engagement rows: compact, badges from existing tokens, 44px action. */
+.eng-list { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.eng-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.eng-main { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; flex: 1 1 260px; min-width: 0; }
+.eng-name a { color: var(--blue); text-decoration: none; font-weight: 600; }
+.eng-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.eng-side .ob-btn { min-height: 44px; }
+.eng-note { width: 100%; }
