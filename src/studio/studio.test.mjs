@@ -3,6 +3,7 @@
 // are provable here.
 import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText } from './liPosts.mjs';
 import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
+import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers } from './postEngagers.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -179,6 +180,59 @@ await check('every consumer reads the published date (static)', async () => {
   assert(/isStaleStory/.test(freshRead('src/research/newsResearch.mjs')), 'the sweep drops evidenced-stale stories');
   assert(/publishedAt/.test(freshRead('src/studio/liPosts.mjs')), 'the story date travels with the post');
   assert(/storyDate/.test(freshRead('web/src/Studio.jsx')), 'and the Studio shows it, or says it is not stated');
+});
+
+console.log('\nPost engagement, the likes made useful:');
+
+await check('a headline yields its company, and never by guesswork', async () => {
+  assert(companyFromHeadline('Project Manager (Data Centres) at Ark Data Centres | DC builds') === 'Ark Data Centres',
+    'the company follows " at " and stops at the first separator');
+  assert(companyFromHeadline('Director at Larsen & Toubro') === 'Larsen & Toubro', 'an ampersand company survives');
+  assert(companyFromHeadline('Head of Cooling, Battersea Power Station redevelopment') === null,
+    'Battersea does not split on its inner at; no " at ", no company');
+  assert(companyFromHeadline('') === null && companyFromHeadline(null) === null, 'empty is null');
+});
+
+await check('orbit fit uses the campaign vocabulary with the shared exclusions', async () => {
+  assert(titleFitsCampaign('Project Manager (Data Centres)', 'marwin_dc'), 'the exact live case fits the DC orbit');
+  assert(titleFitsCampaign('Validation Engineer', 'pharma_steriflow'), 'validation fits the pharma orbit');
+  assert(!titleFitsCampaign('Marketing Director', 'marwin_dc'), 'marketing does not specify valves');
+  assert(!titleFitsCampaign('Project management student', 'marwin_dc'), 'the shared exclusions refuse first');
+  assert(!titleFitsCampaign('Project Manager', 'no_such_campaign'), 'an unknown campaign fits nothing');
+});
+
+await check('a reaction item shapes defensively, nested or flat, and no name is dropped honestly', async () => {
+  const nested = shapeEngager({ author: { name: 'Richard Stern', headline: 'Project Manager (Data Centres) at Ark Data Centres', public_identifier: 'richard-stern' }, value: 'LIKE' });
+  assert(nested.name === 'Richard Stern' && nested.role === 'Project Manager (Data Centres)', 'nested author parses');
+  assert(nested.company === 'Ark Data Centres' && nested.profileUrl?.includes('/in/richard-stern'), 'company and profile derive');
+  const flat = shapeEngager({ first_name: 'Dena', last_name: 'Ali', headline: 'Design Director at Ark Data Centres' });
+  assert(flat.name === 'Dena Ali', 'flat first and last names join');
+  assert(shapeEngager({ value: 'LIKE' }) === null, 'an item with no name is dropped, never invented');
+});
+
+await check('the analysis ranks orbit-fit matched engagers first and counts what it could not read', async () => {
+  const register = [{ id: 2, name: 'ARK DATA CENTRES LIMITED' }];
+  const { engagers, unparsed } = analyseEngagers([
+    { author: { name: 'Nobody Relevant', headline: 'Poet' } },
+    { author: { name: 'Richard Stern', headline: 'Project Manager (Data Centres) at Ark Data Centres' } },
+    { value: 'LIKE' },
+  ], { register, campaign: 'marwin_dc' });
+  assert(unparsed === 1, 'the nameless reaction is counted, not shown');
+  assert(engagers[0].name === 'Richard Stern', 'the strongest prospect leads');
+  assert(engagers[0].orbitFit && engagers[0].matchedCompanyId === 2, 'orbit fit and the register match both land');
+  assert(engagers[1].orbitFit === false && engagers[1].matchedCompanyId === null, 'the poet is listed honestly, unbadged');
+});
+
+await check('the lane stays read-mostly and the wiring holds (static)', async () => {
+  const client = freshRead('src/research/unipile.mjs');
+  assert(/listPostReactions: \{ method: 'GET'/.test(client), 'reactions are a GET, not a third write');
+  const posts = freshRead('src/studio/liPosts.mjs');
+  assert(/linkedinPostId/.test(posts), 'publishing stores the post id so engagement can be read back');
+  const server = freshRead('src/server.mjs');
+  assert(/engagers\/contact/.test(server) && /post_engagement/.test(server), 'the add-as-contact action marks its source');
+  assert(/ON CONFLICT \(linkedin_url\) DO NOTHING/.test(server), 'and a known profile is never duplicated');
+  const dg = freshRead('src/outbound/draft.mjs') + freshRead('src/outbound/grounding.mjs');
+  assert(!/engag|liked/i.test(dg), 'engagement never enters draft grounding: targeting, not wording');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);

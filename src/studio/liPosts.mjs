@@ -156,14 +156,19 @@ export async function publishPost(id) {
     sourceUrl: p.grounding?.signal?.source || null,
     hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
   });
-  await unipile(ROUTES.createPost, {
+  const created = await unipile(ROUTES.createPost, {
     form: { account_id: process.env.UNIPILE_ACCOUNT_ID, text },
     target: `li_post ${p.id}`,
   });
+  // The created post's LinkedIn id, kept so engagement can be read back later.
+  // The response shape is taken defensively; a post published without an id on
+  // record simply cannot list its engagers, and the UI says so plainly.
+  const linkedinPostId = created?.post_id ?? created?.id ?? created?.social_id ?? null;
   await pool.query(
     `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now(),
-            grounding = jsonb_set(COALESCE(grounding, '{}'::jsonb), '{postedText}', $2::jsonb)
-     WHERE id = $1`, [p.id, JSON.stringify(text)]);
+            grounding = COALESCE(grounding, '{}'::jsonb)
+              || jsonb_build_object('postedText', $2::text, 'linkedinPostId', $3::text)
+     WHERE id = $1`, [p.id, text, linkedinPostId]);
   return { posted: true };
 }
 

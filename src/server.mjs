@@ -14,6 +14,7 @@ import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
+import { fetchPostEngagers, titleFitsCampaign } from './studio/postEngagers.mjs';
 import { searchCompanies, candidateRows } from './research/companiesHouse.mjs';
 import { staleDays, isStale } from './research/staleness.mjs';
 import { companyTypeForParty } from './research/partyType.mjs';
@@ -1266,6 +1267,44 @@ app.get('/api/studio/posts', async (req, res) => {
       }),
       createdAt: p.created_at, postedAt: p.posted_at,
     })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Who engaged with a published post: a read on our own post through the
+// connected account, one human click, counted against the daily cap. The
+// analysis (orbit fit, register match) rides back with each row so a name is
+// never just a name.
+app.get('/api/studio/posts/:id/engagers', async (req, res) => {
+  try {
+    const r = await fetchPostEngagers(parseInt(req.params.id, 10));
+    res.json(r);
+  } catch (e) {
+    if (e instanceof CapReached) return res.json({ ok: false, reason: String(e.message) });
+    if (e instanceof AccountUnhealthy) return res.json({ ok: false, reason: `LinkedIn account health: ${String(e.message).slice(0, 200)}` });
+    res.status(500).json({ error: String(e) });
+  }
+});
+
+// An engager becomes a contact, by a human, only on a matched account. The
+// contact then flows into the existing sanctioned invite eligibility and the
+// gated email discovery; nothing automatic follows from here.
+app.post('/api/studio/engagers/contact', async (req, res) => {
+  try {
+    const { companyId, name, roleTitle = null, linkedinUrl = null, campaign = 'marwin_dc' } = req.body || {};
+    const cid = parseInt(companyId, 10);
+    if (!Number.isFinite(cid) || !String(name || '').trim()) {
+      return res.status(400).json({ error: 'companyId and name are required; an unmatched engager stays in Sales Navigator' });
+    }
+    const { rows: co } = await pool.query(`SELECT id FROM companies WHERE id = $1`, [cid]);
+    if (!co.length) return res.status(404).json({ error: 'no such company' });
+    const orbit = titleFitsCampaign(roleTitle, campaign);
+    const { rows } = await pool.query(
+      `INSERT INTO contacts (company_id, full_name, role_title, linkedin_url, in_decision_orbit, source)
+       VALUES ($1, $2, $3, $4, $5, 'post_engagement')
+       ON CONFLICT (linkedin_url) DO NOTHING RETURNING id`,
+      [cid, String(name).trim(), roleTitle, linkedinUrl, orbit]);
+    res.json({ ok: true, created: rows.length > 0, inOrbit: orbit,
+      note: rows.length ? null : 'a contact with this LinkedIn profile already exists; nothing was duplicated' });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
