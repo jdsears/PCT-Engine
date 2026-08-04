@@ -245,6 +245,18 @@ await check('the story date reaches the drafter, so age is never presented as ne
   assert(!undated.includes('story date'), 'no date, no invented one');
 });
 
+await check('an existing customer is never drafted to as a stranger', () => {
+  const base = { contact: null, signal: null, icpReason: null, product: [], blockedSuppliers: [], missing: [] };
+  const known = renderGrounding({ ...base, company: { name: 'Acme Process', customerStatus: 'b' } });
+  assert(/existing PCT customer/.test(known), 'the relationship fact reaches the drafter');
+  assert(/do not present this as first contact/.test(known), 'with the instruction that goes with it');
+  assert(/Do not claim any specific purchase/.test(known), 'and no invented order history');
+  const prospect = renderGrounding({ ...base, company: { name: 'Acme Process', customerStatus: 'prospect' } });
+  assert(!/existing PCT customer/.test(prospect), 'a prospect keeps the cold shape');
+  const unknown = renderGrounding({ ...base, company: { name: 'Acme Process' } });
+  assert(!/existing PCT customer/.test(unknown), 'no record means no relationship claimed');
+});
+
 await check('renderGrounding opens on a project event but marks a filing never-mention', () => {
   const base = { company: { name: 'Datum' }, contact: null, product: [], icpReason: null };
   const event = renderGrounding({ ...base, signal: { type: 'planning', text: 'planning granted for a Slough data centre' }, openerGrade: true });

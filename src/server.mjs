@@ -3,7 +3,7 @@ import { listCampaigns, getCampaign, activeCampaignIds } from './campaigns/regis
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { pool } from './db.mjs';
+import { pool, hasColumn } from './db.mjs';
 import { search } from './retrieve.mjs';
 import { ask } from './answer.mjs';
 import { REGIONS } from './research/region.mjs';
@@ -490,8 +490,11 @@ app.get('/api/accounts', async (req, res) => {
     // campaign it belongs to, because one account in two campaigns is one
     // account, not two rows.
     const campaign = campaignFilter(req);
+    // customer_status is migration 026; ask the schema so the page survives
+    // the deploy-before-migration window.
+    const statusCol = (await hasColumn('companies', 'customer_status')) ? ' c.customer_status,' : '';
     const { rows } = await pool.query(
-      `SELECT c.id, c.name, c.company_type, c.region, c.domain, c.ch_number,
+      `SELECT c.id, c.name, c.company_type, c.region, c.domain, c.ch_number,${statusCol}
               round(COALESCE(cc.score, c.icp_score))::int AS score,
               (SELECT count(*)::int FROM signals s WHERE s.company_id = c.id
                  AND ($1::text IS NULL OR s.campaign = $1)) AS signals,
@@ -508,7 +511,7 @@ app.get('/api/accounts', async (req, res) => {
     res.json({ companies: rows.map(c => ({
       id: c.id, name: c.name, type: c.company_type, region: regionName(c.region),
       domain: c.domain, chNumber: c.ch_number, score: c.score, signals: c.signals, people: c.people,
-      campaigns: c.campaigns || [],
+      campaigns: c.campaigns || [], customerStatus: c.customer_status || null,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -525,8 +528,9 @@ app.get('/api/accounts/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'bad id' });
+    const statusCol = (await hasColumn('companies', 'customer_status')) ? ' customer_status,' : '';
     const comp = await pool.query(
-      `SELECT id, name, company_type, region, domain, ch_number,
+      `SELECT id, name, company_type, region, domain, ch_number,${statusCol}
               round(icp_score)::int AS score, icp_breakdown
        FROM companies WHERE id = $1`, [id]);
     if (!comp.rows.length) return res.status(404).json({ error: 'not found' });
@@ -549,6 +553,7 @@ app.get('/api/accounts/:id', async (req, res) => {
     res.json({
       id: c.id, name: c.name, type: c.company_type, region: regionName(c.region),
       domain: c.domain, chNumber: c.ch_number, score: c.score,
+      customerStatus: c.customer_status || null,
       // Stored breakdowns carry their own max per component, so rows scored
       // under the contactability draft display against the right caps.
       icp: [...ICP_ROWS, ...(bd.contactability ? [['contactability', 'Contactability', 10]] : [])]
@@ -667,30 +672,9 @@ app.get('/api/reviews', async (req, res) => {
 // old schema for a window. One transaction per decision closes that window,
 // the same property the migration runner itself has. A retry after the schema
 // catches up then starts from clean state.
-// Is a column present? The service deploys from main automatically while
-// migrations are applied by hand, so there is always a window where new code
-// meets an older schema. An audit-only column must never take a human action
-// down with it when it is missing, so the writes below ask first.
-//
-// Cache semantics matter: a present column is cached forever, since a column
-// does not vanish, while an absent one is re-checked, so the moment the
-// migration is applied the notes start being written with no redeploy or
-// restart. These are human-paced actions, so the extra lookup costs nothing.
-const columnCache = new Map();
-async function hasColumn(table, column) {
-  const key = `${table}.${column}`;
-  if (columnCache.get(key)) return true;
-  try {
-    const { rowCount } = await pool.query(
-      `SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`,
-      [table, column]);
-    const present = rowCount > 0;
-    if (present) columnCache.set(key, true);
-    return present;
-  } catch {
-    return false; // unknown means do without, never fail the action
-  }
-}
+// hasColumn moved to db.mjs when the customer list import gave outbound
+// grounding the same deploy-before-migration problem the decision notes had;
+// one shared answer, same cache semantics.
 
 async function withTransaction(fn) {
   const client = await pool.connect();

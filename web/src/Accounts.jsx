@@ -7,6 +7,11 @@ import ReviewQueue from './ReviewQueue.jsx';
 
 const typeLabel = t => TYPE_LABELS[t] || '—';
 
+// The CRM relationship, when the customer list has been imported: an existing
+// customer at its grade, or a named prospect. Absent means the engine has no
+// record either way, so nothing is shown rather than something guessed.
+const customerLabel = s => (s === 'prospect' ? 'Prospect' : s ? `Customer ${String(s).toUpperCase()}` : null);
+
 function ScoreBar({ score, wide }) {
   return (
     <span className={`score-bar${wide ? ' wide' : ''}`}>
@@ -42,6 +47,7 @@ function DetailPanel({ id, isMobile, onClose }) {
                 <div className="panel-pills">
                   <span className="pill">{typeLabel(detail.type)}</span>
                   {detail.region && <span className="pill">{detail.region}</span>}
+                  {detail.customerStatus && <span className="pill">{customerLabel(detail.customerStatus)}</span>}
                   <span className={`panel-ch${detail.chNumber ? '' : ' missing'}`}>{detail.chNumber || 'Unmatched'}</span>
                 </div>
               </div>
@@ -172,7 +178,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
           </div>
           {companies.map(c => (
             <button className="acc-grid acc-row" key={c.id} onClick={() => setSelected(c.id)}>
-              <div className="acc-name">{companyLabel(c.name)}{chips(c)}</div>
+              <div className="acc-name">{companyLabel(c.name)}{chips(c)}{c.customerStatus && <span className="pill">{customerLabel(c.customerStatus)}</span>}</div>
               <div className="acc-dim">{typeLabel(c.type)}</div>
               <div className="acc-dim">{c.region || '—'}</div>
               <div className={`acc-flagged${c.domain ? '' : ' missing'}`}>
@@ -204,6 +210,7 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
               <div className="acc-card-meta">
                 <span className="pill">{typeLabel(c.type)}</span>
                 {c.region && <span className="pill">{c.region}</span>}
+                {c.customerStatus && <span className="pill">{customerLabel(c.customerStatus)}</span>}
                 {chips(c)}
                 <span className="acc-card-signals">{c.people ?? 0} people · {c.signals} signals</span>
                 {(!c.domain || !c.chNumber) && (

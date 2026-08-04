@@ -52,6 +52,15 @@ export function renderGrounding(g, campaign = 'marwin_dc') {
   // it never reaches a draft. The stored form stays on the register and in the
   // guardrails; only the prose the model may quote is presented.
   lines.push(`Company: ${writtenCompanyName(g.company?.name) || 'unknown'}${g.company?.region ? ', region ' + g.company.region : ''}.`);
+  // The one relationship fact that changes a draft's register: the account
+  // records say this company already buys from PCT. A cold introduction to an
+  // existing customer reads as not knowing your own customers, which is worse
+  // than no email. Prospects and unknowns keep the cold shape; only a recorded
+  // customer changes it, and the grade is tone context, never something to
+  // recite or build claims on.
+  if (['a', 'b', 'c'].includes(g.company?.customerStatus)) {
+    lines.push('This company is an existing PCT customer in the account records. Write as a supplier they already know: do not introduce PCT as if they had never heard of it and do not present this as first contact. Do not claim any specific purchase or order history, because none is recorded here.');
+  }
   lines.push(g.contact?.name
     ? `Contact: ${g.contact.name}${g.contact.role ? ', ' + g.contact.role : ', role not recorded'}.`
     : `Contact: not recorded. Address a specifier or buyer in neutral terms, do not assume a role.`);
