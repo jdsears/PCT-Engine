@@ -1256,21 +1256,26 @@ app.get('/api/studio/posts', async (req, res) => {
   try {
     const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : 'draft';
     const { rows } = await pool.query(
-      `SELECT id, topic, body, grounding, status, created_at, posted_at FROM li_posts
-       WHERE status = $1 ORDER BY created_at DESC LIMIT 50`, [status]);
-    res.json({ posts: rows.map(p => ({
-      id: p.id, topic: p.topic, body: p.body, status: p.status,
-      source: p.grounding?.signal?.source ?? null, flags: p.grounding?.flags ?? [],
-      // The story's own date, so a reader sees age before posting; null means
-      // the source stated none, which is shown as unknown rather than hidden.
-      storyDate: p.grounding?.signal?.publishedAt ?? null,
-      hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
-      preview: renderPostText({
-        body: p.body, sourceUrl: p.grounding?.signal?.source || null,
-        hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
-      }),
-      createdAt: p.created_at, postedAt: p.posted_at,
-    })) });
+      `SELECT lp.id, lp.topic, lp.body, lp.grounding, lp.status, lp.created_at, lp.posted_at,
+              s.campaign AS signal_campaign
+       FROM li_posts lp LEFT JOIN signals s ON s.id = lp.signal_id
+       WHERE lp.status = $1 ORDER BY lp.created_at DESC LIMIT 50`, [status]);
+    res.json({ posts: rows.map(p => {
+      // The campaign travels with the draft; older drafts resolve through
+      // their signal, then the data centre default. Hashtags follow it.
+      const campaign = p.grounding?.campaign || p.signal_campaign || 'marwin_dc';
+      const hashtags = hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope, campaign });
+      return {
+        id: p.id, topic: p.topic, body: p.body, status: p.status, campaign,
+        source: p.grounding?.signal?.source ?? null, flags: p.grounding?.flags ?? [],
+        // The story's own date, so a reader sees age before posting; null means
+        // the source stated none, which is shown as unknown rather than hidden.
+        storyDate: p.grounding?.signal?.publishedAt ?? null,
+        hashtags,
+        preview: renderPostText({ body: p.body, sourceUrl: p.grounding?.signal?.source || null, hashtags }),
+        createdAt: p.created_at, postedAt: p.posted_at,
+      };
+    }) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

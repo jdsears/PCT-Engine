@@ -61,6 +61,13 @@
     "ask": "a short call, or whether they are specifying process valves on the facility"
   },
 
+  "studio": {
+    "newsLine": "commenting on UK pharmaceutical and biotech manufacturing news",
+    "angleLine": "what the story means for sterile and hygienic process control",
+    "rangeLine": "the Steriflow sanitary valve range his company supplies is widely used across pharmaceutical and biotech production",
+    "hashtags": ["#pharmamanufacturing", "#processcontrol"]
+  },
+
   "orbitTitles": [
     "process engineer", "validation", "project engineer", "project manager",
     "commissioning engineer", "utilities", "engineering manager", "cqv",
