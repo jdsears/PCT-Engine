@@ -6,13 +6,16 @@
 // prove it skipped them: they are excluded and reported, never ingested.
 
 // A cell's realised value: formula cells yield their computed result, rich
-// text collapses to its text.
+// text collapses to its text, and a hyperlinked cell yields its display text.
+// Shared with the customer list import, which meets hyperlinks in CRM domain
+// columns; price sheets never carry them, so the branch is inert here.
 export function cellValue(cell) {
   const v = cell?.value;
   if (v == null) return null;
   if (typeof v === 'object') {
     if ('result' in v) return v.result ?? null;
     if (v.richText) return v.richText.map(t => t.text).join('');
+    if (v.hyperlink) return v.text ?? v.hyperlink;
     if (v instanceof Date) return v;
   }
   return v;
