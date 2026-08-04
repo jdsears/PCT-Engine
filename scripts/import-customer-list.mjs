@@ -80,6 +80,17 @@ for (const [d, n] of domCount) if (n > 1) {
   console.log(`  note, ${n} companies share the domain ${d}: ${rows.filter(r => r.domain === d).map(r => r.name).join(', ')}`);
 }
 
+// Area 5 is the island of Ireland in the CRM and prospecting policy splits
+// it: the Republic of Ireland is out of scope for prospecting, Northern
+// Ireland is in scope (John, August 2026). Nothing in this script prospects,
+// these rows import as customer record only, but the plan states the split
+// so the policy is visible at the moment a human reviews it.
+const ra5 = rows.filter(r => r.region === 'RA-5');
+if (ra5.length) {
+  const roi = ra5.filter(r => r.crm.country === 'Ireland').length;
+  console.log(`  note, ${ra5.length} companies in area 5: ${roi} in the Republic of Ireland, ${ra5.length - roi} in Northern Ireland. The Republic is out of scope for prospecting; all of these import as customer records, not prospecting targets.`);
+}
+
 const { rows: register } = await pool.query(
   `SELECT id, name, domain, region, postcode, customer_status, named_account FROM companies`);
 const aliases = Object.fromEntries(

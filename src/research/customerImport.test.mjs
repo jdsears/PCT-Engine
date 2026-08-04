@@ -218,6 +218,8 @@ await check('the import script is dry by default and confined to its tables', as
   assert(/ON CONFLICT \(company_id, campaign\) DO NOTHING/.test(src), 'membership upsert keeps existing scores');
   assert(/BEGIN/.test(src) && /ROLLBACK/.test(src), 'per-company transactions');
   assert(!/icp_score|scoreCompany/.test(src), 'the import never scores');
+  assert(/Republic of Ireland/.test(src) && /Northern Ireland/.test(src),
+    'the Ireland prospecting policy is stated in the plan a human reviews');
 });
 
 await check('migration 026 adds columns idempotently and carries no data', async () => {

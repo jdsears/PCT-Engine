@@ -23,6 +23,10 @@ part-number configurator, the research funnel, and the outbound stage.
   untraceable claim is flagged before a human ever sees the draft as clean.
 - The nameable-supplier guardrail holds: name the lines that may be named
   (Richards, Marwin, Equilibar and the like), never the white-label OEMs.
+- Prospecting geography: the Republic of Ireland is out of scope (John, August
+  2026, stated for Richards prospecting; the live campaign gates are UK-scoped
+  anyway). Northern Ireland is in scope. Republic companies stay on the
+  register as customers, served when they come to us, never prospected.
 
 ## Git workflow
 
