@@ -3,10 +3,17 @@
 // without a network or a key. The case that matters most is the planted
 // fabrication being caught and surfaced, never stored as clean.
 import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks, stripSignoff, reflagText, ensureGreeting } from './draft.mjs';
+import { draftQueries } from './generateDrafts.mjs';
 import { hasBlockingFlag } from './sendDecision.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
 import { voiceGate } from '../answer.mjs';
 import { promptLinksBlock } from './links.mjs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const read = rel => readFileSync(join(ROOT, rel), 'utf8');
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -322,6 +329,59 @@ await check('composeDraft makes a named end customer a BLOCKING flag, and passes
     draft: { subject: 'Cooling control valves', body: 'PCT supplies the Marwin and Steriflow ranges, already trusted across some of the largest data centre builds.', claims: [] },
     check: { claims: [] } }) });
   assert(!clean.flags.some(f => /^blocking/i.test(f)), 'the general track record must not be blocked');
+});
+
+console.log('\nThe drafting selection queries:');
+
+// The regression net for a live failure: the cross-campaign clause moved the
+// window to a numbered parameter, two queries kept their old bind lists, and
+// Postgres refused every drafting run with "could not determine data type of
+// parameter $2". A query must bind exactly the parameters its SQL
+// references: no gaps, no extras.
+const denseParams = ({ sql, params }) => {
+  const nums = [...new Set([...sql.matchAll(/\$(\d+)/g)].map(m => Number(m[1])))].sort((a, b) => a - b);
+  if (!nums.length || nums[0] !== 1) return `placeholders start at $${nums[0] ?? 'none'}`;
+  if (nums[nums.length - 1] !== nums.length) return `placeholders have a gap: ${nums.map(n => '$' + n).join(', ')}`;
+  if (params.length !== nums.length) return `${params.length} values bound for ${nums.length} placeholders`;
+  return null;
+};
+
+await check('every drafting query binds exactly what its SQL references', () => {
+  for (const includeStale of [false, true]) {
+    const q = draftQueries({ campaign: 'marwin_dc', limit: 5, windowDays: '90', staleWindow: '120', includeStale });
+    for (const [name, query] of Object.entries(q)) {
+      const fault = denseParams(query);
+      assert(!fault, `${name} (includeStale ${includeStale}): ${fault}`);
+    }
+  }
+});
+
+await check('the waiting count asks about contact existence only, one parameter', () => {
+  const q = draftQueries({ campaign: 'marwin_dc', limit: 5, windowDays: '90', staleWindow: '120' });
+  assert(q.waiting.params.length === 1, 'waiting binds the campaign alone');
+  assert(!/last_cold_open/.test(q.waiting.sql), 'waiting is discovery, not the window');
+});
+
+await check('the held count honours the cross-campaign window with its own positions', () => {
+  const q = draftQueries({ campaign: 'marwin_dc', limit: 5, windowDays: '90', staleWindow: '120' });
+  assert(/last_cold_open_at/.test(q.held.sql), 'held asks the window clause');
+  assert(q.held.params.length === 2 && q.held.params[1] === '90', 'campaign and window bound');
+});
+
+await check('the pick query keeps staleness out only when asked', () => {
+  const fresh = draftQueries({ campaign: 'marwin_dc', limit: 5, windowDays: '90', staleWindow: '120' });
+  assert(/updated_at/.test(fresh.pick.sql) && fresh.pick.params.length === 4, 'stale excluded by default, four values');
+  const all = draftQueries({ campaign: 'marwin_dc', limit: 5, windowDays: '90', staleWindow: '120', includeStale: true });
+  assert(!/updated_at/.test(all.pick.sql) && all.pick.params.length === 3, 'includeStale drops the clause and its value');
+});
+
+await check('the drafting run and the manual script both know about campaigns', () => {
+  const server = read('src/server.mjs');
+  const block = server.slice(server.indexOf('async function runDraftsOnce'), server.indexOf('async function sendDigestOnce'));
+  assert(/activeCampaignIds\(\)/.test(block), 'the run iterates every active campaign, not the default one');
+  assert(/campaign: id/.test(block), 'each campaign drafts as itself');
+  const script = read('scripts/draft-coldopen.mjs');
+  assert(/--campaign/.test(script) && /requireCampaign/.test(script), 'the script takes a campaign and validates it through the registry');
 });
 
 console.log(`\n=== Outbound draft gate: ${pass} passed, ${fail} failed ===`);

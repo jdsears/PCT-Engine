@@ -1029,8 +1029,28 @@ async function runDraftsOnce(trigger, limit = autodraftLimit()) {
   const startedAt = new Date().toISOString();
   try {
     if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set on this service');
-    const r = await generateDrafts({ limit, log: m => console.log('[drafts]', m) });
-    await kvSet('outbound_last_draft_run', { ok: true, at: startedAt, trigger, ...r });
+    // Drafting follows the research loop's rule: every active campaign, each
+    // in its own try, so a fault in one cannot silence the other's queue.
+    // Left on its default this drafted marwin_dc only, the same single-tenant
+    // assumption runResearch shed when pharma went live. The totals keep the
+    // banner's shape; per-campaign detail rides along in the same record.
+    const campaigns = activeCampaignIds();
+    const totals = { considered: 0, drafted: 0, flagged: 0, failed: 0, waitingContact: 0, campaigns: [] };
+    for (const id of campaigns) {
+      try {
+        const r = await generateDrafts({ limit, campaign: id, log: m => console.log(`[drafts:${id}]`, m) });
+        for (const k of ['considered', 'drafted', 'flagged', 'failed', 'waitingContact']) totals[k] += r[k] || 0;
+        totals.campaigns.push({ campaign: id, ...r });
+      } catch (e) {
+        console.error(`[drafts:${id}] run failed:`, e.message);
+        totals.campaigns.push({ campaign: id, error: String(e.message).slice(0, 200) });
+      }
+    }
+    // Every campaign failing is a run failure and says so; one campaign
+    // failing among working ones stays visible in its own entry.
+    const errored = totals.campaigns.filter(c => c.error);
+    if (campaigns.length && errored.length === campaigns.length) throw new Error(errored[0].error);
+    await kvSet('outbound_last_draft_run', { ok: true, at: startedAt, trigger, ...totals });
   } catch (e) {
     console.error('[drafts] run failed:', e.message);
     try { await kvSet('outbound_last_draft_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* reported on the next read */ }
