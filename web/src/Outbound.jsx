@@ -73,6 +73,8 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
           {draft.score != null && <span className="pill">ICP {draft.score}</span>}
           {draft.region && <span className="pill">{draft.region}</span>}
           <span className={`pill ob-stat ob-stat-${draft.status}`}>{draft.status}</span>
+          {draft.status === 'sent' && draft.sentBy && <span className="pill" title={draft.sentBy}>sent by {draft.sentBy.split('@')[0]}</span>}
+          {draft.status !== 'sent' && draft.status !== 'draft' && draft.decidedBy && <span className="pill" title={draft.decidedBy}>by {draft.decidedBy.split('@')[0]}</span>}
         </div>
       </div>
       <div className="ob-to">

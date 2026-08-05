@@ -121,5 +121,16 @@ check('dismiss sets no company, in either schema', () => {
   }
 });
 
+check('the deciding person is written only when the schema holds the column', () => {
+  const u = decisionUpdate({ status: 'confirmed', withNote: true, withActor: true });
+  assert(/decided_by = \$3/.test(u.sql) && /WHERE id = \$4/.test(u.sql), 'the actor slots in before the id');
+  const v = decisionValues(u.order, { company: 7, note: 'because', actor: 'andymangell@pctflow.com', id: 42 });
+  assert(JSON.stringify(v) === JSON.stringify([7, 'because', 'andymangell@pctflow.com', 42]), 'values bind in the declared order');
+  const bare = decisionUpdate({ status: 'confirmed', withNote: false, withActor: false });
+  assert(!/decided_by/.test(bare.sql), 'no reference to a column that does not exist');
+  const bv = decisionValues(bare.order, { company: 7, note: 'n', actor: 'x', id: 42 });
+  assert(JSON.stringify(bv) === JSON.stringify([7, 42]), 'no value binds for an absent column');
+});
+
 console.log(`\n=== Sync acknowledgement gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);

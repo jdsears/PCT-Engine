@@ -125,6 +125,13 @@ export function verifiedUser(req) {
   return p ? { email: p.e, name: p.n || null } : null;
 }
 
+// The acting person for an audit column: the signed-in address, or null when
+// the request came through the shared key, which records honestly as an
+// unknown actor rather than a guessed one.
+export function actorEmail(req) {
+  return verifiedUser(req)?.email || null;
+}
+
 const cookieOpts = () => ({
   httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/',
 });
