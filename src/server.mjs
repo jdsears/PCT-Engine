@@ -39,7 +39,7 @@ import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
-import { CapReached, AccountUnhealthy } from './research/unipile.mjs';
+import { CapReached, AccountUnhealthy, accountForCampaign } from './research/unipile.mjs';
 import { generateLiPosts, connectNote, postFlags, hashtagsFor, renderPostText, publishPost } from './studio/liPosts.mjs';
 
 const app = express();
@@ -1413,11 +1413,16 @@ app.post('/api/studio/posts/:id/reject', async (req, res) => {
 });
 
 // The connect queue: decision-orbit people with a LinkedIn profile who have not
-// been invited, best accounts first, each with a suggested note to copy.
+// been invited, best accounts first, each with a suggested note to copy. Each
+// row carries its campaign, derived from the company's membership: exactly one
+// membership decides it, anything else falls to the data centre default. The
+// note and the sending account both follow it, so a pharma contact gets the
+// Steriflow note from Andy's profile, never the MD data centre note.
 app.get('/api/studio/connects', async (_req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT ct.id, ct.full_name, ct.role_title, ct.linkedin_url, c.name AS company, round(c.icp_score)::int AS score
+      `SELECT ct.id, ct.full_name, ct.role_title, ct.linkedin_url, c.name AS company, round(c.icp_score)::int AS score,
+              (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = c.id) AS memberships
        FROM contacts ct JOIN companies c ON c.id = ct.company_id
        WHERE ct.in_decision_orbit AND NOT ct.suppressed AND ct.linkedin_url IS NOT NULL AND ct.li_invited_at IS NULL
        ORDER BY c.icp_score DESC NULLS LAST, ct.full_name LIMIT 50`);
@@ -1425,11 +1430,14 @@ app.get('/api/studio/connects', async (_req, res) => {
       inviteReady: inviteReady(),
       invitesToday: inviteReady() ? await invitesUsedToday() : 0,
       inviteCap: inviteDailyCap(),
-      connects: rows.map(ct => ({
-        id: ct.id, name: ct.full_name, role: ct.role_title, linkedin: ct.linkedin_url,
-        company: ct.company, score: ct.score,
-        note: connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company),
-      })),
+      connects: rows.map(ct => {
+        const campaign = (ct.memberships || []).length === 1 ? ct.memberships[0] : 'marwin_dc';
+        return {
+          id: ct.id, name: ct.full_name, role: ct.role_title, linkedin: ct.linkedin_url,
+          company: ct.company, score: ct.score, campaign,
+          note: connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company, campaign),
+        };
+      }),
     });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -1442,17 +1450,25 @@ app.post('/api/studio/connects/:id/send-invite', async (req, res) => {
   try {
     if (!inviteReady()) return res.json({ sent: false, reason: 'Unipile is not configured on this service' });
     const { rows } = await pool.query(
-      `SELECT ct.*, c.name AS company FROM contacts ct JOIN companies c ON c.id = ct.company_id WHERE ct.id = $1`,
+      `SELECT ct.*, c.name AS company,
+              (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = c.id) AS memberships
+       FROM contacts ct JOIN companies c ON c.id = ct.company_id WHERE ct.id = $1`,
       [req.params.id]);
     const ct = rows[0];
     const gate = canInvite(ct);
     if (!gate.ok) return res.status(409).json({ sent: false, reason: gate.reason });
-    const used = await invitesUsedToday();
+    // The campaign decides whose LinkedIn sends: the queue's derivation is the
+    // default, and the UI may state it explicitly; either way it must be a
+    // registered campaign, never free text into an account lookup.
+    const bodyCampaign = getCampaign(String((req.body || {}).campaign || ''))?.id;
+    const campaign = bodyCampaign || ((ct.memberships || []).length === 1 ? ct.memberships[0] : 'marwin_dc');
+    const accountId = accountForCampaign(campaign);
+    const used = await invitesUsedToday(accountId);
     if (used >= inviteDailyCap()) {
-      return res.json({ sent: false, reason: `today's invite cap is reached (${used} of ${inviteDailyCap()}); the queue keeps until tomorrow` });
+      return res.json({ sent: false, reason: `today's invite cap for this account is reached (${used} of ${inviteDailyCap()}); the queue keeps until tomorrow` });
     }
-    const note = String((req.body || {}).note || '').slice(0, 300) || connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company);
-    const r = await sendConnectionInvite(ct, note);
+    const note = String((req.body || {}).note || '').slice(0, 300) || connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company, campaign);
+    const r = await sendConnectionInvite(ct, note, { accountId });
     if (r.sent) {
       const by = await actorFor('contacts', 'li_invited_by', req);
       await pool.query(

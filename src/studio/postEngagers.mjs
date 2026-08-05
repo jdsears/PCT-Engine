@@ -1,5 +1,5 @@
 import { pool } from '../db.mjs';
-import { unipile, ROUTES } from '../research/unipile.mjs';
+import { unipile, ROUTES, accountForCampaign } from '../research/unipile.mjs';
 import { matchParty } from '../research/match.mjs';
 import { EXCLUDE_TITLES } from '../research/orbitRules.mjs';
 import { getCampaign } from '../campaigns/registry.mjs';
@@ -107,15 +107,17 @@ export async function fetchPostEngagers(liPostId) {
   if (!pid) {
     return { ok: false, reason: 'this post was published before engagement capture existed, so no post id is on record; new posts carry one' };
   }
+  // The read goes through the account that published the post, which is the
+  // campaign's own connected account.
+  const campaign = p.grounding?.campaign || p.campaign || 'marwin_dc';
   const json = await unipile(ROUTES.listPostReactions, {
     pathSuffix: `${encodeURIComponent(String(pid))}/reactions`, rawSuffix: true,
-    query: { account_id: process.env.UNIPILE_ACCOUNT_ID || '', limit: 100 },
+    query: { account_id: accountForCampaign(campaign), limit: 100 },
     target: `li_post ${p.id} reactions`,
   });
   const items = Array.isArray(json?.items) ? json.items : Array.isArray(json) ? json : [];
   const { rows: register } = await pool.query(`SELECT id, name FROM companies`);
   const aliases = Object.fromEntries(
     (await pool.query(`SELECT alias, canonical FROM matcher_aliases`)).rows.map(r => [r.alias, r.canonical]));
-  const campaign = p.campaign || 'marwin_dc';
   return { ok: true, campaign, raw: items.length, ...analyseEngagers(items, { register, aliases, campaign }) };
 }

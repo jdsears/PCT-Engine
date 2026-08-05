@@ -11,11 +11,32 @@
 // early 2026. They are centralised here so a correction is a one-line edit,
 // and scripts/unipile-check.mjs verifies the read routes against the live API;
 // the invite route is verified by its first supervised live use.
-import { pool } from '../db.mjs';
+import { pool, hasColumn } from '../db.mjs';
 
 const DSN = (process.env.UNIPILE_DSN || '').replace(/\/+$/, '');
 const KEY = process.env.UNIPILE_API_KEY || '';
 const CAP = Math.max(1, parseInt(process.env.LINKEDIN_DAILY_CAP || '40', 10));
+
+// Which connected LinkedIn account carries a campaign's writes and reads.
+// UNIPILE_CAMPAIGN_ACCOUNTS is a JSON map of campaign id to Unipile account
+// id, set when Andy's account joined James's in August 2026 so pharma posts
+// and invites go through Andy's profile while the data centre lane stays on
+// James's. A campaign not in the map, an empty map, or a malformed value all
+// fall back to UNIPILE_ACCOUNT_ID, so one-account services behave exactly as
+// before.
+let warnedBadMap = false;
+export function accountForCampaign(campaign) {
+  const raw = process.env.UNIPILE_CAMPAIGN_ACCOUNTS || '';
+  if (raw) {
+    try {
+      const id = JSON.parse(raw)[String(campaign || '')];
+      if (id) return String(id);
+    } catch {
+      if (!warnedBadMap) { console.warn('UNIPILE_CAMPAIGN_ACCOUNTS is not valid JSON; using UNIPILE_ACCOUNT_ID for every campaign.'); warnedBadMap = true; }
+    }
+  }
+  return process.env.UNIPILE_ACCOUNT_ID || '';
+}
 
 // The research lane uses only the read routes. The single write route, invite,
 // belongs to the studio's human-approved connect queue and nothing else; the
@@ -52,7 +73,15 @@ export async function callsUsedToday() {
   }
 }
 
-async function log(endpoint, target, outcome) {
+async function log(endpoint, target, outcome, accountId = null) {
+  // The account column arrived with the second connected account (migration
+  // 028); until the schema has it the ledger keeps its old shape.
+  if (accountId && await hasColumn('unipile_calls', 'account_id')) {
+    await pool.query(
+      `INSERT INTO unipile_calls (endpoint, target, outcome, account_id) VALUES ($1, $2, $3, $4)`,
+      [endpoint, target ?? null, outcome, accountId]);
+    return;
+  }
   await pool.query(
     `INSERT INTO unipile_calls (endpoint, target, outcome) VALUES ($1, $2, $3)`,
     [endpoint, target ?? null, outcome]);
@@ -74,10 +103,13 @@ export function unipile(route, opts = {}) {
 async function doCall(route, { pathSuffix = '', rawSuffix = false, query = {}, body, form, target } = {}) {
   if (!unipileConfigured()) throw new Error('UNIPILE_DSN and UNIPILE_API_KEY are not set');
   const endpoint = `${route.method} ${route.path}${pathSuffix ? '/{id}' : ''}`;
+  // The acting account, read from wherever the call carries it, so the ledger
+  // learns it without every call site changing.
+  const acct = query?.account_id || form?.account_id || body?.account_id || null;
 
   const used = await callsUsedToday();
   if (used >= CAP) {
-    await log(endpoint, target, 'refused_cap');
+    await log(endpoint, target, 'refused_cap', acct);
     throw new CapReached(`daily cap reached: ${used} of ${CAP} Unipile calls used today (UTC). Stopping cleanly.`);
   }
   if (calledBefore) await sleep(4000 + Math.floor(Math.random() * 5001));
@@ -103,12 +135,12 @@ async function doCall(route, { pathSuffix = '', rawSuffix = false, query = {}, b
   try {
     res = await fetch(url, { method: route.method, headers, body: fetchBody });
   } catch (e) {
-    await log(endpoint, target, 'network_error');
+    await log(endpoint, target, 'network_error', acct);
     throw new Error(`Unipile unreachable at ${DSN}: ${e.message}. Check UNIPILE_DSN.`);
   }
 
   const text = await res.text();
-  await log(endpoint, target, res.ok ? 'ok' : `http_${res.status}`);
+  await log(endpoint, target, res.ok ? 'ok' : `http_${res.status}`, acct);
 
   let json = null;
   try { json = text ? JSON.parse(text) : null; } catch { /* non-JSON error body */ }

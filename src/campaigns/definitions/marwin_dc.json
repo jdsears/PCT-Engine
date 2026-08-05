@@ -60,7 +60,9 @@
     "newsLine": "commenting on data centre industry news",
     "angleLine": "what the story means for data centre cooling and flow control",
     "rangeLine": "the Marwin and Steriflow control valve ranges his company supplies are trusted across some of the largest data centre builds",
-    "hashtags": ["#datacentres", "#flowcontrol"]
+    "hashtags": ["#datacentres", "#flowcontrol"],
+    "connectLine": "I'm the MD at PCT, supplier of the Marwin and Steriflow valve ranges used across some of the largest data centre builds",
+    "connectLineShort": "I'm the MD at PCT, supplier of the Marwin and Steriflow valve ranges"
   },
 
   "orbitTitles": [
