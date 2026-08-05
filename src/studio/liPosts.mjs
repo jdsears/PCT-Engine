@@ -246,8 +246,8 @@ export function companyDisplay(name) {
 // queue costs nothing to browse, and the sender edits before sending anyway.
 // The identity line is the campaign's own, because the invite goes from that
 // campaign's connected account: the data centre note is James's and says MD,
-// the pharma note is neutral until Andy chooses his own line, since a claimed
-// title that is not the sender's would be an invented fact in his mouth.
+// the pharma note is Andy's and says sales director, his real title, given
+// by John on 5 August 2026. Each line states only the sender's own facts.
 export function connectNote(contact, companyName, campaign = 'marwin_dc') {
   const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
   const first = String(contact.full_name || '').trim().split(/\s+/)[0] || 'there';

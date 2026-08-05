@@ -314,9 +314,10 @@ await check('the data centre connect note is unchanged, byte for byte', async ()
     `the frozen note moved: ${note}`);
 });
 
-await check('a pharma invite note is Steriflow in a neutral voice, never the MD data centre line', async () => {
+await check('a pharma invite note is Andy\'s: sales director, Steriflow, never the MD data centre line', async () => {
   const note = connectNote({ full_name: 'Priya Shah', role_title: 'Process Engineer' }, 'Example Biologics', 'pharma_steriflow');
   assert(/Steriflow sanitary valve range/.test(note), 'the range is the campaign\'s own');
+  assert(/sales director at PCT/.test(note), 'the sender\'s real title, given by John');
   assert(!/MD at PCT/.test(note) && !/data centre/.test(note), 'no borrowed title and no borrowed sector');
   assert(note.length <= 300, 'under the invite limit');
   const long = connectNote({ full_name: 'Priya Shah', role_title: 'Director of Sterile Manufacturing Science and Technology Operations' },
