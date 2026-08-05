@@ -4,6 +4,17 @@ Conditions the engine knows about, has decided not to fix yet, and should not
 rediscover later as if they were new. Each entry states the gap, why it stands,
 and the options for closing it.
 
+## The food and beverage campaign is scheduled, not built
+
+**The plan.** John, 5 August 2026: the food and bev campaign comes in
+September, run by Andy alongside his pharma LinkedIn lane. It is deliberately
+not in the engine yet. The ground is prepared: the 46 food, beverage and
+cosmetics customers from James's segmented list are on the register with
+customer grades, the campaign machinery is fully definition-driven, and the
+pharma definition is the template. When September comes it is one definition
+file at status manual, first sweep held as John's calibration event, the same
+path pharma took. Until then nothing sweeps, drafts or posts for this segment.
+
 ## The Marwin brass and three-way ranges hold no co-pilot text
 
 **The gap.** The source PDFs for these ranges (the Marwin brass valve sheets,
