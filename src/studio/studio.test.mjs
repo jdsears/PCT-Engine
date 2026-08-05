@@ -2,6 +2,7 @@
 // it is exercised on the deploy; the note builder and its invite-length bound
 // are provable here.
 import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText, postSystem } from './liPosts.mjs';
+import { accountForCampaign } from '../research/unipile.mjs';
 import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
 import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers } from './postEngagers.mjs';
 import { readFileSync } from 'node:fs';
@@ -285,6 +286,59 @@ await check('the drafting and publishing paths carry the signal campaign (static
   assert(/grounding\?\.campaign \|\| p\.signal_campaign \|\| 'marwin_dc'/.test(src), 'publishing resolves the campaign the same way');
   const server = readFileSync(join(FRESH_ROOT, 'src/server.mjs'), 'utf8');
   assert(/p\.grounding\?\.campaign \|\| p\.signal_campaign \|\| 'marwin_dc'/.test(server), 'the posts route resolves it too');
+});
+
+console.log('\nTwo LinkedIn accounts, routed by campaign:');
+
+await check('the campaign map decides the account, with the shared account as the floor', async () => {
+  const saved = { ...process.env };
+  try {
+    process.env.UNIPILE_ACCOUNT_ID = 'james-account';
+    process.env.UNIPILE_CAMPAIGN_ACCOUNTS = '{"pharma_steriflow":"andy-account"}';
+    assert(accountForCampaign('pharma_steriflow') === 'andy-account', 'a mapped campaign uses its own account');
+    assert(accountForCampaign('marwin_dc') === 'james-account', 'an unmapped campaign falls back to the shared account');
+    process.env.UNIPILE_CAMPAIGN_ACCOUNTS = 'not json';
+    assert(accountForCampaign('pharma_steriflow') === 'james-account', 'a malformed map falls back rather than breaking the lane');
+    delete process.env.UNIPILE_CAMPAIGN_ACCOUNTS;
+    assert(accountForCampaign('pharma_steriflow') === 'james-account', 'no map at all behaves as before');
+  } finally {
+    for (const k of ['UNIPILE_ACCOUNT_ID', 'UNIPILE_CAMPAIGN_ACCOUNTS']) {
+      if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+    }
+  }
+});
+
+await check('the data centre connect note is unchanged, byte for byte', async () => {
+  const note = connectNote({ full_name: 'Priya Shah', role_title: 'Project Manager' }, 'ARK DATA CENTRES LIMITED');
+  assert(note === "Hi Priya, I'm the MD at PCT, supplier of the Marwin and Steriflow valve ranges used across some of the largest data centre builds. Given your Project Manager role at Ark Data Centres, I thought it worth connecting.",
+    `the frozen note moved: ${note}`);
+});
+
+await check('a pharma invite note is Andy\'s: sales director, Steriflow, never the MD data centre line', async () => {
+  const note = connectNote({ full_name: 'Priya Shah', role_title: 'Process Engineer' }, 'Example Biologics', 'pharma_steriflow');
+  assert(/Steriflow sanitary valve range/.test(note), 'the range is the campaign\'s own');
+  assert(/sales director at PCT/.test(note), 'the sender\'s real title, given by John');
+  assert(!/MD at PCT/.test(note) && !/data centre/.test(note), 'no borrowed title and no borrowed sector');
+  assert(note.length <= 300, 'under the invite limit');
+  const long = connectNote({ full_name: 'Priya Shah', role_title: 'Director of Sterile Manufacturing Science and Technology Operations' },
+    'An Extremely Long Registered Company Name For The Limit Limited', 'pharma_steriflow');
+  assert(long.length <= 300, 'the short fallback keeps the limit');
+});
+
+await check('publishing, invites and engagement reads all route by campaign (static)', async () => {
+  const posts = readFileSync(join(FRESH_ROOT, 'src/studio/liPosts.mjs'), 'utf8');
+  assert(/accountForCampaign\(campaign\)/.test(posts), 'publishPost asks the map');
+  assert(/postsPublishedToday\(accountId\)/.test(posts), 'the post cap is the account\'s own');
+  const invite = readFileSync(join(FRESH_ROOT, 'src/studio/liInvite.mjs'), 'utf8');
+  assert(/accountId = process\.env\.UNIPILE_ACCOUNT_ID/.test(invite) && /no LinkedIn account is configured/.test(invite), 'the invite takes an account and refuses plainly without one');
+  assert(/AND account_id = \$1/.test(invite), 'the invite cap counts per account when the ledger can say');
+  const engagers = readFileSync(join(FRESH_ROOT, 'src/studio/postEngagers.mjs'), 'utf8');
+  assert(/accountForCampaign\(campaign\)/.test(engagers), 'engagement reads through the posting account');
+  const server = readFileSync(join(FRESH_ROOT, 'src/server.mjs'), 'utf8');
+  assert(/import \{[^}]*accountForCampaign[^}]*\} from '\.\/research\/unipile\.mjs'/.test(server), 'the server imports what it uses');
+  assert(/getCampaign\(String\(\(req\.body \|\| \{\}\)\.campaign \|\| ''\)\)/.test(server), 'a requested campaign is validated through the registry, never free text');
+  const mig = readFileSync(join(FRESH_ROOT, 'src/migrations/028_unipile_accounts.sql'), 'utf8');
+  assert(/ADD COLUMN IF NOT EXISTS account_id/.test(mig) && !/INSERT INTO/i.test(mig), 'the ledger column is idempotent and data free');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);

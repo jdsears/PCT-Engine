@@ -1,5 +1,5 @@
-import { pool } from '../db.mjs';
-import { unipile, ROUTES, unipileConfigured } from '../research/unipile.mjs';
+import { pool, hasColumn } from '../db.mjs';
+import { unipile, ROUTES, unipileConfigured, accountForCampaign } from '../research/unipile.mjs';
 
 // The one sanctioned LinkedIn write: a connection invite, sent only when a
 // person clicks Send invite on one named contact in the studio, authorised by
@@ -31,20 +31,28 @@ export function canInvite(contact) {
   return { ok: true };
 }
 
-// Successful invites sent today (UTC), from the shared call ledger.
-export async function invitesUsedToday() {
+// Successful invites sent today (UTC), from the shared call ledger. Per
+// connected account when the ledger can say (migration 028), because the
+// invite tolerance is per LinkedIn profile; before the column exists, or
+// with no account given, the shared count stands, the conservative
+// direction.
+export async function invitesUsedToday(accountId = null) {
+  const perAccount = accountId && await hasColumn('unipile_calls', 'account_id');
   const { rows } = await pool.query(
     `SELECT count(*)::int AS n FROM unipile_calls
      WHERE endpoint = 'POST /api/v1/users/invite' AND outcome = 'ok'
-       AND (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date`);
+       AND (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date
+       ${perAccount ? 'AND account_id = $1' : ''}`, perAccount ? [accountId] : []);
   return rows[0].n;
 }
 
 // Resolve the profile to its provider id, then send the invite with the note.
-// Two Unipile calls, both through the queue and both ledgered.
-export async function sendConnectionInvite(contact, note) {
+// Two Unipile calls, both through the queue and both ledgered. The account is
+// the campaign's own, so a pharma invite goes from Andy's profile and a data
+// centre one from James's.
+export async function sendConnectionInvite(contact, note, { accountId = process.env.UNIPILE_ACCOUNT_ID } = {}) {
   const slug = linkedinSlug(contact.linkedin_url);
-  const accountId = process.env.UNIPILE_ACCOUNT_ID;
+  if (!accountId) return { sent: false, reason: 'no LinkedIn account is configured for this campaign' };
   const profile = await unipile(ROUTES.profile, { pathSuffix: slug, query: { account_id: accountId }, target: slug });
   const providerId = profile?.provider_id || profile?.member_id || profile?.id || null;
   if (!providerId) return { sent: false, reason: 'could not resolve the LinkedIn profile to an id' };

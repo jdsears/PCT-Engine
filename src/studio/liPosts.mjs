@@ -1,7 +1,7 @@
 import { pool, hasColumn } from '../db.mjs';
 import { freshOnly, postMaxAgeDays } from '../research/freshness.mjs';
 import { outboundVoice, flagEndCustomers } from '../outbound/draft.mjs';
-import { unipile, ROUTES, unipileConfigured } from '../research/unipile.mjs';
+import { unipile, ROUTES, unipileConfigured, accountForCampaign } from '../research/unipile.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
@@ -146,11 +146,18 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
 // hashtags. Nothing ever posts on a schedule.
 export const postDailyCap = () => Math.max(1, parseInt(process.env.LINKEDIN_POST_DAILY_CAP || '2', 10));
 
-export async function postsPublishedToday() {
+// Posts published today, per connected account when the ledger can say
+// (migration 028), because LinkedIn's tolerance is per profile: Andy posting
+// pharma must not consume James's allowance. Before the column exists, or
+// with no account given, the shared count stands, which is the conservative
+// direction, never the loose one.
+export async function postsPublishedToday(accountId = null) {
+  const perAccount = accountId && await hasColumn('unipile_calls', 'account_id');
   const { rows } = await pool.query(
     `SELECT count(*)::int AS n FROM unipile_calls
      WHERE endpoint = 'POST /api/v1/posts' AND outcome = 'ok'
-       AND (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date`);
+       AND (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date
+       ${perAccount ? 'AND account_id = $1' : ''}`, perAccount ? [accountId] : []);
   return rows[0].n;
 }
 
@@ -165,21 +172,26 @@ export async function publishPost(id, { actor = null } = {}) {
   const flags = p.grounding?.flags || [];
   if (flags.length) return { posted: false, reason: 'the draft carries a blocking flag; edit it clean first' };
   if (!unipileConfigured()) return { posted: false, reason: 'the LinkedIn lane is not configured on this service' };
-  if (!process.env.UNIPILE_ACCOUNT_ID) return { posted: false, reason: 'UNIPILE_ACCOUNT_ID is not set' };
-  const used = await postsPublishedToday();
+  // The campaign chooses whose LinkedIn carries the post: pharma through
+  // Andy's connected account, the data centre lane through James's. The cap
+  // is that account's own.
+  const campaign = p.grounding?.campaign || p.signal_campaign || 'marwin_dc';
+  const accountId = accountForCampaign(campaign);
+  if (!accountId) return { posted: false, reason: 'no LinkedIn account is configured for this campaign' };
+  const used = await postsPublishedToday(accountId);
   if (used >= postDailyCap()) {
-    return { posted: false, reason: `the daily post cap is used (${used} of ${postDailyCap()}); it resets at midnight UTC` };
+    return { posted: false, reason: `the daily post cap for this account is used (${used} of ${postDailyCap()}); it resets at midnight UTC` };
   }
   const text = renderPostText({
     body: p.body,
     sourceUrl: p.grounding?.signal?.source || null,
     hashtags: hashtagsFor({
       title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope,
-      campaign: p.grounding?.campaign || p.signal_campaign || 'marwin_dc',
+      campaign,
     }),
   });
   const created = await unipile(ROUTES.createPost, {
-    form: { account_id: process.env.UNIPILE_ACCOUNT_ID, text },
+    form: { account_id: accountId, text },
     target: `li_post ${p.id}`,
   });
   // The created post's LinkedIn id, kept so engagement can be read back later.
@@ -232,11 +244,16 @@ export function companyDisplay(name) {
 // The suggested connection note: deterministic, in voice, and under LinkedIn's
 // three-hundred character invite limit by construction. No model call, so the
 // queue costs nothing to browse, and the sender edits before sending anyway.
-export function connectNote(contact, companyName) {
+// The identity line is the campaign's own, because the invite goes from that
+// campaign's connected account: the data centre note is James's and says MD,
+// the pharma note is Andy's and says sales director, his real title, given
+// by John on 5 August 2026. Each line states only the sender's own facts.
+export function connectNote(contact, companyName, campaign = 'marwin_dc') {
+  const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
   const first = String(contact.full_name || '').trim().split(/\s+/)[0] || 'there';
   const company = companyDisplay(companyName);
   const role = cleanRole(contact.role_title);
   const work = role ? `your ${role} role at ${company}` : `your work at ${company}`;
-  const note = `Hi ${first}, I'm the MD at PCT, supplier of the Marwin and Steriflow valve ranges used across some of the largest data centre builds. Given ${work}, I thought it worth connecting.`;
-  return note.length <= 300 ? note : `Hi ${first}, I'm the MD at PCT, supplier of the Marwin and Steriflow valve ranges. Given your work at ${company}, I thought it worth connecting.`;
+  const note = `Hi ${first}, ${def.studio.connectLine}. Given ${work}, I thought it worth connecting.`;
+  return note.length <= 300 ? note : `Hi ${first}, ${def.studio.connectLineShort}. Given your work at ${company}, I thought it worth connecting.`;
 }
