@@ -1,7 +1,7 @@
 import express from 'express';
 import { listCampaigns, getCampaign, activeCampaignIds } from './campaigns/registry.mjs';
 import crypto from 'node:crypto';
-import { registerAuthRoutes, verifiedUser, msSigninConfigured } from './auth.mjs';
+import { registerAuthRoutes, verifiedUser, msSigninConfigured, actorEmail } from './auth.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pool, hasColumn } from './db.mjs';

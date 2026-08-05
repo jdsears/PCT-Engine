@@ -134,6 +134,21 @@ check('migration 027 adds audit columns idempotently and carries no data', () =>
   assert(!/INSERT INTO/i.test(sql), 'columns only, no data');
 });
 
+check('every auth identifier the server uses is actually imported', () => {
+  // The fault this catches reached production: actorEmail was called in ten
+  // places and imported in none, a ReferenceError that node --check cannot
+  // see and no suite loaded the server to hit. The import line must carry
+  // every identifier the server takes from auth.mjs.
+  const server = read('src/server.mjs');
+  const importLine = server.match(/import \{([^}]*)\} from '\.\/auth\.mjs'/)?.[1] || '';
+  const imported = new Set(importLine.split(',').map(s => s.trim()).filter(Boolean));
+  for (const name of ['registerAuthRoutes', 'verifiedUser', 'msSigninConfigured', 'actorEmail']) {
+    if (new RegExp(`\\b${name}\\(`).test(server)) {
+      assert(imported.has(name), `${name} is used in server.mjs but not imported from auth.mjs`);
+    }
+  }
+});
+
 check('every human action stamps its actor behind a schema check (static)', () => {
   const server = read('src/server.mjs');
   assert(/setDraftStatus\(req\.params\.id, 'approved', \['draft'\], actorEmail\(req\)\)/.test(server), 'approve carries the actor');
