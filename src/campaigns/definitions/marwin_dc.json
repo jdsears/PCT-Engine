@@ -56,6 +56,13 @@
     "ask": "a short call, or whether they are specifying flow control on the project"
   },
 
+  "studio": {
+    "newsLine": "commenting on data centre industry news",
+    "angleLine": "what the story means for data centre cooling and flow control",
+    "rangeLine": "the Marwin and Steriflow control valve ranges his company supplies are trusted across some of the largest data centre builds",
+    "hashtags": ["#datacentres", "#flowcontrol"]
+  },
+
   "orbitTitles": [
     "design engineer", "building services", "mechanical engineer", "mep",
     "controls", "hvac", "project manager", "commissioning engineer",

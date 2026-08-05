@@ -2,6 +2,7 @@ import { pool } from '../db.mjs';
 import { freshOnly, postMaxAgeDays } from '../research/freshness.mjs';
 import { outboundVoice, flagEndCustomers } from '../outbound/draft.mjs';
 import { unipile, ROUTES, unipileConfigured } from '../research/unipile.mjs';
+import { requireCampaign } from '../campaigns/registry.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
@@ -17,13 +18,24 @@ async function callClaude(system, user, { maxTokens = 500 } = {}) {
   return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 }
 
-const SYSTEM =
-  "You draft a short LinkedIn post for a UK flow control specialist commenting on data centre industry news. The post appears under his own name, so it reads like a practitioner's take, not marketing. " +
-  "GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. You may add one general line that the Marwin and Steriflow control valve ranges his company supplies are trusted across some of the largest data centre builds. " +
-  "CONFIDENTIALITY RULE, absolute: never state or imply that any named company is a customer. The story's subject may be discussed as news; it must never read as a client reference. No customer names, ever. " +
-  "VOICE: plain British English, calm, first person, three to six sentences. A practitioner's observation about what the story means for data centre cooling and flow control, then a light closing thought or question to invite comment. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. " +
-  "SHAPE: the first sentence stands alone as its own opening line and must carry the story's hook, since the feed folds everything after it. Then short paragraphs of one or two sentences separated by blank lines, never one solid block. " +
-  "Return the post text only, no preamble and no quotation marks around it.";
+// The post briefing follows the signal's campaign. The template is shared,
+// the campaign supplies its news domain, its angle and its sanctioned track
+// record line; the confidentiality rule, the voice and the shape are the same
+// for every campaign. Briefed as data centre regardless, a pharma story drew
+// an honest refusal from the drafter, and the refusal text sat in the queue
+// as a post draft, which is how this gap was found.
+export function postSystem(campaign = 'marwin_dc') {
+  const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
+  const s = def.studio;
+  return (
+    `You draft a short LinkedIn post for a UK flow control specialist ${s.newsLine}. The post appears under his own name, so it reads like a practitioner's take, not marketing. ` +
+    `GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. You may add one general line that ${s.rangeLine}. ` +
+    "CONFIDENTIALITY RULE, absolute: never state or imply that any named company is a customer. The story's subject may be discussed as news; it must never read as a client reference. No customer names, ever. " +
+    `VOICE: plain British English, calm, first person, three to six sentences. A practitioner's observation about ${s.angleLine}, then a light closing thought or question to invite comment. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. ` +
+    "SHAPE: the first sentence stands alone as its own opening line and must carry the story's hook, since the feed folds everything after it. Then short paragraphs of one or two sentences separated by blank lines, never one solid block. " +
+    "Return the post text only, no preamble and no quotation marks around it."
+  );
+}
 
 // The shape guaranteed rather than hoped for: a hook line, then paragraphs of
 // at most two sentences with blank lines between. A post that arrives as one
@@ -45,10 +57,11 @@ export function formatPost(body) {
 }
 
 // Hashtags are curated, never model-chosen, so a tag can never be invented:
-// the standing pair, plus cooling when the story is about cooling, plus the
-// UK tag on UK project stories.
-export function hashtagsFor({ title = '', body = '', geoScope = '' } = {}) {
-  const tags = ['#datacentres', '#flowcontrol'];
+// the campaign's standing pair, plus cooling when the story is about cooling,
+// plus the UK tag on UK project stories.
+export function hashtagsFor({ title = '', body = '', geoScope = '', campaign = 'marwin_dc' } = {}) {
+  const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
+  const tags = [...def.studio.hashtags];
   if (/cool|chill|thermal|liquid/i.test(`${title} ${body}`)) tags.push('#cooling');
   if (geoScope === 'uk_project') tags.push('#ukconstruction');
   tags.push('#valves');
@@ -74,10 +87,10 @@ export function postFlags(body, operator) {
 
 // Write one post from one story, guardrails applied: the voice gate on the
 // text, and the end-customer check. Shared by the signal-driven posts and the
-// intel inbox commentary.
-export async function writePost({ headline, story, operator }, { callModel = callClaude } = {}) {
+// intel inbox commentary. The campaign decides the briefing.
+export async function writePost({ headline, story, operator, campaign = 'marwin_dc' }, { callModel = callClaude } = {}) {
   const user = `The news story:\nHeadline: ${headline}\n${story ? `Story: ${String(story).slice(0, 900)}\n` : ''}Write the post.`;
-  const body = outboundVoice(await callModel(SYSTEM, user, { maxTokens: 500 }));
+  const body = outboundVoice(await callModel(postSystem(campaign), user, { maxTokens: 500 }));
   if (!body) throw new Error('empty post');
   return { body, flags: postFlags(body, operator) };
 }
@@ -93,7 +106,7 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
   // since a third-party date string must never abort the query. That is how a
   // three-year-old story became a live post: nothing read the date it carried.
   const { rows: fetched } = await pool.query(
-    `SELECT s.id, s.title, s.operator, s.url, s.geo_scope,
+    `SELECT s.id, s.title, s.operator, s.url, s.geo_scope, s.campaign,
             s.payload->>'content' AS content, s.payload->>'published' AS published
      FROM signals s
      WHERE s.dc_relevant AND s.geo_scope IN ('uk_project', 'expansion_watch') AND s.title IS NOT NULL
@@ -108,11 +121,14 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
   const report = { considered: signals.length, staleSkipped, drafted: 0, flagged: 0, failed: 0 };
   for (const s of signals) {
     try {
-      const { body, flags } = await writePost({ headline: s.title, story: s.content, operator: s.operator }, { callModel });
+      // The signal's own campaign briefs its post: a pharma story is written
+      // as pharma commentary, a data centre story as data centre commentary.
+      const campaign = s.campaign || 'marwin_dc';
+      const { body, flags } = await writePost({ headline: s.title, story: s.content, operator: s.operator, campaign }, { callModel });
       await pool.query(
         `INSERT INTO li_posts (signal_id, topic, body, grounding, status)
          VALUES ($1, $2, $3, $4::jsonb, 'draft')`,
-        [s.id, s.title, body, JSON.stringify({ signal: { id: s.id, title: s.title, operator: s.operator, source: s.url, geoScope: s.geo_scope, publishedAt: s.published || null }, flags })]);
+        [s.id, s.title, body, JSON.stringify({ campaign, signal: { id: s.id, title: s.title, operator: s.operator, source: s.url, geoScope: s.geo_scope, publishedAt: s.published || null }, flags })]);
       report.drafted++;
       if (flags.length) report.flagged++;
     } catch (e) {
@@ -139,8 +155,11 @@ export async function postsPublishedToday() {
 }
 
 export async function publishPost(id) {
+  // The campaign travels in the draft's grounding; posts drafted before it
+  // did fall back through their signal, then to the data centre default.
   const p = (await pool.query(
-    `SELECT id, topic, body, grounding, status FROM li_posts WHERE id = $1`, [id])).rows[0];
+    `SELECT lp.id, lp.topic, lp.body, lp.grounding, lp.status, s.campaign AS signal_campaign
+     FROM li_posts lp LEFT JOIN signals s ON s.id = lp.signal_id WHERE lp.id = $1`, [id])).rows[0];
   if (!p) return { posted: false, reason: 'post not found' };
   if (p.status !== 'draft') return { posted: false, reason: 'only an open draft can be posted' };
   const flags = p.grounding?.flags || [];
@@ -154,7 +173,10 @@ export async function publishPost(id) {
   const text = renderPostText({
     body: p.body,
     sourceUrl: p.grounding?.signal?.source || null,
-    hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
+    hashtags: hashtagsFor({
+      title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope,
+      campaign: p.grounding?.campaign || p.signal_campaign || 'marwin_dc',
+    }),
   });
   const created = await unipile(ROUTES.createPost, {
     form: { account_id: process.env.UNIPILE_ACCOUNT_ID, text },

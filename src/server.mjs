@@ -1,6 +1,7 @@
 import express from 'express';
 import { listCampaigns, getCampaign, activeCampaignIds } from './campaigns/registry.mjs';
 import crypto from 'node:crypto';
+import { registerAuthRoutes, verifiedUser, msSigninConfigured } from './auth.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pool, hasColumn } from './db.mjs';
@@ -46,17 +47,20 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // ----- Access gate -----
-// A single shared key for the pilot. When APP_ACCESS_KEY is set the data routes
-// require a valid cookie; when it is not set the gate is open, so local runs and
-// the existing deploy keep working until the key is configured. The cookie holds
-// a hash of the key, never the key itself, and is compared in constant time.
+// Two ways in: individual Microsoft sign-in (auth.mjs), the way for John,
+// James and Andy, and the pilot's shared key, kept working through the
+// transition so nobody is locked out while the sign-in is being configured.
+// When neither is configured the gate is open, so local runs keep working.
+// The key cookie holds a hash of the key, never the key itself, and is
+// compared in constant time. Once everyone signs in with Microsoft, removing
+// APP_ACCESS_KEY retires the shared key and named sign-in stands alone.
 const ACCESS_KEY = process.env.APP_ACCESS_KEY || '';
 const GATE_ON = ACCESS_KEY.length > 0;
 const COOKIE = 'pct_access';
 const tokenFor = k => crypto.createHash('sha256').update(String(k)).digest('hex');
 const ACCESS_TOKEN = GATE_ON ? tokenFor(ACCESS_KEY) : '';
-if (!GATE_ON) {
-  console.warn('APP_ACCESS_KEY is not set: the access gate is open. Set it to protect /ask, /search and /api.');
+if (!GATE_ON && !msSigninConfigured()) {
+  console.warn('Neither APP_ACCESS_KEY nor Microsoft sign-in is configured: the access gate is open. Set one to protect /ask, /search and /api.');
 }
 
 function readCookie(req, name) {
@@ -73,7 +77,9 @@ function constantTimeEqual(a, b) {
   return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
 }
 function hasAccess(req) {
-  if (!GATE_ON) return true;
+  if (!GATE_ON && !msSigninConfigured()) return true;
+  if (verifiedUser(req)) return true;
+  if (!GATE_ON) return false;
   const c = readCookie(req, COOKIE);
   return !!c && constantTimeEqual(c, ACCESS_TOKEN);
 }
@@ -89,9 +95,18 @@ app.get('/health', async (_req, res) => {
   }
 });
 
+// The sign-in routes live outside /api so the gate never blocks the way in.
+registerAuthRoutes(app);
+
 // These two stay public so the UI can check the gate and enter the key.
 app.get('/api/access/status', (req, res) => {
-  res.json({ required: GATE_ON, authed: hasAccess(req) });
+  res.json({
+    required: GATE_ON || msSigninConfigured(),
+    authed: hasAccess(req),
+    microsoft: msSigninConfigured(),
+    sharedKey: GATE_ON,
+    user: verifiedUser(req),
+  });
 });
 
 app.post('/api/access', async (req, res) => {
@@ -1256,21 +1271,26 @@ app.get('/api/studio/posts', async (req, res) => {
   try {
     const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : 'draft';
     const { rows } = await pool.query(
-      `SELECT id, topic, body, grounding, status, created_at, posted_at FROM li_posts
-       WHERE status = $1 ORDER BY created_at DESC LIMIT 50`, [status]);
-    res.json({ posts: rows.map(p => ({
-      id: p.id, topic: p.topic, body: p.body, status: p.status,
-      source: p.grounding?.signal?.source ?? null, flags: p.grounding?.flags ?? [],
-      // The story's own date, so a reader sees age before posting; null means
-      // the source stated none, which is shown as unknown rather than hidden.
-      storyDate: p.grounding?.signal?.publishedAt ?? null,
-      hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
-      preview: renderPostText({
-        body: p.body, sourceUrl: p.grounding?.signal?.source || null,
-        hashtags: hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope }),
-      }),
-      createdAt: p.created_at, postedAt: p.posted_at,
-    })) });
+      `SELECT lp.id, lp.topic, lp.body, lp.grounding, lp.status, lp.created_at, lp.posted_at,
+              s.campaign AS signal_campaign
+       FROM li_posts lp LEFT JOIN signals s ON s.id = lp.signal_id
+       WHERE lp.status = $1 ORDER BY lp.created_at DESC LIMIT 50`, [status]);
+    res.json({ posts: rows.map(p => {
+      // The campaign travels with the draft; older drafts resolve through
+      // their signal, then the data centre default. Hashtags follow it.
+      const campaign = p.grounding?.campaign || p.signal_campaign || 'marwin_dc';
+      const hashtags = hashtagsFor({ title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope, campaign });
+      return {
+        id: p.id, topic: p.topic, body: p.body, status: p.status, campaign,
+        source: p.grounding?.signal?.source ?? null, flags: p.grounding?.flags ?? [],
+        // The story's own date, so a reader sees age before posting; null means
+        // the source stated none, which is shown as unknown rather than hidden.
+        storyDate: p.grounding?.signal?.publishedAt ?? null,
+        hashtags,
+        preview: renderPostText({ body: p.body, sourceUrl: p.grounding?.signal?.source || null, hashtags }),
+        createdAt: p.created_at, postedAt: p.posted_at,
+      };
+    }) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

@@ -1,7 +1,7 @@
 // The studio's pure parts. Post generation needs the database and a model, so
 // it is exercised on the deploy; the note builder and its invite-length bound
 // are provable here.
-import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText } from './liPosts.mjs';
+import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText, postSystem } from './liPosts.mjs';
 import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
 import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers } from './postEngagers.mjs';
 import { readFileSync } from 'node:fs';
@@ -233,6 +233,58 @@ await check('the lane stays read-mostly and the wiring holds (static)', async ()
   assert(/ON CONFLICT \(linkedin_url\) DO NOTHING/.test(server), 'and a known profile is never duplicated');
   const dg = freshRead('src/outbound/draft.mjs') + freshRead('src/outbound/grounding.mjs');
   assert(!/engag|liked/i.test(dg), 'engagement never enters draft grounding: targeting, not wording');
+});
+
+console.log('\nThe post briefing follows the campaign:');
+
+// The data centre briefing as it was before campaigns reached the Studio,
+// frozen byte for byte: making the template campaign-aware must not move a
+// word of the calibrated voice.
+const DC_POST_SYSTEM =
+  "You draft a short LinkedIn post for a UK flow control specialist commenting on data centre industry news. The post appears under his own name, so it reads like a practitioner's take, not marketing. " +
+  "GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. You may add one general line that the Marwin and Steriflow control valve ranges his company supplies are trusted across some of the largest data centre builds. " +
+  "CONFIDENTIALITY RULE, absolute: never state or imply that any named company is a customer. The story's subject may be discussed as news; it must never read as a client reference. No customer names, ever. " +
+  "VOICE: plain British English, calm, first person, three to six sentences. A practitioner's observation about what the story means for data centre cooling and flow control, then a light closing thought or question to invite comment. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. " +
+  "SHAPE: the first sentence stands alone as its own opening line and must carry the story's hook, since the feed folds everything after it. Then short paragraphs of one or two sentences separated by blank lines, never one solid block. " +
+  "Return the post text only, no preamble and no quotation marks around it.";
+
+check('the data centre post briefing is unchanged, byte for byte', () => {
+  assert(postSystem('marwin_dc') === DC_POST_SYSTEM, 'the assembled briefing must equal the original exactly');
+});
+
+check('a pharma signal briefs as pharma commentary, never as data centre news', () => {
+  const s = postSystem('pharma_steriflow');
+  assert(/pharmaceutical and biotech manufacturing news/.test(s), 'the news domain is pharma');
+  assert(/Steriflow sanitary valve range/.test(s), 'the track record line is the campaign\'s own');
+  assert(/sterile and hygienic process control/.test(s), 'the angle is process control');
+  assert(!/data centre/i.test(s), 'no data centre briefing survives in the pharma prompt');
+  assert(/never state or imply that any named company is a customer/.test(s), 'confidentiality is shared, not per campaign');
+});
+
+await check('writePost briefs by the campaign it is given', async () => {
+  let seenSystem = '';
+  const capture = async (system) => { seenSystem = system; return 'A calm line about the story.\n\nA closing thought.'; };
+  await writePost({ headline: 'Facility expands', story: 'x', operator: null, campaign: 'pharma_steriflow' }, { callModel: capture });
+  assert(/pharmaceutical and biotech/.test(seenSystem), 'the pharma briefing was used');
+  await writePost({ headline: 'Campus approved', story: 'x', operator: null }, { callModel: capture });
+  assert(/data centre industry news/.test(seenSystem), 'the default stays data centre');
+});
+
+check('hashtags follow the campaign, with the shared earned tags on top', () => {
+  const dc = hashtagsFor({ title: 'Cooling plant approved', geoScope: 'uk_project' });
+  assert(dc.join(' ') === '#datacentres #flowcontrol #cooling #ukconstruction #valves', `dc tags unchanged: ${dc.join(' ')}`);
+  const ph = hashtagsFor({ title: 'Sterile filling line', geoScope: 'uk_project', campaign: 'pharma_steriflow' });
+  assert(ph[0] === '#pharmamanufacturing' && ph[1] === '#processcontrol', 'the pharma pair leads');
+  assert(ph.includes('#ukconstruction') && ph.includes('#valves'), 'the earned and closing tags are shared');
+  assert(!ph.includes('#datacentres'), 'no data centre tag on a pharma post');
+});
+
+await check('the drafting and publishing paths carry the signal campaign (static)', async () => {
+  const src = readFileSync(join(FRESH_ROOT, 'src/studio/liPosts.mjs'), 'utf8');
+  assert(/const campaign = s\.campaign \|\| 'marwin_dc'/.test(src), 'generation briefs each signal by its own campaign');
+  assert(/grounding\?\.campaign \|\| p\.signal_campaign \|\| 'marwin_dc'/.test(src), 'publishing resolves the campaign the same way');
+  const server = readFileSync(join(FRESH_ROOT, 'src/server.mjs'), 'utf8');
+  assert(/p\.grounding\?\.campaign \|\| p\.signal_campaign \|\| 'marwin_dc'/.test(server), 'the posts route resolves it too');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);
