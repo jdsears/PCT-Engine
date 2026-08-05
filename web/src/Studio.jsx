@@ -41,7 +41,15 @@ function PostCard({ post, onChanged }) {
   const dirty = body !== post.body;
   const open = post.status === 'draft';
 
-  const run = async (fn) => { setBusy(true); try { await fn(); onChanged(); } catch { /* refresh shows truth */ } setBusy(false); };
+  // A refused action must say why. This used to swallow the server's reason,
+  // and a reject that failed looked like a button doing nothing, which is how
+  // "it won't let me reject" reached John with no reason attached.
+  const run = async (fn) => {
+    setBusy(true); setMsg(null);
+    try { await fn(); onChanged(); }
+    catch (e) { setMsg(String(e.message || e)); }
+    setBusy(false);
+  };
   const save = () => run(() => action(`/api/studio/posts/${post.id}`, jsonOpts('PATCH', { body })));
   const posted = () => run(() => action(`/api/studio/posts/${post.id}/posted`, jsonOpts('POST')));
   const reject = () => run(() => action(`/api/studio/posts/${post.id}/reject`, jsonOpts('POST')));
