@@ -5,7 +5,7 @@
 // gate covering the data routes with identity never taken from the browser.
 import {
   signPayload, verifyPayload, isAllowed, buildAuthorizeUrl,
-  msSigninConfigured, allowedUsers, sessionSecret,
+  msSigninConfigured, allowedUsers, sessionSecret, verifiedUser, actorEmail,
 } from './auth.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -103,6 +103,47 @@ check('the session secret needs no new configuration, and its own env wins', () 
       if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
     }
   }
+});
+
+console.log('\nAttribution:');
+
+check('a signed-in request yields its actor, anything else yields null', () => {
+  const saved = { ...process.env };
+  try {
+    process.env.MS_TENANT_ID = 't'; process.env.MS_CLIENT_ID = 'c'; process.env.MS_CLIENT_SECRET = 's';
+    process.env.AUTH_ALLOWED_USERS = 'andymangell@pctflow.com';
+    delete process.env.AUTH_SESSION_SECRET;
+    const cookie = signPayload({ e: 'andymangell@pctflow.com', n: 'Andy Mangell' }, sessionSecret(), { maxAgeMs: 60_000 });
+    const req = { headers: { cookie: `pct_user=${cookie}` } };
+    assert(verifiedUser(req)?.email === 'andymangell@pctflow.com', 'the session identifies the person');
+    assert(actorEmail(req) === 'andymangell@pctflow.com', 'the actor is that address');
+    assert(actorEmail({ headers: {} }) === null, 'no session, no actor');
+    assert(actorEmail({ headers: { cookie: 'pct_user=tampered.value' } }) === null, 'a bad session is no actor');
+  } finally {
+    for (const k of ['MS_TENANT_ID', 'MS_CLIENT_ID', 'MS_CLIENT_SECRET', 'AUTH_ALLOWED_USERS', 'AUTH_SESSION_SECRET']) {
+      if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+    }
+  }
+});
+
+check('migration 027 adds audit columns idempotently and carries no data', () => {
+  const sql = read('src/migrations/027_attribution.sql');
+  for (const col of ['decided_by', 'sent_by', 'li_invited_by', 'added_by']) {
+    assert(new RegExp(`ADD COLUMN IF NOT EXISTS ${col}`).test(sql), `${col} added idempotently`);
+  }
+  assert(!/INSERT INTO/i.test(sql), 'columns only, no data');
+});
+
+check('every human action stamps its actor behind a schema check (static)', () => {
+  const server = read('src/server.mjs');
+  assert(/setDraftStatus\(req\.params\.id, 'approved', \['draft'\], actorEmail\(req\)\)/.test(server), 'approve carries the actor');
+  assert(/setDraftStatus\(req\.params\.id, 'rejected', \['draft', 'approved'\], actorEmail\(req\)\)/.test(server), 'reject carries the actor');
+  assert(/withActor: await hasColumn\('party_reviews', 'decided_by'\)/.test(server), 'review decisions ask the schema first');
+  assert(/actorFor\('outbound_drafts', 'sent_by', req\)/.test(server), 'the send click is stamped');
+  assert(/actorFor\('contacts', 'li_invited_by', req\)/.test(server), 'the invite is stamped');
+  assert(/actorFor\('li_posts', 'decided_by', req\)/.test(server), 'the post transitions are stamped');
+  const posts = read('src/studio/liPosts.mjs');
+  assert(/publishPost\(id, \{ actor = null \} = \{\}\)/.test(posts) && /hasColumn\('li_posts', 'decided_by'\)/.test(posts), 'publishing records who clicked, schema permitting');
 });
 
 console.log('\nThe server keeps its shape (static):');

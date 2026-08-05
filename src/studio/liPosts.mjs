@@ -1,4 +1,4 @@
-import { pool } from '../db.mjs';
+import { pool, hasColumn } from '../db.mjs';
 import { freshOnly, postMaxAgeDays } from '../research/freshness.mjs';
 import { outboundVoice, flagEndCustomers } from '../outbound/draft.mjs';
 import { unipile, ROUTES, unipileConfigured } from '../research/unipile.mjs';
@@ -154,7 +154,7 @@ export async function postsPublishedToday() {
   return rows[0].n;
 }
 
-export async function publishPost(id) {
+export async function publishPost(id, { actor = null } = {}) {
   // The campaign travels in the draft's grounding; posts drafted before it
   // did fall back through their signal, then to the data centre default.
   const p = (await pool.query(
@@ -186,11 +186,14 @@ export async function publishPost(id) {
   // The response shape is taken defensively; a post published without an id on
   // record simply cannot list its engagers, and the UI says so plainly.
   const linkedinPostId = created?.post_id ?? created?.id ?? created?.social_id ?? null;
+  // Who clicked Post, when the schema holds it (migration 027) and a person
+  // is signed in. Never worth failing a publish that has already happened.
+  const by = (actor && await hasColumn('li_posts', 'decided_by')) ? actor : null;
   await pool.query(
-    `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now(),
+    `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now()${by ? ', decided_by = $4' : ''},
             grounding = COALESCE(grounding, '{}'::jsonb)
               || jsonb_build_object('postedText', $2::text, 'linkedinPostId', $3::text)
-     WHERE id = $1`, [p.id, text, linkedinPostId]);
+     WHERE id = $1`, by ? [p.id, text, linkedinPostId, by] : [p.id, text, linkedinPostId]);
   return { posted: true };
 }
 

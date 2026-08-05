@@ -691,6 +691,16 @@ app.get('/api/reviews', async (req, res) => {
 // grounding the same deploy-before-migration problem the decision notes had;
 // one shared answer, same cache semantics.
 
+// The actor value a human-action write may include: the signed-in address,
+// only when the schema has the audit column (migration 027) and someone is
+// actually signed in. Null means the write proceeds without it, so an audit
+// column never fails a human action and a shared-key session records nothing
+// rather than a guess.
+async function actorFor(table, column, req) {
+  const actor = actorEmail(req);
+  return (actor && await hasColumn(table, column)) ? actor : null;
+}
+
 async function withTransaction(fn) {
   const client = await pool.connect();
   try {
@@ -764,8 +774,11 @@ app.post('/api/reviews/:id/confirm', async (req, res) => {
       const decisionNote = chNumber
         ? `confirmed against Companies House ${chNumber}`
         : 'confirmed as printed: no confident Companies House match chosen at review';
-      const upd = decisionUpdate({ status: 'confirmed', withNote: noteColumn });
-      await client.query(upd.sql, decisionValues(upd.order, { company: id, note: decisionNote, id: r.id }));
+      const upd = decisionUpdate({
+        status: 'confirmed', withNote: noteColumn,
+        withActor: await hasColumn('party_reviews', 'decided_by'),
+      });
+      await client.query(upd.sql, decisionValues(upd.order, { company: id, note: decisionNote, actor: actorEmail(req), id: r.id }));
       return id;
     });
     res.json({ ok: true, companyId });
@@ -797,10 +810,14 @@ app.post('/api/reviews/:id/merge', async (req, res) => {
         `UPDATE companies SET company_type = COALESCE(company_type, $2), updated_at = now() WHERE id = $1`,
         [companyId, companyTypeForParty(r.campaign, r.party)]);
       await linkReviewSignal(client, r, companyId);
-      const upd = decisionUpdate({ status: 'merged', withNote: noteColumn });
+      const upd = decisionUpdate({
+        status: 'merged', withNote: noteColumn,
+        withActor: await hasColumn('party_reviews', 'decided_by'),
+      });
       await client.query(upd.sql, decisionValues(upd.order, {
         company: companyId,
         note: `${r.kind === 'ambiguous' ? 'resolved' : 'merged'} into ${co[0].name}, alias recorded`,
+        actor: actorEmail(req),
         id: r.id,
       }));
     });
@@ -816,9 +833,10 @@ app.post('/api/reviews/:id/dismiss', async (req, res) => {
     const upd = decisionUpdate({
       status: 'dismissed', setCompany: false,
       withNote: await hasColumn('party_reviews', 'decision_note'),
+      withActor: await hasColumn('party_reviews', 'decided_by'),
     });
     await pool.query(upd.sql, decisionValues(upd.order, {
-      note: 'dismissed at review; not proposed again', id: r.id,
+      note: 'dismissed at review; not proposed again', actor: actorEmail(req), id: r.id,
     }));
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -1322,11 +1340,14 @@ app.post('/api/studio/engagers/contact', async (req, res) => {
     const { rows: co } = await pool.query(`SELECT id FROM companies WHERE id = $1`, [cid]);
     if (!co.length) return res.status(404).json({ error: 'no such company' });
     const orbit = titleFitsCampaign(roleTitle, campaign);
+    const actor = actorEmail(req);
+    const withActor = actor && await hasColumn('contacts', 'added_by');
     const { rows } = await pool.query(
-      `INSERT INTO contacts (company_id, full_name, role_title, linkedin_url, in_decision_orbit, source)
-       VALUES ($1, $2, $3, $4, $5, 'post_engagement')
+      `INSERT INTO contacts (company_id, full_name, role_title, linkedin_url, in_decision_orbit, source${withActor ? ', added_by' : ''})
+       VALUES ($1, $2, $3, $4, $5, 'post_engagement'${withActor ? ', $6' : ''})
        ON CONFLICT (linkedin_url) DO NOTHING RETURNING id`,
-      [cid, String(name).trim(), roleTitle, linkedinUrl, orbit]);
+      withActor ? [cid, String(name).trim(), roleTitle, linkedinUrl, orbit, actor]
+                : [cid, String(name).trim(), roleTitle, linkedinUrl, orbit]);
     res.json({ ok: true, created: rows.length > 0, inOrbit: orbit,
       note: rows.length ? null : 'a contact with this LinkedIn profile already exists; nothing was duplicated' });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -1336,7 +1357,7 @@ app.post('/api/studio/engagers/contact', async (req, res) => {
 // open, unflagged draft, capped per day. A refusal returns its plain reason.
 app.post('/api/studio/posts/:id/post', async (req, res) => {
   try {
-    const r = await publishPost(req.params.id);
+    const r = await publishPost(req.params.id, { actor: actorEmail(req) });
     if (!r.posted) return res.status(409).json({ error: r.reason });
     res.json(r);
   } catch (e) { res.status(500).json({ error: String(e.message || e).slice(0, 300) }); }
@@ -1371,8 +1392,10 @@ app.patch('/api/studio/posts/:id', async (req, res) => {
 // Marked by the human after they have posted it from their own account.
 app.post('/api/studio/posts/:id/posted', async (req, res) => {
   try {
+    const by = await actorFor('li_posts', 'decided_by', req);
     const { rowCount } = await pool.query(
-      `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now() WHERE id = $1 AND status = 'draft'`, [req.params.id]);
+      `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now()${by ? ', decided_by = $2' : ''}
+       WHERE id = $1 AND status = 'draft'`, by ? [req.params.id, by] : [req.params.id]);
     if (!rowCount) return res.status(409).json({ error: 'only a draft post can be marked posted' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -1380,8 +1403,10 @@ app.post('/api/studio/posts/:id/posted', async (req, res) => {
 
 app.post('/api/studio/posts/:id/reject', async (req, res) => {
   try {
+    const by = await actorFor('li_posts', 'decided_by', req);
     const { rowCount } = await pool.query(
-      `UPDATE li_posts SET status = 'rejected', updated_at = now() WHERE id = $1 AND status = 'draft'`, [req.params.id]);
+      `UPDATE li_posts SET status = 'rejected', updated_at = now()${by ? ', decided_by = $2' : ''}
+       WHERE id = $1 AND status = 'draft'`, by ? [req.params.id, by] : [req.params.id]);
     if (!rowCount) return res.status(409).json({ error: 'only a draft post can be rejected' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -1429,7 +1454,10 @@ app.post('/api/studio/connects/:id/send-invite', async (req, res) => {
     const note = String((req.body || {}).note || '').slice(0, 300) || connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company);
     const r = await sendConnectionInvite(ct, note);
     if (r.sent) {
-      await pool.query(`UPDATE contacts SET li_invited_at = now(), li_invite_note = $2 WHERE id = $1`, [ct.id, note]);
+      const by = await actorFor('contacts', 'li_invited_by', req);
+      await pool.query(
+        `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2${by ? ', li_invited_by = $3' : ''} WHERE id = $1`,
+        by ? [ct.id, note, by] : [ct.id, note]);
     }
     res.json(r);
   } catch (e) {
@@ -1444,8 +1472,10 @@ app.post('/api/studio/connects/:id/send-invite', async (req, res) => {
 app.post('/api/studio/connects/:id/invited', async (req, res) => {
   try {
     const note = String((req.body || {}).note || '').slice(0, 300) || null;
+    const by = await actorFor('contacts', 'li_invited_by', req);
     const { rowCount } = await pool.query(
-      `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2 WHERE id = $1 AND li_invited_at IS NULL`, [req.params.id, note]);
+      `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2${by ? ', li_invited_by = $3' : ''}
+       WHERE id = $1 AND li_invited_at IS NULL`, by ? [req.params.id, note, by] : [req.params.id, note]);
     if (!rowCount) return res.status(409).json({ error: 'already marked invited' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -1529,9 +1559,11 @@ app.get('/api/outbound/drafts', async (req, res) => {
     const clauses = [];
     if (status) { params.push(status); clauses.push(`d.status = $${params.length}`); }
     if (campaign) { params.push(campaign); clauses.push(`(d.campaign = $${params.length} OR d.campaign = 'rehearsal')`); }
+    // Attribution columns are migration 027; shown when the schema has them.
+    const actorCols = (await hasColumn('outbound_drafts', 'decided_by')) ? ' d.decided_by, d.sent_by,' : '';
     const { rows } = await pool.query(
       `SELECT d.id, d.subject, d.body, d.status, d.rationale, d.grounding, d.grounding_flags,
-              d.email_type, d.campaign, d.created_at, d.sent_at,
+              d.email_type, d.campaign, d.created_at, d.sent_at,${actorCols}
               c.name AS company, c.region, c.icp_score,
               ct.full_name AS contact_name, ct.role_title, ct.email
        FROM outbound_drafts d
@@ -1544,6 +1576,7 @@ app.get('/api/outbound/drafts', async (req, res) => {
       rationale: r.rationale, grounding: r.grounding || null, groundingFlags: r.grounding_flags || [],
       emailType: r.email_type, rehearsal: r.campaign === 'rehearsal', campaign: r.campaign,
       createdAt: r.created_at, sentAt: r.sent_at,
+      decidedBy: r.decided_by || null, sentBy: r.sent_by || null,
       company: r.company, region: r.region, score: r.icp_score,
       contact: r.contact_name ? { name: r.contact_name, role: r.role_title, email: r.email } : null,
     })) });
@@ -1571,12 +1604,15 @@ app.patch('/api/outbound/drafts/:id', async (req, res) => {
 });
 
 // Approve moves a draft to approved; reject closes it from either open state and
-// frees the lead's slot for a future draft.
-async function setDraftStatus(id, to, from) {
+// frees the lead's slot for a future draft. The deciding person is stamped when
+// the schema holds the column and someone is actually signed in; a shared-key
+// session records nothing rather than something guessed.
+async function setDraftStatus(id, to, from, actor = null) {
+  const withActor = actor && await hasColumn('outbound_drafts', 'decided_by');
   const { rows } = await pool.query(
-    `UPDATE outbound_drafts SET status = $2, updated_at = now()
+    `UPDATE outbound_drafts SET status = $2, updated_at = now()${withActor ? ', decided_by = $4' : ''}
      WHERE id = $1 AND status = ANY($3) RETURNING status`,
-    [id, to, from]);
+    withActor ? [id, to, from, actor] : [id, to, from]);
   return rows[0]?.status || null;
 }
 app.post('/api/outbound/drafts/:id/approve', async (req, res) => {
@@ -1587,14 +1623,14 @@ app.post('/api/outbound/drafts/:id/approve', async (req, res) => {
     if (hasBlockingFlag(fr.rows[0]?.grounding_flags)) {
       return res.status(409).json({ error: 'this draft has a blocking flag and cannot be approved until it is rewritten' });
     }
-    const s = await setDraftStatus(req.params.id, 'approved', ['draft']);
+    const s = await setDraftStatus(req.params.id, 'approved', ['draft'], actorEmail(req));
     if (!s) return res.status(409).json({ error: 'only a draft can be approved' });
     res.json({ ok: true, status: s });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 app.post('/api/outbound/drafts/:id/reject', async (req, res) => {
   try {
-    const s = await setDraftStatus(req.params.id, 'rejected', ['draft', 'approved']);
+    const s = await setDraftStatus(req.params.id, 'rejected', ['draft', 'approved'], actorEmail(req));
     if (!s) return res.status(409).json({ error: 'draft is not open' });
     res.json({ ok: true, status: s });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -1611,18 +1647,23 @@ app.post('/api/outbound/drafts/approve-all', async (_req, res) => {
       `SELECT id, grounding_flags FROM outbound_drafts WHERE status = 'draft' AND campaign <> 'rehearsal'`);
     const clean = rows.filter(r => !hasBlockingFlag(r.grounding_flags)).map(r => r.id);
     const skipped = rows.length - clean.length;
+    const actor = actorEmail(_req);
+    const withActor = actor && await hasColumn('outbound_drafts', 'decided_by');
     if (clean.length) {
       await pool.query(
-        `UPDATE outbound_drafts SET status = 'approved', updated_at = now() WHERE id = ANY($1) AND status = 'draft'`, [clean]);
+        `UPDATE outbound_drafts SET status = 'approved', updated_at = now()${withActor ? ', decided_by = $2' : ''}
+         WHERE id = ANY($1) AND status = 'draft'`, withActor ? [clean, actor] : [clean]);
     }
     res.json({ approved: clean.length, skippedBlocking: skipped });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 app.post('/api/outbound/drafts/reject-all', async (_req, res) => {
   try {
+    const actor = actorEmail(_req);
+    const withActor = actor && await hasColumn('outbound_drafts', 'decided_by');
     const { rowCount } = await pool.query(
-      `UPDATE outbound_drafts SET status = 'rejected', updated_at = now()
-       WHERE status = 'draft' AND campaign <> 'rehearsal'`);
+      `UPDATE outbound_drafts SET status = 'rejected', updated_at = now()${withActor ? ', decided_by = $1' : ''}
+       WHERE status = 'draft' AND campaign <> 'rehearsal'`, withActor ? [actor] : []);
     res.json({ rejected: rowCount });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -1696,7 +1737,10 @@ app.post('/api/outbound/drafts/:id/send', async (req, res) => {
        result.messageId || null, result.conversationId || null, result.internetMessageId || null, sentFrom]);
 
     if (result.sent) {
-      await pool.query(`UPDATE outbound_drafts SET status = 'sent', sent_at = now(), updated_at = now() WHERE id = $1`, [d.id]);
+      const by = await actorFor('outbound_drafts', 'sent_by', req);
+      await pool.query(
+        `UPDATE outbound_drafts SET status = 'sent', sent_at = now(), updated_at = now()${by ? ', sent_by = $2' : ''} WHERE id = $1`,
+        by ? [d.id, by] : [d.id]);
       if (d.lead_id) await pool.query(
         `UPDATE leads SET stage = 'outbound', updated_at = now() WHERE id = $1 AND stage IN ('sourced','researched')`, [d.lead_id]);
     }
