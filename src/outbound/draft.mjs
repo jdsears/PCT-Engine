@@ -250,12 +250,27 @@ const END_CUSTOMER_NAMES = [
 const END_CUSTOMER_PHRASES = [
   'a major us', 'well-known search', "world's biggest tech", "world's largest tech", 'major tech firm', 'major hyperscaler',
 ];
+// One company, several names: the recipient exemption must cover the
+// recipient's known aliases as well as their registered name. Learned live
+// on the first sending day, when a draft addressed to Amazon WEB Services
+// Emea Sarl was blocked for saying AWS, the recipient's own abbreviation
+// for themselves. Discussing the addressee's own project under any of their
+// names is the addressee, never an end-customer reference; the same names
+// written to anyone else still block.
+const END_CUSTOMER_ALIAS_GROUPS = [
+  ['amazon', 'aws'], ['google', 'alphabet'], ['microsoft', 'azure'],
+  ['meta', 'facebook'], ['bytedance', 'tiktok'],
+];
+function recipientCovers(recipient, name) {
+  if (recipient.includes(name)) return true;
+  return END_CUSTOMER_ALIAS_GROUPS.some(g => g.includes(name) && g.some(a => recipient.includes(a)));
+}
 export function flagEndCustomers(text, recipientName) {
   const hay = String(text || '').toLowerCase();
   const recipient = String(recipientName || '').toLowerCase();
   const hits = [];
   for (const name of END_CUSTOMER_NAMES) {
-    if (recipient && recipient.includes(name)) continue; // the recipient's own name is the addressee, not an end customer
+    if (recipient && recipientCovers(recipient, name)) continue; // the recipient's own name is the addressee, not an end customer
     if (new RegExp(`\\b${escapeRe(name)}\\b`, 'i').test(hay)) hits.push(name);
   }
   for (const ph of END_CUSTOMER_PHRASES) if (hay.includes(ph)) hits.push(ph);

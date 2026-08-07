@@ -1431,7 +1431,11 @@ app.get('/api/studio/connects', async (_req, res) => {
       invitesToday: inviteReady() ? await invitesUsedToday() : 0,
       inviteCap: inviteDailyCap(),
       connects: rows.map(ct => {
-        const campaign = (ct.memberships || []).length === 1 ? ct.memberships[0] : 'marwin_dc';
+        // Only registered campaigns count towards the derivation: a stray
+        // membership value must never take the whole queue down, because the
+        // queue failing reads as a greyed invite button with no reason.
+        const known = (ct.memberships || []).filter(id => getCampaign(id));
+        const campaign = known.length === 1 ? known[0] : 'marwin_dc';
         return {
           id: ct.id, name: ct.full_name, role: ct.role_title, linkedin: ct.linkedin_url,
           company: ct.company, score: ct.score, campaign,
@@ -1461,7 +1465,8 @@ app.post('/api/studio/connects/:id/send-invite', async (req, res) => {
     // default, and the UI may state it explicitly; either way it must be a
     // registered campaign, never free text into an account lookup.
     const bodyCampaign = getCampaign(String((req.body || {}).campaign || ''))?.id;
-    const campaign = bodyCampaign || ((ct.memberships || []).length === 1 ? ct.memberships[0] : 'marwin_dc');
+    const knownMemberships = (ct.memberships || []).filter(id => getCampaign(id));
+    const campaign = bodyCampaign || (knownMemberships.length === 1 ? knownMemberships[0] : 'marwin_dc');
     const accountId = accountForCampaign(campaign);
     const used = await invitesUsedToday(accountId);
     if (used >= inviteDailyCap()) {

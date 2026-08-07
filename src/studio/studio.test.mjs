@@ -337,6 +337,7 @@ await check('publishing, invites and engagement reads all route by campaign (sta
   const server = readFileSync(join(FRESH_ROOT, 'src/server.mjs'), 'utf8');
   assert(/import \{[^}]*accountForCampaign[^}]*\} from '\.\/research\/unipile\.mjs'/.test(server), 'the server imports what it uses');
   assert(/getCampaign\(String\(\(req\.body \|\| \{\}\)\.campaign \|\| ''\)\)/.test(server), 'a requested campaign is validated through the registry, never free text');
+  assert(/memberships \|\| \[\]\)\.filter\(id => getCampaign\(id\)\)/.test(server), 'a stray membership value can never take the connect queue down');
   const mig = readFileSync(join(FRESH_ROOT, 'src/migrations/028_unipile_accounts.sql'), 'utf8');
   assert(/ADD COLUMN IF NOT EXISTS account_id/.test(mig) && !/INSERT INTO/i.test(mig), 'the ledger column is idempotent and data free');
 });
