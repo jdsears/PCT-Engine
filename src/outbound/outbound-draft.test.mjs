@@ -318,6 +318,17 @@ await check('a named operator or implying phrase is flagged, the recipient name 
   assert(flagEndCustomers('used across some of the largest data centre builds', 'Aery').length === 0, 'the safe general form is clean');
 });
 
+await check('the recipient exemption covers the recipient\'s own aliases, and only theirs', () => {
+  // The live case from the first sending day: a draft to Amazon WEB Services
+  // Emea Sarl, blocked for saying AWS, the recipient's own abbreviation.
+  assert(flagEndCustomers('The recent news of AWS expanding its Mumbai footprint suggests further work.', 'Amazon WEB Services Emea Sarl').length === 0,
+    'AWS to Amazon is the addressee, not an end customer');
+  assert(flagEndCustomers('Azure capacity keeps growing', 'Microsoft UK').length === 0, 'Azure to Microsoft is the addressee');
+  assert(flagEndCustomers('used by AWS on their builds', 'Aery').includes('aws'), 'AWS to anyone else still blocks');
+  assert(flagEndCustomers('we supply Google too', 'Amazon WEB Services Emea Sarl').includes('google'),
+    'an alias exemption never widens to other companies');
+});
+
 await check('composeDraft makes a named end customer a BLOCKING flag, and passes the general form', async () => {
   const grounding = { company: { name: 'Aery Datacentres' }, contact: null, signal: null, icpReason: null, blockedSuppliers: [] };
   const named = await composeDraft(grounding, { callModel: fakeModel({
