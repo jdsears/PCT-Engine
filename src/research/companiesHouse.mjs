@@ -56,6 +56,18 @@ export function candidateRows(results) {
   }));
 }
 
+// A hand-entered company number into Companies House's canonical form, or
+// null when it cannot be one. Numbers are eight characters: all digits, with
+// short old registrations zero-padded, or a two-letter prefix and six digits
+// (SC, NI and kin). Typed input arrives with spaces and lower case; a value
+// this cannot shape is refused before any API call is spent on it.
+export function cleanChNumber(v) {
+  const s = String(v || '').replace(/\s+/g, '').toUpperCase();
+  if (/^\d{1,8}$/.test(s)) return s.padStart(8, '0');
+  if (/^[A-Z]{2}\d{6}$/.test(s)) return s;
+  return null;
+}
+
 // Fetches the profile and caches it onto the companies row when one exists.
 export async function companyProfile(chNumber) {
   const profile = await chFetch(`/company/${chNumber}`);

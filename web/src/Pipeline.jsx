@@ -130,7 +130,17 @@ export default function Pipeline({ isMobile, campaign }) {
       <div className="card leads-card">
         <div className="leads-head">
           <div className="leads-title">{stageDef.label}</div>
-          {(hasLeads || q) && <div className="leads-meta">Showing {leads.length} of {total}</div>}
+          {(hasLeads || q) && (
+            <div className="leads-meta">
+              Showing {leads.length} of {total}
+              {total > leads.length && (
+                <button className="leads-meta-btn"
+                  onClick={() => setLimit(SIZES.find(n => n >= total) || SIZES[SIZES.length - 1])}>
+                  Show all {total}
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <div className="leads-tools">
           <input className="tool-search" type="search" value={qLive}
