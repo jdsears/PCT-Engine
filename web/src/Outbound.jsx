@@ -240,6 +240,7 @@ function ConversationCard({ convo, onChanged }) {
     setBusy(false);
   };
   const meeting = () => act(() => action(`/api/outbound/leads/${convo.leadId}/meeting`, jsonOpts('POST', { kind })), 'Meeting recorded, the team has been told.');
+  const designIn = () => act(() => action(`/api/outbound/leads/${convo.leadId}/design-in`, jsonOpts('POST', {})), 'Design-in recorded, the team has been told.');
   const handoff = () => act(() => action(`/api/outbound/leads/${convo.leadId}/handoff`, jsonOpts('POST')), 'Handed off. The pack email is with the team.');
   const suppress = () => act(() => action(`/api/outbound/leads/${convo.leadId}/suppress`, jsonOpts('POST')), 'Closed and suppressed.');
   const toggleThread = async () => {
@@ -272,6 +273,7 @@ function ConversationCard({ convo, onChanged }) {
         {convo.openDraft ? ' A draft is waiting in To review.' : ''}
         {convo.snoozedUntil && new Date(convo.snoozedUntil) > new Date() ? ` Snoozed until ${fmtClockDay(convo.snoozedUntil)} (away reply).` : ''}
         {convo.meeting ? ` Meeting: ${convo.meeting.kind === 'f2f' ? 'face to face' : 'video'}${convo.meeting.at ? ', ' + fmtClockDay(convo.meeting.at) : ''}.` : ''}
+        {convo.designIn ? ` Specified on design, ${fmtClockDay(convo.designIn.at)}.` : ''}
       </div>
       <div className="ob-actions">
         <button className="ob-btn" onClick={toggleThread} disabled={busy}>{items ? 'Hide thread' : 'Show thread'}</button>
@@ -284,6 +286,12 @@ function ConversationCard({ convo, onChanged }) {
             </select>
             <button className="ob-btn primary" onClick={meeting} disabled={busy}>Meeting booked</button>
           </>
+        )}
+        {live && !convo.designIn && (
+          <button className="ob-btn" onClick={designIn} disabled={busy}
+            title="Marwin has been written into the project's design. A win in its own right; records it and tells the team.">
+            Specified on design
+          </button>
         )}
         {convo.stage === 'qualified' && <button className="ob-btn primary" onClick={handoff} disabled={busy}>Hand off</button>}
         {live && <button className="ob-btn ghost" onClick={suppress} disabled={busy} title="Close the lead and never contact this person again">Stop</button>}

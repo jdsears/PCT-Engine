@@ -26,7 +26,11 @@ part-number configurator, the research funnel, and the outbound stage.
 - Prospecting geography: the Republic of Ireland is out of scope (John, August
   2026, stated for Richards prospecting; the live campaign gates are UK-scoped
   anyway). Northern Ireland is in scope. Republic companies stay on the
-  register as customers, served when they come to us, never prospected.
+  register as customers, served when they come to us, never prospected. One
+  carve-out (John, 7 August 2026, after James's design-in note): Irish
+  engineering houses that design UK facilities are in scope as consultant
+  targets, because the spec decision for a UK project can sit in Dublin. The
+  rule stands unchanged for Republic companies as end targets.
 
 ## Git workflow
 

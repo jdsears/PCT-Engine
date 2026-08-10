@@ -1791,8 +1791,10 @@ app.get('/api/outbound/replies', async (_req, res) => {
 // with enough on the card to act without opening the detail.
 app.get('/api/outbound/conversations', async (_req, res) => {
   try {
+    // The design-in columns are migration 029; shown when the schema has them.
+    const designCols = (await hasColumn('leads', 'design_in_at')) ? ' l.design_in_at, l.design_in_note,' : '';
     const { rows } = await pool.query(
-      `SELECT l.id, l.stage, l.campaign, l.snoozed_until, l.meeting_booked_at, l.meeting_kind, l.meeting_at, l.handed_off_at,
+      `SELECT l.id, l.stage, l.campaign, l.snoozed_until, l.meeting_booked_at, l.meeting_kind, l.meeting_at, l.handed_off_at,${designCols}
               c.name AS company, c.icp_score,
               d.contact_id, ct.full_name AS contact_name, ct.role_title, ct.email, ct.suppressed, ct.email_bounced_at, ct.li_invited_at,
               (SELECT count(*)::int FROM outbound_drafts x WHERE x.lead_id = l.id AND x.status = 'sent') AS sent_count,
@@ -1818,6 +1820,7 @@ app.get('/api/outbound/conversations', async (_req, res) => {
       sent: r.sent_count, replies: r.reply_count, lastCategory: r.last_category,
       lastSentAt: r.last_sent_at, lastReplyAt: r.last_reply_at, openDraft: r.open_draft,
       snoozedUntil: r.snoozed_until, meeting: r.meeting_booked_at ? { bookedAt: r.meeting_booked_at, kind: r.meeting_kind, at: r.meeting_at } : null,
+      designIn: r.design_in_at ? { at: r.design_in_at, note: r.design_in_note || null } : null,
       handedOffAt: r.handed_off_at,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
@@ -1860,6 +1863,32 @@ app.post('/api/outbound/replies/:id/respond', async (req, res) => {
     const r = await draftResponse(req.params.id);
     if (!r.drafted) return res.status(409).json({ error: r.reason });
     res.json({ ok: true, subject: r.subject, flags: r.flags });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Specified on design: the second prize, recorded as its own outcome. James's
+// note of 7 August 2026: getting onto a design carries value in itself, so a
+// thread that reaches the spec is a win even before anyone buys. Moves the
+// lead to qualified like a meeting; the optional note says which project or
+// consultancy carried it.
+app.post('/api/outbound/leads/:id/design-in', async (req, res) => {
+  try {
+    if (!await hasColumn('leads', 'design_in_at')) {
+      return res.status(503).json({ error: 'the design-in columns are not migrated yet; run npm run migrate' });
+    }
+    const note = String((req.body || {}).note || '').slice(0, 300) || null;
+    const { rows } = await pool.query(
+      `UPDATE leads SET design_in_at = now(), design_in_note = $2,
+              stage = CASE WHEN stage IN ('handed_off') THEN stage ELSE 'qualified' END, updated_at = now()
+       WHERE id = $1 AND stage <> 'closed' RETURNING campaign`, [req.params.id, note]);
+    if (!rows.length) return res.status(409).json({ error: 'lead not found or closed' });
+    const tag = rows[0].campaign === 'rehearsal' ? 'Rehearsal, ' : '';
+    const who = (await pool.query(
+      `SELECT c.name AS company, ct.full_name FROM leads l JOIN companies c ON c.id = l.company_id
+       LEFT JOIN contacts ct ON ct.id = l.contact_id WHERE l.id = $1`, [req.params.id])).rows[0] || {};
+    await sendTeamNote(`${tag}specified on design: ${who.company || 'lead ' + req.params.id}`,
+      `The thread${who.full_name ? ' with ' + who.full_name : ''}${who.company ? ' at ' + who.company : ''} has reached the design.${note ? '\n\n' + note : ''}\n\nRecorded as a design-in win; hand off from the app when someone owns the follow-through.`);
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

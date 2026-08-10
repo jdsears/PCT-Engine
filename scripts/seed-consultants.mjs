@@ -28,6 +28,13 @@ const CANDIDATES = [
   'RED Engineering Design', 'Sudlows', 'Hurley Palmer Flatt',
   'Mott MacDonald', 'Ramboll UK', 'WSP UK', 'Buro Happold',
   'AtkinsRealis UK', 'PM Group', 'Keysource', 'Future-tech',
+  // Irish engineering houses that design UK facilities, John's carve-out of
+  // 7 August 2026 after James's note: the spec decision for a UK build can
+  // sit in Dublin, as the Ireland RFQ for a north east data centre showed.
+  // Republic companies register with the CRO, not Companies House, so these
+  // will read as unmatched below; that is expected, not a failure, and they
+  // seed by name. The Republic stays out of scope as an end target.
+  'Ethos Engineering', 'Axiseng', 'Homan O\'Brien',
 ];
 
 const APPLY = process.argv.includes('--apply');
