@@ -11,7 +11,7 @@ import { dirname, join } from 'node:path';
 const FRESH_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const freshRead = rel => readFileSync(join(FRESH_ROOT, rel), 'utf8');
 import { htmlToText, splitNewsletter, intelSenders } from './intelInbox.mjs';
-import { linkedinSlug, canInvite, inviteDailyCap } from './liInvite.mjs';
+import { linkedinSlug, canInvite, inviteDailyCap, inviteRefusal } from './liInvite.mjs';
 
 let pass = 0, fail = 0;
 function check(name, fn) {
@@ -103,6 +103,26 @@ check('only an eligible decision maker can be invited, once', () => {
   assert(!canInvite({ ...base, li_invited_at: '2026-07-13' }).ok, 'never twice');
   assert(!canInvite({ ...base, linkedin_url: 'https://example.com/nope' }).ok, 'needs a real profile URL');
   assert(!canInvite(null).ok, 'a missing contact refuses');
+});
+
+check('an invitation already pending on LinkedIn is recorded truth, not a repeating error', () => {
+  // The live refusal, frozen from James's screen: a raw 422 on every click
+  // because the invite had been sent by hand outside the engine's books.
+  const live = new Error('Unipile 422 on POST /api/v1/users/invite: {"status":422,"type":"errors/already_invited_recently","title":"Should delay new invitation to this recipient","detail":"An invitation has already been sent recently to this recipient. Please try again later."}');
+  live.status = 422;
+  const r = inviteRefusal(live);
+  assert(r?.alreadyInvited === true, 'the refusal is recognised');
+  assert(/already pending/.test(r.reason) && /queue will not offer them again/.test(r.reason), 'the reason reads calmly and says what happens next');
+  const other = new Error('Unipile 422 on POST /api/v1/users/invite: {"type":"errors/limit_exceeded"}');
+  other.status = 422;
+  assert(inviteRefusal(other) === null, 'other 422s are not swallowed into the same story');
+  const server = new Error('Unipile 500 on POST /api/v1/users/invite: upstream');
+  server.status = 500;
+  assert(inviteRefusal(server) === null && inviteRefusal(null) === null, 'nothing else matches');
+  const src = readFileSync(join(FRESH_ROOT, 'src/server.mjs'), 'utf8');
+  assert(/inviteRefusal\(e\)/.test(src), 'the send route consults the translation');
+  assert(/recorded from LinkedIn: an invitation was already pending/.test(src), 'and records the truth so the queue moves on');
+  assert(/import \{[^}]*inviteRefusal[^}]*\} from '\.\/studio\/liInvite\.mjs'/.test(src), 'the server imports what it uses');
 });
 
 check('the profile slug parses from the usual URL shapes', () => {

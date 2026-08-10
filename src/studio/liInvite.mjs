@@ -15,6 +15,22 @@ export function inviteReady() {
   return unipileConfigured() && Boolean(process.env.UNIPILE_ACCOUNT_ID);
 }
 
+// LinkedIn's own refusals, translated where translation earns its place. The
+// one that matters says an invitation is already pending with this person,
+// usually sent by hand outside the engine's books; the honest response is to
+// record that truth and let the queue move on, not to error at the same name
+// on every click. Learned live when Darryn Power sat in the queue refusing
+// with a raw 422 each time James pressed Send invite.
+export function inviteRefusal(e) {
+  if (e?.status === 422 && /already_invited_recently/i.test(String(e.message))) {
+    return {
+      alreadyInvited: true,
+      reason: 'LinkedIn reports an invitation is already pending with this person, sent at some point outside the engine. Recorded, so the queue will not offer them again; the connection completes whenever they accept.',
+    };
+  }
+  return null;
+}
+
 // The public identifier from a profile URL: linkedin.com/in/<slug>.
 export function linkedinSlug(url) {
   const m = String(url || '').match(/linkedin\.com\/in\/([^/?#]+)/i);
