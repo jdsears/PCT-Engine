@@ -526,6 +526,8 @@ button, input { font: inherit; }
 .add-account-fields { display: flex; flex-wrap: wrap; gap: 8px; }
 .add-account-fields input, .add-account-fields select { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; min-height: 44px; flex: 1 1 180px; }
 .leads-meta-btn { background: none; border: none; padding: 0; margin-left: 8px; color: var(--teal, #49C0B1); font: inherit; font-size: inherit; cursor: pointer; text-decoration: underline; }
+.amend-toggle { margin: 4px 0 8px; }
+.add-person { margin-top: 10px; }
 .rq-err { font-size: 12px; color: var(--amber); }
 .rq-actions { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
 .rq-actions .ob-btn { min-height: 44px; }

@@ -1,6 +1,7 @@
 import { pool } from '../db.mjs';
 import { findContacts, laneReady } from './linkedinResearch.mjs';
-import { CapReached, AccountUnhealthy } from './unipile.mjs';
+import { CapReached, AccountUnhealthy, accountForCampaign } from './unipile.mjs';
+import { getCampaign } from '../campaigns/registry.mjs';
 
 // The in-cycle people search: a small batch of named accounts per engine
 // cycle, so a new account gets its specifiers found within a day of arriving
@@ -13,8 +14,17 @@ import { CapReached, AccountUnhealthy } from './unipile.mjs';
 //
 // An account-health error is the one thing that must never be retried on a
 // schedule: the caller is told to switch the feature off and say so.
+//
+// Raised on John's instruction, August 2026, when contacts became the
+// bottleneck on the live pipeline: the default doubles to four accounts a
+// cycle, roughly sixteen calls a day at the six-hour cadence, and the ceiling
+// moves to ten. Two things keep this honest at the higher rate: each search
+// runs through the campaign's own connected account, so James's profile
+// carries the data centre load and Andy's the pharma load, and the daily
+// call cap counts per account once the ledger can say. The AccountUnhealthy
+// latch stays the circuit breaker it always was.
 
-export const peopleSearchLimit = () => Math.max(1, Math.min(5, parseInt(process.env.ENGINE_PEOPLE_SEARCH_LIMIT || '2', 10) || 2));
+export const peopleSearchLimit = () => Math.max(1, Math.min(10, parseInt(process.env.ENGINE_PEOPLE_SEARCH_LIMIT || '4', 10) || 4));
 
 export async function discoverPeople({ limit = peopleSearchLimit(), log = () => {} } = {}) {
   if (!laneReady()) return { skipped: 'the LinkedIn lane is not configured on this service' };
@@ -25,7 +35,9 @@ export async function discoverPeople({ limit = peopleSearchLimit(), log = () => 
   // once a company has an emailable specifier, so the search works the
   // backlog that is actually blocking outreach before it explores.
   const { rows: companies } = await pool.query(
-    `SELECT id, name FROM companies
+    `SELECT id, name,
+            (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = companies.id) AS memberships
+     FROM companies
      WHERE named_account
        AND NOT EXISTS (
          SELECT 1 FROM unipile_calls u
@@ -44,7 +56,11 @@ export async function discoverPeople({ limit = peopleSearchLimit(), log = () => 
   const report = { companies: 0, created: 0, updated: 0, orbit: 0 };
   for (const co of companies) {
     try {
-      const f = await findContacts(co, { limit: 5 });
+      // The search runs through the campaign's own connected account, with a
+      // stray membership value never deciding anything.
+      const known = (co.memberships || []).filter(id => getCampaign(id));
+      const campaign = known.length === 1 ? known[0] : 'marwin_dc';
+      const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(campaign) });
       report.companies++;
       report.created += f.created || 0;
       report.updated += f.updated || 0;

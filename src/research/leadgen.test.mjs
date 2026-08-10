@@ -362,6 +362,19 @@ await check('the confirm route verifies a typed number and the add route guards 
   assert(/import \{[^}]*matchParty[^}]*\} from '\.\/research\/match\.mjs'/.test(server), 'and the matcher too');
 });
 
+await check('amending an account verifies, aliases the old name, and adds people honestly (static)', async () => {
+  const server = read('src/server.mjs');
+  const patchBlock = server.slice(server.indexOf("app.patch('/api/accounts/:id'"), server.indexOf("app.post('/api/accounts/:id/contacts'"));
+  assert(/companyProfile\(clean\)/.test(patchBlock), 'a new number is verified against Companies House');
+  assert(/name = \$/.test(patchBlock) && /'manual_match'/.test(patchBlock), 'the registered name takes over and the old name becomes an alias');
+  assert(/COALESCE\(postcode,/.test(patchBlock) && /COALESCE\(region,/.test(patchBlock), 'held fields fill gaps only');
+  assert(/nothing to change/.test(patchBlock), 'an empty amendment refuses rather than writing nothing silently');
+  const contactBlock = server.slice(server.indexOf("app.post('/api/accounts/:id/contacts'"), server.indexOf("app.get('/api/accounts'"));
+  assert(/'manual'/.test(contactBlock) && /in_decision_orbit/.test(contactBlock), 'a hand-added person says so and enters the orbit deliberately');
+  assert(/actorFor\('contacts', 'added_by', req\)/.test(contactBlock), 'the adder is recorded when signed in');
+  assert(/ON CONFLICT \(linkedin_url\) DO NOTHING/.test(contactBlock), 'a known profile is never duplicated');
+});
+
 await check('every candidate producer uses the one mapper, and the queue reads its fields', async () => {
   const run = read('src/research/runResearch.mjs');
   assert(/candidateRows\(await searchCompanies/.test(run), 'the research run shapes candidates through candidateRows');
@@ -409,6 +422,28 @@ await check('the gate path is wired to nothing from this work', async () => {
   assert(!/parties\.mjs|extractParties|buildPartiesSystem/.test(rel), 'relevance.mjs never touches the extraction');
   const prompts = read('src/campaigns/prompts.mjs');
   assert(!/parties\.mjs|extractParties|buildPartiesSystem/.test(prompts), 'prompt assembly never touches the extraction');
+});
+
+await check('discovery batches doubled and each campaign searches from its own account', async () => {
+  const { peopleSearchLimit } = await import('./peopleDiscovery.mjs');
+  const saved = process.env.ENGINE_PEOPLE_SEARCH_LIMIT;
+  try {
+    delete process.env.ENGINE_PEOPLE_SEARCH_LIMIT;
+    assert(peopleSearchLimit() === 4, 'the default doubles to four accounts a cycle');
+    process.env.ENGINE_PEOPLE_SEARCH_LIMIT = '25';
+    assert(peopleSearchLimit() === 10, 'the ceiling is ten, not unlimited');
+    process.env.ENGINE_PEOPLE_SEARCH_LIMIT = '1';
+    assert(peopleSearchLimit() === 1, 'the floor is one');
+  } finally {
+    if (saved === undefined) delete process.env.ENGINE_PEOPLE_SEARCH_LIMIT; else process.env.ENGINE_PEOPLE_SEARCH_LIMIT = saved;
+  }
+  const disc = read('src/research/peopleDiscovery.mjs');
+  assert(/accountForCampaign\(campaign\)/.test(disc), 'each search runs through the campaign\'s own account');
+  assert(/filter\(id => getCampaign\(id\)\)/.test(disc), 'a stray membership value never decides the account');
+  const lane = read('src/research/linkedinResearch.mjs');
+  assert(/accountId: acct = null/.test(lane) && /`findContacts: \$\{company\.name\}`, acct\)/.test(lane), 'findContacts threads the account to the search');
+  const uni = read('src/research/unipile.mjs');
+  assert(/callsUsedToday\(acct\)/.test(uni) && /AND account_id = \$1/.test(uni), 'the daily lane cap counts per account once the ledger can say');
 });
 
 await check('people-discovery pacing is untouched', async () => {

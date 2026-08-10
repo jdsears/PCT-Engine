@@ -59,11 +59,19 @@ export const dailyCap = () => CAP;
 export class CapReached extends Error {}
 export class AccountUnhealthy extends Error {}
 
-export async function callsUsedToday() {
+// Calls made today, per connected account when both the ledger column
+// (migration 028) and the acting account are known, because LinkedIn's
+// tolerance is per profile: with James's and Andy's accounts each carrying
+// their own campaign, one cap shared between them would halve both for no
+// safety gain. Absent either, the shared count stands, the conservative
+// direction.
+export async function callsUsedToday(accountId = null) {
   try {
+    const perAccount = accountId && await hasColumn('unipile_calls', 'account_id');
     const { rows } = await pool.query(
       `SELECT count(*)::int AS n FROM unipile_calls
-       WHERE (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date`);
+       WHERE (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date
+       ${perAccount ? 'AND account_id = $1' : ''}`, perAccount ? [accountId] : []);
     return rows[0].n;
   } catch (e) {
     if (/relation "unipile_calls" does not exist/i.test(String(e))) {
@@ -107,10 +115,10 @@ async function doCall(route, { pathSuffix = '', rawSuffix = false, query = {}, b
   // learns it without every call site changing.
   const acct = query?.account_id || form?.account_id || body?.account_id || null;
 
-  const used = await callsUsedToday();
+  const used = await callsUsedToday(acct);
   if (used >= CAP) {
     await log(endpoint, target, 'refused_cap', acct);
-    throw new CapReached(`daily cap reached: ${used} of ${CAP} Unipile calls used today (UTC). Stopping cleanly.`);
+    throw new CapReached(`daily cap reached${acct ? ' for this account' : ''}: ${used} of ${CAP} Unipile calls used today (UTC). Stopping cleanly.`);
   }
   if (calledBefore) await sleep(4000 + Math.floor(Math.random() * 5001));
   calledBefore = true;

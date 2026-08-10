@@ -557,6 +557,87 @@ app.post('/api/accounts', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// Amend an account by hand: James's 4D case, renamed to Stellanor on the
+// register Companies House keeps, and Echelon's wrongly resolved domain. A
+// company number is verified and the registered name wins, with the old name
+// kept as an alias so stories printing it still match; a domain is cleaned
+// the way the import cleans them; a type must be one a campaign knows. Only
+// the fields sent change, and nothing here touches scores, leads or people.
+app.patch('/api/accounts/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: 'bad id' });
+    const { rows: existing } = await pool.query(`SELECT id, name FROM companies WHERE id = $1`, [id]);
+    if (!existing.length) return res.status(404).json({ error: 'no such account' });
+    const body = req.body || {};
+    const sets = [];
+    const params = [id];
+    const notes = [];
+
+    if (body.chNumber !== undefined) {
+      const clean = cleanChNumber(body.chNumber);
+      if (!clean) return res.status(422).json({ error: 'that does not look like a Companies House number' });
+      const profile = await companyProfile(clean).catch(() => null);
+      if (!profile?.company_name) return res.status(422).json({ error: `Companies House does not answer for ${clean}; check the number` });
+      params.push(clean); sets.push(`ch_number = $${params.length}`);
+      params.push(profile.company_name); sets.push(`name = $${params.length}`);
+      const pc = profile.registered_office_address?.postal_code || null;
+      if (pc) {
+        params.push(pc); sets.push(`postcode = COALESCE(postcode, $${params.length})`);
+        const reg = regionForPostcode(pc);
+        if (reg) { params.push(reg); sets.push(`region = COALESCE(region, $${params.length})`); }
+      }
+      // The old name becomes an alias for the registered one, so a story
+      // still printing 4D Data Centres matches Stellanor without the queue.
+      if (existing[0].name.toLowerCase() !== profile.company_name.toLowerCase()) {
+        await pool.query(
+          `INSERT INTO matcher_aliases (alias, canonical, source) VALUES ($1, $2, 'manual_match') ON CONFLICT (alias) DO NOTHING`,
+          [existing[0].name.toLowerCase(), profile.company_name]);
+        notes.push(`renamed to the registered name, ${profile.company_name}; the old name still matches as an alias`);
+      }
+    }
+    if (body.domain !== undefined) {
+      const d = cleanDomain(body.domain);
+      if (!d) return res.status(422).json({ error: 'that does not look like a domain' });
+      params.push(d); sets.push(`domain = $${params.length}`);
+    }
+    if (body.type !== undefined) {
+      const allowed = new Set(listCampaigns().flatMap(c => c.icp.companyTypes).concat(['other', 'oem']));
+      if (!allowed.has(body.type)) return res.status(422).json({ error: `unknown type; known: ${[...allowed].join(', ')}` });
+      params.push(body.type); sets.push(`company_type = $${params.length}`);
+    }
+    if (!sets.length) return res.status(422).json({ error: 'nothing to change; send a domain, a company number or a type' });
+    await pool.query(`UPDATE companies SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, params);
+    res.json({ ok: true, note: notes.join('; ') || null });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Add a person to an account by hand: James found Echelon's London people on
+// LinkedIn himself. A human choosing one named person for one account is the
+// decision-orbit judgement, so the contact enters the orbit directly, source
+// manual, the adder recorded when signed in. Email stays for discovery or
+// hand entry later; nothing is invented.
+app.post('/api/accounts/:id/contacts', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: 'bad id' });
+    const { rows: co } = await pool.query(`SELECT id FROM companies WHERE id = $1`, [id]);
+    if (!co.length) return res.status(404).json({ error: 'no such account' });
+    const name = String((req.body || {}).name || '').trim();
+    if (!name) return res.status(422).json({ error: 'a name is required' });
+    const roleTitle = String((req.body || {}).roleTitle || '').trim() || null;
+    const linkedinUrl = String((req.body || {}).linkedinUrl || '').trim() || null;
+    const by = await actorFor('contacts', 'added_by', req);
+    const { rows } = await pool.query(
+      `INSERT INTO contacts (company_id, full_name, role_title, linkedin_url, in_decision_orbit, source${by ? ', added_by' : ''})
+       VALUES ($1, $2, $3, $4, true, 'manual'${by ? ', $5' : ''})
+       ON CONFLICT (linkedin_url) DO NOTHING RETURNING id`,
+      by ? [id, name, roleTitle, linkedinUrl, by] : [id, name, roleTitle, linkedinUrl]);
+    res.json({ ok: true, created: rows.length > 0,
+      note: rows.length ? null : 'a contact with this LinkedIn profile already exists; nothing was duplicated' });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 app.get('/api/accounts', async (req, res) => {
   try {
     // Companies are shared and membership is not, so a scoped view asks the
