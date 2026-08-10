@@ -222,6 +222,18 @@ await check('the import script is dry by default and confined to its tables', as
     'the Ireland prospecting policy is stated in the plan a human reviews');
 });
 
+await check('the consultant seed is curated, dry by default, and confined to the register', async () => {
+  const src = read('scripts/seed-consultants.mjs');
+  assert(/Dry run\. Nothing written to the register\./.test(src), 'dry run is the default');
+  assert(/--apply/.test(src) && /APPLY/.test(src), 'writing requires the flag');
+  assert(/CONSULTANTS_DRAFT\.md/.test(src), 'a curation draft is written for John and James');
+  assert(/'consultant'/.test(src) && /'marwin_dc'/.test(src), 'consultant type on the DC campaign');
+  assert(/COALESCE\(company_type, 'consultant'\)/.test(src), 'a human-set type is never overwritten');
+  assert(!/INSERT INTO leads|INSERT INTO contacts|UPDATE leads|UPDATE contacts/i.test(src), 'never touches leads or contacts');
+  assert(!/icp_score|scoreCompany/.test(src), 'never scores');
+  assert(/ON CONFLICT \(company_id, campaign\) DO NOTHING/.test(src), 'membership upsert keeps existing scores');
+});
+
 await check('migration 026 adds columns idempotently and carries no data', async () => {
   const sql = read('src/migrations/026_customer_list.sql');
   assert(/ADD COLUMN IF NOT EXISTS customer_status/.test(sql), 'status column');
