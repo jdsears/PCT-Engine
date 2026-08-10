@@ -424,6 +424,28 @@ await check('the gate path is wired to nothing from this work', async () => {
   assert(!/parties\.mjs|extractParties|buildPartiesSystem/.test(prompts), 'prompt assembly never touches the extraction');
 });
 
+await check('discovery batches doubled and each campaign searches from its own account', async () => {
+  const { peopleSearchLimit } = await import('./peopleDiscovery.mjs');
+  const saved = process.env.ENGINE_PEOPLE_SEARCH_LIMIT;
+  try {
+    delete process.env.ENGINE_PEOPLE_SEARCH_LIMIT;
+    assert(peopleSearchLimit() === 4, 'the default doubles to four accounts a cycle');
+    process.env.ENGINE_PEOPLE_SEARCH_LIMIT = '25';
+    assert(peopleSearchLimit() === 10, 'the ceiling is ten, not unlimited');
+    process.env.ENGINE_PEOPLE_SEARCH_LIMIT = '1';
+    assert(peopleSearchLimit() === 1, 'the floor is one');
+  } finally {
+    if (saved === undefined) delete process.env.ENGINE_PEOPLE_SEARCH_LIMIT; else process.env.ENGINE_PEOPLE_SEARCH_LIMIT = saved;
+  }
+  const disc = read('src/research/peopleDiscovery.mjs');
+  assert(/accountForCampaign\(campaign\)/.test(disc), 'each search runs through the campaign\'s own account');
+  assert(/filter\(id => getCampaign\(id\)\)/.test(disc), 'a stray membership value never decides the account');
+  const lane = read('src/research/linkedinResearch.mjs');
+  assert(/accountId: acct = null/.test(lane) && /`findContacts: \$\{company\.name\}`, acct\)/.test(lane), 'findContacts threads the account to the search');
+  const uni = read('src/research/unipile.mjs');
+  assert(/callsUsedToday\(acct\)/.test(uni) && /AND account_id = \$1/.test(uni), 'the daily lane cap counts per account once the ledger can say');
+});
+
 await check('people-discovery pacing is untouched', async () => {
   const src = read('src/research/peopleDiscovery.mjs');
   assert(!/party_review|proposal|contractor/i.test(src), 'people discovery knows nothing of proposals');

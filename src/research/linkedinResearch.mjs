@@ -171,9 +171,9 @@ async function verifyEmployer(companyName, candidate) {
   return match ? { evidence: true, title: match.title } : { evidence: false, title: null };
 }
 
-async function searchPeople(keywords, limit, target) {
+async function searchPeople(keywords, limit, target, acct = accountId()) {
   const res = await unipile(ROUTES.search, {
-    query: { account_id: accountId(), limit: String(limit) },
+    query: { account_id: acct || accountId(), limit: String(limit) },
     body: { api: 'sales_navigator', category: 'people', keywords },
     target: target || keywords.slice(0, 120),
   });
@@ -227,7 +227,10 @@ async function upsertLinkedinContact(companyId, c) {
 // (company, { roles, limit }).
 export async function findContacts(company, optsOrRoles = {}) {
   const opts = Array.isArray(optsOrRoles) ? { roles: optsOrRoles } : (optsOrRoles || {});
-  const { roles = [], limit = 5 } = opts;
+  // The searching account may be the campaign's own (Andy's for pharma,
+  // James's for the data centre lane), so each profile carries only its own
+  // campaign's discovery load. Absent, the shared default account stands.
+  const { roles = [], limit = 5, accountId: acct = null } = opts;
   if (!laneReady()) {
     console.log(`  LinkedIn lane not configured, skipping contact discovery for ${company.name}`);
     return { available: false, contacts: [] };
@@ -237,7 +240,7 @@ export async function findContacts(company, optsOrRoles = {}) {
   // Over-fetch, then keep the UK ones, so the daily-capped single call still
   // returns a full batch after the global noise is dropped.
   const candidatePool = Math.min(Math.max(limit * 4, limit), 25);
-  const found = await searchPeople(keywords, candidatePool, `findContacts: ${company.name}`);
+  const found = await searchPeople(keywords, candidatePool, `findContacts: ${company.name}`, acct);
   const uk = found.filter(c => inTargetCountry(c.location));
 
   const out = { available: true, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0, filteredOutOfArea: found.length - uk.length };
