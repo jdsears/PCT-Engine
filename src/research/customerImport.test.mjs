@@ -232,6 +232,9 @@ await check('the consultant seed is curated, dry by default, and confined to the
   assert(!/INSERT INTO leads|INSERT INTO contacts|UPDATE leads|UPDATE contacts/i.test(src), 'never touches leads or contacts');
   assert(!/icp_score|scoreCompany/.test(src), 'never scores');
   assert(/ON CONFLICT \(company_id, campaign\) DO NOTHING/.test(src), 'membership upsert keeps existing scores');
+  assert(/Irish engineering houses that design UK facilities/.test(src) && /Ethos Engineering/.test(src),
+    'the Irish design-house carve-out is stated where the list lives');
+  assert(/out of scope as an end target/.test(src), 'and the standing Republic rule is restated beside it');
 });
 
 await check('migration 026 adds columns idempotently and carries no data', async () => {

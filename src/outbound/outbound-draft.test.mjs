@@ -361,6 +361,16 @@ await check('composeDraft makes a named end customer a BLOCKING flag, and passes
   assert(!clean.flags.some(f => /^blocking/i.test(f)), 'the general track record must not be blocked');
 });
 
+await check('design-in is its own recorded outcome, schema-tolerant (static)', () => {
+  const server = read('src/server.mjs');
+  assert(/leads\/:id\/design-in/.test(server), 'the route exists');
+  assert(/hasColumn\('leads', 'design_in_at'\)/.test(server), 'it asks the schema before writing or selecting');
+  assert(/specified on design/.test(server), 'the team is told in the outcome\'s own words');
+  assert(/stage = CASE WHEN stage IN \('handed_off'\) THEN stage ELSE 'qualified' END/.test(server), 'a design-in qualifies the lead without regressing a handoff');
+  const mig = read('src/migrations/029_design_in.sql');
+  assert(/ADD COLUMN IF NOT EXISTS design_in_at/.test(mig) && !/INSERT INTO/i.test(mig), 'migration 029 is columns only, idempotent');
+});
+
 console.log('\nThe drafting selection queries:');
 
 // The regression net for a live failure: the cross-campaign clause moved the
