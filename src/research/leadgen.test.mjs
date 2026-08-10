@@ -362,6 +362,19 @@ await check('the confirm route verifies a typed number and the add route guards 
   assert(/import \{[^}]*matchParty[^}]*\} from '\.\/research\/match\.mjs'/.test(server), 'and the matcher too');
 });
 
+await check('amending an account verifies, aliases the old name, and adds people honestly (static)', async () => {
+  const server = read('src/server.mjs');
+  const patchBlock = server.slice(server.indexOf("app.patch('/api/accounts/:id'"), server.indexOf("app.post('/api/accounts/:id/contacts'"));
+  assert(/companyProfile\(clean\)/.test(patchBlock), 'a new number is verified against Companies House');
+  assert(/name = \$/.test(patchBlock) && /'manual_match'/.test(patchBlock), 'the registered name takes over and the old name becomes an alias');
+  assert(/COALESCE\(postcode,/.test(patchBlock) && /COALESCE\(region,/.test(patchBlock), 'held fields fill gaps only');
+  assert(/nothing to change/.test(patchBlock), 'an empty amendment refuses rather than writing nothing silently');
+  const contactBlock = server.slice(server.indexOf("app.post('/api/accounts/:id/contacts'"), server.indexOf("app.get('/api/accounts'"));
+  assert(/'manual'/.test(contactBlock) && /in_decision_orbit/.test(contactBlock), 'a hand-added person says so and enters the orbit deliberately');
+  assert(/actorFor\('contacts', 'added_by', req\)/.test(contactBlock), 'the adder is recorded when signed in');
+  assert(/ON CONFLICT \(linkedin_url\) DO NOTHING/.test(contactBlock), 'a known profile is never duplicated');
+});
+
 await check('every candidate producer uses the one mapper, and the queue reads its fields', async () => {
   const run = read('src/research/runResearch.mjs');
   assert(/candidateRows\(await searchCompanies/.test(run), 'the research run shapes candidates through candidateRows');

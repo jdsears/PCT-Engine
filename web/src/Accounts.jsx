@@ -77,9 +77,100 @@ function ScoreBar({ score, wide }) {
   );
 }
 
-function DetailPanel({ id, isMobile, onClose }) {
+// Amend the account's own facts: the 4D case, renamed on Companies House, and
+// Echelon's wrongly resolved domain. The server verifies a number before
+// anything is stored and keeps the old name as an alias.
+function AmendAccount({ id, detail, onSaved }) {
+  const [open, setOpen] = useState(false);
+  const [domain, setDomain] = useState('');
+  const [chNumber, setChNumber] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const save = async () => {
+    setBusy(true); setMsg(null);
+    const body = {};
+    if (domain.trim()) body.domain = domain.trim();
+    if (chNumber.trim()) body.chNumber = chNumber.trim();
+    try {
+      const res = await apiFetch(`/api/accounts/${id}`, {
+        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg(json.error || 'could not amend the account'); setBusy(false); return; }
+      setMsg(json.note || 'Saved.');
+      setDomain(''); setChNumber('');
+      onSaved();
+    } catch (e) { setMsg(String(e.message || e)); }
+    setBusy(false);
+  };
+
+  if (!open) {
+    return <button className="ob-btn amend-toggle" onClick={() => setOpen(true)}>Amend this account</button>;
+  }
+  return (
+    <div className="panel-block">
+      <div className="eyebrow">Amend this account</div>
+      <div className="add-account-fields">
+        <input placeholder={detail.domain ? `Domain, currently ${detail.domain}` : 'Domain, none on file'}
+          value={domain} onChange={e => setDomain(e.target.value)} aria-label="Domain" />
+        <input placeholder={detail.chNumber ? `Companies House number, currently ${detail.chNumber}` : 'Companies House number, unmatched'}
+          value={chNumber} onChange={e => setChNumber(e.target.value)}
+          aria-label="Companies House number, verified before it is stored" />
+        <button className="ob-btn primary" onClick={save} disabled={busy || (!domain.trim() && !chNumber.trim())}>
+          {busy ? 'Checking' : 'Save'}
+        </button>
+        <button className="ob-btn ghost" onClick={() => { setOpen(false); setMsg(null); }} disabled={busy}>Close</button>
+      </div>
+      <div className="muted-small">A company number is checked against Companies House and the registered name takes over, with the old name kept as an alias. Only what you fill in changes.</div>
+      {msg && <div className="muted-note">{msg}</div>}
+    </div>
+  );
+}
+
+// Add a person James's way: found on LinkedIn, chosen deliberately for this
+// account, so they enter the decision orbit directly.
+function AddPerson({ id, onSaved }) {
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('');
+  const [linkedin, setLinkedin] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const save = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      const res = await apiFetch(`/api/accounts/${id}/contacts`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, roleTitle: role || null, linkedinUrl: linkedin || null }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg(json.error || 'could not add the person'); setBusy(false); return; }
+      setMsg(json.note || `${name} added to the decision makers.`);
+      setName(''); setRole(''); setLinkedin('');
+      onSaved();
+    } catch (e) { setMsg(String(e.message || e)); }
+    setBusy(false);
+  };
+
+  return (
+    <div className="add-person">
+      <div className="add-account-fields">
+        <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} aria-label="Person's name" />
+        <input placeholder="Role, optional" value={role} onChange={e => setRole(e.target.value)} aria-label="Role" />
+        <input placeholder="LinkedIn URL, optional" value={linkedin} onChange={e => setLinkedin(e.target.value)} aria-label="LinkedIn URL" />
+        <button className="ob-btn" onClick={save} disabled={busy || !name.trim()}>{busy ? 'Adding' : 'Add person'}</button>
+      </div>
+      {msg && <div className="muted-note">{msg}</div>}
+    </div>
+  );
+}
+
+function DetailPanel({ id, isMobile, onClose, onChanged }) {
   const [detail, setDetail] = useState(null);
   const [state, setState] = useState('loading');
+  const [reload, setReload] = useState(0);
+  const changed = () => { setReload(n => n + 1); if (onChanged) onChanged(); };
   useEffect(() => {
     let live = true;
     setState('loading');
@@ -88,7 +179,7 @@ function DetailPanel({ id, isMobile, onClose }) {
       .then(d => { if (live) { setDetail(d); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
-  }, [id]);
+  }, [id, reload]);
 
   return (
     <>
@@ -142,6 +233,7 @@ function DetailPanel({ id, isMobile, onClose }) {
                     </span>
                   </div>
                 ))}
+                <AddPerson id={id} onSaved={changed} />
               </div>
               <div className="panel-block">
                 <div className="eyebrow">Recent signals</div>
@@ -163,6 +255,7 @@ function DetailPanel({ id, isMobile, onClose }) {
                   </div>
                 ))}
               </div>
+              <AmendAccount id={id} detail={detail} onSaved={changed} />
             </div>
           </>
         )}
@@ -284,7 +377,8 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
           ))}
         </div>
       )}
-      {selected != null && <DetailPanel id={selected} isMobile={isMobile} onClose={() => setSelected(null)} />}
+      {selected != null && <DetailPanel id={selected} isMobile={isMobile} onClose={() => setSelected(null)}
+        onChanged={() => setReloads(n => n + 1)} />}
     </div>
   );
 }
