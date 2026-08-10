@@ -38,7 +38,7 @@ import { resolveSite, resolveDrive, docWebUrl } from './sharepoint.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
-import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady } from './studio/liInvite.mjs';
+import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady, inviteRefusal } from './studio/liInvite.mjs';
 import { CapReached, AccountUnhealthy, accountForCampaign } from './research/unipile.mjs';
 import { generateLiPosts, connectNote, postFlags, hashtagsFor, renderPostText, publishPost } from './studio/liPosts.mjs';
 
@@ -1484,6 +1484,20 @@ app.post('/api/studio/connects/:id/send-invite', async (req, res) => {
   } catch (e) {
     if (e instanceof AccountUnhealthy) return res.json({ sent: false, reason: `LinkedIn account health problem reported; everything stopped, nothing retried: ${String(e.message).slice(0, 200)}` });
     if (e instanceof CapReached) return res.json({ sent: false, reason: 'the daily Unipile call cap is reached; more tomorrow' });
+    // An invitation already pending on LinkedIn's side is truth the register
+    // was missing, not a fault to re-raise: record it so the queue moves on.
+    const refusal = inviteRefusal(e);
+    if (refusal?.alreadyInvited) {
+      try {
+        const by = await actorFor('contacts', 'li_invited_by', req);
+        await pool.query(
+          `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2${by ? ', li_invited_by = $3' : ''}
+           WHERE id = $1 AND li_invited_at IS NULL`,
+          by ? [req.params.id, 'recorded from LinkedIn: an invitation was already pending', by]
+             : [req.params.id, 'recorded from LinkedIn: an invitation was already pending']);
+      } catch { /* the reason still reaches the person; the queue self-corrects next time */ }
+      return res.json({ sent: false, recorded: true, reason: refusal.reason });
+    }
     res.status(500).json({ error: String(e) });
   }
 });
