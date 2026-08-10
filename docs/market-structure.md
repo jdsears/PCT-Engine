@@ -40,6 +40,53 @@ about supply.
 > We can also pickup this work if we are bidding in the UK only to a UK
 > customer because of our distribution agreement.
 
+## The commission structure, six packages
+
+James, 7 August 2026: Richards splits a project's commission across six
+packages, each earned by the representative who did that part of the work.
+The percentage split between them lives with John and James, deliberately
+not in this repository. The structure, compressed from the definitions
+James shared:
+
+1. **The inquiry.** Introducing the products on a sales call, adoption onto
+   a project's approved vendor list, considered as basis of design;
+   "essentially ours to lose at this stage". Not merely having a contact at
+   the customer.
+2. **The quotation.** Preparing the original technical and commercial quote,
+   assisting with or completing sizing and selection. Not just pricing a
+   fully specified list.
+3. **Revision.** Technical revision of an existing quote, a part number or
+   model change. Not letterhead or quantity changes.
+4. **Negotiation.** Terms, conditions, placement.
+5. **Invoicing in the contractual territory.** Order processing, follow-up
+   and modification; the location initiating order placement, not an HQ
+   bill-to address.
+6. **The final destination.** After-sales in the country where the plant
+   runs: warranty, training, spare parts service.
+
+## Where the engine's work lands on the packages
+
+- **Package 1 is the outbound-to-spec play.** The consultant campaign, the
+  operator briefing that aims at the specification decision, and the
+  design-in outcome are all package 1 capture: onto the approved vendor
+  list, basis of design, ours to lose.
+- **Package 2 is the parked quoting engine.** The largest single share of
+  the split, per James, and it is sizing, selection and original quotation,
+  which is exactly what the configurator and the price machinery already
+  half-know how to do. When John calls the quoting engine build, this is
+  the commercial case for it.
+- **Packages 3 to 5 land in the UK even when the design sat abroad.** The
+  Ireland RFQ is the live proof: engineering done in Dublin, procurement
+  seeking UK suppliers, so the quoting and invoicing packages arrive at the
+  UK rep. The gate already keeps these stories, because a UK build is a UK
+  story wherever it was designed.
+- **Package 6 defaults to the UK rep on UK builds**, which is after-sales
+  the engine never touches but the reps collect.
+- **The parked foreign-design signal now has a precise value statement**: a
+  UK or Irish house designing a foreign plant is package 1 and 2 territory
+  even when the build never touches the UK. Still parked for a calibrated
+  gate change, now with its worth written down.
+
 ## What the engine takes from it
 
 1. **Two prizes, not one.** A UK purchase, and specified-on-design, which
