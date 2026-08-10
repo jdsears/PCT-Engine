@@ -318,6 +318,25 @@ await check('a named operator or implying phrase is flagged, the recipient name 
   assert(flagEndCustomers('used across some of the largest data centre builds', 'Aery').length === 0, 'the safe general form is clean');
 });
 
+await check('a consultant recipient is briefed on spec fit, never supply', () => {
+  const base = { contact: null, signal: null, icpReason: null, product: [], blockedSuppliers: [], missing: [] };
+  const consultant = renderGrounding({ ...base, company: { name: 'Example Design Partnership', type: 'consultant' } });
+  assert(/design consultancy/.test(consultant), 'the drafter is told who it is writing to');
+  assert(/specification fit, approved equals and design support/.test(consultant), 'the ask aims at the spec');
+  assert(/never to supply, stock or price/.test(consultant), 'and never at the purchase');
+  const operator = renderGrounding({ ...base, company: { name: 'Example DC', type: 'dc_developer' } });
+  assert(!/design consultancy/.test(operator), 'no consultant briefing for anyone else');
+});
+
+await check('the operator-side briefing aims at the spec, learned from a live reply', () => {
+  const g = { company: { name: 'Example DC', type: 'dc_developer' }, contact: null, icpReason: null,
+    product: [], blockedSuppliers: [], missing: [], openerGrade: true,
+    signal: { type: 'news_dc_build', text: 'campus approved', matchedAs: 'operator' } };
+  const text = renderGrounding(g);
+  assert(/aim at the specification decision, never the purchase order/.test(text),
+    'operators specify while contractors buy, as VIRTUS spelt out');
+});
+
 await check('the recipient exemption covers the recipient\'s own aliases, and only theirs', () => {
   // The live case from the first sending day: a draft to Amazon WEB Services
   // Emea Sarl, blocked for saying AWS, the recipient's own abbreviation.

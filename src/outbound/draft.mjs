@@ -61,6 +61,13 @@ export function renderGrounding(g, campaign = 'marwin_dc') {
   if (['a', 'b', 'c'].includes(g.company?.customerStatus)) {
     lines.push('This company is an existing PCT customer in the account records. Write as a supplier they already know: do not introduce PCT as if they had never heard of it and do not present this as first contact. Do not claim any specific purchase or order history, because none is recorded here.');
   }
+  // Consultancies performance-specify and never purchase, a structure a live
+  // operator reply spelt out: the spec is written by the operator and their
+  // consultants, the buying happens through the contractors. An email to a
+  // consultant about supply reads as not knowing how their industry works.
+  if (g.company?.type === 'consultant') {
+    lines.push('The recipient is at a design consultancy. Consultancies performance-specify flow control on their projects and never purchase it: write to specification fit, approved equals and design support, never to supply, stock or price.');
+  }
   lines.push(g.contact?.name
     ? `Contact: ${g.contact.name}${g.contact.role ? ', ' + g.contact.role : ', role not recorded'}.`
     : `Contact: not recorded. Address a specifier or buyer in neutral terms, do not assume a role.`);
@@ -75,7 +82,10 @@ export function renderGrounding(g, campaign = 'marwin_dc') {
     if (g.signal.matchedAs === 'contractor') {
       lines.push('The recipient is at the contractor appointed or delivering the work in this signal, not the client whose facility it is. Write to the delivery side: their project, their specification decisions. Do not congratulate them on building their own facility.');
     } else if (g.signal.matchedAs === 'operator') {
-      lines.push('The recipient is at the operator or end client whose facility this signal describes. Write to the owner side of it.');
+      // Sharpened from a live operator reply, August 2026: operators and
+      // their consultants performance-specify while their contractors do the
+      // buying, so the owner-side email aims at the spec, not the order.
+      lines.push('The recipient is at the operator or end client whose facility this signal describes. Write to the owner side of it: operators and their consultants performance-specify flow control while their contractors purchase it, so aim at the specification decision, never the purchase order.');
     }
   } else {
     if (g.signal) lines.push(`Context only, an administrative filing (${g.signal.type}). NEVER mention it to the recipient and never give it as a reason for contact; it only tells us the account is worth approaching.`);

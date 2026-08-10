@@ -13,6 +13,7 @@ export const TYPE_LABELS = {
   dc_developer: 'DC developer', me_contractor: 'M&E contractor',
   end_client: 'End client', oem: 'OEM', other: 'Other',
   pharma_manufacturer: 'Pharma manufacturer', biotech_manufacturer: 'Biotech manufacturer',
+  consultant: 'Design consultant',
 };
 
 export const SIGNAL_TYPE_LABELS = {

@@ -158,7 +158,11 @@ check('the migrated sweep queries and ICP config match what the code held', () =
   assert(c.signals.sweepQueries.length === 5, 'five sweep queries, as before');
   assert(c.signals.sweepQueries[0].query === 'UK data centre planning permission granted hyperscale colocation campus', 'the first query is unchanged');
   assert(c.signals.sweepQueries[3].type === 'news_contract', 'the fit-out query stays a contract signal');
-  assert(JSON.stringify(c.icp.companyTypes) === JSON.stringify(['dc_developer', 'me_contractor', 'end_client']), 'the company types are unchanged');
+  // consultant joined the list on 7 August 2026, John's instruction after
+  // VIRTUS's live reply named consultants as co-authors of the performance
+  // spec. A deliberate widening, recorded here so the next reader knows it
+  // was chosen, not drifted into.
+  assert(JSON.stringify(c.icp.companyTypes) === JSON.stringify(['dc_developer', 'me_contractor', 'end_client', 'consultant']), 'the company types are the original three plus the consultant widening');
   assert(JSON.stringify(c.icp.weights) === JSON.stringify({ namedAccount: 25, typeFit: 25, signals: 30, chHealth: 20 }), 'the weights are unchanged');
   assert(JSON.stringify(c.icp.signalTypes) === JSON.stringify(['news_dc_build', 'news_contract', 'planning']), 'the scoring signal types are unchanged');
   assert(c.icp.noSignalReason === 'no data centre build or contract signals', 'the no-signal reason is unchanged');
