@@ -23,6 +23,10 @@ function ProposalRow({ r, accounts, onDone }) {
   // Default to the single CH candidate when there is exactly one; several mean
   // the human picks, none means confirm on the printed name alone.
   const [entity, setEntity] = useState(r.chCandidates.length === 1 ? r.chCandidates[0].chNumber : '');
+  // James's APT case: the right entity existed but was never suggested. The
+  // reviewer can enter the number; the server verifies it against Companies
+  // House and takes the registered name from the register, never the typing.
+  const [manualNumber, setManualNumber] = useState('');
   const [mergeTarget, setMergeTarget] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
@@ -48,16 +52,20 @@ function ProposalRow({ r, accounts, onDone }) {
               : r.signal.title}
           </div>
         )}
-        {r.chCandidates.length > 0 && (
-          <select className="rq-select" value={entity} onChange={e => setEntity(e.target.value)}
-            aria-label="Companies House entity">
-            <option value="">Companies House entity, pick to confirm against</option>
-            {r.chCandidates.map(c => (
-              <option key={c.chNumber} value={c.chNumber}>
-                {c.name} ({c.chNumber}{c.status && c.status !== 'active' ? `, ${c.status}` : ''})
-              </option>
-            ))}
-          </select>
+        <select className="rq-select" value={entity} onChange={e => setEntity(e.target.value)}
+          aria-label="Companies House entity">
+          <option value="">{r.chCandidates.length ? 'Companies House entity, pick to confirm against' : 'No Companies House suggestion; confirm as printed'}</option>
+          {r.chCandidates.map(c => (
+            <option key={c.chNumber} value={c.chNumber}>
+              {c.name} ({c.chNumber}{c.status && c.status !== 'active' ? `, ${c.status}` : ''})
+            </option>
+          ))}
+          <option value="__manual">None of these: enter the company number yourself</option>
+        </select>
+        {entity === '__manual' && (
+          <input className="rq-select" placeholder="Companies House number, for example 07053790"
+            value={manualNumber} onChange={e => setManualNumber(e.target.value)}
+            aria-label="Companies House number, verified before it is stored" />
         )}
         <select className="rq-select" value={mergeTarget} onChange={e => setMergeTarget(e.target.value)}
           aria-label="Merge into an existing account">
@@ -67,10 +75,11 @@ function ProposalRow({ r, accounts, onDone }) {
         {err && <div className="rq-err">{err}</div>}
       </div>
       <div className="rq-actions">
-        <button className="ob-btn primary" disabled={busy || !!mergeTarget}
+        <button className="ob-btn primary" disabled={busy || !!mergeTarget || (entity === '__manual' && !manualNumber.trim())}
           onClick={run(() => act(`/api/reviews/${r.id}/confirm`,
-            chosen ? { chNumber: chosen.chNumber, registeredName: chosen.name } : {}))}>
-          Confirm{chosen ? '' : ' as printed'}
+            entity === '__manual' ? { chNumber: manualNumber.trim() }
+              : chosen ? { chNumber: chosen.chNumber, registeredName: chosen.name } : {}))}>
+          Confirm{entity === '__manual' ? ' against that number' : chosen ? '' : ' as printed'}
         </button>
         <button className="ob-btn" disabled={busy || !mergeTarget}
           onClick={run(() => act(`/api/reviews/${r.id}/merge`, { companyId: Number(mergeTarget) }))}>

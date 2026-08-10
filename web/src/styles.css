@@ -519,6 +519,13 @@ button, input { font: inherit; }
 .rq-signal { font-size: 13px; color: var(--ink2); }
 .rq-signal a { color: var(--blue); text-decoration: none; }
 .rq-select { font: inherit; font-size: 13px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; max-width: 100%; min-height: 44px; }
+
+/* Add an account by hand: a small toggle above the table, a one-row form. */
+.add-account-toggle { margin-bottom: 14px; }
+.add-account { padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; }
+.add-account-fields { display: flex; flex-wrap: wrap; gap: 8px; }
+.add-account-fields input, .add-account-fields select { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; min-height: 44px; flex: 1 1 180px; }
+.leads-meta-btn { background: none; border: none; padding: 0; margin-left: 8px; color: var(--teal, #49C0B1); font: inherit; font-size: inherit; cursor: pointer; text-decoration: underline; }
 .rq-err { font-size: 12px; color: var(--amber); }
 .rq-actions { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
 .rq-actions .ob-btn { min-height: 44px; }

@@ -7,7 +7,8 @@ import { dirname, join } from 'node:path';
 import { pool, hasColumn } from './db.mjs';
 import { search } from './retrieve.mjs';
 import { ask } from './answer.mjs';
-import { REGIONS } from './research/region.mjs';
+import { REGIONS, regionForPostcode } from './research/region.mjs';
+import { matchParty } from './research/match.mjs';
 import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
 import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, prospectHtml, signatureBlock } from './mail.mjs';
@@ -16,7 +17,7 @@ import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { fetchPostEngagers, titleFitsCampaign } from './studio/postEngagers.mjs';
-import { searchCompanies, candidateRows } from './research/companiesHouse.mjs';
+import { searchCompanies, candidateRows, companyProfile, cleanChNumber } from './research/companiesHouse.mjs';
 import { staleDays, isStale } from './research/staleness.mjs';
 import { companyTypeForParty } from './research/partyType.mjs';
 import { classifySyncErrors } from './sync/acknowledgements.mjs';
@@ -498,6 +499,64 @@ app.get('/api/pipeline/analytics', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// Add an account by hand. James's ask when CyrusOne was nowhere to be found:
+// the register grows through seeds, confirms and the import, and there was no
+// door for a company a human simply knows belongs. With a company number the
+// entity is verified against Companies House and the registered name wins;
+// with a name alone the account enters unmatched, honestly. The matcher
+// guards the door so a company already on the register is pointed at, never
+// duplicated, and the campaign resolves through the registry, never free
+// text.
+app.post('/api/accounts', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const campaign = getCampaign(String(body.campaign || ''))?.id;
+    if (!campaign) return res.status(422).json({ error: `unknown campaign; known: ${listCampaigns().map(c => c.id).join(', ')}` });
+    const def = getCampaign(campaign);
+    const type = def.icp.companyTypes.includes(body.type) ? body.type : null;
+
+    let chNumber = null, name = String(body.name || '').trim(), postcode = null;
+    if (body.chNumber) {
+      chNumber = cleanChNumber(body.chNumber);
+      if (!chNumber) return res.status(422).json({ error: 'that does not look like a Companies House number' });
+      const profile = await companyProfile(chNumber).catch(() => null);
+      if (!profile?.company_name) return res.status(422).json({ error: `Companies House does not answer for ${chNumber}; check the number` });
+      name = profile.company_name;
+      postcode = profile.registered_office_address?.postal_code || null;
+    }
+    if (!name) return res.status(422).json({ error: 'a name or a company number is required' });
+
+    const { rows: register } = await pool.query(`SELECT id, name FROM companies`);
+    const aliases = Object.fromEntries(
+      (await pool.query(`SELECT alias, canonical FROM matcher_aliases`)).rows.map(r => [r.alias, r.canonical]));
+    const m = matchParty(name, register, { aliases });
+    if (m.status === 'matched') {
+      // Already here: make sure it is on this campaign and named, then say so
+      // plainly rather than minting a twin.
+      await pool.query(`UPDATE companies SET named_account = true, updated_at = now() WHERE id = $1`, [m.company.id]);
+      await pool.query(
+        `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [m.company.id, campaign]);
+      return res.json({ ok: true, companyId: m.company.id, existed: true,
+        note: `${m.company.name} is already on the register; it is now a named account on this campaign` });
+    }
+    if (m.status === 'ambiguous') {
+      return res.status(409).json({ error: `the register holds several plausible matches for that name: ${m.candidates.map(c => c.name).join('; ')}. Open Accounts and check before adding.` });
+    }
+
+    const { rows: created } = await pool.query(
+      `INSERT INTO companies (name, ch_number, company_type, region, postcode, named_account, source)
+       VALUES ($1, $2, $3, $4, $5, true, 'manual')
+       ON CONFLICT (ch_number) DO UPDATE SET named_account = true, updated_at = now()
+       RETURNING id`,
+      [name, chNumber, type, regionForPostcode(postcode), postcode]);
+    await pool.query(
+      `INSERT INTO company_campaigns (company_id, campaign) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [created[0].id, campaign]);
+    res.json({ ok: true, companyId: created[0].id, name });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 app.get('/api/accounts', async (req, res) => {
   try {
     // Companies are shared and membership is not, so a scoped view asks the
@@ -740,7 +799,30 @@ app.post('/api/reviews/:id/confirm', async (req, res) => {
     const r = await openReview(req.params.id);
     if (!r) return res.status(404).json({ error: 'review not open' });
     if (r.kind !== 'proposal') return res.status(409).json({ error: 'only a proposal can be confirmed; resolve an ambiguity to an account or mark it distinct' });
-    const { chNumber = null, registeredName = null } = req.body || {};
+    let { chNumber = null, registeredName = null } = req.body || {};
+    let handVerified = false;
+    if (chNumber) {
+      // A number among the stored candidates came from Companies House and is
+      // trusted as it was fetched. Anything else was typed at review, James's
+      // APT case, where the right entity was findable but never suggested: it
+      // is verified against Companies House before it is stored, and the
+      // registered name comes from the register, never from the typing.
+      const clean = cleanChNumber(chNumber);
+      if (!clean) return res.status(422).json({ error: 'that does not look like a Companies House number' });
+      const suggested = (r.ch_candidates || []).find(c => c.chNumber === clean);
+      if (suggested) {
+        chNumber = clean;
+        registeredName = registeredName || suggested.name;
+      } else {
+        const profile = await companyProfile(clean).catch(() => null);
+        if (!profile?.company_name) {
+          return res.status(422).json({ error: `Companies House does not answer for ${clean}; check the number` });
+        }
+        chNumber = clean;
+        registeredName = profile.company_name;
+        handVerified = true;
+      }
+    }
     const name = (registeredName || r.printed_name).trim();
     // Asked before the transaction opens: a failed statement inside one aborts
     // it, so the shape is decided up front rather than discovered by failing.
@@ -772,7 +854,7 @@ app.post('/api/reviews/:id/confirm', async (req, res) => {
       // was chosen at review, a decision to add the printed entity as it stands,
       // not an entity that was overlooked.
       const decisionNote = chNumber
-        ? `confirmed against Companies House ${chNumber}`
+        ? `confirmed against Companies House ${chNumber}${handVerified ? ', entered at review and verified' : ''}`
         : 'confirmed as printed: no confident Companies House match chosen at review';
       const upd = decisionUpdate({
         status: 'confirmed', withNote: noteColumn,

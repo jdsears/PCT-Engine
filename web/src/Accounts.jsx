@@ -7,6 +7,63 @@ import ReviewQueue from './ReviewQueue.jsx';
 
 const typeLabel = t => TYPE_LABELS[t] || '—';
 
+// Add an account by hand, James's ask when CyrusOne was nowhere to be found.
+// With a company number the server verifies it against Companies House and
+// the registered name wins; a name alone enters unmatched, honestly. A
+// company already on the register is pointed at, never duplicated.
+function AddAccount({ campaign, campaignList, onAdded }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [chNumber, setChNumber] = useState('');
+  const [type, setType] = useState('');
+  const [target, setTarget] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const chosenCampaign = target || (!isAll(campaign) && campaign) || campaignList[0]?.id || '';
+
+  const submit = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      const res = await apiFetch('/api/accounts', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, chNumber: chNumber || null, type: type || null, campaign: chosenCampaign }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg(json.error || 'could not add the account'); setBusy(false); return; }
+      setMsg(json.note || `${json.name || name} added to the register.`);
+      setName(''); setChNumber(''); setType('');
+      onAdded();
+    } catch (e) { setMsg(String(e.message || e)); }
+    setBusy(false);
+  };
+
+  if (!open) {
+    return <button className="ob-btn add-account-toggle" onClick={() => setOpen(true)}>Add an account</button>;
+  }
+  return (
+    <div className="card add-account">
+      <div className="eyebrow">Add an account</div>
+      <div className="add-account-fields">
+        <input placeholder="Company name" value={name} onChange={e => setName(e.target.value)} aria-label="Company name" />
+        <input placeholder="Companies House number, optional" value={chNumber} onChange={e => setChNumber(e.target.value)}
+          aria-label="Companies House number, verified before it is stored" />
+        <select value={type} onChange={e => setType(e.target.value)} aria-label="Company type">
+          <option value="">Type, optional</option>
+          {Object.entries(TYPE_LABELS).filter(([k]) => k !== 'other').map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        <select value={chosenCampaign} onChange={e => setTarget(e.target.value)} aria-label="Campaign">
+          {campaignList.map(c => <option key={c.id} value={c.id}>{c.displayName || c.id}</option>)}
+        </select>
+        <button className="ob-btn primary" onClick={submit} disabled={busy || (!name.trim() && !chNumber.trim())}>
+          {busy ? 'Checking' : 'Add'}
+        </button>
+        <button className="ob-btn ghost" onClick={() => { setOpen(false); setMsg(null); }} disabled={busy}>Close</button>
+      </div>
+      {msg && <div className="muted-note">{msg}</div>}
+    </div>
+  );
+}
+
 // The CRM relationship, when the customer list has been imported: an existing
 // customer at its grade, or a named prospect. Absent means the engine has no
 // record either way, so nothing is shown rather than something guessed.
@@ -149,11 +206,17 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
     <ReviewQueue campaign={campaign} accounts={companies}
       onChanged={() => setReloads(n => n + 1)} />
   );
+  const addForm = (
+    <AddAccount campaign={campaign} campaignList={campaignList}
+      onAdded={() => setReloads(n => n + 1)} />
+  );
 
   if (companies.length === 0) {
     return (
       <div className="content-pad">
         {queue}
+      {addForm}
+        {addForm}
         <p className="muted-note">
           No named accounts on this campaign's register yet. Accounts appear once the campaign has been seeded, a sweep has matched a company to it, or a proposal above is confirmed.
         </p>

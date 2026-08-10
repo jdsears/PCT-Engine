@@ -335,6 +335,33 @@ await check('a rendered candidate option is never empty when the API returned a 
   }
 });
 
+await check('a hand-entered company number shapes to the canonical form or refuses', async () => {
+  const { cleanChNumber } = await import('./companiesHouse.mjs');
+  // James's APT case: the right entity was findable but never suggested, so
+  // the reviewer types the number. Companies House numbers are eight
+  // characters; typed input arrives with spaces, lower case and dropped
+  // leading zeros.
+  assert(cleanChNumber('07053790') === '07053790', 'the live number passes as typed');
+  assert(cleanChNumber(' 070 53790 ') === '07053790', 'spaces are stripped');
+  assert(cleanChNumber('7053790') === '07053790', 'a dropped leading zero is restored');
+  assert(cleanChNumber('sc123456') === 'SC123456', 'prefixed registrations upper-case');
+  assert(cleanChNumber('123456789') === null, 'nine digits is not a number');
+  assert(cleanChNumber('CYRUSONE') === null && cleanChNumber('') === null && cleanChNumber(null) === null, 'words and blanks refuse');
+});
+
+await check('the confirm route verifies a typed number and the add route guards the register (static)', async () => {
+  const server = read('src/server.mjs');
+  assert(/entered at review and verified/.test(server), 'a hand-entered confirm records how the number arrived');
+  assert(/Companies House does not answer for/.test(server), 'an unverifiable number refuses plainly');
+  const addBlock = server.slice(server.indexOf("app.post('/api/accounts'"), server.indexOf("app.get('/api/accounts'"));
+  assert(/getCampaign\(String\(body\.campaign/.test(addBlock), 'the campaign resolves through the registry, never free text');
+  assert(/matchParty\(name, register/.test(addBlock), 'the matcher guards the door against duplicates');
+  assert(/source\)[\s\S]*'manual'/.test(addBlock), 'a hand-added account says where it came from');
+  assert(/already on the register/.test(addBlock), 'an existing account is pointed at, never duplicated');
+  assert(/import \{[^}]*cleanChNumber[^}]*\} from '\.\/research\/companiesHouse\.mjs'/.test(server), 'the server imports what it uses');
+  assert(/import \{[^}]*matchParty[^}]*\} from '\.\/research\/match\.mjs'/.test(server), 'and the matcher too');
+});
+
 await check('every candidate producer uses the one mapper, and the queue reads its fields', async () => {
   const run = read('src/research/runResearch.mjs');
   assert(/candidateRows\(await searchCompanies/.test(run), 'the research run shapes candidates through candidateRows');
