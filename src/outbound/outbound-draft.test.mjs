@@ -337,6 +337,19 @@ await check('the operator-side briefing aims at the spec, learned from a live re
     'operators specify while contractors buy, as VIRTUS spelt out');
 });
 
+await check('a URL never trips the end-customer scan; the words outside it still do', () => {
+  // The live case, frozen: Patrick's booking link lives on Microsoft's own
+  // host for the Bookings service, and the name scan blocked the first live
+  // response for "naming" an end customer nobody had named.
+  const bookingLink = 'https://bookings.cloud.microsoft/bookwithme/user/20bbcc9178744a1092ce961f504b0233%40pctflow.com/meetingtype/scL6W7CwikuQ4GedS7MicA2?anonymous&ismsaljsauthenabled';
+  assert(flagEndCustomers(`a booking link is here: ${bookingLink}`, 'Virtus Data Centres').length === 0,
+    'the booking host is a URL, not a customer reference');
+  assert(flagEndCustomers(`we supply Microsoft, book here: ${bookingLink}`, 'Virtus Data Centres').includes('microsoft'),
+    'the same word outside the URL still blocks');
+  assert(flagEndCustomers('see www.google.com/page for details', 'Aery').length === 0,
+    'a bare www address is a link concern, not a name concern');
+});
+
 await check('the recipient exemption covers the recipient\'s own aliases, and only theirs', () => {
   // The live case from the first sending day: a draft to Amazon WEB Services
   // Emea Sarl, blocked for saying AWS, the recipient's own abbreviation.
