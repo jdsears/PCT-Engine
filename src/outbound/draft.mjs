@@ -276,7 +276,13 @@ function recipientCovers(recipient, name) {
   return END_CUSTOMER_ALIAS_GROUPS.some(g => g.includes(name) && g.some(a => recipient.includes(a)));
 }
 export function flagEndCustomers(text, recipientName) {
-  const hay = String(text || '').toLowerCase();
+  // URLs are the link rule's business, not the name rule's: an approved
+  // address may lawfully contain a giant's name, bookings.cloud.microsoft
+  // being Microsoft's own host for the reps' booking pages, which blocked
+  // the first live response for naming an end customer nobody had named.
+  // Stripping URLs here loses nothing, because any unapproved address still
+  // blocks as a link in its own right.
+  const hay = String(text || '').replace(LINK_RE, ' ').toLowerCase();
   const recipient = String(recipientName || '').toLowerCase();
   const hits = [];
   for (const name of END_CUSTOMER_NAMES) {

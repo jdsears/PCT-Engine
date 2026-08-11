@@ -1786,19 +1786,54 @@ app.get('/api/outbound/drafts', async (req, res) => {
 // deterministic guardrails re-run against the edited text and the stored
 // flags are rewritten to match, so a hand-fixed draft approves and an
 // unfixed fault keeps its flag.
+//
+// The first edit also captures what the drafter wrote, inside the same
+// statement: every SET expression reads the row as it was, so original_*
+// takes the pre-edit text even as subject and body change. That pair, the
+// drafted words against the sent words, is the raw material the system
+// learns from; the loop stays human, repeated edit patterns becoming
+// proposed positioning changes, reviewed like every voice change.
 app.patch('/api/outbound/drafts/:id', async (req, res) => {
   try {
     const { subject, body } = req.body || {};
     if (subject == null && body == null) return res.status(400).json({ error: 'nothing to update' });
+    const withOriginals = await hasColumn('outbound_drafts', 'original_body');
+    const editor = withOriginals ? actorEmail(req) : null;
     const { rows } = await pool.query(
-      `UPDATE outbound_drafts SET subject = COALESCE($2, subject), body = COALESCE($3, body), updated_at = now()
+      `UPDATE outbound_drafts SET
+         ${withOriginals ? `original_subject = COALESCE(original_subject, subject),
+         original_body = COALESCE(original_body, body),
+         ${editor ? 'edited_by = $4,' : ''}` : ''}
+         subject = COALESCE($2, subject), body = COALESCE($3, body), updated_at = now()
        WHERE id = $1 AND status IN ('draft','approved') RETURNING status, subject, body, grounding`,
-      [req.params.id, subject ?? null, body ?? null]);
+      editor ? [req.params.id, subject ?? null, body ?? null, editor] : [req.params.id, subject ?? null, body ?? null]);
     if (!rows.length) return res.status(409).json({ error: 'draft is not editable' });
     const flags = reflagText({ subject: rows[0].subject, body: rows[0].body, grounding: rows[0].grounding || {} });
     await pool.query(`UPDATE outbound_drafts SET grounding_flags = $2::jsonb WHERE id = $1`,
       [req.params.id, JSON.stringify(flags)]);
     res.json({ ok: true, status: rows[0].status, flags });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The edit pairs, drafted words against final words, newest first: the raw
+// material for the learning review. Read-only; the consumer is a human
+// deciding whether a repeated edit should become a positioning change.
+app.get('/api/outbound/edits', async (req, res) => {
+  try {
+    if (!await hasColumn('outbound_drafts', 'original_body')) return res.json({ edits: [] });
+    const { rows } = await pool.query(
+      `SELECT d.id, d.campaign, d.email_type, d.status, d.sent_at, d.updated_at, d.edited_by,
+              d.original_subject, d.original_body, d.subject, d.body, c.name AS company
+       FROM outbound_drafts d JOIN companies c ON c.id = d.company_id
+       WHERE d.original_body IS NOT NULL
+         AND (d.original_body <> d.body OR COALESCE(d.original_subject, '') <> COALESCE(d.subject, ''))
+       ORDER BY d.updated_at DESC LIMIT 50`);
+    res.json({ edits: rows.map(r => ({
+      id: r.id, campaign: r.campaign, emailType: r.email_type, status: r.status,
+      company: r.company, editedBy: r.edited_by || null, sentAt: r.sent_at, updatedAt: r.updated_at,
+      original: { subject: r.original_subject, body: r.original_body },
+      final: { subject: r.subject, body: r.body },
+    })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

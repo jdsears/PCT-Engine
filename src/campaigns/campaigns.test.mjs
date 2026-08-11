@@ -57,9 +57,13 @@ const ORIGINAL_DRAFT_SYSTEM =
   "Return strict JSON only, no preamble: {\"subject\":\"...\",\"body\":\"...\",\"claims\":[{\"text\":\"<factual sentence>\",\"supportedBy\":\"signal|icp|range|contact\"}]}. The body is plain text, short paragraphs separated by a blank line, no Markdown.";
 
 // The four range positioning lines exactly as renderGrounding pushed them.
+// The range line grew on 10 August 2026, James's sanction relayed by John
+// from the first live technical reply: UK supply, the sanitary design line,
+// and the hyperscaler delivery capability, his claims made standing so no
+// one retypes them per draft. Everything else is the original text.
 const ORIGINAL_RANGE_LINES = [
   'Range positioning, lead on this, not on a single part number or its specifications:',
-  '  PCT supplies the Marwin and Steriflow control valve ranges, suited to and trusted in data centre cooling.',
+  '  PCT supplies the Marwin and Steriflow control valve ranges from the UK, suited to and trusted in data centre cooling. Their sanitary design is well suited to clean cooling loops, and PCT can meet the delivery time requirements of large hyperscalers.',
   '  Track record, state in general form and with confidence: Marwin and Steriflow control valves are already used across some of the largest data centre builds.',
   '  Hard limit: never name or imply a specific data centre operator or end customer. "Some of the largest data centre builds" is the ceiling of specificity.',
   '  Do not make any part-specific spec claim (pressure rating, material, temperature) in the cold open.',
@@ -146,7 +150,7 @@ check('the assembled drafter prompt is the original, byte for byte', () => {
   assertSame(buildDraftSystem(requireCampaign('marwin_dc')), ORIGINAL_DRAFT_SYSTEM, 'the draft system prompt');
 });
 
-check('the range positioning lines and the confidentiality rule are unchanged', () => {
+check('the range positioning lines carry the sanctioned text byte for byte, and the confidentiality rule is unchanged', () => {
   const lines = buildRangeLines(requireCampaign('marwin_dc'));
   assert(lines.length === ORIGINAL_RANGE_LINES.length, 'the same number of range lines');
   lines.forEach((l, i) => assertSame(l, ORIGINAL_RANGE_LINES[i], `range line ${i + 1}`));

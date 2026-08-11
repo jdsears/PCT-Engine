@@ -337,6 +337,19 @@ await check('the operator-side briefing aims at the spec, learned from a live re
     'operators specify while contractors buy, as VIRTUS spelt out');
 });
 
+await check('a URL never trips the end-customer scan; the words outside it still do', () => {
+  // The live case, frozen: Patrick's booking link lives on Microsoft's own
+  // host for the Bookings service, and the name scan blocked the first live
+  // response for "naming" an end customer nobody had named.
+  const bookingLink = 'https://bookings.cloud.microsoft/bookwithme/user/20bbcc9178744a1092ce961f504b0233%40pctflow.com/meetingtype/scL6W7CwikuQ4GedS7MicA2?anonymous&ismsaljsauthenabled';
+  assert(flagEndCustomers(`a booking link is here: ${bookingLink}`, 'Virtus Data Centres').length === 0,
+    'the booking host is a URL, not a customer reference');
+  assert(flagEndCustomers(`we supply Microsoft, book here: ${bookingLink}`, 'Virtus Data Centres').includes('microsoft'),
+    'the same word outside the URL still blocks');
+  assert(flagEndCustomers('see www.google.com/page for details', 'Aery').length === 0,
+    'a bare www address is a link concern, not a name concern');
+});
+
 await check('the recipient exemption covers the recipient\'s own aliases, and only theirs', () => {
   // The live case from the first sending day: a draft to Amazon WEB Services
   // Emea Sarl, blocked for saying AWS, the recipient's own abbreviation.
@@ -359,6 +372,23 @@ await check('composeDraft makes a named end customer a BLOCKING flag, and passes
     draft: { subject: 'Cooling control valves', body: 'PCT supplies the Marwin and Steriflow ranges, already trusted across some of the largest data centre builds.', claims: [] },
     check: { claims: [] } }) });
   assert(!clean.flags.some(f => /^blocking/i.test(f)), 'the general track record must not be blocked');
+});
+
+await check('an edit captures the drafted words before the hand moves (static)', () => {
+  const server = read('src/server.mjs');
+  const patchBlock = server.slice(server.indexOf("app.patch('/api/outbound/drafts/:id'"), server.indexOf("app.get('/api/outbound/edits'"));
+  assert(/original_subject = COALESCE\(original_subject, subject\)/.test(patchBlock)
+    && /original_body = COALESCE\(original_body, body\)/.test(patchBlock),
+    'the first edit keeps the drafted text, in the same statement so SET reads the old row');
+  assert(/hasColumn\('outbound_drafts', 'original_body'\)/.test(patchBlock), 'schema-tolerant through the migration window');
+  assert(/actorEmail\(req\)/.test(patchBlock), 'the editing hand is recorded when signed in');
+  const editsBlock = server.slice(server.indexOf("app.get('/api/outbound/edits'"), server.indexOf('// Approve moves a draft'));
+  assert(/original_body IS NOT NULL/.test(editsBlock) && /original_body <> d\.body/.test(editsBlock),
+    'the pairs endpoint returns real differences, drafted against final');
+  const mig = read('src/migrations/030_draft_edits.sql');
+  assert(/ADD COLUMN IF NOT EXISTS original_body/.test(mig) && !/INSERT INTO/i.test(mig), 'migration 030 is columns only, idempotent');
+  assert(/never silently\s+fed back into prompts/.test(mig.replace(/\n/g, ' ').replace(/\s+/g, ' ')) || /never silently/.test(mig),
+    'the learning doctrine is stated where the columns live: proposals, not prompt drift');
 });
 
 await check('design-in is its own recorded outcome, schema-tolerant (static)', () => {
