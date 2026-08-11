@@ -361,6 +361,23 @@ await check('composeDraft makes a named end customer a BLOCKING flag, and passes
   assert(!clean.flags.some(f => /^blocking/i.test(f)), 'the general track record must not be blocked');
 });
 
+await check('an edit captures the drafted words before the hand moves (static)', () => {
+  const server = read('src/server.mjs');
+  const patchBlock = server.slice(server.indexOf("app.patch('/api/outbound/drafts/:id'"), server.indexOf("app.get('/api/outbound/edits'"));
+  assert(/original_subject = COALESCE\(original_subject, subject\)/.test(patchBlock)
+    && /original_body = COALESCE\(original_body, body\)/.test(patchBlock),
+    'the first edit keeps the drafted text, in the same statement so SET reads the old row');
+  assert(/hasColumn\('outbound_drafts', 'original_body'\)/.test(patchBlock), 'schema-tolerant through the migration window');
+  assert(/actorEmail\(req\)/.test(patchBlock), 'the editing hand is recorded when signed in');
+  const editsBlock = server.slice(server.indexOf("app.get('/api/outbound/edits'"), server.indexOf('// Approve moves a draft'));
+  assert(/original_body IS NOT NULL/.test(editsBlock) && /original_body <> d\.body/.test(editsBlock),
+    'the pairs endpoint returns real differences, drafted against final');
+  const mig = read('src/migrations/030_draft_edits.sql');
+  assert(/ADD COLUMN IF NOT EXISTS original_body/.test(mig) && !/INSERT INTO/i.test(mig), 'migration 030 is columns only, idempotent');
+  assert(/never silently\s+fed back into prompts/.test(mig.replace(/\n/g, ' ').replace(/\s+/g, ' ')) || /never silently/.test(mig),
+    'the learning doctrine is stated where the columns live: proposals, not prompt drift');
+});
+
 await check('design-in is its own recorded outcome, schema-tolerant (static)', () => {
   const server = read('src/server.mjs');
   assert(/leads\/:id\/design-in/.test(server), 'the route exists');
