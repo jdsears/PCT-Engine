@@ -8,6 +8,7 @@ import {
   msSigninConfigured, allowedUsers, sessionSecret, verifiedUser, actorEmail,
 } from './auth.mjs';
 import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -134,19 +135,35 @@ check('migration 027 adds audit columns idempotently and carries no data', () =>
   assert(!/INSERT INTO/i.test(sql), 'columns only, no data');
 });
 
-check('every auth identifier the server uses is actually imported', () => {
-  // The fault this catches reached production: actorEmail was called in ten
-  // places and imported in none, a ReferenceError that node --check cannot
-  // see and no suite loaded the server to hit. The import line must carry
-  // every identifier the server takes from auth.mjs.
+check('every module function the server calls is imported or its own', () => {
+  // This fault reached production twice: actorEmail called in ten places and
+  // imported in none, then cleanDomain the same, each a ReferenceError that
+  // node --check cannot see and no suite loads the server to hit. So the
+  // check is now general: every function exported by any module under src,
+  // if called anywhere in server.mjs, must be on an import line or defined
+  // locally. A missing import line entirely, the cleanDomain shape, fails
+  // the same as a missing name on an existing line.
   const server = read('src/server.mjs');
-  const importLine = server.match(/import \{([^}]*)\} from '\.\/auth\.mjs'/)?.[1] || '';
-  const imported = new Set(importLine.split(',').map(s => s.trim()).filter(Boolean));
-  for (const name of ['registerAuthRoutes', 'verifiedUser', 'msSigninConfigured', 'actorEmail']) {
-    if (new RegExp(`\\b${name}\\(`).test(server)) {
-      assert(imported.has(name), `${name} is used in server.mjs but not imported from auth.mjs`);
+  const imported = new Set();
+  for (const m of server.matchAll(/import \{([^}]*)\} from '[^']+'/g)) {
+    for (const n of m[1].split(',')) imported.add(n.trim().split(/\s+as\s+/).pop());
+  }
+  const local = new Set();
+  for (const m of server.matchAll(/(?:async function|function) (\w+)/g)) local.add(m[1]);
+  for (const m of server.matchAll(/const (\w+) =/g)) local.add(m[1]);
+
+  const files = execSync('find src -name "*.mjs" -not -name "*.test.mjs"', { cwd: ROOT, encoding: 'utf8' })
+    .trim().split('\n').filter(f => f && f !== 'src/server.mjs');
+  const missing = [];
+  for (const f of files) {
+    const src = readFileSync(join(ROOT, f), 'utf8');
+    for (const m of src.matchAll(/export (?:async )?function (\w+)/g)) {
+      const name = m[1];
+      if (imported.has(name) || local.has(name)) continue;
+      if (new RegExp(`(?<![.\\w])${name}\\(`).test(server)) missing.push(`${name} (${f})`);
     }
   }
+  assert(missing.length === 0, `used in server.mjs but never imported: ${missing.join(', ')}`);
 });
 
 check('every human action stamps its actor behind a schema check (static)', () => {

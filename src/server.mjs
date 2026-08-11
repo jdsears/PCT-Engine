@@ -18,6 +18,7 @@ import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { fetchPostEngagers, titleFitsCampaign } from './studio/postEngagers.mjs';
 import { searchCompanies, candidateRows, companyProfile, cleanChNumber } from './research/companiesHouse.mjs';
+import { cleanDomain } from './research/customerImport.mjs';
 import { staleDays, isStale } from './research/staleness.mjs';
 import { companyTypeForParty } from './research/partyType.mjs';
 import { classifySyncErrors } from './sync/acknowledgements.mjs';
