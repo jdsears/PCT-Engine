@@ -42,6 +42,15 @@
     }
   },
 
+  "census": {
+    "queries": [
+      "list of UK data centre operators and colocation providers",
+      "UK data centre developers companies",
+      "M&E contractors UK data centre construction",
+      "UK hyperscale data centre construction contractors"
+    ]
+  },
+
   "positioning": {
     "campaignPhrase": "the data centre cooling campaign",
     "profileFitLine": "lead with why Marwin control valves are relevant to data centre chilled-water cooling specification, and a light reason a person in the contact's role might care. Be specific to the work, do not say they fit a profile.",

@@ -47,6 +47,15 @@
     }
   },
 
+  "census": {
+    "queries": [
+      "list of UK pharmaceutical manufacturing companies with UK production sites",
+      "UK CDMO contract development and manufacturing organisations",
+      "UK biotech manufacturing companies production facilities",
+      "engineering contractors UK pharmaceutical cleanroom construction"
+    ]
+  },
+
   "positioning": {
     "campaignPhrase": "the pharmaceutical and biotech process campaign",
     "profileFitLine": "lead with why Steriflow sanitary process valves are relevant to hygienic and sterile process specification on pharmaceutical and biotech production, and a light reason a person in the contact's role might care. Be specific to the work, do not say they fit a profile.",
