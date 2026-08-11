@@ -7,6 +7,36 @@ import ReviewQueue from './ReviewQueue.jsx';
 
 const typeLabel = t => TYPE_LABELS[t] || '—';
 
+// James's ask: click a header, the table orders by that column, click again
+// to flip. Text columns start ascending, counts and the score start
+// descending, and an account with nothing in the column sinks to the bottom
+// whichever way the sort runs, because absence is not a value.
+const SORT_COLS = [
+  { id: 'name', label: 'Company', defDir: 'asc', get: c => c.name || '' },
+  { id: 'type', label: 'Type', defDir: 'asc', get: c => (TYPE_LABELS[c.type] || '') },
+  { id: 'region', label: 'Region', defDir: 'asc', get: c => c.region || '' },
+  { id: 'domain', label: 'Domain', defDir: 'asc', get: c => c.domain || '' },
+  { id: 'chNumber', label: 'CH number', defDir: 'asc', get: c => c.chNumber || '' },
+  { id: 'score', label: 'ICP score', defDir: 'desc', get: c => c.score },
+  { id: 'people', label: 'People', defDir: 'desc', get: c => c.people ?? 0 },
+  { id: 'signals', label: 'Signals', defDir: 'desc', get: c => c.signals ?? 0 },
+];
+
+function sortCompanies(list, sortId, dir) {
+  const col = SORT_COLS.find(s => s.id === sortId) || SORT_COLS.find(s => s.id === 'score');
+  return [...list].sort((a, b) => {
+    const av = col.get(a), bv = col.get(b);
+    const aAbsent = av == null || av === '';
+    const bAbsent = bv == null || bv === '';
+    if (aAbsent !== bAbsent) return aAbsent ? 1 : -1;
+    let cmp = (typeof av === 'number' && typeof bv === 'number')
+      ? av - bv
+      : String(av).localeCompare(String(bv), 'en', { sensitivity: 'base' });
+    if (cmp === 0) cmp = String(a.name || '').localeCompare(String(b.name || ''));
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
+
 // Add an account by hand, James's ask when CyrusOne was nowhere to be found.
 // With a company number the server verifies it against Companies House and
 // the registered name wins; a name alone enters unmatched, honestly. A
@@ -268,7 +298,14 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
   const [companies, setCompanies] = useState(null);
   const [state, setState] = useState('loading');
   const [selected, setSelected] = useState(null);
+  const [sort, setSort] = useState('score');
+  const [dir, setDir] = useState('desc');
   const campaignList = useCampaignList();
+
+  const clickSort = (col) => {
+    if (sort === col.id) setDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSort(col.id); setDir(col.defDir); }
+  };
 
   const [reloads, setReloads] = useState(0);
   useEffect(() => {
@@ -308,7 +345,6 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
     return (
       <div className="content-pad">
         {queue}
-      {addForm}
         {addForm}
         <p className="muted-note">
           No named accounts on this campaign's register yet. Accounts appear once the campaign has been seeded, a sweep has matched a company to it, or a proposal above is confirmed.
@@ -317,22 +353,25 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
     );
   }
 
+  const shown = sortCompanies(companies, sort, dir);
+  const marker = (id) => (sort === id ? (dir === 'asc' ? ' ↑' : ' ↓') : '');
+
   return (
     <div className="content-pad">
       {queue}
+      {addForm}
       {!isMobile ? (
         <div className="card accounts-table">
           <div className="acc-grid acc-head">
-            <div className="eyebrow">Company</div>
-            <div className="eyebrow">Type</div>
-            <div className="eyebrow">Region</div>
-            <div className="eyebrow">Domain</div>
-            <div className="eyebrow">CH number</div>
-            <div className="eyebrow">ICP score</div>
-            <div className="eyebrow right">People</div>
-            <div className="eyebrow right">Signals</div>
+            {SORT_COLS.map(col => (
+              <button key={col.id} className={`eyebrow acc-sort${['people', 'signals'].includes(col.id) ? ' right' : ''}`}
+                onClick={() => clickSort(col)}
+                aria-label={`Sort by ${col.label.toLowerCase()}`}>
+                {col.label}{marker(col.id)}
+              </button>
+            ))}
           </div>
-          {companies.map(c => (
+          {shown.map(c => (
             <button className="acc-grid acc-row" key={c.id} onClick={() => setSelected(c.id)}>
               <div className="acc-name">{companyLabel(c.name)}{chips(c)}{c.customerStatus && <span className="pill">{customerLabel(c.customerStatus)}</span>}</div>
               <div className="acc-dim">{typeLabel(c.type)}</div>
@@ -356,7 +395,15 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
         </div>
       ) : (
         <div className="acc-cards">
-          {companies.map(c => (
+          <div className="tool-group acc-sort-pills" role="group" aria-label="Sort accounts">
+            {SORT_COLS.filter(col => ['name', 'region', 'score', 'people', 'signals'].includes(col.id)).map(col => (
+              <button key={col.id} className={`filter-pill${sort === col.id ? ' active' : ''}`}
+                onClick={() => clickSort(col)}>
+                {col.label}{marker(col.id)}
+              </button>
+            ))}
+          </div>
+          {shown.map(c => (
             <button className="acc-card" key={c.id} onClick={() => setSelected(c.id)}>
               <div className="acc-card-top">
                 <div className="acc-card-name">{companyLabel(c.name)}</div>
