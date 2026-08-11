@@ -424,6 +424,65 @@ await check('the gate path is wired to nothing from this work', async () => {
   assert(!/parties\.mjs|extractParties|buildPartiesSystem/.test(prompts), 'prompt assembly never touches the extraction');
 });
 
+console.log('\nThe census: population coverage, proposed never written:');
+
+await check('the census prompt is the campaign\'s own and tells the model not to invent', async () => {
+  const { buildCensusSystem } = await import('./census.mjs');
+  const dc = buildCensusSystem('marwin_dc');
+  assert(/data centre/.test(dc) && /"operator"/.test(dc) && /"contractor"/.test(dc), 'the DC census asks for its two parties');
+  assert(/never invent, merge or guess a name/.test(dc), 'the never-invent rule is stated');
+  assert(/reviewed by a person against Companies House/.test(dc), 'and the model is told why');
+  assert(/No consultancies, no suppliers, no publications/.test(dc), 'the population is the sellable one');
+  const ph = buildCensusSystem('pharma_steriflow');
+  assert(/pharmaceutical/.test(ph) && !/data centre/.test(ph), 'the pharma census is pharma\'s own');
+  assert(!/dcRelevant|QUESTION 1/.test(dc), 'no gate wording leaks into the census');
+});
+
+await check('the census reply parses strictly and junk is dropped, never guessed at', async () => {
+  const { parseCensus } = await import('./census.mjs');
+  const good = parseCensus('Here you go:\n{"companies":[{"name":"Kao Data","party":"operator"},{"name":"NG Bailey","party":"contractor"}]}');
+  assert(good.length === 2 && good[0].norm, 'clean candidates with the queue\'s normal form');
+  const junk = parseCensus('{"companies":[{"name":"","party":"operator"},{"name":"Real Co","party":"investor"},{"name":"Kao Data","party":"operator"},{"name":"KAO DATA LTD","party":"operator"}]}');
+  assert(junk.length === 1 && junk[0].name === 'Kao Data', 'empty names, unknown parties and normal-form duplicates all drop');
+  assert(parseCensus('not json') .length === 0 && parseCensus('').length === 0, 'a failed parse is empty, never an error');
+});
+
+await check('the census diff runs through the matcher, three honest buckets', async () => {
+  const { censusDiff } = await import('./census.mjs');
+  const { normName: nn } = await import('./partyActions.mjs');
+  const cands = [
+    { name: 'Pure DC', party: 'operator', norm: nn('Pure DC') },
+    { name: 'Kao Data', party: 'operator', norm: nn('Kao Data') },
+    { name: 'Volta', party: 'operator', norm: nn('Volta') },
+  ];
+  const { fresh, known, ambiguous } = censusDiff(cands, REGISTER);
+  assert(known.length === 1 && known[0].companyId === 1, 'an aliased brand is already on the register');
+  assert(fresh.length === 1 && fresh[0].name === 'Kao Data', 'the genuinely new name is the census\'s answer');
+  assert(ambiguous.length === 1 && ambiguous[0].candidates.length === 2, 'ambiguity goes to a human, never a guess');
+});
+
+await check('the census script proposes into the queue and touches nothing else (static)', async () => {
+  const src = read('scripts/census-run.mjs');
+  assert(/Dry run\. Nothing written\./.test(src) && /--propose/.test(src), 'dry by default, proposing is explicit');
+  assert(/requireCampaign\(campArg\)/.test(src) && /Campaign: \$\{def\.id\}/.test(src), 'the campaign resolves through the registry and is printed first');
+  assert(/ON CONFLICT \(name_norm, campaign\) DO NOTHING/.test(src), 'a decided or waiting name is never relitigated');
+  assert(/SELECT name_norm FROM party_reviews WHERE campaign/.test(src), 'the queue\'s history blocks re-proposal up front');
+  assert(/censusProposalsMax/.test(src), 'the per-run cap protects the queue from a flood');
+  assert(!/INSERT INTO companies|INSERT INTO leads|INSERT INTO contacts/i.test(src), 'the census writes proposals, never register rows');
+  assert(/topic: 'general'/.test(src), 'population search, not the news window');
+  assert(/stopping rather than enumerating from model memory alone/.test(src), 'no snippets, no census');
+  const { censusProposalsMax } = await import('./census.mjs');
+  const saved = process.env.CENSUS_PROPOSALS_MAX;
+  try {
+    delete process.env.CENSUS_PROPOSALS_MAX;
+    assert(censusProposalsMax() === 15, 'the default cap is fifteen');
+    process.env.CENSUS_PROPOSALS_MAX = '500';
+    assert(censusProposalsMax() === 50, 'the ceiling is fifty');
+  } finally {
+    if (saved === undefined) delete process.env.CENSUS_PROPOSALS_MAX; else process.env.CENSUS_PROPOSALS_MAX = saved;
+  }
+});
+
 await check('discovery batches doubled and each campaign searches from its own account', async () => {
   const { peopleSearchLimit } = await import('./peopleDiscovery.mjs');
   const saved = process.env.ENGINE_PEOPLE_SEARCH_LIMIT;
