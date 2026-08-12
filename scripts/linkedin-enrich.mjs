@@ -2,7 +2,6 @@ import { pool } from '../src/db.mjs';
 import { findContacts, enrichDirectors, laneReady } from '../src/research/linkedinResearch.mjs';
 import { callsUsedToday, dailyCap, CapReached, AccountUnhealthy, accountForCampaign } from '../src/research/unipile.mjs';
 import { ensureContactEmail, getCreditsSpent } from '../src/research/findymail.mjs';
-import { ORBIT_TITLES } from '../src/research/orbitRules.mjs';
 import { getCampaign, requireCampaign } from '../src/campaigns/registry.mjs';
 
 // The LinkedIn lane's orchestrator. Dry run by default: it prints what it
@@ -105,6 +104,10 @@ const laneFor = (co) => {
   const known = (co.memberships || []).filter(id => getCampaign(id));
   return known.length === 1 ? known[0] : 'marwin_dc';
 };
+// The lane's own vocabulary, from the campaign definition: the first eight
+// titles key the search, the whole list widens the orbit classification, so
+// a pharma walk asks for process and CQV people and believes the answer.
+const lanePeople = (id) => getCampaign(id)?.orbitTitles || [];
 
 console.log(`${apply ? 'Apply run' : 'Dry run'}: ${companies.length} compan${companies.length === 1 ? 'y' : 'ies'}${onlyNew ? ' not yet searched' : ''}${camp ? ` on ${camp.id}` : ''}, email discovery ${emailDiscovery ? 'on' : 'off'}.\n`);
 
@@ -112,7 +115,7 @@ for (const co of companies) {
   console.log(`${co.name}`);
 
   if (!apply) {
-    console.log(`  would run one people search: "${co.name}" for the specifier roles (${ORBIT_TITLES.slice(0, 4).join(', ')}, ...), limit 5, via the ${laneFor(co)} account`);
+    console.log(`  would run one people search: "${co.name}" for the specifier roles (${lanePeople(laneFor(co)).slice(0, 4).join(', ')}, ...), limit 5, via the ${laneFor(co)} account`);
     if (doDirectors) {
       const { rows: pending } = await pool.query(
         `SELECT full_name FROM contacts
@@ -139,7 +142,9 @@ for (const co of companies) {
     // The decision-makers for flow instrumentation are the design and project
     // people on the build, found by the people search. Register directors are
     // enriched only when asked for, since they are not the specifiers.
-    const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(laneFor(co)) });
+    const laneTitles = lanePeople(laneFor(co));
+    const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(laneFor(co)),
+      searchRoles: laneTitles.slice(0, 8), orbitExtra: laneTitles });
     const d = doDirectors
       ? await enrichDirectors(co)
       : { enriched: 0, left: 0, ambiguous: 0, examples: [] };

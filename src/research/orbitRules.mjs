@@ -40,10 +40,15 @@ export const EXCLUDE_TITLES = [
 // Lowercase match against the includes, then the excludes. Excludes win unless
 // the title also mentions procurement. Null or empty titles return null, not
 // false, so unknowns stay visible rather than quietly out of orbit.
-export function inOrbit(title) {
+// A campaign may widen the includes with its own vocabulary, the definition's
+// orbitTitles, wired through on 12 August 2026 when the pharma force run
+// showed the search speaking data centre language at pharma companies: a
+// process engineer or a CQV lead classified out of orbit and could never
+// draft. The excludes always stand; a recruiter never orbits anywhere.
+export function inOrbit(title, extraTitles = []) {
   if (title == null || !String(title).trim()) return null;
   const t = String(title).toLowerCase();
-  if (!ORBIT_TITLES.some(x => t.includes(x))) return false;
+  if (![...ORBIT_TITLES, ...extraTitles].some(x => t.includes(String(x).toLowerCase()))) return false;
   if (EXCLUDE_TITLES.some(x => t.includes(x)) && !t.includes('procurement')) return false;
   return true;
 }

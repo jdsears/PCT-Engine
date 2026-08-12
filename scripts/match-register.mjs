@@ -1,5 +1,6 @@
 import { pool } from '../src/db.mjs';
-import { searchCompanies, companyProfile, confidentChMatch } from '../src/research/companiesHouse.mjs';
+import { searchCompanies, companyProfile, fetchCompanyProfile, confidentChMatch } from '../src/research/companiesHouse.mjs';
+import { registrationFromSite } from '../src/research/webRegistration.mjs';
 import { regionForPostcode } from '../src/research/region.mjs';
 
 // The retro-matcher: walks register companies with no Companies House number
@@ -22,8 +23,17 @@ import { regionForPostcode } from '../src/research/region.mjs';
 // Batched (--limit, default 100) and re-runnable: matched rows leave the
 // walk by matching.
 //
+// When the name walk fails and the company has a domain, the walk reads the
+// company's own homepage for a stated registration number, the Upperton
+// shape: a trading name on the register, a differently named legal entity
+// at Companies House, and the number printed in the site footer as the
+// trading disclosure rules require. Exactly one stated number, verified
+// against Companies House and active, attaches under the same collision
+// check; several numbers, or a dissolved one, are reported for a human.
+//
 // What this never does: rename a company, touch leads or contacts, or spend
-// anything beyond Companies House lookups.
+// anything beyond Companies House lookups and one homepage read per
+// unresolved company.
 
 const APPLY = process.argv.includes('--apply');
 const RECHECK = process.argv.includes('--recheck');
@@ -61,7 +71,7 @@ let where = `ch_number IS NULL`;
 if (campaign) { params.push(campaign); where += ` AND EXISTS (SELECT 1 FROM company_campaigns m WHERE m.company_id = companies.id AND m.campaign = $${params.length})`; }
 params.push(limit);
 const { rows } = await pool.query(
-  `SELECT id, name, postcode, region FROM companies WHERE ${where}
+  `SELECT id, name, postcode, region, domain FROM companies WHERE ${where}
    ORDER BY named_account DESC, icp_score DESC NULLS LAST, name LIMIT $${params.length}`, params);
 
 console.log(`${rows.length} unmatched compan${rows.length === 1 ? 'y' : 'ies'}${campaign ? ` on ${campaign}` : ''} in this batch (limit ${limit}).`);
@@ -77,19 +87,58 @@ for (const co of rows) {
     console.log(`  failed   ${co.name}: ${String(e.message).slice(0, 100)}`);
     continue;
   }
-  if (outcome.status === 'ambiguous') {
-    report.ambiguous++;
-    console.log(`  ambiguous ${co.name}: ${outcome.candidates.map(c => `${c.name} (${c.chNumber})`).join('; ')}  -> use the amend form`);
-    continue;
-  }
   if (outcome.status === 'dissolved_only') {
     report.dissolved = (report.dissolved || 0) + 1;
     console.log(`  dissolved ${co.name}: every name-agreeing entity is dissolved: ${outcome.candidates.map(c => `${c.name} (${c.chNumber})`).join('; ')}  -> if this is them, the business is gone; consider dismissing the account, or attach the number via the amend form to record the truth`);
     continue;
   }
-  if (outcome.status === 'none') {
-    report.none++;
-    console.log(`  none     ${co.name}: no confident active match  -> use the amend form if you know the entity`);
+  if (outcome.status === 'ambiguous' || outcome.status === 'none') {
+    // The name walk failed; the company's own website may still state the
+    // number. One stated number, verified active at Companies House,
+    // attaches; anything less certain stays a human decision.
+    const probe = co.domain ? await registrationFromSite(co.domain) : null;
+    if (probe && probe.numbers.length === 1) {
+      const num = probe.numbers[0];
+      let profile = null;
+      try { profile = await fetchCompanyProfile(num); } catch { profile = null; }
+      if (profile && profile.company_status === 'active') {
+        const { rows: holder } = await pool.query(`SELECT id, name FROM companies WHERE ch_number = $1`, [num]);
+        if (holder.length) {
+          report.collisions++;
+          console.log(`  collision ${co.name}: its site states ${num}, already held by #${holder[0].id} ${holder[0].name}  -> a merge candidate, decide by hand`);
+          continue;
+        }
+        report.web = (report.web || 0) + 1;
+        console.log(`  web      ${co.name} -> ${profile.company_name} (${num}), stated on ${probe.url}`);
+        if (APPLY) {
+          const rp = profile.registered_office_address?.postal_code || null;
+          await pool.query(
+            `UPDATE companies SET ch_number = $2, ch_profile = $3::jsonb,
+               postcode = COALESCE(postcode, $4), region = COALESCE(region, $5), updated_at = now()
+             WHERE id = $1`,
+            [co.id, num, JSON.stringify(profile), rp, regionForPostcode(rp) || co.region || null]);
+        }
+        continue;
+      }
+      if (profile) {
+        report.dissolved = (report.dissolved || 0) + 1;
+        console.log(`  dissolved ${co.name}: its own site states ${num}, which Companies House lists as ${profile.company_status}  -> if this is them, the business is gone; consider dismissing the account, or attach the number via the amend form to record the truth`);
+        continue;
+      }
+      // Nothing registered behind the stated number: fall through to the
+      // name walk's own verdict rather than trust a broken footer.
+    } else if (probe && probe.numbers.length > 1) {
+      report.webAmbiguous = (report.webAmbiguous || 0) + 1;
+      console.log(`  web?     ${co.name}: its site states several numbers: ${probe.numbers.join(', ')}  -> use the amend form`);
+      continue;
+    }
+    if (outcome.status === 'ambiguous') {
+      report.ambiguous++;
+      console.log(`  ambiguous ${co.name}: ${outcome.candidates.map(c => `${c.name} (${c.chNumber})`).join('; ')}  -> use the amend form`);
+    } else {
+      report.none++;
+      console.log(`  none     ${co.name}: no confident active match  -> use the amend form if you know the entity`);
+    }
     continue;
   }
   const m = outcome.match;
@@ -111,7 +160,7 @@ for (const co of rows) {
   }
 }
 
-console.log(`\n${report.matched} confident, ${report.ambiguous} ambiguous, ${report.none} without a match, ${report.collisions} collision(s), ${report.failed} failed.`);
+console.log(`\n${report.matched} confident, ${report.web || 0} from their own site, ${report.ambiguous} ambiguous, ${report.none} without a match, ${report.collisions} collision(s), ${report.failed} failed.`);
 if (!APPLY) console.log('Dry run. Nothing written. Re-run with --apply to attach the confident matches.');
 else console.log('Applied. Matched companies now sync directors and score register health on the next research run.');
 await pool.end();

@@ -57,10 +57,15 @@ export async function discoverPeople({ limit = peopleSearchLimit(), log = () => 
   for (const co of companies) {
     try {
       // The search runs through the campaign's own connected account, with a
-      // stray membership value never deciding anything.
+      // stray membership value never deciding anything, and speaks the
+      // campaign's own vocabulary: the definition's orbitTitles key the
+      // search and widen the classification, so a pharma company is asked
+      // for its process and CQV people, not MEP and HVAC ones.
       const known = (co.memberships || []).filter(id => getCampaign(id));
       const campaign = known.length === 1 ? known[0] : 'marwin_dc';
-      const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(campaign) });
+      const titles = getCampaign(campaign)?.orbitTitles || [];
+      const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(campaign),
+        searchRoles: titles.slice(0, 8), orbitExtra: titles });
       report.companies++;
       report.created += f.created || 0;
       report.updated += f.updated || 0;
