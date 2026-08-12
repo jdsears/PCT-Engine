@@ -708,6 +708,21 @@ await check('a Findymail miss is recorded and stood down, never re-bought blind'
   assert((e.match(/email_lookup/g) || []).length >= 2, 'the inline enrich spend obeys it in the count and the loop');
 });
 
+await check('the email spend can be aimed at one campaign', async () => {
+  // The second live spend went entirely to the data centre tail while the
+  // pharma wave waited: the global score ordering knows no campaigns. The
+  // spend now takes the same --campaign scope as the enrich lever, resolved
+  // through the registry, on the preview and the shared selection alike;
+  // the engine's own call passes no campaign and is unchanged.
+  const s = read('scripts/discover-emails.mjs');
+  assert(/--campaign/.test(s) && /requireCampaign\(campArg\)/.test(s), 'the scope resolves through the registry, never free text');
+  assert(/campaign: camp\?\.id \|\| null/.test(s), 'the apply run passes the same scope it previewed');
+  const d = read('src/research/emailDiscovery.mjs');
+  assert(/campaign = null/.test(d) && /m\.campaign = \$/.test(d), 'the shared selection scopes by membership only when asked');
+  const server = read('src/server.mjs');
+  assert(/discoverEmails\(\{ limit: cap, log/.test(server), 'the engine cycle spend stays campaign-blind, working the global backlog');
+});
+
 await check('people-discovery pacing is untouched', async () => {
   const src = read('src/research/peopleDiscovery.mjs');
   assert(!/party_review|proposal|contractor/i.test(src), 'people discovery knows nothing of proposals');
