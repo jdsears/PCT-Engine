@@ -1,14 +1,15 @@
 import { pool } from '../src/db.mjs';
 import { findContacts, enrichDirectors, laneReady } from '../src/research/linkedinResearch.mjs';
-import { callsUsedToday, dailyCap, CapReached, AccountUnhealthy } from '../src/research/unipile.mjs';
+import { callsUsedToday, dailyCap, CapReached, AccountUnhealthy, accountForCampaign } from '../src/research/unipile.mjs';
 import { ensureContactEmail, getCreditsSpent } from '../src/research/findymail.mjs';
 import { ORBIT_TITLES } from '../src/research/orbitRules.mjs';
+import { getCampaign, requireCampaign } from '../src/campaigns/registry.mjs';
 
 // The LinkedIn lane's orchestrator. Dry run by default: it prints what it
 // would search and write, calling nothing. --apply does the work, within the
 // daily cap, stopping immediately on any account-health error.
 //
-//   node scripts/linkedin-enrich.mjs [--company "Name"] [--limit 10] [--new] [--apply]
+//   node scripts/linkedin-enrich.mjs [--company "Name"] [--campaign pharma_steriflow] [--limit 10] [--new] [--apply]
 
 const args = process.argv.slice(2);
 const apply = args.includes('--apply');
@@ -18,6 +19,13 @@ const flag = (name, def) => {
 };
 const companyFilter = flag('--company', '');
 const companyLimit = Math.max(1, parseInt(flag('--limit', '5'), 10) || 5);
+// --campaign scopes the walk to one campaign's members and routes every
+// search through that campaign's connected account. This is the force lever
+// for a fresh research wave, John's instruction, 12 August 2026: pharma had
+// 125 researched leads all waiting on contact discovery, and the in-cycle
+// search's small batches would have taken days to reach them.
+const campaignArg = flag('--campaign', '');
+const camp = campaignArg ? requireCampaign(campaignArg) : null;
 const emailDiscovery = (process.env.EMAIL_DISCOVERY || 'off') === 'on';
 // Register-director enrichment is opt-in. Across the first runs it enriched
 // none and ate the daily cap, since statutory directors are not the specifiers,
@@ -42,17 +50,34 @@ const newClause = onlyNew ? `AND NOT EXISTS (
        SELECT 1 FROM unipile_calls u
        WHERE u.target = 'findContacts: ' || companies.name
          AND u.called_at > now() - interval '30 days')` : '';
+// Selection order serves the drafting queue, the same rule as the in-cycle
+// search: companies whose researched leads are waiting on an emailable
+// specifier come first, then the rest by score. A force run works the
+// backlog that is actually blocking outreach before it explores.
+const params = [companyFilter];
+let scope = '';
+if (camp) { params.push(camp.id); scope = ` AND EXISTS (SELECT 1 FROM company_campaigns m WHERE m.company_id = companies.id AND m.campaign = $${params.length})`; }
+params.push(companyLimit);
 const { rows: companies } = await pool.query(
-  `SELECT id, name, domain, ch_number FROM companies
-   WHERE named_account AND ($1 = '' OR name ILIKE '%' || $1 || '%')
+  `SELECT id, name, domain, ch_number,
+          (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = companies.id) AS memberships
+   FROM companies
+   WHERE named_account AND ($1 = '' OR name ILIKE '%' || $1 || '%')${scope}
    ${newClause}
-   ORDER BY icp_score DESC NULLS LAST, name LIMIT $2`,
-  [companyFilter, companyLimit]);
+   ORDER BY EXISTS (
+       SELECT 1 FROM leads l WHERE l.company_id = companies.id AND l.stage = 'researched'
+         AND NOT EXISTS (
+           SELECT 1 FROM contacts ct WHERE ct.company_id = companies.id
+             AND ct.in_decision_orbit AND NOT ct.suppressed AND NOT ct.rehearsal
+             AND ct.email IS NOT NULL AND ct.email_bounced_at IS NULL)
+     ) DESC,
+     icp_score DESC NULLS LAST, name LIMIT $${params.length}`,
+  params);
 
 if (!companies.length) {
   const reason = onlyNew
-    ? 'No named accounts left to search. Every account has been searched in the last thirty days.'
-    : (companyFilter ? `No named account matches "${companyFilter}".` : 'No named accounts found.');
+    ? `No named accounts left to search${camp ? ` on ${camp.id}` : ''}. Every account has been searched in the last thirty days.`
+    : (companyFilter ? `No named account matches "${companyFilter}".` : `No named accounts found${camp ? ` on ${camp.id}` : ''}.`);
   console.log(reason);
   await pool.end();
   process.exit(0);
@@ -70,13 +95,24 @@ const report = {
   emailsResolved: 0, potentialEmails: 0,
 };
 
-console.log(`${apply ? 'Apply run' : 'Dry run'}: ${companies.length} compan${companies.length === 1 ? 'y' : 'ies'}${onlyNew ? ' not yet searched' : ''}, email discovery ${emailDiscovery ? 'on' : 'off'}.\n`);
+// The search rides the campaign's own connected account, exactly as the
+// in-cycle search does: the flag decides when given, otherwise a company
+// with exactly one known membership uses that campaign's account, and
+// anything else uses the data centre default. A stray membership value
+// never decides anything.
+const laneFor = (co) => {
+  if (camp) return camp.id;
+  const known = (co.memberships || []).filter(id => getCampaign(id));
+  return known.length === 1 ? known[0] : 'marwin_dc';
+};
+
+console.log(`${apply ? 'Apply run' : 'Dry run'}: ${companies.length} compan${companies.length === 1 ? 'y' : 'ies'}${onlyNew ? ' not yet searched' : ''}${camp ? ` on ${camp.id}` : ''}, email discovery ${emailDiscovery ? 'on' : 'off'}.\n`);
 
 for (const co of companies) {
   console.log(`${co.name}`);
 
   if (!apply) {
-    console.log(`  would run one people search: "${co.name}" for the specifier roles (${ORBIT_TITLES.slice(0, 4).join(', ')}, ...), limit 5`);
+    console.log(`  would run one people search: "${co.name}" for the specifier roles (${ORBIT_TITLES.slice(0, 4).join(', ')}, ...), limit 5, via the ${laneFor(co)} account`);
     if (doDirectors) {
       const { rows: pending } = await pool.query(
         `SELECT full_name FROM contacts
@@ -103,7 +139,7 @@ for (const co of companies) {
     // The decision-makers for flow instrumentation are the design and project
     // people on the build, found by the people search. Register directors are
     // enriched only when asked for, since they are not the specifiers.
-    const f = await findContacts(co, { limit: 5 });
+    const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(laneFor(co)) });
     const d = doDirectors
       ? await enrichDirectors(co)
       : { enriched: 0, left: 0, ambiguous: 0, examples: [] };
@@ -140,7 +176,7 @@ const used = laneReady() ? await callsUsedToday().catch(() => null) : null;
 
 console.log('\n=== LinkedIn enrich report ===');
 console.log(`Mode: ${apply ? 'apply' : 'dry run, nothing called, nothing written'}`);
-console.log(`Companies touched: ${apply ? report.touched : companies.length}${companyFilter ? ` (filter "${companyFilter}")` : ''}`);
+console.log(`Companies touched: ${apply ? report.touched : companies.length}${companyFilter ? ` (filter "${companyFilter}")` : ''}${camp ? ` (campaign ${camp.id})` : ''}`);
 if (apply) {
   if (doDirectors) {
     console.log(`Directors enriched: ${report.enriched}   Left as register data: ${report.leftBlank}   Ambiguous, skipped: ${report.ambiguous}`);

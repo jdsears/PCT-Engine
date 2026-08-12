@@ -627,6 +627,21 @@ await check('discovery batches doubled and each campaign searches from its own a
   assert(/callsUsedToday\(acct\)/.test(uni) && /AND account_id = \$1/.test(uni), 'the daily lane cap counts per account once the ledger can say');
 });
 
+await check('the enrich script is the force lever: scoped, routed, backlog first', async () => {
+  // John's instruction, 12 August 2026: pharma research created 125 leads
+  // and drafting sat at zero, every lead waiting on an emailable specifier.
+  // The manual enrich walk is the force lever for that moment, so it gained
+  // what the in-cycle search already had: a campaign scope, per-campaign
+  // account routing, and blocked-leads-first ordering.
+  const s = read('scripts/linkedin-enrich.mjs');
+  assert(/--campaign/.test(s) && /requireCampaign\(campaignArg\)/.test(s), 'the campaign scope resolves through the registry, never free text');
+  assert(/accountForCampaign\(laneFor\(co\)\)/.test(s), 'every search rides the campaign\'s own connected account');
+  assert(/filter\(id => getCampaign\(id\)\)/.test(s), 'a stray membership value never decides the account');
+  assert(/ORDER BY EXISTS \(/.test(s) && /stage = 'researched'/.test(s) && /email_bounced_at IS NULL/.test(s),
+    'companies whose leads are waiting on an emailable specifier come first');
+  assert(/Dry run/.test(s) && /--apply/.test(s), 'the walk stays dry by default');
+});
+
 await check('people-discovery pacing is untouched', async () => {
   const src = read('src/research/peopleDiscovery.mjs');
   assert(!/party_review|proposal|contractor/i.test(src), 'people discovery knows nothing of proposals');
