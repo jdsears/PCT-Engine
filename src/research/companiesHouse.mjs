@@ -117,6 +117,13 @@ export function cleanChNumber(v) {
   return null;
 }
 
+// The profile alone, no cache write: the match walk judges a number found
+// on a company's own website before anything is attached, so the read must
+// not touch the database.
+export async function fetchCompanyProfile(chNumber) {
+  return chFetch(`/company/${chNumber}`);
+}
+
 // Fetches the profile and caches it onto the companies row when one exists.
 export async function companyProfile(chNumber) {
   const profile = await chFetch(`/company/${chNumber}`);

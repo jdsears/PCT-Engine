@@ -494,6 +494,28 @@ await check('a dissolved register row is news, not a prospect', async () => {
     'the walk names the dissolved shape and hands the human both choices');
 });
 
+await check('a company\'s own website can say what the name search cannot', async () => {
+  const { extractRegistrationNumbers } = await import('./webRegistration.mjs');
+  // Frozen from upperton.com's footer, 12 August 2026: the register says
+  // Upperton Pharma Solutions, Companies House says Upperton Limited, and
+  // the site states the number, as the trading disclosure rules require of
+  // every UK company. The probe reads it; nothing else on a page qualifies.
+  const upperton = 'Copyright © 2026 Upperton Limited. Registration number: 03833301. Registered office address: Albert Einstein Centre, Nottingham Science Park, Nottingham, NG7 2TN. Registered in England. All rights reserved.';
+  assert(JSON.stringify(extractRegistrationNumbers(upperton)) === '["03833301"]',
+    'the footer number is found exactly once; the year and the postcode never read as numbers');
+  assert(extractRegistrationNumbers('VAT registration number 361324525').length === 0, 'a VAT number is not an identity');
+  assert(JSON.stringify(extractRegistrationNumbers('Registered in Scotland, company no. SC123456')) === '["SC123456"]', 'prefixed registrations keep their prefix');
+  assert(JSON.stringify(extractRegistrationNumbers('<footer>Company No. 3833301</footer>')) === '["03833301"]', 'tags come off and short old registrations pad to eight');
+  assert(extractRegistrationNumbers('Call us on 0115 855 7050. © 2026. The company now employs 250 people.').length === 0, 'phones, years and prose are silence');
+  assert(extractRegistrationNumbers('Company number 01234567. Registered number 07654321.').length === 2, 'several distinct numbers all surface, for a human to pick');
+  const m = read('scripts/match-register.mjs');
+  assert(/registrationFromSite\(co\.domain\)/.test(m), 'the walk probes only when the name search has failed and a domain exists');
+  assert(/company_status === 'active'/.test(m) && /fetchCompanyProfile/.test(m), 'a stated number is verified against Companies House before anything is attached');
+  assert(/its site states \$\{num\}, already held/.test(m), 'the collision check holds for site-stated numbers too');
+  const w = read('src/research/webRegistration.mjs');
+  assert(/AbortSignal\.timeout/.test(w) && !/pool\.|INSERT INTO|UPDATE /.test(w), 'the probe is bounded and touches no database');
+});
+
 await check('the matcher and typing scripts are dry, bounded and confined (static)', async () => {
   const m = read('scripts/match-register.mjs');
   assert(/Dry run\. Nothing written\./.test(m) && /--apply/.test(m), 'the matcher is dry by default');
@@ -640,6 +662,32 @@ await check('the enrich script is the force lever: scoped, routed, backlog first
   assert(/ORDER BY EXISTS \(/.test(s) && /stage = 'researched'/.test(s) && /email_bounced_at IS NULL/.test(s),
     'companies whose leads are waiting on an emailable specifier come first');
   assert(/Dry run/.test(s) && /--apply/.test(s), 'the walk stays dry by default');
+});
+
+await check('the people search speaks each campaign\'s own language', async () => {
+  // Found on the first pharma force run, 12 August 2026: the dry run showed
+  // pharma companies about to be searched for MEP and HVAC people, and a
+  // process engineer it might find would classify out of orbit and never
+  // draft. Every definition already carried its own orbitTitles; only the
+  // studio read them. Now the search keys on the campaign's first eight and
+  // the classification widens with the whole list.
+  const { inOrbit, ORBIT_TITLES } = await import('./orbitRules.mjs');
+  const { getCampaign } = await import('../campaigns/registry.mjs');
+  const pharma = getCampaign('pharma_steriflow');
+  assert(inOrbit('Senior Process Engineer') === false, 'the shared list alone does not know pharma');
+  assert(inOrbit('Senior Process Engineer', pharma.orbitTitles) === true, 'the campaign\'s own vocabulary puts the process engineer in orbit');
+  assert(inOrbit('CQV Lead', pharma.orbitTitles) === true, 'and the CQV lead');
+  assert(inOrbit('Process Engineering Recruiter', pharma.orbitTitles) === false, 'the excludes always stand: a recruiter never orbits');
+  const dc = getCampaign('marwin_dc');
+  assert(JSON.stringify(dc.orbitTitles.slice(0, 8)) === JSON.stringify(ORBIT_TITLES.slice(0, 8)),
+    'the data centre search keys are the same eight as before the wiring');
+  const lane = read('src/research/linkedinResearch.mjs');
+  assert(/searchRoles\?\.length \? searchRoles/.test(lane) && /orbitExtra/.test(lane),
+    'findContacts lets the campaign vocabulary replace the search keys and widen the orbit');
+  const disc = read('src/research/peopleDiscovery.mjs');
+  assert(/orbitTitles/.test(disc) && /searchRoles: titles\.slice\(0, 8\)/.test(disc), 'the in-cycle search wires the definition\'s titles');
+  const s = read('scripts/linkedin-enrich.mjs');
+  assert(/lanePeople/.test(s) && /orbitExtra: laneTitles/.test(s), 'the force lever wires them too');
 });
 
 await check('people-discovery pacing is untouched', async () => {

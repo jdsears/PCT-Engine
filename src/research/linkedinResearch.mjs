@@ -188,7 +188,7 @@ async function searchPeople(keywords, limit, target, acct = accountId()) {
 const FRESH_DAYS = 30;
 const isFresh = ts => ts && (Date.now() - new Date(ts).getTime()) < FRESH_DAYS * 86400000;
 
-async function upsertLinkedinContact(companyId, c) {
+async function upsertLinkedinContact(companyId, c, orbitExtra = []) {
   const { rows } = await pool.query(
     `SELECT id, enriched_at FROM contacts
      WHERE linkedin_url = $1 OR (company_id = $2 AND lower(full_name) = lower($3))
@@ -207,7 +207,7 @@ async function upsertLinkedinContact(companyId, c) {
            enriched_at = now(),
            payload = COALESCE(payload, '{}'::jsonb) || $4::jsonb
          WHERE id = $5`,
-        [c.title, c.url, inOrbit(c.title), payload, rows[0].id]);
+        [c.title, c.url, inOrbit(c.title, orbitExtra), payload, rows[0].id]);
       return 'updated';
     } catch { return 'skipped'; }
   }
@@ -215,7 +215,7 @@ async function upsertLinkedinContact(companyId, c) {
     await pool.query(
       `INSERT INTO contacts (company_id, full_name, role_title, linkedin_url, in_decision_orbit, source, payload, enriched_at)
        VALUES ($1, $2, $3, $4, $5, 'linkedin', $6::jsonb, now())`,
-      [companyId, c.name, c.title, c.url, inOrbit(c.title), payload]);
+      [companyId, c.name, c.title, c.url, inOrbit(c.title, orbitExtra), payload]);
     return 'created';
   } catch { return 'skipped'; } // unique collision with another row, leave it
 }
@@ -224,18 +224,23 @@ async function upsertLinkedinContact(companyId, c) {
 
 // Sales Navigator people search scoped to the company, keywords drawn from the
 // orbit titles. Accepts the old (company, rolesArray) call shape as well as
-// (company, { roles, limit }).
+// (company, { roles, limit }). A campaign passes its own vocabulary through
+// searchRoles, which replaces the shared default keys, and orbitExtra, which
+// widens the classification, so a pharma search asks for process and CQV
+// people rather than MEP and HVAC ones, and believes the answer when it
+// arrives. The data centre lane's defaults are byte-identical either way.
 export async function findContacts(company, optsOrRoles = {}) {
   const opts = Array.isArray(optsOrRoles) ? { roles: optsOrRoles } : (optsOrRoles || {});
   // The searching account may be the campaign's own (Andy's for pharma,
   // James's for the data centre lane), so each profile carries only its own
   // campaign's discovery load. Absent, the shared default account stands.
-  const { roles = [], limit = 5, accountId: acct = null } = opts;
+  const { roles = [], limit = 5, accountId: acct = null, searchRoles = null, orbitExtra = [] } = opts;
   if (!laneReady()) {
     console.log(`  LinkedIn lane not configured, skipping contact discovery for ${company.name}`);
     return { available: false, contacts: [] };
   }
-  const terms = [...new Set([...roles, ...ORBIT_TITLES.slice(0, 8)])].map(t => `"${t}"`).join(' OR ');
+  const keys = searchRoles?.length ? searchRoles : [...new Set([...roles, ...ORBIT_TITLES.slice(0, 8)])];
+  const terms = keys.map(t => `"${t}"`).join(' OR ');
   const keywords = `"${corePhrase(company.name)}" (${terms})`;
   // Over-fetch, then keep the UK ones, so the daily-capped single call still
   // returns a full batch after the global noise is dropped.
@@ -249,9 +254,9 @@ export async function findContacts(company, optsOrRoles = {}) {
     // Drop a headline that is only the company name, so we never store it as a
     // role; the row keeps whatever real title it already had.
     const cleaned = { ...c, title: looksLikeTitle(c.title, company.name) ? c.title : null };
-    const outcome = await upsertLinkedinContact(company.id, cleaned);
+    const outcome = await upsertLinkedinContact(company.id, cleaned, orbitExtra);
     out[outcome]++;
-    out.contacts.push({ ...cleaned, outcome, orbit: inOrbit(cleaned.title) });
+    out.contacts.push({ ...cleaned, outcome, orbit: inOrbit(cleaned.title, orbitExtra) });
   }
   return out;
 }
