@@ -282,6 +282,29 @@ check('a pharma signal briefs as pharma commentary, never as data centre news', 
   assert(/never state or imply that any named company is a customer/.test(s), 'confidentiality is shared, not per campaign');
 });
 
+await check('five angles, one calibrated voice: the feed stops repeating itself', async () => {
+  const { POST_ANGLES } = await import('./liPosts.mjs');
+  assert(POST_ANGLES.length === 5 && POST_ANGLES[0] === 'observation', 'observation remains the default and the first');
+  const texts = POST_ANGLES.map(a => postSystem('marwin_dc', a));
+  assert(new Set(texts).size === 5, 'every angle is a genuinely different briefing');
+  for (const t of texts) {
+    assert(/never state or imply that any named company is a customer/.test(t), 'confidentiality is identical in every angle');
+    assert(/no hashtags, no emojis, no links/.test(t), 'the voice constants hold in every angle');
+    assert(/first sentence stands alone/.test(t), 'the shape holds in every angle');
+  }
+  for (const a of ['question', 'detail', 'spec']) {
+    assert(/Do not mention the valve ranges/.test(postSystem('marwin_dc', a)),
+      `${a} posts carry no supplier line; a feed that always ends on the ranges reads as marketing`);
+  }
+  assert(/sharpest question/.test(postSystem('marwin_dc', 'question')), 'the question angle asks');
+  assert(/most concrete figure or fact the story itself states/.test(postSystem('marwin_dc', 'detail')), 'the detail angle leads with the printed number');
+  assert(/Never invent, convert or extrapolate/.test(postSystem('marwin_dc', 'detail')), 'and never invents one');
+  assert(/where the sector is heading/.test(postSystem('marwin_dc', 'trend')), 'the trend angle reads the direction');
+  assert(/people who will write the specification/.test(postSystem('marwin_dc', 'spec')), 'the spec angle writes to the specifiers');
+  const src = readFileSync(join(FRESH_ROOT, 'src/studio/liPosts.mjs'), 'utf8');
+  assert(/POST_ANGLES\[s\.id % POST_ANGLES\.length\]/.test(src), 'the signal id picks the angle, deterministic per post, varied across the feed');
+});
+
 await check('writePost briefs by the campaign it is given', async () => {
   let seenSystem = '';
   const capture = async (system) => { seenSystem = system; return 'A calm line about the story.\n\nA closing thought.'; };

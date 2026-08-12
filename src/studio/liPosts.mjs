@@ -18,23 +18,58 @@ async function callClaude(system, user, { maxTokens = 500 } = {}) {
   return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 }
 
-// The post briefing follows the signal's campaign. The template is shared,
-// the campaign supplies its news domain, its angle and its sanctioned track
-// record line; the confidentiality rule, the voice and the shape are the same
-// for every campaign. Briefed as data centre regardless, a pharma story drew
-// an honest refusal from the drafter, and the refusal text sat in the queue
-// as a post draft, which is how this gap was found.
-export function postSystem(campaign = 'marwin_dc') {
+// The post briefing follows the signal's campaign, and since 11 August 2026
+// it also rotates through angles, John's instruction when three drafts in a
+// row read as the same skeleton: hook, projects at this scale bring serious
+// questions, range line, light question. One prompt produces one shape. The
+// campaign supplies its news domain and its sanctioned lines; the angle
+// decides the post's whole posture, and only some angles may mention the
+// ranges at all, because a feed where every post ends in the same supplier
+// line reads as marketing however calm the words. The confidentiality rule,
+// the voice constants and the shape are identical in every angle.
+export const POST_ANGLES = ['observation', 'question', 'detail', 'trend', 'spec'];
+
+const VOICE_CONSTANTS = 'No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. ';
+const CONFIDENTIALITY = "CONFIDENTIALITY RULE, absolute: never state or imply that any named company is a customer. The story's subject may be discussed as news; it must never read as a client reference. No customer names, ever. ";
+const SHAPE = "SHAPE: the first sentence stands alone as its own opening line and must carry the story's hook, since the feed folds everything after it. Then short paragraphs of one or two sentences separated by blank lines, never one solid block. " +
+  'Return the post text only, no preamble and no quotation marks around it.';
+
+export function postSystem(campaign = 'marwin_dc', angle = 'observation') {
   const def = typeof campaign === 'string' ? requireCampaign(campaign) : campaign;
   const s = def.studio;
-  return (
-    `You draft a short LinkedIn post for a UK flow control specialist ${s.newsLine}. The post appears under his own name, so it reads like a practitioner's take, not marketing. ` +
-    `GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. You may add one general line that ${s.rangeLine}. ` +
-    "CONFIDENTIALITY RULE, absolute: never state or imply that any named company is a customer. The story's subject may be discussed as news; it must never read as a client reference. No customer names, ever. " +
-    `VOICE: plain British English, calm, first person, three to six sentences. A practitioner's observation about ${s.angleLine}, then a light closing thought or question to invite comment. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. ` +
-    "SHAPE: the first sentence stands alone as its own opening line and must carry the story's hook, since the feed folds everything after it. Then short paragraphs of one or two sentences separated by blank lines, never one solid block. " +
-    "Return the post text only, no preamble and no quotation marks around it."
-  );
+  const opening = `You draft a short LinkedIn post for a UK flow control specialist ${s.newsLine}. The post appears under his own name, so it reads like a practitioner's take, not marketing. `;
+  const groundNoRange = 'GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. Do not mention the valve ranges his company supplies; this post is commentary, not positioning. ';
+  switch (angle) {
+    case 'question':
+      return opening + groundNoRange + CONFIDENTIALITY +
+        `VOICE: plain British English, calm, first person, two to four sentences. Open with the sharpest question the story raises about ${s.angleLine}, and let the post sit on that question rather than answering it neatly. ` +
+        VOICE_CONSTANTS + SHAPE;
+    case 'detail':
+      return opening + groundNoRange + CONFIDENTIALITY +
+        `VOICE: plain British English, calm, first person, three to five sentences. Lead with the most concrete figure or fact the story itself states, a capacity, an area, a timeline, quoted as printed, and say plainly why that number matters for ${s.angleLine}. Never invent, convert or extrapolate a figure the story does not state. ` +
+        VOICE_CONSTANTS + SHAPE;
+    case 'trend':
+      return opening +
+        `GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. You may add one general line that ${s.rangeLine}. ` +
+        CONFIDENTIALITY +
+        `VOICE: plain British English, calm, first person, three to six sentences. Read the story as one more data point in where the sector is heading, a practitioner's view stated with modesty, then a light closing thought. ` +
+        VOICE_CONSTANTS + SHAPE;
+    case 'spec':
+      return opening + groundNoRange + CONFIDENTIALITY +
+        `VOICE: plain British English, calm, first person, three to five sentences. Write to the people who will write the specification behind this story: what it means for ${s.angleLine} at the design stage, before procurement begins. End on a question to the specifiers. ` +
+        VOICE_CONSTANTS + SHAPE;
+    default:
+      // The original briefing, byte for byte: the observation angle is the
+      // calibrated voice everything else varies around.
+      return (
+        `You draft a short LinkedIn post for a UK flow control specialist ${s.newsLine}. The post appears under his own name, so it reads like a practitioner's take, not marketing. ` +
+        `GROUNDING RULE: you may reference only the news story provided. Do not invent figures, projects or details beyond it. You may add one general line that ${s.rangeLine}. ` +
+        "CONFIDENTIALITY RULE, absolute: never state or imply that any named company is a customer. The story's subject may be discussed as news; it must never read as a client reference. No customer names, ever. " +
+        `VOICE: plain British English, calm, first person, three to six sentences. A practitioner's observation about ${s.angleLine}, then a light closing thought or question to invite comment. No em dashes or en dashes, never the word genuinely, no exclamation marks, no hashtags, no emojis, no links. ` +
+        "SHAPE: the first sentence stands alone as its own opening line and must carry the story's hook, since the feed folds everything after it. Then short paragraphs of one or two sentences separated by blank lines, never one solid block. " +
+        "Return the post text only, no preamble and no quotation marks around it."
+      );
+  }
 }
 
 // The shape guaranteed rather than hoped for: a hook line, then paragraphs of
@@ -88,9 +123,9 @@ export function postFlags(body, operator) {
 // Write one post from one story, guardrails applied: the voice gate on the
 // text, and the end-customer check. Shared by the signal-driven posts and the
 // intel inbox commentary. The campaign decides the briefing.
-export async function writePost({ headline, story, operator, campaign = 'marwin_dc' }, { callModel = callClaude } = {}) {
+export async function writePost({ headline, story, operator, campaign = 'marwin_dc', angle = 'observation' }, { callModel = callClaude } = {}) {
   const user = `The news story:\nHeadline: ${headline}\n${story ? `Story: ${String(story).slice(0, 900)}\n` : ''}Write the post.`;
-  const body = outboundVoice(await callModel(postSystem(campaign), user, { maxTokens: 500 }));
+  const body = outboundVoice(await callModel(postSystem(campaign, angle), user, { maxTokens: 500 }));
   if (!body) throw new Error('empty post');
   return { body, flags: postFlags(body, operator) };
 }
@@ -121,14 +156,16 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
   const report = { considered: signals.length, staleSkipped, drafted: 0, flagged: 0, failed: 0 };
   for (const s of signals) {
     try {
-      // The signal's own campaign briefs its post: a pharma story is written
-      // as pharma commentary, a data centre story as data centre commentary.
+      // The signal's own campaign briefs its post, and its id picks the
+      // angle, deterministic so a regenerated post keeps its posture while
+      // neighbouring posts in the feed take different ones.
       const campaign = s.campaign || 'marwin_dc';
-      const { body, flags } = await writePost({ headline: s.title, story: s.content, operator: s.operator, campaign }, { callModel });
+      const angle = POST_ANGLES[s.id % POST_ANGLES.length];
+      const { body, flags } = await writePost({ headline: s.title, story: s.content, operator: s.operator, campaign, angle }, { callModel });
       await pool.query(
         `INSERT INTO li_posts (signal_id, topic, body, grounding, status)
          VALUES ($1, $2, $3, $4::jsonb, 'draft')`,
-        [s.id, s.title, body, JSON.stringify({ campaign, signal: { id: s.id, title: s.title, operator: s.operator, source: s.url, geoScope: s.geo_scope, publishedAt: s.published || null }, flags })]);
+        [s.id, s.title, body, JSON.stringify({ campaign, angle, signal: { id: s.id, title: s.title, operator: s.operator, source: s.url, geoScope: s.geo_scope, publishedAt: s.published || null }, flags })]);
       report.drafted++;
       if (flags.length) report.flagged++;
     } catch (e) {

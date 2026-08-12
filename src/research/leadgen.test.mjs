@@ -437,11 +437,61 @@ await check('bulk matching requires exactly one active, name-agreeing candidate'
     { name: 'VOLTA HOLDINGS LIMITED', chNumber: '01111111', status: 'active' },
     { name: 'VOLTA GREAT SUTTON LIMITED', chNumber: '02222222', status: 'active' },
   ]);
-  assert(two.status === 'ambiguous' && two.candidates.length === 2, 'two active fits go to a human');
+  assert(two.status === 'ambiguous' && two.candidates.length === 2, 'a holdings shell never wins by suffix stripping; two fits go to a human');
   assert(confidentChMatch('Quest Medical', [
     { name: 'UNRELATED HOLDINGS LIMITED', chNumber: '03333333', status: 'active' },
   ]).status === 'none', 'no name agreement is none, not a stretch');
   assert(confidentChMatch('Anything', []).status === 'none' && confidentChMatch('', []).status === 'none', 'empty is none, never an error');
+});
+
+await check('the live leaks are sealed and the GSK shape resolves', async () => {
+  const { confidentChMatch } = await import('./companiesHouse.mjs');
+  // Frozen from the first live walk, 11 August 2026: two wrong entities the
+  // looser substring rule attached, and the obvious one it refused.
+  assert(confidentChMatch('Oxitec', [
+    { name: 'OXI-TECH SOLUTIONS LIMITED', chNumber: '10761534', status: 'active' },
+  ]).status === 'none', 'a word boundary is a boundary: Oxitec is not Oxi-Tech');
+  assert(confidentChMatch('Olympus Surgical Technologies Europe', [
+    { name: 'SURGICAL TECHNOLOGIES LTD', chNumber: '12708054', status: 'active' },
+  ]).status === 'none', 'the identity word cannot be swallowed: first tokens must agree');
+  const gsk = confidentChMatch('GSK', [
+    { name: 'GSK PLC', chNumber: '03888792', status: 'active' },
+    { name: 'GSK ACCOUNTANCY LTD', chNumber: '08134121', status: 'active' },
+    { name: 'GSK BESPOKE DESIGNS LIMITED', chNumber: '11247658', status: 'active' },
+  ]);
+  assert(gsk.status === 'matched' && gsk.match.chNumber === '03888792', 'the exact legal name wins over its extensions');
+  const dechra = confidentChMatch('Dechra Pharmaceuticals Plc', [
+    { name: 'DECHRA PHARMACEUTICALS LIMITED', chNumber: '03369634', status: 'active' },
+    { name: 'DECHRA PHARMACEUTICALS HOLDINGS LIMITED', chNumber: '14856770', status: 'active' },
+    { name: 'DECHRA LIMITED', chNumber: '04513124', status: 'active' },
+  ]);
+  assert(dechra.status === 'matched' && dechra.match.chNumber === '03369634', 'exact beats holdings and abbreviation');
+});
+
+await check('a dissolved register row is news, not a prospect', async () => {
+  const { confidentChMatch } = await import('./companiesHouse.mjs');
+  // Frozen from the second live walk, 12 August 2026: Fletchers Engineering
+  // agreed with exactly one entity, dissolved since September 2021, and the
+  // walk called it none while research scored the row 60 on name and type
+  // alone. The matcher now reports the shape and research refuses to score
+  // any company whose cached register status is not active.
+  const f = confidentChMatch('Fletchers Engineering', [
+    { name: 'FLETCHERS ENGINEERING LIMITED', chNumber: '12562063', status: 'dissolved' },
+  ]);
+  assert(f.status === 'dissolved_only' && f.candidates[0].chNumber === '12562063',
+    'name agreement with only dead entities is dissolved_only, not none');
+  const mixed = confidentChMatch('Fletchers Engineering', [
+    { name: 'FLETCHERS ENGINEERING LIMITED', chNumber: '12562063', status: 'dissolved' },
+    { name: 'FLETCHERS ENGINEERING LIMITED', chNumber: '15999999', status: 'active' },
+  ]);
+  assert(mixed.status === 'matched' && mixed.match.chNumber === '15999999',
+    'a live successor still matches; dissolved_only only fires when nothing is left alive');
+  const r = read('src/research/runResearch.mjs');
+  assert(/chStatus && chStatus !== 'active'/.test(r) && /Companies House status \$\{chStatus\}, not a prospect/.test(r),
+    'research skips any cached status that is not active before scoring');
+  const m = read('scripts/match-register.mjs');
+  assert(/dissolved_only/.test(m) && /dismissing the account/.test(m),
+    'the walk names the dissolved shape and hands the human both choices');
 });
 
 await check('the matcher and typing scripts are dry, bounded and confined (static)', async () => {
@@ -451,6 +501,8 @@ await check('the matcher and typing scripts are dry, bounded and confined (stati
   assert(/collision/.test(m) && /merge candidate/.test(m), 'a number already held is reported, never written over');
   assert(/COALESCE\(postcode,/.test(m) && /COALESCE\(region,/.test(m), 'held fields fill gaps only');
   assert(!/SET name|INSERT INTO leads|INSERT INTO contacts/i.test(m), 'it never renames and never touches leads or contacts');
+  assert(/--recheck/.test(m) && /It never detaches/.test(m) && !/ch_number\s*=\s*NULL/i.test(m),
+    'the recheck audit re-judges attached numbers under the current rule and reports; correction stays a human act');
   const t = read('scripts/type-members.mjs');
   assert(/Dry run\. Nothing written\./.test(t) && /--apply/.test(t), 'the typing wave is dry by default');
   assert(/requireCampaign\(campArg\)/.test(t) && /def\.icp\.companyTypes\.includes\(type\)/.test(t),

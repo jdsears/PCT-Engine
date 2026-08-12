@@ -139,6 +139,16 @@ export async function runResearch({ campaign, log = () => {} } = {}) {
 
   const report = { scored: 0, leadsCreated: 0, leadsUpdated: 0, domains: 0, officersAdded: 0, officersUpdated: 0, inOrbit: 0, skipped: [] };
   for (const co of targets) {
+    // A company the public register says is dissolved is not a prospect at
+    // any score: John's Fletchers catch, a dead M&E contractor sitting at 60
+    // because named plus type clears the threshold on its own. CH health
+    // zeroing keeps the audit honest; this skip keeps a known-dead company
+    // from ever forming a lead, and the report says exactly why.
+    const chStatus = co.ch_profile?.company_status;
+    if (chStatus && chStatus !== 'active') {
+      report.skipped.push(`${co.name}: Companies House status ${chStatus}, not a prospect`);
+      continue;
+    }
     const { rows: signals } = await pool.query(
       `SELECT * FROM signals WHERE (company_id = $1 OR contractor_company_id = $1) AND campaign = $2`,
       [co.id, def.id]);

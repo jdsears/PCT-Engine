@@ -159,8 +159,11 @@ function AmendAccount({ id, detail, onSaved }) {
 }
 
 // Add a person James's way: found on LinkedIn, chosen deliberately for this
-// account, so they enter the decision orbit directly.
+// account, so they enter the decision orbit directly. Behind a toggle, the
+// same as amending, so the panel reads as a record first and an editor only
+// when asked.
 function AddPerson({ id, onSaved }) {
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [linkedin, setLinkedin] = useState('');
@@ -183,6 +186,9 @@ function AddPerson({ id, onSaved }) {
     setBusy(false);
   };
 
+  if (!open) {
+    return <button className="ob-btn ghost add-person-toggle" onClick={() => setOpen(true)}>Add a person</button>;
+  }
   return (
     <div className="add-person">
       <div className="add-account-fields">
@@ -190,6 +196,7 @@ function AddPerson({ id, onSaved }) {
         <input placeholder="Role, optional" value={role} onChange={e => setRole(e.target.value)} aria-label="Role" />
         <input placeholder="LinkedIn URL, optional" value={linkedin} onChange={e => setLinkedin(e.target.value)} aria-label="LinkedIn URL" />
         <button className="ob-btn" onClick={save} disabled={busy || !name.trim()}>{busy ? 'Adding' : 'Add person'}</button>
+        <button className="ob-btn ghost" onClick={() => { setOpen(false); setMsg(null); }} disabled={busy}>Close</button>
       </div>
       {msg && <div className="muted-note">{msg}</div>}
     </div>
@@ -359,7 +366,10 @@ export default function Accounts({ isMobile, focusCompanyId, onFocusConsumed, ca
   return (
     <div className="content-pad">
       {queue}
-      {addForm}
+      <div className="acc-toolbar">
+        <div className="muted-small">{companies.length} named account{companies.length === 1 ? '' : 's'}{!isAll(campaign) ? ' on this campaign' : ''}</div>
+        {addForm}
+      </div>
       {!isMobile ? (
         <div className="card accounts-table">
           <div className="acc-grid acc-head">
