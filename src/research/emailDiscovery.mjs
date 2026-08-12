@@ -20,6 +20,10 @@ export async function discoverEmails({ limit = 10, log = () => {} } = {}) {
      WHERE ct.in_decision_orbit AND NOT ct.suppressed
        AND (ct.email IS NULL OR ct.email_verified_at IS NULL)
        AND (ct.linkedin_url IS NOT NULL OR (ct.full_name IS NOT NULL AND c.domain IS NOT NULL))
+       -- A recorded miss stands down for ninety days rather than being
+       -- re-bought at the top of every run.
+       AND (ct.payload->'email_lookup'->>'at' IS NULL
+            OR (ct.payload->'email_lookup'->>'at')::timestamptz < now() - interval '90 days')
      ORDER BY c.icp_score DESC NULLS LAST, ct.full_name
      LIMIT $1`, [Math.min(Math.max(1, limit), 50)]);
 

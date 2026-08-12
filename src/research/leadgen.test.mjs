@@ -690,6 +690,24 @@ await check('the people search speaks each campaign\'s own language', async () =
   assert(/lanePeople/.test(s) && /orbitExtra: laneTitles/.test(s), 'the force lever wires them too');
 });
 
+await check('a Findymail miss is recorded and stood down, never re-bought blind', async () => {
+  // John's first live spend, 12 August 2026: 25 lookups, 10 resolved, 15
+  // not found, 41 credits, and nothing recorded a miss. The not-founds sat
+  // at the very top of the score ordering, so every later run, engine cycle
+  // or manual, would have re-bought the same misses first, forever. The
+  // miss now stamps the contact row and every selection stands it down for
+  // ninety days: people move and mailboxes appear, so an eventual retry is
+  // right, four a day is not.
+  const f = read('src/research/findymail.mjs');
+  assert(/email_lookup/.test(f) && /not_found/.test(f), 'the miss is stamped on the contact row at the one spend point');
+  const d = read('src/research/emailDiscovery.mjs');
+  assert(/email_lookup/.test(d) && /90 days/.test(d), 'the shared selection stands a recorded miss down');
+  const s = read('scripts/discover-emails.mjs');
+  assert(/email_lookup/.test(s) && /90 days/.test(s), 'the dry-run preview obeys the same rule, so it shows what --apply will spend on');
+  const e = read('scripts/linkedin-enrich.mjs');
+  assert((e.match(/email_lookup/g) || []).length >= 2, 'the inline enrich spend obeys it in the count and the loop');
+});
+
 await check('people-discovery pacing is untouched', async () => {
   const src = read('src/research/peopleDiscovery.mjs');
   assert(!/party_review|proposal|contractor/i.test(src), 'people discovery knows nothing of proposals');
