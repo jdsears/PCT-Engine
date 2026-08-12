@@ -21,13 +21,14 @@ function topReason(breakdown) {
 // Missing pieces are reported in `missing`, never invented around; the drafter
 // must write less when grounding is thin, not fill the gap.
 export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc' } = {}) {
-  // customer_status arrived with the customer list import (migration 026);
-  // the service can deploy before the migration is applied, so ask the schema
-  // rather than fail every draft in that window.
+  // customer_status and the crm payload arrived with the customer list
+  // import (migration 026); the service can deploy before the migration is
+  // applied, so ask the schema rather than fail every draft in that window.
   const statusCol = (await hasColumn('companies', 'customer_status')) ? ', c.customer_status' : '';
+  const crmCol = (await hasColumn('companies', 'crm')) ? ", c.crm->>'segment' AS crm_segment" : '';
   const lead = (await pool.query(
     `SELECT l.id, l.company_id, l.contact_id, l.campaign, l.score, l.score_breakdown,
-            c.name AS company, c.company_type, c.region${statusCol}
+            c.name AS company, c.company_type, c.region${statusCol}${crmCol}
      FROM leads l JOIN companies c ON c.id = l.company_id WHERE l.id = $1`, [leadId])).rows[0];
   if (!lead) throw new Error(`lead ${leadId} not found`);
 
@@ -102,7 +103,7 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc' }
   return {
     leadId: lead.id, companyId: lead.company_id, contactId: contact?.id ?? null, campaign: lead.campaign,
     company: { name: lead.company, type: lead.company_type || null, region: lead.region || null,
-               customerStatus: lead.customer_status || null },
+               customerStatus: lead.customer_status || null, segment: lead.crm_segment || null },
     contact, signal, openerGrade, openerNote: openerNote(signal, openerGrade),
     icpReason: topReason(lead.score_breakdown),
     product, blockedSuppliers, missing,

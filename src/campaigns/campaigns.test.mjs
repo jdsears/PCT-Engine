@@ -105,12 +105,23 @@ check('campaigns load from files, and an unknown id is refused', () => {
 });
 
 check('a campaign definition carries every field the machinery reads', () => {
+  // Widened 10 August 2026 for the reactivation campaign: a campaign may run
+  // on relationship rather than events, in which case its sweep queries are
+  // deliberately empty and it needs no gate, because a gate that never runs
+  // would be dead text pretending to be calibrated. Sweeping campaigns still
+  // require both.
   for (const c of allCampaigns()) {
     for (const path of ['grounding.lines', 'grounding.retrievalFocus', 'icp.companyTypes', 'icp.weights',
-                        'signals.sweepQueries', 'signals.gate.subjectTest', 'signals.gate.eventTest',
                         'positioning.trustLine', 'positioning.confidentialityRule', 'orbitTitles']) {
       const v = path.split('.').reduce((o, k) => (o == null ? o : o[k]), c);
       assert(v != null && (!Array.isArray(v) || v.length), `${c.id} is missing ${path}`);
+    }
+    assert(Array.isArray(c.signals?.sweepQueries), `${c.id} declares its sweep queries, empty meaning relationship-driven`);
+    if (c.signals.sweepQueries.length) {
+      for (const path of ['signals.gate.subjectTest', 'signals.gate.eventTest']) {
+        const v = path.split('.').reduce((o, k) => (o == null ? o : o[k]), c);
+        assert(v != null, `${c.id} sweeps, so it is missing ${path}`);
+      }
     }
     assert(Array.isArray(c.grounding.lines) && c.grounding.lines.length, `${c.id} names its grounding lines`);
     assert(c.icp.weights && Object.values(c.icp.weights).reduce((a, b) => a + b, 0) === 100,
