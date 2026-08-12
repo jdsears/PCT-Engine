@@ -26,9 +26,35 @@ import { regionForPostcode } from '../src/research/region.mjs';
 // anything beyond Companies House lookups.
 
 const APPLY = process.argv.includes('--apply');
+const RECHECK = process.argv.includes('--recheck');
 const argAfter = f => { const i = process.argv.indexOf(f); return i !== -1 ? process.argv[i + 1] : null; };
 const campaign = argAfter('--campaign');
 const limit = Math.max(1, Math.min(300, parseInt(argAfter('--limit') || '100', 10) || 100));
+
+// --recheck: audit what earlier walks attached. The first live run leaked
+// two wrong entities through the looser rule before it was tightened, so
+// this re-judges every attached number against the cached register entry
+// under the current rule and names the suspects. It never detaches; a wrong
+// number is corrected through the amend form, a human decision.
+if (RECHECK) {
+  const { confidentChMatch: strict } = await import('../src/research/companiesHouse.mjs');
+  const { rows } = await pool.query(
+    `SELECT id, name, ch_number, ch_profile->>'company_name' AS registered
+     FROM companies WHERE ch_number IS NOT NULL AND ch_profile IS NOT NULL ORDER BY name`);
+  let suspects = 0;
+  for (const r of rows) {
+    if (!r.registered) continue;
+    const verdict = strict(r.name, [{ name: r.registered, chNumber: r.ch_number, status: 'active' }]);
+    if (verdict.status !== 'matched') {
+      suspects++;
+      console.log(`  suspect  #${r.id} ${r.name} -> ${r.registered} (${r.ch_number}); if wrong, paste the right number in the amend form`);
+    }
+  }
+  console.log(`\n${rows.length} attached number(s) rechecked, ${suspects} suspect(s) under the tightened rule.`);
+  console.log('Nothing was changed; a wrong number is corrected through the amend form.');
+  await pool.end();
+  process.exit(0);
+}
 
 const params = [];
 let where = `ch_number IS NULL`;
@@ -54,6 +80,11 @@ for (const co of rows) {
   if (outcome.status === 'ambiguous') {
     report.ambiguous++;
     console.log(`  ambiguous ${co.name}: ${outcome.candidates.map(c => `${c.name} (${c.chNumber})`).join('; ')}  -> use the amend form`);
+    continue;
+  }
+  if (outcome.status === 'dissolved_only') {
+    report.dissolved = (report.dissolved || 0) + 1;
+    console.log(`  dissolved ${co.name}: every name-agreeing entity is dissolved: ${outcome.candidates.map(c => `${c.name} (${c.chNumber})`).join('; ')}  -> if this is them, the business is gone; consider dismissing the account, or attach the number via the amend form to record the truth`);
     continue;
   }
   if (outcome.status === 'none') {

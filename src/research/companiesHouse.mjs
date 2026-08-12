@@ -63,13 +63,43 @@ export function candidateRows(results) {
 // such candidate, because walking a thousand rows automatically deserves a
 // stricter bar than seeding forty by hand. Anything else is ambiguous or
 // none, left for the amend form, never guessed.
-const matchNorm = (s) => String(s || '').toLowerCase()
-  .replace(/\b(ltd|limited|plc|llp|uk|group|holdings)\b/g, '').replace(/[^a-z0-9]/g, '');
+// Tightened 11 August 2026 after the first live walk leaked: substring
+// containment matched Oxitec to OXI-TECH SOLUTIONS across a word boundary
+// and Olympus Surgical Technologies to bare SURGICAL TECHNOLOGIES by
+// swallowing the identity word. The rule is now token-shaped: the first
+// token must agree, because identity lives at the front of a name, and the
+// shorter side's tokens must all appear in the longer's. Recall is traded
+// for precision deliberately; a bulk auto-attach that is sometimes wrong is
+// worse than one that leaves more for the amend form.
+const tokenise = (s, stop) => String(s || '').toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ').split(/\s+/)
+  .filter(t => t && !stop.includes(t));
+const FIT_STOP = ['ltd', 'limited', 'plc', 'llp', 'uk', 'group', 'holdings', 'the'];
+// Only the legal dressing: an exact match may strip LIMITED or PLC, never
+// HOLDINGS, GROUP or UK, because a holdings shell or a group parent is the
+// classic wrong attach and a UK arm of a foreign group deserves a human eye.
+const LEGAL_STOP = ['ltd', 'limited', 'plc', 'llp', 'the'];
 export function confidentChMatch(name, results) {
-  const n = matchNorm(name);
-  if (!n) return { status: 'none' };
-  const fits = (results || []).filter(r => r.status === 'active'
-    && (matchNorm(r.name).includes(n) || n.includes(matchNorm(r.name))));
+  const nTok = tokenise(name, FIT_STOP);
+  if (!nTok.length) return { status: 'none' };
+  const nameFits = (results || []).filter(r => {
+    const cTok = tokenise(r.name, FIT_STOP);
+    if (!cTok.length || cTok[0] !== nTok[0]) return false;
+    const [a, b] = cTok.length <= nTok.length ? [cTok, nTok] : [nTok, cTok];
+    return a.every(t => b.includes(t));
+  });
+  const fits = nameFits.filter(r => r.status === 'active');
+  // The Fletchers shape: the name agrees and every agreeing entity is
+  // dissolved. That is not "none", it is news, the business behind this
+  // register row may be gone, and the caller should say so rather than
+  // leave a dead company scoring like a prospect.
+  if (!fits.length && nameFits.length) return { status: 'dissolved_only', candidates: nameFits };
+  // GSK's shape, from the first live walk: the register name sits among
+  // extensions, GSK Accountancy and kin, but exactly one candidate IS the
+  // name once the legal dressing comes off, GSK PLC. That one wins.
+  const nLegal = tokenise(name, LEGAL_STOP).join(' ');
+  const exact = fits.filter(r => tokenise(r.name, LEGAL_STOP).join(' ') === nLegal);
+  if (exact.length === 1) return { status: 'matched', match: exact[0] };
   if (fits.length === 1) return { status: 'matched', match: fits[0] };
   if (fits.length > 1) return { status: 'ambiguous', candidates: fits };
   return { status: 'none' };
