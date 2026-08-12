@@ -56,6 +56,25 @@ export function candidateRows(results) {
   }));
 }
 
+// The confidence rule for attaching a Companies House entity to a register
+// name without a human in the loop, extracted from the July seed and
+// tightened for bulk use: the candidate must be active, the names must
+// contain one another after suffix stripping, and there must be exactly one
+// such candidate, because walking a thousand rows automatically deserves a
+// stricter bar than seeding forty by hand. Anything else is ambiguous or
+// none, left for the amend form, never guessed.
+const matchNorm = (s) => String(s || '').toLowerCase()
+  .replace(/\b(ltd|limited|plc|llp|uk|group|holdings)\b/g, '').replace(/[^a-z0-9]/g, '');
+export function confidentChMatch(name, results) {
+  const n = matchNorm(name);
+  if (!n) return { status: 'none' };
+  const fits = (results || []).filter(r => r.status === 'active'
+    && (matchNorm(r.name).includes(n) || n.includes(matchNorm(r.name))));
+  if (fits.length === 1) return { status: 'matched', match: fits[0] };
+  if (fits.length > 1) return { status: 'ambiguous', candidates: fits };
+  return { status: 'none' };
+}
+
 // A hand-entered company number into Companies House's canonical form, or
 // null when it cannot be one. Numbers are eight characters: all digits, with
 // short old registrations zero-padded, or a two-letter prefix and six digits

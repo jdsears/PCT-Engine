@@ -424,6 +424,40 @@ await check('the gate path is wired to nothing from this work', async () => {
   assert(!/parties\.mjs|extractParties|buildPartiesSystem/.test(prompts), 'prompt assembly never touches the extraction');
 });
 
+console.log('\nThe retro-matcher: confident or left for a human:');
+
+await check('bulk matching requires exactly one active, name-agreeing candidate', async () => {
+  const { confidentChMatch } = await import('./companiesHouse.mjs');
+  const one = confidentChMatch('Tankbuilder', [
+    { name: 'TANKBUILDER LIMITED', chNumber: '01234567', status: 'active' },
+    { name: 'TANKBUILDER SERVICES LIMITED', chNumber: '07654321', status: 'dissolved' },
+  ]);
+  assert(one.status === 'matched' && one.match.chNumber === '01234567', 'one active fit attaches');
+  const two = confidentChMatch('Volta', [
+    { name: 'VOLTA HOLDINGS LIMITED', chNumber: '01111111', status: 'active' },
+    { name: 'VOLTA GREAT SUTTON LIMITED', chNumber: '02222222', status: 'active' },
+  ]);
+  assert(two.status === 'ambiguous' && two.candidates.length === 2, 'two active fits go to a human');
+  assert(confidentChMatch('Quest Medical', [
+    { name: 'UNRELATED HOLDINGS LIMITED', chNumber: '03333333', status: 'active' },
+  ]).status === 'none', 'no name agreement is none, not a stretch');
+  assert(confidentChMatch('Anything', []).status === 'none' && confidentChMatch('', []).status === 'none', 'empty is none, never an error');
+});
+
+await check('the matcher and typing scripts are dry, bounded and confined (static)', async () => {
+  const m = read('scripts/match-register.mjs');
+  assert(/Dry run\. Nothing written\./.test(m) && /--apply/.test(m), 'the matcher is dry by default');
+  assert(/confidentChMatch/.test(m), 'it uses the extracted confidence rule');
+  assert(/collision/.test(m) && /merge candidate/.test(m), 'a number already held is reported, never written over');
+  assert(/COALESCE\(postcode,/.test(m) && /COALESCE\(region,/.test(m), 'held fields fill gaps only');
+  assert(!/SET name|INSERT INTO leads|INSERT INTO contacts/i.test(m), 'it never renames and never touches leads or contacts');
+  const t = read('scripts/type-members.mjs');
+  assert(/Dry run\. Nothing written\./.test(t) && /--apply/.test(t), 'the typing wave is dry by default');
+  assert(/requireCampaign\(campArg\)/.test(t) && /def\.icp\.companyTypes\.includes\(type\)/.test(t),
+    'the type resolves through the campaign\'s own ICP, never free text');
+  assert(/company_type IS NULL/.test(t), 'a type any human has set is never overwritten');
+});
+
 console.log('\nReactivation: the relationship is the qualification:');
 
 await check('a seeded reactivation wave crosses the lead threshold on the relationship alone', async () => {
