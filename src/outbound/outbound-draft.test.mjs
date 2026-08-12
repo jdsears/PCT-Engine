@@ -262,6 +262,13 @@ await check('an existing customer is never drafted to as a stranger', () => {
   assert(!/existing PCT customer/.test(prospect), 'a prospect keeps the cold shape');
   const unknown = renderGrounding({ ...base, company: { name: 'Acme Process' } });
   assert(!/existing PCT customer/.test(unknown), 'no record means no relationship claimed');
+  // The CRM's segment steers the range choice for a known customer, and only
+  // for a known customer: segment without relationship proves nothing.
+  const seg = renderGrounding({ ...base, company: { name: 'Acme Process', customerStatus: 'c', segment: 'Oil & Gas (Jordan Valve)' } });
+  assert(/Their recorded segment in PCT's own books: Oil & Gas \(Jordan Valve\)/.test(seg), 'the segment reaches the drafter');
+  assert(/Lead with the range most relevant/.test(seg), 'with the instruction that goes with it');
+  const segOnly = renderGrounding({ ...base, company: { name: 'Acme Process', segment: 'Oil & Gas (Jordan Valve)' } });
+  assert(!/recorded segment/.test(segOnly), 'no relationship, no segment line');
 });
 
 await check('renderGrounding opens on a project event but marks a filing never-mention', () => {

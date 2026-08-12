@@ -424,6 +424,42 @@ await check('the gate path is wired to nothing from this work', async () => {
   assert(!/parties\.mjs|extractParties|buildPartiesSystem/.test(prompts), 'prompt assembly never touches the extraction');
 });
 
+console.log('\nReactivation: the relationship is the qualification:');
+
+await check('a seeded reactivation wave crosses the lead threshold on the relationship alone', async () => {
+  // The imported customers mostly carry no company type and no Companies
+  // House number, which is exactly why the campaign weights the named
+  // membership itself at 45: being a deliberately seeded existing customer
+  // is the fit, and a wave becomes leads without waiting for news.
+  const seeded = { named_account: true, company_type: null, ch_profile: null };
+  const s = scoreCompany(seeded, [], null, 'richards_reactivation');
+  assert(s.score >= 40, `a bare seeded customer clears the 40 threshold, got ${s.score}`);
+  const unseeded = { named_account: false, company_type: null, ch_profile: null };
+  assert(scoreCompany(unseeded, [], null, 'richards_reactivation').score < 40,
+    'an unseeded company does not, so the wave stays the human choice');
+});
+
+await check('the reactivation campaign is manual, sweepless, and honest about it', async () => {
+  const def = requireCampaign('richards_reactivation');
+  assert(def.status === 'manual', 'nothing runs until the first wave is calibrated');
+  assert(def.signals.sweepQueries.length === 0, 'a relationship campaign has no news sweep');
+  assert(!def.signals.gate, 'and no gate, because a gate that never runs would be dead text');
+  assert(/never invent any order history/.test(def.positioning.profileFitLine), 'the opener rule bans invented history');
+  assert(/never name or imply any other customer/.test(def.positioning.confidentialityRule), 'confidentiality holds');
+  const { activeCampaignIds } = await import('../campaigns/registry.mjs');
+  assert(!activeCampaignIds().includes('richards_reactivation'), 'the scheduler never touches it while manual');
+});
+
+await check('the wave seeder is dry by default, filtered, and keeps the Ireland rule (static)', async () => {
+  const src = read('scripts/seed-reactivation.mjs');
+  assert(/Dry run\. Nothing written\./.test(src) && /--apply/.test(src), 'dry by default');
+  assert(/customer_status = ANY/.test(src), 'waves select existing customers by grade');
+  assert(/<> 'Ireland'/.test(src), 'Republic customers are served, never prospected, and a reactivation email is prospecting');
+  assert(/--segment/.test(src) && /--region/.test(src) && /--limit/.test(src), 'waves are shaped, not floods');
+  assert(!/INSERT INTO leads|INSERT INTO contacts/i.test(src) && !/icp_score|scoreCompany/.test(src), 'seeding touches membership only');
+  assert(/ON CONFLICT \(company_id, campaign\) DO NOTHING/.test(src), 're-runs never duplicate membership');
+});
+
 console.log('\nThe census: population coverage, proposed never written:');
 
 await check('the census prompt is the campaign\'s own and tells the model not to invent', async () => {

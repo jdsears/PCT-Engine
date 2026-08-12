@@ -1,0 +1,66 @@
+{
+  "id": "richards_reactivation",
+  "displayName": "Reactivation",
+  "status": "manual",
+  "note": "The fourth campaign, proposed 10 August 2026 on John's instruction after James and Andy asked for it: most customer relationships are arms length, a web shop purchase at some point, and those customers have never been shown the Richards Industrials ranges PCT now supplies. This campaign runs on relationship rather than events: no sweep, no gate, members seeded in deliberate waves from the imported customer base by scripts/seed-reactivation.mjs, scored on the relationship itself so a seeded wave becomes leads without waiting for news, and drafted to as known customers, which the drafter's existing-customer briefing already enforces. Status manual and it stays manual until the first wave's drafts have been read line by line and the positioning wording below has James's sanction; both are the calibration event. The trust and range lines are the conservative corpus-grounded forms; James may strengthen them, which is a field edit here.",
+
+  "grounding": {
+    "lines": ["jordan", "steriflow", "steriflow_fb", "marwin", "hexvalve", "bestobell_steam"],
+    "retrievalFocus": "Richards Industrials valve ranges Jordan Steriflow Marwin Hex Bestobell pressure control sanitary steam"
+  },
+
+  "links": { "rangePage": "steriflow_page" },
+
+  "icp": {
+    "companyTypes": ["end_client", "me_contractor", "oem", "fb_manufacturer", "pharma_manufacturer", "other"],
+    "signalTypes": [],
+    "partyTypes": { "operator": "end_client", "contractor": "me_contractor" },
+    "noSignalReason": "a reactivation campaign runs on relationship, not events",
+    "thresholds": { "minContractValueGBP": 0, "ukOnly": true },
+    "buildStages": [],
+    "weights": { "namedAccount": 45, "typeFit": 10, "signals": 25, "chHealth": 20 }
+  },
+
+  "signals": {
+    "sweepQueries": []
+  },
+
+  "positioning": {
+    "campaignPhrase": "the existing customer reactivation campaign",
+    "profileFitLine": "open on the standing relationship: this company has bought from PCT before, often through the web shop, and the purpose is to introduce the wider Richards Industrials ranges they may not have seen. Be specific to their world where the grounding gives it, and never invent any order history.",
+    "rangeLine": "PCT supplies the Richards Industrials valve ranges from the UK: Jordan pressure and temperature control, Steriflow sanitary process, Marwin control ball valves, Hex high pressure, and Bestobell steam.",
+    "trustLine": "These ranges are widely used across UK process industries.",
+    "trustLinePrefix": "Track record, state in general form and with confidence: ",
+    "confidentialityHardLimit": "Hard limit: never name or imply any other customer, and never state or invent this customer's own purchase history beyond the fact of the standing relationship. \"Widely used across UK process industries\" is the ceiling of specificity.",
+    "positioningRule": "Position the Richards ranges as the wider catalogue behind a relationship that already exists, never as a cold introduction and never as a data sheet.",
+    "trackRecordRule": "you may state, confidently and in general form, that these ranges are widely used across UK process industries. CONFIDENTIALITY RULE, absolute: never name or imply any other customer, and never invent this customer's own purchase history; the standing relationship may be acknowledged as fact, nothing more specific.",
+    "confidentialityRule": "CONFIDENTIALITY RULE, absolute: never name or imply any other customer, and never invent this customer's own purchase history; the standing relationship may be acknowledged as fact, nothing more specific.",
+    "structurePositioning": "one line noting PCT supplies the full Richards Industrials range set, and where the grounding names their segment, one line matching the most relevant range to that world, with no invented purchase history and no part-specific spec",
+    "ask": "a short call, or whether a range overview relevant to their work would be useful"
+  },
+
+  "studio": {
+    "newsLine": "commenting on UK process industry news",
+    "angleLine": "what the story means for process and flow control",
+    "rangeLine": "the Richards Industrials valve ranges his company supplies are widely used across UK process industries",
+    "hashtags": ["#processindustry", "#flowcontrol"],
+    "connectLine": "I'm with PCT, the UK supplier of the Richards Industrials valve ranges",
+    "connectLineShort": "I'm with PCT, the UK supplier of the Richards Industrials valve ranges"
+  },
+
+  "orbitTitles": [
+    "maintenance manager", "engineering manager", "process engineer", "plant engineer",
+    "site engineer", "operations manager", "technical manager", "utilities",
+    "reliability engineer", "project engineer", "procurement", "buyer",
+    "purchasing manager", "supply chain", "stores manager", "facilities manager",
+    "head of engineering", "engineering director", "works engineer", "mechanical engineer"
+  ],
+
+  "signalLabels": {},
+
+  "watchlistCopy": "Existing customers seeded for reactivation, where the relationship is real but arms length. These are known accounts to reintroduce the wider ranges to, not cold prospects.",
+
+  "geo": { "routing": "shared" },
+
+  "staleness": { "days": 365 }
+}

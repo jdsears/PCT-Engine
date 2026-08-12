@@ -60,6 +60,12 @@ export function renderGrounding(g, campaign = 'marwin_dc') {
   // recite or build claims on.
   if (['a', 'b', 'c'].includes(g.company?.customerStatus)) {
     lines.push('This company is an existing PCT customer in the account records. Write as a supplier they already know: do not introduce PCT as if they had never heard of it and do not present this as first contact. Do not claim any specific purchase or order history, because none is recorded here.');
+    // The CRM's own segment label, when the import recorded one: it says
+    // which world this customer works in, so the drafter can lead with the
+    // relevant range instead of reciting the whole catalogue.
+    if (g.company?.segment) {
+      lines.push(`Their recorded segment in PCT's own books: ${g.company.segment}. Lead with the range most relevant to that world.`);
+    }
   }
   // Consultancies performance-specify and never purchase, a structure a live
   // operator reply spelt out: the spec is written by the operator and their
