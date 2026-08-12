@@ -1,8 +1,9 @@
 import { pool } from '../db.mjs';
 
 // Findymail client. Credits cost money, so every call is logged, a counter is
-// kept for run reports, and a contact with a verified email is never looked up
-// again.
+// kept for run reports, a contact with a verified email is never looked up
+// again, and a miss is recorded on the contact row so the next run stands the
+// contact down instead of re-buying the same miss.
 const BASE = 'https://app.findymail.com/api';
 let creditsSpent = 0;
 export const getCreditsSpent = () => creditsSpent;
@@ -49,7 +50,18 @@ export async function ensureContactEmail(contact, companyDomain) {
   let found = null;
   if (contact.linkedin_url) found = await findFromLinkedin(contact.linkedin_url);
   if (!found && contact.full_name && companyDomain) found = await findFromNameDomain(contact.full_name, companyDomain);
-  if (!found) return { skipped: 'not found' };
+  if (!found) {
+    // A miss costs credits too. John's first live spend showed the leak:
+    // fifteen not-founds at the highest scores, and nothing recorded, so
+    // every later run would have re-bought the same misses first, forever.
+    // The stamp lets the selection stand a missed contact down for a
+    // quarter; people move and mailboxes appear, so a retry eventually
+    // makes sense, just not four times a day.
+    await pool.query(
+      `UPDATE contacts SET payload = COALESCE(payload, '{}'::jsonb) || $2::jsonb WHERE id = $1`,
+      [contact.id, JSON.stringify({ email_lookup: { at: new Date().toISOString(), outcome: 'not_found' } })]);
+    return { skipped: 'not found' };
+  }
   await pool.query(
     `UPDATE contacts SET email = $1, email_confidence = $2, email_verified_at = now() WHERE id = $3`,
     [found.email, found.confidence, contact.id]);

@@ -23,6 +23,10 @@ const { rows: candidates } = await pool.query(
    FROM contacts ct JOIN companies c ON c.id = ct.company_id
    WHERE ct.in_decision_orbit AND NOT ct.suppressed
      AND (ct.email IS NULL OR ct.email_verified_at IS NULL)
+     -- The preview obeys the run's own rule: a recorded miss stands down
+     -- for ninety days, so the dry list is what --apply will spend on.
+     AND (ct.payload->'email_lookup'->>'at' IS NULL
+          OR (ct.payload->'email_lookup'->>'at')::timestamptz < now() - interval '90 days')
    ORDER BY c.icp_score DESC NULLS LAST, ct.full_name
    LIMIT $1`, [LIMIT]);
 

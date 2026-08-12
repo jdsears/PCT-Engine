@@ -128,7 +128,9 @@ for (const co of companies) {
       if (co.domain) {
         const { rows: [{ n }] } = await pool.query(
           `SELECT count(*)::int AS n FROM contacts
-           WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed AND email_verified_at IS NULL`, [co.id]);
+           WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed AND email_verified_at IS NULL
+             AND (payload->'email_lookup'->>'at' IS NULL
+                  OR (payload->'email_lookup'->>'at')::timestamptz < now() - interval '90 days')`, [co.id]);
         report.potentialEmails += n;
         console.log(`  would look up ${n} email${n === 1 ? '' : 's'} via Findymail, ${n} credit${n === 1 ? '' : 's'}, on the in-orbit contacts here`);
       } else {
@@ -161,7 +163,9 @@ for (const co of companies) {
       const { rows: orbit } = await pool.query(
         `SELECT id, full_name, email, email_verified_at, linkedin_url FROM contacts
          WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed
-           AND email_verified_at IS NULL`, [co.id]);
+           AND email_verified_at IS NULL
+           AND (payload->'email_lookup'->>'at' IS NULL
+                OR (payload->'email_lookup'->>'at')::timestamptz < now() - interval '90 days')`, [co.id]);
       for (const c of orbit) {
         try {
           const r = await ensureContactEmail(c, co.domain);
