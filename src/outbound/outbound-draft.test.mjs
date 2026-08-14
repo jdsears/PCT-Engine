@@ -132,6 +132,26 @@ await check('a namesake cannot be cold-opened on a guess', async () => {
   assert(edited.some(f => /namesake/.test(f)), 'editing the words cannot clear a wrong recipient');
 });
 
+await check('a stated employer elsewhere blocks the same way', async () => {
+  const { flagStatedEmployer } = await import('./draft.mjs');
+  // Frozen from the same morning's queue: Mark Quest, Principle Mechanical
+  // Engineer at AECOM, drafted on the Flakt Woods card. Not a namesake,
+  // the role simply says where he works, and it is not the card.
+  const quest = flagStatedEmployer({ name: 'Mark Quest', role: 'Principle Mechanical Engineer at AECOM' }, 'Flakt Woods Limited');
+  assert(quest && /^blocking:/.test(quest) && /AECOM/.test(quest), 'a role naming another employer blocks for a human');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Operations Director at Armstrong' }, 'Armstrong Limited') === null,
+    'the card company after at is evidence, not doubt');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Commissioning Engineer' }, 'Flakt Woods Limited') === null,
+    'no stated employer, no verdict from this rule');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Principal at Arup | Advisor at Flakt Woods' }, 'Flakt Woods Limited') === null,
+    'any matching segment is evidence enough: second hats are real');
+  const edited = reflagText({ subject: 's', body: 'Entirely rewritten by hand.', grounding: {
+    contact: { name: 'Mark Quest', role: 'Principle Mechanical Engineer at AECOM' },
+    company: { name: 'Flakt Woods Limited' }, blockedSuppliers: [],
+  } });
+  assert(edited.some(f => /stated employer differs/.test(f)), 'editing cannot clear this wrong recipient either');
+});
+
 await check('the greeting is guaranteed: Dear on cold opens, bare on thread emails, never invented', async () => {
   assert(ensureGreeting('You secured planning in Slough.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nYou secured planning in Slough.', 'a missing greeting is prepended');
   assert(ensureGreeting('Sam,\n\nYou secured planning.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nYou secured planning.', 'a bare greeting upgrades to Dear');

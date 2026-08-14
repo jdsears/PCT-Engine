@@ -246,11 +246,13 @@ export function reflagText({ subject = '', body = '', grounding = {} }) {
   const named = [...new Set(flagEndCustomers(text, grounding?.company?.name))];
   const suppliers = (Array.isArray(grounding?.blockedSuppliers) ? grounding.blockedSuppliers : [])
     .filter(n => n && text.toLowerCase().includes(String(n).toLowerCase()));
-  // The namesake block is about the recipient, not the words: no edit to the
-  // text clears it, only fixing the contact does.
+  // The recipient blocks are about who this goes to, not the words: no edit
+  // to the text clears them, only fixing the contact does.
   const namesake = flagNamesake(grounding?.contact, grounding?.company?.name);
+  const employer = flagStatedEmployer(grounding?.contact, grounding?.company?.name);
   return [
     ...(namesake ? [namesake] : []),
+    ...(employer ? [employer] : []),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
     ...suppliers.map(n => `blocking: names a supplier that may not be named (${n})`),
     ...links.map(u => `blocking: web address not on the approved list (${u}); only the booking link and the approved PCT pages may appear, never a manufacturer site`),
@@ -335,6 +337,26 @@ export function flagNamesake(contact, companyName) {
   return `blocking: namesake risk, the contact's surname is the company's name and their recorded role does not place them there; a people search can catch a namesake at another employer. Confirm ${contact.name} really works at ${companyName} before this can send`;
 }
 
+// The namesake's sibling, caught the same morning: Mark Quest, Principle
+// Mechanical Engineer at AECOM, drafted on the Flakt Woods card. His role
+// states his employer, and it is not the company on the card. When every
+// "at" segment of a recorded role shares no word with the card's company,
+// the person almost certainly works somewhere else, however they came to be
+// attached. Same discipline as the namesake: block for a human eye,
+// suppress nobody, and a segment that does mention the company (a partner,
+// a second hat) is evidence enough to pass.
+export function flagStatedEmployer(contact, companyName) {
+  const role = String(contact?.role || '');
+  const coTok = String(companyName || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(/\s+/)
+    .filter(t => t && !NAMESAKE_STOP.includes(t));
+  if (!coTok.length) return null;
+  const segs = role.toLowerCase().split(/\bat\b/).slice(1);
+  if (!segs.length) return null;
+  const segTokens = s => s.replace(/[^a-z0-9]+/g, ' ').split(/\s+/).filter(t => t && !NAMESAKE_STOP.includes(t)).slice(0, 4);
+  if (segs.some(s => segTokens(s).some(t => coTok.includes(t)))) return null;
+  return `blocking: stated employer differs, the contact's recorded role reads "${role}" and does not place them at ${companyName}; confirm they really work at ${companyName} before this can send`;
+}
+
 // The shared finishing pipeline for every outbound email type: check, one
 // revision if needed, re-check, then the supplier and end-customer guardrails.
 // Returns the final text plus the flags the reviewer must see. A draft is never
@@ -363,9 +385,11 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
   // A wrong recipient is a fault no wording can fix, so it flags here with
   // everything else the reviewer must see.
   const namesake = flagNamesake(grounding.contact, grounding.company?.name);
+  const employer = flagStatedEmployer(grounding.contact, grounding.company?.name);
   const flags = [
     ...check.unsupported,
     ...(namesake ? [namesake] : []),
+    ...(employer ? [employer] : []),
     ...(swept.removed ? ['a trailing sign-off block was removed; the signature is appended at send'] : []),
     ...redacted.map(n => `supplier name redacted: ${n}`),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
