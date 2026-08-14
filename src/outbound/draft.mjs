@@ -213,8 +213,19 @@ export function stripSignoff(body) {
 // the house form, an existing correct one passes through, and with no name
 // on file nothing is ever invented. An inline continuation ("Michael,
 // understood, and...") is preserved, only the lead-in token changes.
+// A stored name is the truth verbatim, LinkedIn casing included, but a
+// greeting is ours: an all-lowercase or SHOUTED first name is recased to its
+// written form (gary -> Gary, ION -> Ion), hyphens and apostrophes
+// respected, while a mixed-case name (McDowall) and short initials (JP)
+// pass through untouched. James's request, 14 August 2026, after a queue of
+// drafts greeted gary in LinkedIn's own casing.
+const displayFirst = (w) => {
+  const recase = /^[a-z'-]+$/.test(w) || (/^[A-Z'-]+$/.test(w) && w.length >= 3);
+  if (!recase) return w;
+  return w.toLowerCase().replace(/(^|[-'])([a-z])/g, (m, p, c) => p + c.toUpperCase());
+};
 export function ensureGreeting(body, fullName, { dear = false } = {}) {
-  const first = String(fullName || '').trim().split(/\s+/)[0];
+  const first = displayFirst(String(fullName || '').trim().split(/\s+/)[0] || '');
   const b = String(body || '').trim();
   if (!first || !b) return b;
   const greet = dear ? `Dear ${first},` : `${first},`;
@@ -235,7 +246,11 @@ export function reflagText({ subject = '', body = '', grounding = {} }) {
   const named = [...new Set(flagEndCustomers(text, grounding?.company?.name))];
   const suppliers = (Array.isArray(grounding?.blockedSuppliers) ? grounding.blockedSuppliers : [])
     .filter(n => n && text.toLowerCase().includes(String(n).toLowerCase()));
+  // The namesake block is about the recipient, not the words: no edit to the
+  // text clears it, only fixing the contact does.
+  const namesake = flagNamesake(grounding?.contact, grounding?.company?.name);
   return [
+    ...(namesake ? [namesake] : []),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
     ...suppliers.map(n => `blocking: names a supplier that may not be named (${n})`),
     ...links.map(u => `blocking: web address not on the approved list (${u}); only the booking link and the approved PCT pages may appear, never a manufacturer site`),
@@ -299,6 +314,27 @@ export function flagEndCustomers(text, recipientName) {
   return [...new Set(hits)];
 }
 
+// The namesake trap, caught live on 14 August 2026: the people search for
+// Armstrong Limited attached gary armstrong, a mechanical engineer at Jaguar
+// Building Services, because a keyword search matches a surname as happily
+// as an employer, and a pattern-guessed mailbox at the company's domain made
+// him look reachable. The draft was one Approve away from sending. When the
+// contact's surname IS the company's identity word and nothing in their
+// recorded role places them at the company, employment is unproven and a
+// cold open must not send on a guess. Family firms are real, an Armstrong at
+// Armstrong may be exactly the right reader, so this blocks for a human eye
+// rather than suppressing anyone.
+const NAMESAKE_STOP = ['ltd', 'limited', 'plc', 'llp', 'uk', 'group', 'holdings', 'the'];
+export function flagNamesake(contact, companyName) {
+  const words = String(contact?.name || '').toLowerCase().replace(/[^a-z\s'-]/g, ' ').trim().split(/\s+/).filter(Boolean);
+  const surname = words[words.length - 1] || '';
+  const token = String(companyName || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(/\s+/)
+    .filter(t => t && !NAMESAKE_STOP.includes(t))[0] || '';
+  if (!surname || !token || surname !== token) return null;
+  if (String(contact?.role || '').toLowerCase().includes(token)) return null;
+  return `blocking: namesake risk, the contact's surname is the company's name and their recorded role does not place them there; a people search can catch a namesake at another employer. Confirm ${contact.name} really works at ${companyName} before this can send`;
+}
+
 // The shared finishing pipeline for every outbound email type: check, one
 // revision if needed, re-check, then the supplier and end-customer guardrails.
 // Returns the final text plus the flags the reviewer must see. A draft is never
@@ -324,8 +360,12 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
   // full of manufacturer addresses, and prospects are sent to PCT's own
   // pages, never a factory's.
   const links = findLinks(`${s.text}\n${b.text}`).filter(u => !allowedLink(u));
+  // A wrong recipient is a fault no wording can fix, so it flags here with
+  // everything else the reviewer must see.
+  const namesake = flagNamesake(grounding.contact, grounding.company?.name);
   const flags = [
     ...check.unsupported,
+    ...(namesake ? [namesake] : []),
     ...(swept.removed ? ['a trailing sign-off block was removed; the signature is appended at send'] : []),
     ...redacted.map(n => `supplier name redacted: ${n}`),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
