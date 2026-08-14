@@ -369,6 +369,13 @@ await check('the cold-open grounding positions the range, not a single part spec
 await check('a named operator or implying phrase is flagged, the recipient name is not', () => {
   assert(flagEndCustomers('used by Google on their builds', 'Aery').length > 0, 'Google must be flagged');
   assert(flagEndCustomers('trusted by a major US hyperscaler', 'Aery').includes('a major us'), 'the implying phrase must be flagged');
+  // John's calibration, 14 August 2026, from the live queue: hyperscaler is
+  // the industry's category word and must be usable. Commentary passes; an
+  // implied specific customer still blocks.
+  assert(flagEndCustomers('Hyperscaler projects demand tight delivery schedules.', 'Aery').length === 0,
+    'the bare category word is usable in commentary');
+  assert(flagEndCustomers('Our valves are in service with a major hyperscaler.', 'Aery').includes('major hyperscaler'),
+    'an implied specific customer still blocks');
   assert(flagEndCustomers('valves for Oracle', 'Oracle Data Centres').length === 0, 'the recipient name is not an end-customer breach');
   assert(flagEndCustomers('used across some of the largest data centre builds', 'Aery').length === 0, 'the safe general form is clean');
 });

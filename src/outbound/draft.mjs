@@ -276,9 +276,13 @@ export function applySupplierGuardrail(text, blocked) {
 // data centre track record is sayable in general form, but the specific operators
 // are never named or implied. This flags a draft that names or points at a
 // specific end customer; the flag is blocking, such a draft cannot be approved.
+// "hyperscaler" left this list on John's instruction, 14 August 2026: it is
+// the industry's category word, not anyone's name, and a draft discussing
+// hyperscaler demand names nobody. The implication phrases below still
+// block, "a major hyperscaler" is a specific unnamed customer.
 const END_CUSTOMER_NAMES = [
   'google', 'alphabet', 'microsoft', 'azure', 'amazon', 'aws', 'meta', 'facebook',
-  'apple', 'oracle', 'openai', 'anthropic', 'tiktok', 'bytedance', 'tencent', 'alibaba', 'nvidia', 'hyperscaler',
+  'apple', 'oracle', 'openai', 'anthropic', 'tiktok', 'bytedance', 'tencent', 'alibaba', 'nvidia',
 ];
 const END_CUSTOMER_PHRASES = [
   'a major us', 'well-known search', "world's biggest tech", "world's largest tech", 'major tech firm', 'major hyperscaler',
