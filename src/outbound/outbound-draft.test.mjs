@@ -111,6 +111,47 @@ await check('a human edit re-checks the guardrails: a fixed body clears, an unfi
   if (old === undefined) delete process.env.MEETING_LINK; else process.env.MEETING_LINK = old;
 });
 
+await check('a namesake cannot be cold-opened on a guess', async () => {
+  const { flagNamesake } = await import('./draft.mjs');
+  // Frozen from the live queue, 14 August 2026: the people search for
+  // Armstrong Limited attached gary armstrong, mechanical engineer at
+  // Jaguar Building Services, a pattern mailbox at the company domain made
+  // him look reachable, and the draft was one Approve away from sending.
+  const gary = flagNamesake({ name: 'gary armstrong', role: 'Mechanical engineer jaguar building services' }, 'Armstrong Limited');
+  assert(gary && /^blocking:/.test(gary) && /gary armstrong/.test(gary), 'surname equals company, role elsewhere: blocked for a human');
+  assert(flagNamesake({ name: 'Engineer Marley', role: null }, 'Marley Limited'), 'no recorded role is no evidence either');
+  assert(flagNamesake({ name: 'Sarah Armstrong', role: 'Operations Director at Armstrong' }, 'Armstrong Limited') === null,
+    'a role that places them at the company clears it: family firms are real');
+  assert(flagNamesake({ name: 'Priya Shah', role: 'Process Engineer' }, 'Armstrong Limited') === null, 'an unrelated surname never flags');
+  assert(flagNamesake({ name: 'Steven McDowall', role: null }, 'Global Switch Limited') === null, 'no false hit on ordinary rows');
+  // The block survives editing: it is about the recipient, not the words.
+  const edited = reflagText({ subject: 'Hello', body: 'Entirely rewritten by hand.', grounding: {
+    contact: { name: 'gary armstrong', role: 'Mechanical engineer jaguar building services' },
+    company: { name: 'Armstrong Limited' }, blockedSuppliers: [],
+  } });
+  assert(edited.some(f => /namesake/.test(f)), 'editing the words cannot clear a wrong recipient');
+});
+
+await check('a stated employer elsewhere blocks the same way', async () => {
+  const { flagStatedEmployer } = await import('./draft.mjs');
+  // Frozen from the same morning's queue: Mark Quest, Principle Mechanical
+  // Engineer at AECOM, drafted on the Flakt Woods card. Not a namesake,
+  // the role simply says where he works, and it is not the card.
+  const quest = flagStatedEmployer({ name: 'Mark Quest', role: 'Principle Mechanical Engineer at AECOM' }, 'Flakt Woods Limited');
+  assert(quest && /^blocking:/.test(quest) && /AECOM/.test(quest), 'a role naming another employer blocks for a human');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Operations Director at Armstrong' }, 'Armstrong Limited') === null,
+    'the card company after at is evidence, not doubt');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Commissioning Engineer' }, 'Flakt Woods Limited') === null,
+    'no stated employer, no verdict from this rule');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Principal at Arup | Advisor at Flakt Woods' }, 'Flakt Woods Limited') === null,
+    'any matching segment is evidence enough: second hats are real');
+  const edited = reflagText({ subject: 's', body: 'Entirely rewritten by hand.', grounding: {
+    contact: { name: 'Mark Quest', role: 'Principle Mechanical Engineer at AECOM' },
+    company: { name: 'Flakt Woods Limited' }, blockedSuppliers: [],
+  } });
+  assert(edited.some(f => /stated employer differs/.test(f)), 'editing cannot clear this wrong recipient either');
+});
+
 await check('the greeting is guaranteed: Dear on cold opens, bare on thread emails, never invented', async () => {
   assert(ensureGreeting('You secured planning in Slough.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nYou secured planning in Slough.', 'a missing greeting is prepended');
   assert(ensureGreeting('Sam,\n\nYou secured planning.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nYou secured planning.', 'a bare greeting upgrades to Dear');
@@ -118,6 +159,13 @@ await check('the greeting is guaranteed: Dear on cold opens, bare on thread emai
   assert(ensureGreeting('Dear Sam,\n\nAs discussed.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nAs discussed.', 'a correct greeting passes through');
   assert(ensureGreeting('Sam, understood, and that is common.', 'Sam Lee') === 'Sam, understood, and that is common.', 'a thread email keeps its inline register');
   assert(ensureGreeting('Worth a second look.', null, { dear: true }) === 'Worth a second look.', 'no name on file, no invented greeting');
+  // James's request, 14 August 2026: the stored name is LinkedIn's casing,
+  // the greeting is ours. Recase only what is clearly uncased.
+  assert(ensureGreeting('Dear gary,\n\nText.', 'gary armstrong', { dear: true }).startsWith('Dear Gary,'), 'gary greets as Gary');
+  assert(ensureGreeting('Body text.', 'ION RAILEANU', { dear: true }).startsWith('Dear Ion,'), 'a shouted name greets in its written form');
+  assert(ensureGreeting('Body.', 'anne-marie smith', { dear: true }).startsWith('Dear Anne-Marie,'), 'hyphens keep their capitals');
+  assert(ensureGreeting('Body.', 'McDowall Steven', { dear: true }).startsWith('Dear McDowall,'), 'a mixed-case name passes through untouched');
+  assert(ensureGreeting('Body.', 'JP Morgan', { dear: true }).startsWith('Dear JP,'), 'short initials pass through untouched');
   const composed = await composeDraft(grounding, { callModel: fakeModel({
     draft: { subject: 'Slough', body: 'You secured planning in Slough.\n\nWorth a short call.', claims: [] },
     check: { claims: [] },
