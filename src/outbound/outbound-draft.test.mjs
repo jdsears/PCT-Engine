@@ -152,6 +152,26 @@ await check('a stated employer elsewhere blocks the same way', async () => {
   assert(edited.some(f => /stated employer differs/.test(f)), 'editing cannot clear this wrong recipient either');
 });
 
+await check('a recipient block can end the loop: suppress and reject in one act (static)', async () => {
+  // James, 16 August 2026: "these keep appearing". Rejection frees the
+  // lead's slot by design, so the cycle re-picks the same wrong contact and
+  // regenerates the same blocked draft. The loop-breaker acts on the
+  // contact: one action on the card suppresses them with provenance and
+  // rejects the draft; the lead falls back to another eligible contact or
+  // returns to waiting on discovery.
+  const server = read('src/server.mjs');
+  assert(/app\.post\('\/api\/outbound\/drafts\/:id\/suppress-contact'/.test(server), 'the route exists');
+  assert(/namesake risk\|stated employer differs/.test(server), 'guarded to drafts carrying a recipient block');
+  assert(/this draft carries no recipient block; use reject/.test(server), 'an ordinary draft is refused, reject stays the path');
+  assert(/SET suppressed = true/.test(server) && /suppressed: \{ at: new Date\(\)\.toISOString\(\), by/.test(server),
+    'suppression writes provenance onto the contact row');
+  assert(/setDraftStatus\(req\.params\.id, 'rejected', \['draft', 'approved'\], by\)/.test(server),
+    'the draft is rejected with attribution in the same act');
+  const web = read('web/src/Outbound.jsx');
+  assert(/suppress-contact/.test(web) && /Not them, suppress contact/.test(web) && /recipientBlock && draft\.contact/.test(web),
+    'the card offers the action only when a recipient block is present');
+});
+
 await check('the greeting is guaranteed: Dear on cold opens, bare on thread emails, never invented', async () => {
   assert(ensureGreeting('You secured planning in Slough.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nYou secured planning in Slough.', 'a missing greeting is prepended');
   assert(ensureGreeting('Sam,\n\nYou secured planning.', 'Sam Lee', { dear: true }) === 'Dear Sam,\n\nYou secured planning.', 'a bare greeting upgrades to Dear');
