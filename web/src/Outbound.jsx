@@ -71,8 +71,7 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
       <div className="ob-head">
         <div className="ob-co">{companyLabel(draft.company)}</div>
         <div className="ob-pills">
-          {showChip && !draft.rehearsal && <CampaignChip campaign={draft.campaign} list={campaignList} />}
-          {draft.rehearsal && <span className="pill">rehearsal</span>}
+          {showChip && <CampaignChip campaign={draft.campaign} list={campaignList} />}
           {draft.emailType === 'followup' && <span className="pill">follow-up</span>}
           {draft.emailType === 'response' && <span className="pill">response</span>}
           {draft.score != null && <span className="pill">ICP {draft.score}</span>}
@@ -143,25 +142,17 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
             <button className="ob-btn ghost" onClick={reject} disabled={busy}>Reject</button>
             {draft.status === 'draft' && <button className="ob-btn primary" onClick={approve} disabled={busy || dirty}>Approve</button>}
             {draft.status === 'approved' && (
-              <button className={`ob-btn ${draft.rehearsal ? 'primary' : 'danger'}`} onClick={sendReal} disabled={busy}>
-                {draft.rehearsal ? 'Send the rehearsal email' : 'Send to prospect'}
-              </button>
+              <button className="ob-btn danger" onClick={sendReal} disabled={busy}>Send to prospect</button>
             )}
           </div>
-          {draft.rehearsal ? (
-            <div className="ob-test">
-              <span className="ob-test-off">Test sends are hidden on a rehearsal: reply capture, triage and follow-ups only follow the real send above, which can only reach the internal allowlist while the kill switch is on.</span>
-            </div>
-          ) : (
-            <div className="ob-test">
-              <span className="eyebrow">Send a test</span>
-              <select className="ob-select" value={to} disabled={!testOn || !recipients.length || busy} onChange={e => setTo(e.target.value)}>
-                {recipients.length ? recipients.map(a => <option key={a} value={a}>{a}</option>) : <option value="">no internal recipients set</option>}
-              </select>
-              <button className="ob-btn" onClick={sendTest} disabled={!testOn || !to || busy}>Send test</button>
-              {!testOn && <span className="ob-test-off">test sends are off</span>}
-            </div>
-          )}
+          <div className="ob-test">
+            <span className="eyebrow">Send a test</span>
+            <select className="ob-select" value={to} disabled={!testOn || !recipients.length || busy} onChange={e => setTo(e.target.value)}>
+              {recipients.length ? recipients.map(a => <option key={a} value={a}>{a}</option>) : <option value="">no internal recipients set</option>}
+            </select>
+            <button className="ob-btn" onClick={sendTest} disabled={!testOn || !to || busy}>Send test</button>
+            {!testOn && <span className="ob-test-off">test sends are off</span>}
+          </div>
         </>
       )}
       {msg && <div className="ob-msg">{msg}</div>}
@@ -204,9 +195,8 @@ function ReplyCard({ reply, onChanged }) {
   );
 }
 
-// Bulk review for the testing loop. Two clicks each way (arm, then confirm),
-// blocking flags are skipped by the server and reported, the rehearsal lane is
-// never touched, and sending stays one click per email elsewhere.
+// Bulk review. Two clicks each way (arm, then confirm), blocking flags are
+// skipped by the server and reported, and sending stays one click per email.
 function BulkBar({ count, onDone }) {
   const [arm, setArm] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -223,7 +213,7 @@ function BulkBar({ count, onDone }) {
   };
   return (
     <div className="ob-actions" style={{ marginBottom: 12 }}>
-      <span className="ob-banner-note">{count} open draft{count === 1 ? '' : 's'} (rehearsal excluded)</span>
+      <span className="ob-banner-note">{count} open draft{count === 1 ? '' : 's'}</span>
       <span className="ob-spacer" />
       <button className="ob-btn ghost" onClick={() => run('reject')} disabled={busy}>
         {arm === 'reject' ? `Confirm reject all (${count})` : 'Reject all'}
@@ -264,7 +254,6 @@ function ConversationCard({ convo, onChanged }) {
       <div className="ob-head">
         <div className="ob-co">{companyLabel(convo.company)}</div>
         <div className="ob-pills">
-          {convo.rehearsal && <span className="pill">rehearsal</span>}
           {convo.score != null && <span className="pill">ICP {convo.score}</span>}
           {convo.lastCategory && <span className="pill">{CATEGORY_LABELS[convo.lastCategory] || convo.lastCategory}</span>}
           <span className={`pill ob-stat ob-stat-${convo.stage}`}>{STAGE_LABELS[convo.stage] || convo.stage}</span>
@@ -331,10 +320,8 @@ export default function Outbound({ campaign }) {
   const [convos, setConvos] = useState([]);
   const [state, setState] = useState('loading');
 
-  const [reh, setReh] = useState(null);
   const loadStatus = useCallback(() => {
     apiFetch('/api/outbound/status').then(r => r.json()).then(setStatus).catch(() => setStatus({ killSwitch: 'unknown' }));
-    apiFetch('/api/outbound/rehearsal').then(r => r.json()).then(setReh).catch(() => setReh(null));
   }, []);
   // setState only inside the async callbacks, never synchronously in the effect:
   // the previous list stays until the new one arrives, matching the other views.
@@ -368,8 +355,7 @@ export default function Outbound({ campaign }) {
   };
 
   const killOn = status?.killSwitch !== 'off';
-  // The rehearsal lane already carries its own marker, so only real campaign
-  // drafts take a campaign chip, and only when the queue is showing every one.
+  // A campaign chip appears only when the queue is showing every campaign.
   const showChips = isAll(campaign) && campaignList.length > 1;
   const testOn = status?.testSends === 'on';
   const recipients = status?.testRecipients || [];
@@ -403,32 +389,6 @@ export default function Outbound({ campaign }) {
       });
       loadStatus();
     } catch { setGenNote(`The ${key} switch is not available right now.`); }
-  };
-
-  const [rehTo, setRehTo] = useState('');
-  const [rehBusy, setRehBusy] = useState(false);
-  const [rehNote, setRehNote] = useState(null);
-  const lanes = reh?.lanes || [];
-  const freeRecipients = recipients.filter(a => !lanes.some(l => l.to === String(a).toLowerCase()));
-  const startReh = async () => {
-    setRehBusy(true); setRehNote(null);
-    try {
-      const r = await action('/api/outbound/rehearsal/start', jsonOpts('POST', { to: rehTo || freeRecipients[0] }));
-      setRehNote(`Rehearsal started for ${r.to}: a cloned draft is in To review. The original draft is untouched, and any other rehearsal keeps running on its own lane. Approve it, press Send the rehearsal email, then reply from that inbox like a prospect; only that real send drives reply capture, triage and follow-ups.`);
-      setRehTo('');
-      refresh();
-    } catch (e) { setRehNote(String(e.message || e)); }
-    setRehBusy(false);
-  };
-  const endReh = async (to) => {
-    setRehBusy(true); setRehNote(null);
-    try {
-      const r = await action('/api/outbound/rehearsal/end', jsonOpts('POST', to ? { to } : {}));
-      const w = r.wiped || {};
-      setRehNote(`${to ? `Rehearsal for ${to} wiped` : 'All rehearsals wiped'}: ${w.drafts ?? 0} drafts, ${w.sends ?? 0} sends, ${w.replies ?? 0} replies, ${w.leads ?? 0} leads, ${w.contacts ?? 0} stand-ins removed. ${to ? 'Other lanes were not touched, and the' : 'The'} real pipeline was never part of it.`);
-      refresh();
-    } catch (e) { setRehNote(String(e.message || e)); }
-    setRehBusy(false);
   };
 
   return (
@@ -477,38 +437,6 @@ export default function Outbound({ campaign }) {
           </p>
         )}
         {genNote && <p className="ob-banner-sub">{genNote}</p>}
-        <div className="ob-banner-controls">
-          <span className="eyebrow">Rehearsal</span>
-          <select className="ob-select" value={rehTo || freeRecipients[0] || ''} disabled={rehBusy || !freeRecipients.length} onChange={e => setRehTo(e.target.value)}>
-            {freeRecipients.length
-              ? freeRecipients.map(a => <option key={a} value={a}>{a}</option>)
-              : <option value="">{recipients.length ? 'every internal address is mid-rehearsal' : 'no internal recipients set'}</option>}
-          </select>
-          <button className="ob-btn" onClick={startReh} disabled={rehBusy || !freeRecipients.length}
-            title="Clones the latest clean draft onto a rehearsal lead addressed to the chosen teammate. Each address runs its own lane, so teammates can rehearse at the same time; follow-ups run on a minutes clock and each lane wipes on its own.">
-            Start a rehearsal
-          </button>
-          {lanes.length > 1 && (
-            <button className="ob-btn ghost" onClick={() => endReh()} disabled={rehBusy}>End all rehearsals</button>
-          )}
-        </div>
-        {lanes.map(l => (
-          <div className="ob-banner-controls" key={l.to}>
-            <span className="ob-banner-note">
-              {l.to}: {l.stage === 'researched' ? 'not yet sent' : l.stage.replace(/_/g, ' ')}, {l.drafts ?? 0} draft{(l.drafts ?? 0) === 1 ? '' : 's'}, {l.sends ?? 0} send{(l.sends ?? 0) === 1 ? '' : 's'}, {l.replies ?? 0} repl{(l.replies ?? 0) === 1 ? 'y' : 'ies'}, tagged and excluded from the digest.
-            </span>
-            <button className="ob-btn ghost" onClick={() => endReh(l.to)} disabled={rehBusy}>End this rehearsal</button>
-          </div>
-        ))}
-        {reh?.active && !lanes.length && (
-          <div className="ob-banner-controls">
-            <span className="ob-banner-note">
-              Live: {reh.drafts ?? 0} draft{(reh.drafts ?? 0) === 1 ? '' : 's'}, {reh.sends ?? 0} send{(reh.sends ?? 0) === 1 ? '' : 's'}, {reh.replies ?? 0} repl{(reh.replies ?? 0) === 1 ? 'y' : 'ies'} on the rehearsal lane.
-            </span>
-            <button className="ob-btn ghost" onClick={() => endReh()} disabled={rehBusy}>End rehearsal and wipe</button>
-          </div>
-        )}
-        {rehNote && <p className="ob-banner-sub">{rehNote}</p>}
       </div>
 
       <div className="ob-tabs">
@@ -532,7 +460,7 @@ export default function Outbound({ campaign }) {
       {state === 'ready' && filter === 'conversations' && (
         convos.length === 0
           ? <p className="muted-note">No conversations yet. A lead appears here once its first email has been sent.</p>
-          : convos.map(c => <ConversationCard key={c.leadId} convo={c} onChanged={refresh} />)
+          : convos.filter(c => !c.rehearsal).map(c => <ConversationCard key={c.leadId} convo={c} onChanged={refresh} />)
       )}
       {state === 'ready' && filter !== 'replies' && filter !== 'conversations' && drafts && drafts.length === 0 && (
         <p className="muted-note">
@@ -541,7 +469,7 @@ export default function Outbound({ campaign }) {
             : `No ${filter} drafts yet.`}
         </p>
       )}
-      {state === 'ready' && filter !== 'replies' && filter !== 'conversations' && drafts && drafts.map(d => (
+      {state === 'ready' && filter !== 'replies' && filter !== 'conversations' && drafts && drafts.filter(d => !d.rehearsal).map(d => (
         <DraftCard key={d.id} draft={d} recipients={recipients} testOn={testOn} onChanged={refresh}
           showChip={showChips} campaignList={campaignList} />
       ))}
