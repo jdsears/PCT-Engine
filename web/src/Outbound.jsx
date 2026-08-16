@@ -50,6 +50,11 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
   const save = () => run(async () => { await action(`/api/outbound/drafts/${draft.id}`, jsonOpts('PATCH', { subject, body })); onChanged(); });
   const approve = () => run(async () => { await action(`/api/outbound/drafts/${draft.id}/approve`, jsonOpts('POST')); onChanged(); });
   const reject = () => run(async () => { await action(`/api/outbound/drafts/${draft.id}/reject`, jsonOpts('POST')); onChanged(); });
+  // A recipient block means the person is wrong, not the words, and a plain
+  // reject regenerates a fresh draft to the same person next cycle. This
+  // stands the contact down and rejects in one act, ending the loop.
+  const recipientBlock = flags.some(f => /namesake risk|stated employer differs/.test(String(f)));
+  const suppressContact = () => run(async () => { await action(`/api/outbound/drafts/${draft.id}/suppress-contact`, jsonOpts('POST')); onChanged(); });
   const sendTest = () => run(async () => {
     const res = await action(`/api/outbound/drafts/${draft.id}/send-test`, jsonOpts('POST', { to }));
     setMsg(res.sent ? `Test sent to ${to}.` : `Not sent: ${res.reason}.`);
@@ -132,6 +137,9 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
           <div className="ob-actions">
             {dirty && <button className="ob-btn" onClick={save} disabled={busy}>Save changes</button>}
             <span className="ob-spacer" />
+            {recipientBlock && draft.contact && (
+              <button className="ob-btn danger" onClick={suppressContact} disabled={busy}>Not them, suppress contact</button>
+            )}
             <button className="ob-btn ghost" onClick={reject} disabled={busy}>Reject</button>
             {draft.status === 'draft' && <button className="ob-btn primary" onClick={approve} disabled={busy || dirty}>Approve</button>}
             {draft.status === 'approved' && (

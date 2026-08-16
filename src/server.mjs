@@ -1870,6 +1870,35 @@ app.post('/api/outbound/drafts/:id/reject', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// A recipient block names a wrong person, and rejection alone cannot end it:
+// rejection frees the lead's slot by design, the next cycle picks the same
+// eligible contact, and the same blocked draft reappears, which is exactly
+// what James watched happen on 16 August 2026. This closes the loop in one
+// act: the contact is suppressed with provenance on the row, the draft is
+// rejected, and the lead either falls back to another eligible contact or
+// returns to waiting on discovery. Guarded to drafts that actually carry a
+// recipient block, so the ordinary reject path stays what it was, and
+// suppression here is reversible only by hand, which is the point.
+app.post('/api/outbound/drafts/:id/suppress-contact', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT contact_id, grounding_flags FROM outbound_drafts WHERE id = $1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'no such draft' });
+    const flags = Array.isArray(rows[0].grounding_flags) ? rows[0].grounding_flags : [];
+    const recipientBlock = flags.find(f => /namesake risk|stated employer differs/.test(String(f)));
+    if (!recipientBlock) return res.status(409).json({ error: 'this draft carries no recipient block; use reject' });
+    if (!rows[0].contact_id) return res.status(409).json({ error: 'no contact recorded on this draft' });
+    const by = actorEmail(req);
+    await pool.query(
+      `UPDATE contacts SET suppressed = true,
+         payload = COALESCE(payload, '{}'::jsonb) || $2::jsonb
+       WHERE id = $1`,
+      [rows[0].contact_id, JSON.stringify({ suppressed: { at: new Date().toISOString(), by: by || null, reason: String(recipientBlock).slice(0, 200) } })]);
+    await setDraftStatus(req.params.id, 'rejected', ['draft', 'approved'], by);
+    res.json({ ok: true, suppressed: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 // Bulk review, for the testing loop of reject, regenerate, review. Approval in
 // bulk still refuses blocking flags per draft and says how many it skipped;
 // rejection in bulk frees each lead's slot for a fresh draft. Neither touches
