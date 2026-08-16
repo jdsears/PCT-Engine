@@ -103,3 +103,46 @@ James shared:
    idea that a foreign project keeps value when its design house is in scope.
 4. **Supply bids stay UK to UK customers**, per the distribution agreement,
    which the campaign gates already respect.
+
+## The build ecosystem map (the Olajuwon directory)
+
+Forwarded by James, 16 August 2026: Amir Olajuwon's LinkedIn master
+directory of the data centre construction ecosystem, published 15 August
+2026. A US market map in sixteen categories, general contractors and EPCs,
+electrical and mechanical trades, commissioning and QA, then the OEM tiers,
+switchgear, transformers, generators, cooling, liquid cooling, controls,
+fire, busway, load banks, network and IT, and facility operations, wrapped
+in a workforce thesis the author calls the execution gap: the industry is
+growing faster than the people who can build, commission and operate it.
+It is a directory, not project news. Nothing in it is citable in an
+outbound draft; it feeds the register, not the claims.
+
+What the engine takes from it:
+
+1. **Liquid cooling is its own tier, and it buys valves as components.**
+   The directory separates AI and HPC liquid cooling from general HVAC:
+   CoolIT, Motivair (now Schneider Electric), Boyd, LiquidStack, Submer,
+   GRC, JetCool, Accelsius, ZutaCore, Chilldyne, plus Danfoss and Chart
+   Industries. A CDU is largely pumps, plates and valves, so this tier
+   buys flow control as a component, repeat volume rather than
+   project-by-project supply. The UK-checkable names seed through
+   scripts/seed-ecosystem.mjs; the pure plays without verified UK entities
+   stay on the draft's hold list, watched, not prospected.
+2. **UK arms hide inside the US list.** Airedale by Modine is a Leeds
+   manufacturer and the standout supplier-tier seed. STULZ, Munters and
+   Alfa Laval have UK operations. EMCOR has a UK critical-environments
+   business. Exyte is the dual catch, a data centre builder that is also
+   among the biggest pharma cleanroom EPCs in Europe, so its UK arm sits
+   on both campaigns. AECOM, Jacobs, Stantec and Introba extend the
+   consultants lane the VIRTUS reply opened.
+3. **The cooling-tower Marley is an SPX brand.** SPX Cooling Tech carries
+   the Marley line, which is the answer to the register's MARLEY LIMITED
+   question: the roofing company is not a data centre cooling supplier,
+   and the row and its bought contacts want the recheck and amend
+   treatment.
+4. **The execution gap supports existing claims, it sanctions no new
+   ones.** When experienced labour is the constraint, schedule certainty
+   moves up the buying criteria. That argues from PCT's already grounded
+   stock and delivery claims, and gives the studio's trend angle a real
+   topic. No new positioning sentence enters the prompts from this
+   directory.

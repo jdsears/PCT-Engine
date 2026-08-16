@@ -532,6 +532,23 @@ await check('the matcher and typing scripts are dry, bounded and confined (stati
   assert(/company_type IS NULL/.test(t), 'a type any human has set is never overwritten');
 });
 
+await check('the ecosystem seed is curated, tightened and confined (static)', async () => {
+  // The Olajuwon directory harvest, 16 August 2026: a US market map mined
+  // for UK arms. The seed mirrors the consultants pattern but matches with
+  // the tightened rule, and names without a verified UK entity stay on the
+  // draft's hold list rather than becoming named accounts that would spend
+  // discovery on nothing.
+  const s = read('scripts/seed-ecosystem.mjs');
+  assert(/Dry run\. Nothing written to the register\./.test(s) && /--apply/.test(s), 'dry by default');
+  assert(/confidentChMatch\(e\.name, await searchCompanies\(e\.name\)\)/.test(s) && !/norm\(m\.name\)\.includes/.test(s),
+    'every seed is judged by the tightened rule, never the old containment');
+  assert(/COALESCE\(company_type/.test(s) && /ON CONFLICT \(company_id, campaign\) DO NOTHING/.test(s),
+    'human fields hold and membership is idempotent');
+  assert(!/INSERT INTO leads|INSERT INTO contacts/i.test(s), 'no leads, no contacts, nothing sent');
+  assert(/ECOSYSTEM_DRAFT\.md/.test(s) && /const HOLD/.test(s) && /not seeded/i.test(s),
+    'unverified names stay in the draft for curation');
+});
+
 console.log('\nReactivation: the relationship is the qualification:');
 
 await check('a seeded reactivation wave crosses the lead threshold on the relationship alone', async () => {
