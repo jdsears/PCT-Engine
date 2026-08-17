@@ -1811,7 +1811,7 @@ app.get('/api/outbound/drafts', async (req, res) => {
     // Attribution columns are migration 027; shown when the schema has them.
     const actorCols = (await hasColumn('outbound_drafts', 'decided_by')) ? ' d.decided_by, d.sent_by,' : '';
     const { rows } = await pool.query(
-      `SELECT d.id, d.subject, d.body, d.status, d.rationale, d.grounding, d.grounding_flags,
+      `SELECT d.id, d.lead_id, d.subject, d.body, d.status, d.rationale, d.grounding, d.grounding_flags,
               d.email_type, d.campaign, d.created_at, d.sent_at,${actorCols}
               c.name AS company, c.region, c.icp_score,
               ct.full_name AS contact_name, ct.role_title, ct.email
@@ -1820,10 +1820,25 @@ app.get('/api/outbound/drafts', async (req, res) => {
        LEFT JOIN contacts ct ON ct.id = d.contact_id
        ${clauses.length ? 'WHERE ' + clauses.join(' AND ') : ''}
        ORDER BY d.created_at DESC LIMIT 200`, params);
+    // A follow-up card carries its thread's truth: every sent step with its
+    // date and recipient, so the reviewer can see the break-up is honest
+    // before approving it. John's ask, 18 August 2026, with thirty-two
+    // break-ups queued against threads nobody could verify from the card.
+    const fuLeads = [...new Set(rows.filter(r => r.email_type === 'followup' && r.lead_id).map(r => r.lead_id))];
+    const threads = {};
+    if (fuLeads.length) {
+      const { rows: sent } = await pool.query(
+        `SELECT d.lead_id, d.sequence_step, d.sent_at, ct.full_name
+         FROM outbound_drafts d LEFT JOIN contacts ct ON ct.id = d.contact_id
+         WHERE d.lead_id = ANY($1) AND d.status = 'sent' AND d.sent_at IS NOT NULL
+         ORDER BY d.sent_at`, [fuLeads]);
+      for (const s of sent) (threads[s.lead_id] ||= []).push({ step: s.sequence_step, sentAt: s.sent_at, to: s.full_name || null });
+    }
     res.json({ drafts: rows.map(r => ({
       id: r.id, subject: r.subject, body: r.body, status: r.status,
       rationale: r.rationale, grounding: r.grounding || null, groundingFlags: r.grounding_flags || [],
       emailType: r.email_type, rehearsal: r.campaign === 'rehearsal', campaign: r.campaign,
+      thread: r.email_type === 'followup' ? (threads[r.lead_id] || []) : undefined,
       createdAt: r.created_at, sentAt: r.sent_at,
       decidedBy: r.decided_by || null, sentBy: r.sent_by || null,
       company: r.company, region: r.region, score: r.icp_score,
