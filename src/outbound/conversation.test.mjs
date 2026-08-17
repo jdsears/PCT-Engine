@@ -17,6 +17,12 @@ import { renderHandoffPack } from './handoff.mjs';
 import { withFooter, signatureBlock, blockedByKillSwitch, prospectHtml, textToHtml } from '../mail.mjs';
 import { renderDigest } from '../digest.mjs';
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const read = rel => readFileSync(join(ROOT, rel), 'utf8');
+
 let pass = 0, fail = 0;
 async function check(name, fn) {
   try { await fn(); console.log(`  pass  ${name}`); pass++; }
@@ -456,6 +462,32 @@ await check('the digest reports outcomes, not open rates', async () => {
   assert(text.includes('reply rate of 30 percent'), 'reply rate computed');
   assert(text.includes('Meetings booked: 1'), 'the goal is on the scoreboard');
   assert(!/open rate/i.test(text), 'no open-rate theatre');
+});
+
+await check('a thread belongs to one person: pinned grounding, drift blocks, the card shows the sends', async () => {
+  const { flagGreetingMismatch } = await import('./draft.mjs');
+  // Frozen from the live queue, 18 August 2026: thirty-two break-ups, and
+  // Ark's card addressed Chris Palmer while its body greeted Dena, because
+  // the sweeper re-resolved the lead's best contact mid-thread while the
+  // thread belonged to someone else.
+  const drift = flagGreetingMismatch('Dena,\n\nThis is the last email PCT will send on this.', { name: 'Chris Palmer' });
+  assert(drift && /^blocking:/.test(drift) && /Dena/.test(drift) && /Chris Palmer/.test(drift), 'a drifted greeting blocks by name');
+  assert(flagGreetingMismatch('Dear Corey,\n\nText.', { name: 'Corey Thain' }) === null, 'the right person passes');
+  assert(flagGreetingMismatch('Dear Gary,\n\nText.', { name: 'gary armstrong' }) === null, 'recasing is not drift');
+  assert(flagGreetingMismatch('A body with no greeting at all.', { name: 'Sam Lee' }) === null, 'no greeting, no verdict');
+  assert(flagGreetingMismatch('Dena,\n\nText.', {}) === null, 'no contact, no verdict');
+  const fu = read('src/outbound/followups.mjs');
+  assert(/gatherGrounding\(t\.lead_id, \{ campaign: t\.campaign, contactId: t\.contact_id \}\)/.test(fu),
+    'the sweeper grounds on the thread\'s own contact, never the lead\'s current best');
+  assert(/flagGreetingMismatch\(body, grounding\.contact\)/.test(fu), 'the net runs on the final body after the greeting is guaranteed');
+  const gr = read('src/outbound/grounding.mjs');
+  assert(/contactId = null/.test(gr) && /\[contactId\]/.test(gr), 'gatherGrounding accepts the pin');
+  const srv = read('src/server.mjs');
+  assert(/threads\[s\.lead_id\]/.test(srv) && /d\.status = 'sent' AND d\.sent_at IS NOT NULL/.test(srv),
+    'the card is told every sent step with its date and recipient');
+  const rj = read('scripts/reject-open-followups.mjs');
+  assert(/Dry run\. Nothing rejected\./.test(rj) && /--apply/.test(rj), 'the clear-out is dry by default');
+  assert(/status IN \('draft', 'approved'\)/.test(rj) && !/DELETE FROM/i.test(rj), 'it touches only open drafts and deletes nothing');
 });
 
 console.log(`\n=== Conversation gate: ${pass} passed, ${fail} failed ===`);

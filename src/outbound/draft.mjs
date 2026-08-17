@@ -250,9 +250,11 @@ export function reflagText({ subject = '', body = '', grounding = {} }) {
   // to the text clears them, only fixing the contact does.
   const namesake = flagNamesake(grounding?.contact, grounding?.company?.name);
   const employer = flagStatedEmployer(grounding?.contact, grounding?.company?.name);
+  const greeting = flagGreetingMismatch(body, grounding?.contact);
   return [
     ...(namesake ? [namesake] : []),
     ...(employer ? [employer] : []),
+    ...(greeting ? [greeting] : []),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
     ...suppliers.map(n => `blocking: names a supplier that may not be named (${n})`),
     ...links.map(u => `blocking: web address not on the approved list (${u}); only the booking link and the approved PCT pages may appear, never a manufacturer site`),
@@ -361,6 +363,23 @@ export function flagStatedEmployer(contact, companyName) {
   return `blocking: stated employer differs, the contact's recorded role reads "${role}" and does not place them at ${companyName}; confirm they really work at ${companyName} before this can send`;
 }
 
+// The thread-drift net, 18 August 2026: thirty-two break-up drafts sat in
+// the queue greeting a different person than their recipient, because the
+// follow-up grounding re-resolved the lead's best contact while the thread
+// belonged to another. The sweeper is now pinned to the thread's contact,
+// and this net catches any future drift at the last gate: a body whose
+// opening greeting names someone other than the recipient blocks until a
+// human looks. Only the fault of a wrong human blocks; a body with no
+// greeting yet, or no contact on file, says nothing.
+export function flagGreetingMismatch(body, contact) {
+  const first = String(contact?.name || '').trim().split(/\s+/)[0];
+  if (!first) return null;
+  const m = String(body || '').trimStart().match(/^(?:dear\s+|hi\s+|hello\s+)?([A-Za-z][\w'-]*)\s*,/i);
+  if (!m) return null;
+  if (m[1].toLowerCase() === first.toLowerCase()) return null;
+  return `blocking: the greeting names ${m[1]} but the recipient is ${contact.name}; this thread may belong to a different person. Fix the contact or reject`;
+}
+
 // The shared finishing pipeline for every outbound email type: check, one
 // revision if needed, re-check, then the supplier and end-customer guardrails.
 // Returns the final text plus the flags the reviewer must see. A draft is never
@@ -410,5 +429,8 @@ export async function composeDraft(grounding, { callModel = callClaude } = {}) {
   const campaign = grounding.campaign || 'marwin_dc';
   const draft = await draftColdOpen(grounding, { callModel, campaign });
   const finished = await finaliseDraft(draft, grounding, { callModel });
-  return { ...finished, body: ensureGreeting(finished.body, grounding.contact?.name, { dear: true }) };
+  // The greeting is checked after it is guaranteed, on the final body.
+  const body = ensureGreeting(finished.body, grounding.contact?.name, { dear: true });
+  const mismatch = flagGreetingMismatch(body, grounding.contact);
+  return { ...finished, flags: [...finished.flags, ...(mismatch ? [mismatch] : [])], body };
 }

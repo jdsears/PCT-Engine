@@ -20,7 +20,7 @@ function topReason(breakdown) {
 // recorded), and grounded product facts retrieved from the corpus with citations.
 // Missing pieces are reported in `missing`, never invented around; the drafter
 // must write less when grounding is thin, not fill the gap.
-export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc' } = {}) {
+export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc', contactId = null } = {}) {
   // customer_status and the crm payload arrived with the customer list
   // import (migration 026); the service can deploy before the migration is
   // applied, so ask the schema rather than fail every draft in that window.
@@ -32,11 +32,16 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc' }
      FROM leads l JOIN companies c ON c.id = l.company_id WHERE l.id = $1`, [leadId])).rows[0];
   if (!lead) throw new Error(`lead ${leadId} not found`);
 
-  // The contact: the lead's own contact if set, else the best decision-orbit
-  // contact for the company. Name and role only if recorded, otherwise null.
+  // The contact: a caller's pinned contact first, else the lead's own, else
+  // the best decision-orbit contact for the company. The pin exists for
+  // follow-ups, 18 August 2026: a thread belongs to the person the sent
+  // emails went to, and re-resolving the lead's current best mid-thread put
+  // one person's greeting on another person's break-up.
   let contact = null;
   const pick = async (sql, p) => (await pool.query(sql, p)).rows[0] || null;
-  const row = lead.contact_id
+  const row = contactId
+    ? await pick(`SELECT id, full_name, role_title, email FROM contacts WHERE id = $1`, [contactId])
+    : lead.contact_id
     ? await pick(`SELECT id, full_name, role_title, email FROM contacts WHERE id = $1`, [lead.contact_id])
     : await pick(
         `SELECT id, full_name, role_title, email FROM contacts

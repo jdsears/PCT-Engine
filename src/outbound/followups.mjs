@@ -2,7 +2,7 @@ import { pool } from '../db.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 import { confidentialityRule } from '../campaigns/prompts.mjs';
 import { gatherGrounding } from './grounding.mjs';
-import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGreeting } from './draft.mjs';
+import { renderGrounding, finaliseDraft, outboundVoice, stripSignoff, ensureGreeting, flagGreetingMismatch } from './draft.mjs';
 
 // Follow-ups: the second and third touch on a thread that has had no reply.
 // Most replies to cold outreach arrive on a later touch, so a first email with
@@ -133,10 +133,16 @@ export async function draftFollowup(grounding, prev, { step, callModel = callCla
   };
   if (!draft.body) throw new Error('follow-up missing body');
   const finished = await finaliseDraft(draft, grounding, { callModel, groundingText });
+  // The greeting is checked after it is guaranteed, on the final body: with
+  // the grounding pinned to the thread's contact this never fires, and if
+  // any future path drifts again the draft arrives blocked, not sendable.
+  const body = ensureGreeting(finished.body, grounding.contact?.name);
+  const mismatch = flagGreetingMismatch(body, grounding.contact);
   return {
     ...finished,
+    flags: [...finished.flags, ...(mismatch ? [mismatch] : [])],
     subject: reSubject(finished.subject || prev.subject),
-    body: ensureGreeting(finished.body, grounding.contact?.name),
+    body,
   };
 }
 
@@ -181,7 +187,13 @@ export async function sweepFollowups({ limit = 5, log = () => {}, callModel = ca
   if (batch.length) log(`Drafting ${batch.length} follow-up(s) of ${due.length} due.`);
   for (const t of batch) {
     try {
-      const grounding = await gatherGrounding(t.lead_id);
+      // Pinned to the thread's contact: the person the sent emails actually
+      // went to. Without the pin, the grounding re-resolved the lead's
+      // current best contact, and when discovery replaced the contact
+      // between touches, a break-up greeted one person and addressed
+      // another. The recipient, the greeting and the grounding are now the
+      // same human by construction.
+      const grounding = await gatherGrounding(t.lead_id, { campaign: t.campaign, contactId: t.contact_id });
       const d = await draftFollowup(grounding, { subject: t.subject, body: t.body }, { step: t.sequence_step + 1, callModel });
       await pool.query(
         `INSERT INTO outbound_drafts (lead_id, company_id, contact_id, campaign, email_type, sequence_step, parent_draft_id,

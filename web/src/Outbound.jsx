@@ -96,6 +96,11 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
 
       <div className="ob-evidence">
         <div className="eyebrow">Grounding</div>
+        {draft.emailType === 'followup' && draft.thread && (
+          draft.thread.length
+            ? <div className="ob-ev-line"><span className="ob-ev-k">Thread</span> {draft.thread.map(t => `step ${t.step ?? '?'} sent ${fmtClockDay(t.sentAt)}${t.to ? ` to ${t.to}` : ''}`).join('; ')}</div>
+            : <div className="ob-ev-line"><span className="ob-ev-k">Thread</span> No sent email is recorded on this thread; a follow-up here would be the first thing they ever receive.</div>
+        )}
         {g?.openerNote && <div className={`ob-grade ob-grade-${g.openerNote.kind}`}>{g.openerNote.text}</div>}
         {g ? (
           <>
