@@ -2,7 +2,10 @@
 // exercise only the refusal paths, which return before any network call, so the
 // gate runs offline. The actual delivery path is not tested here, by design.
 import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients, textToHtml, blockedByKillSwitch } from '../mail.mjs';
-import { renderDigest, digestDue } from '../digest.mjs';
+import { renderDigest, renderDigestHtml, humanDate, digestDue } from '../digest.mjs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { outboundVoice, voiceClean } from './draft.mjs';
 import { canSendReal, matchReply } from './sendDecision.mjs';
 
@@ -117,6 +120,41 @@ await check('the digest reads in the house voice and carries the numbers', () =>
   assert(/6 signals, 3 new leads, 4 drafts waiting/.test(d.subject), d.subject);
   assert(/Nothing sends without a person/.test(d.text), 'the safety line is stated');
   assert(!/[—–!]/.test(d.text) && !/genuinely/i.test(d.text), 'house voice holds');
+  // John's screenshot, 17 August 2026: "1 drafts waiting". Never again.
+  const one = renderDigest({
+    questions: { questions: 1, declined: 0, fb_up: 0, fb_down: 0, teams: 0 },
+    signals: { news: 1, uk: 1, watch: 0, filings: 0 },
+    leads: { created: 1, refreshed: 0 },
+    drafts: { waiting: 1, approved: 0, drafted_this_week: 1 },
+    posts: null,
+  }, { weekEnding: '2026-08-17' });
+  assert(/1 signal, 1 new lead, 1 draft waiting/.test(one.subject), one.subject);
+  assert(one.text.includes('week to 17 August 2026'), 'the date reads like a person wrote it');
+  assert(humanDate('2026-08-17') === '17 August 2026', 'the date helper is exact');
+});
+
+await check('the digest email is a designed card, same numbers, same voice', () => {
+  const data = {
+    questions: { questions: 12, declined: 2, fb_up: 5, fb_down: 1, teams: 4 },
+    signals: { news: 83, uk: 25, watch: 58, filings: 20 },
+    leads: { created: 169, refreshed: 89 },
+    drafts: { waiting: 1, approved: 0, drafted_this_week: 52 },
+    posts: { waiting: 14, posted: 1 },
+    convo: { sent: 47, replies: 1, live: 0, closed: 0, meetings: 0, handoffs: 0 },
+  };
+  const html = renderDigestHtml(data, { weekEnding: '2026-08-17', appUrl: 'https://engine.example' });
+  assert(html.includes('The week to 17 August 2026'), 'the header carries the human date');
+  for (const n of ['>83<', '>169<', '>1<']) assert(html.includes(n), `the hero row carries ${n}`);
+  assert(html.includes('Nothing sends without a person.'), 'the safety line survives the redesign');
+  assert(html.includes('reply rate of 2 percent'), 'the conversation arithmetic matches the text digest');
+  assert(html.includes('Open the engine') && html.includes('https://engine.example'), 'the app link renders when a URL is configured');
+  assert(!/[—–!]/.test(html.replace(/<[^>]+>/g, '')) && !/genuinely/i.test(html), 'house voice holds in the card');
+  const bare = renderDigestHtml({ ...data, convo: null, posts: null }, { weekEnding: '2026-08-17', appUrl: '' });
+  assert(!bare.includes('Conversations') && !bare.includes('Studio') && !bare.includes('Open the engine'),
+    'absent lanes and an unset URL render nothing rather than zeros');
+  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const srv = readFileSync(join(ROOT, 'src/server.mjs'), 'utf8');
+  assert(/const html = renderDigestHtml\(data\)/.test(srv), 'the scheduled send posts the designed card');
 });
 
 console.log('\nReal send gate and reply matching:');
