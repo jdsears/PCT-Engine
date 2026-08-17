@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from './api.js';
 import { companyLabel } from './labels.js';
+import { withCampaign } from './CampaignSwitcher.jsx';
 
 // The LinkedIn studio. The engine drafts posts from its gated signals and
 // queues the decision-orbit people worth connecting with. Posts are never
@@ -214,7 +215,7 @@ function ConnectCard({ person, inviteInfo, onChanged }) {
   );
 }
 
-export default function Studio() {
+export default function Studio({ campaign }) {
   const [tab, setTab] = useState('draft');
   const [posts, setPosts] = useState([]);
   const [connects, setConnects] = useState([]);
@@ -223,15 +224,18 @@ export default function Studio() {
   const [note, setNote] = useState(null);
   const [genBusy, setGenBusy] = useState(false);
 
+  // The studio follows the app's campaign switcher like every other page,
+  // John's ask of 18 August 2026, so James works the data centre posts and
+  // connects while Andy works pharma, each seeing only their own queue.
   const load = useCallback((t) => {
     const req = t === 'connects'
-      ? apiFetch('/api/studio/connects').then(r => r.json()).then(d => {
+      ? apiFetch(withCampaign('/api/studio/connects', campaign)).then(r => r.json()).then(d => {
           setConnects(d.connects || []);
           setInviteInfo({ ready: !!d.inviteReady, today: d.invitesToday ?? 0, cap: d.inviteCap ?? 0 });
         })
-      : apiFetch(`/api/studio/posts?status=${t}`).then(r => r.json()).then(d => setPosts(d.posts || []));
+      : apiFetch(withCampaign(`/api/studio/posts?status=${t}`, campaign)).then(r => r.json()).then(d => setPosts(d.posts || []));
     req.then(() => setState('ready')).catch(() => setState('error'));
-  }, []);
+  }, [campaign]);
   useEffect(() => { load(tab); }, [tab, load]);
   const refresh = () => load(tab);
 

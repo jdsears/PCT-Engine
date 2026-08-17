@@ -140,7 +140,7 @@ export default function App() {
           )}
           {section === 'signals' && <Signals onOpenCompany={openCompany} campaign={campaign} />}
           {section === 'watchlist' && <Watchlist campaign={campaign} />}
-          {section === 'studio' && <Studio />}
+          {section === 'studio' && <Studio campaign={campaign} />}
           {section === 'outbound' && <Outbound isMobile={isMobile} campaign={campaign} />}
           {section === 'health' && <Health />}
         </div>

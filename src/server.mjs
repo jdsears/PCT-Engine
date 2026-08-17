@@ -1502,11 +1502,19 @@ app.post('/api/engine/run-now', async (_req, res) => {
 app.get('/api/studio/posts', async (req, res) => {
   try {
     const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : 'draft';
+    // The switcher scopes the studio like every other page, so James works
+    // the data centre queue and Andy the pharma one. The filter derives the
+    // campaign exactly as the mapping below does: the draft's own grounding
+    // first, its signal's campaign second, the data centre default last.
+    const camp = campaignFilter(req);
+    const params = [status];
+    let scope = '';
+    if (camp) { params.push(camp); scope = ` AND COALESCE(lp.grounding->>'campaign', s.campaign, 'marwin_dc') = $${params.length}`; }
     const { rows } = await pool.query(
       `SELECT lp.id, lp.topic, lp.body, lp.grounding, lp.status, lp.created_at, lp.posted_at,
               s.campaign AS signal_campaign
        FROM li_posts lp LEFT JOIN signals s ON s.id = lp.signal_id
-       WHERE lp.status = $1 ORDER BY lp.created_at DESC LIMIT 50`, [status]);
+       WHERE lp.status = $1${scope} ORDER BY lp.created_at DESC LIMIT 50`, params);
     res.json({ posts: rows.map(p => {
       // The campaign travels with the draft; older drafts resolve through
       // their signal, then the data centre default. Hashtags follow it.
@@ -1632,14 +1640,31 @@ app.post('/api/studio/posts/:id/reject', async (req, res) => {
 // membership decides it, anything else falls to the data centre default. The
 // note and the sending account both follow it, so a pharma contact gets the
 // Steriflow note from Andy's profile, never the MD data centre note.
-app.get('/api/studio/connects', async (_req, res) => {
+app.get('/api/studio/connects', async (req, res) => {
   try {
+    // Scoped like the posts: the connect queue derives each contact's
+    // campaign the same way the mapping below does, exactly one registered
+    // membership or the data centre default, and filters on that derivation
+    // before the limit, so a narrow view is never starved by the other
+    // campaign's fifty best.
+    const camp = campaignFilter(req);
+    const params = [listCampaigns().map(c => c.id)];
+    let scope = '';
+    if (camp) {
+      params.push(camp);
+      scope = ` AND (CASE WHEN array_length(m.memberships, 1) = 1 THEN m.memberships[1] ELSE 'marwin_dc' END) = $${params.length}`;
+    }
     const { rows } = await pool.query(
       `SELECT ct.id, ct.full_name, ct.role_title, ct.linkedin_url, c.name AS company, round(c.icp_score)::int AS score,
-              (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = c.id) AS memberships
-       FROM contacts ct JOIN companies c ON c.id = ct.company_id
-       WHERE ct.in_decision_orbit AND NOT ct.suppressed AND ct.linkedin_url IS NOT NULL AND ct.li_invited_at IS NULL
-       ORDER BY c.icp_score DESC NULLS LAST, ct.full_name LIMIT 50`);
+              m.memberships
+       FROM contacts ct
+       JOIN companies c ON c.id = ct.company_id
+       CROSS JOIN LATERAL (
+         SELECT (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc
+                 WHERE cc.company_id = c.id AND cc.campaign = ANY($1)) AS memberships
+       ) m
+       WHERE ct.in_decision_orbit AND NOT ct.suppressed AND ct.linkedin_url IS NOT NULL AND ct.li_invited_at IS NULL${scope}
+       ORDER BY c.icp_score DESC NULLS LAST, ct.full_name LIMIT 50`, params);
     res.json({
       inviteReady: inviteReady(),
       invitesToday: inviteReady() ? await invitesUsedToday() : 0,
