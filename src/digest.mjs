@@ -62,12 +62,20 @@ export async function gatherDigestData() {
   return { questions: q, signals: s, leads: l, drafts: d, posts, convo };
 }
 
+// The digest speaks dates like a person: 2026-08-17 reads as 17 August 2026.
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+export function humanDate(iso) {
+  const [y, m, d] = String(iso || '').split('-').map(Number);
+  return y && m && d ? `${d} ${MONTHS[m - 1]} ${y}` : String(iso || '');
+}
+
 // Plain text in the house voice. The subject carries the three numbers that
 // matter; the body stays short enough to read on a phone.
 export function renderDigest(data, { weekEnding = new Date().toISOString().slice(0, 10) } = {}) {
   const { questions: q, signals: s, leads: l, drafts: d, posts, convo } = data;
   const lines = [
-    `The engine's week to ${weekEnding}.`,
+    `The engine's week to ${humanDate(weekEnding)}.`,
     '',
     `Signals: ${s.news} data centre stories kept (${s.uk} UK project, ${s.watch} watchlist), ${s.filings} register filings tracked.`,
     `Leads: ${l.created} new, ${l.refreshed} refreshed.`,
@@ -81,9 +89,47 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
   if (posts) lines.push(`Studio: ${posts.waiting} post draft${posts.waiting === 1 ? '' : 's'} waiting, ${posts.posted} posted this week.`);
   lines.push('', 'The detail is in the app: pipeline, watchlist, drafts and gaps. This is an internal summary, sent to the digest list only.');
   return {
-    subject: `Engine week: ${s.news} signals, ${l.created} new leads, ${d.waiting} drafts waiting`,
+    subject: `Engine week: ${s.news} signal${s.news === 1 ? '' : 's'}, ${l.created} new lead${l.created === 1 ? '' : 's'}, ${d.waiting} draft${d.waiting === 1 ? '' : 's'} waiting`,
     text: lines.join('\n'),
   };
+}
+
+// The same week as a designed email, John's ask of 17 August 2026 when the
+// plain digest read as a wall of labelled sentences on a phone. One centred
+// card in the app's own palette, the subject's three numbers as a hero row,
+// then a short section per lane. Inline styles and tables only, because
+// email clients; every value rendered here is a number or a fixed string, so
+// nothing needs escaping. The text version above remains the wording of
+// record and the two renderers share their arithmetic by construction.
+const PAL = { navy: '#1F386B', blue: '#009ADE', ink2: '#5B6B8C', line: '#E3E7EE', paper: '#F7F8FA' };
+export function renderDigestHtml(data, { weekEnding = new Date().toISOString().slice(0, 10), appUrl = process.env.APP_URL || '' } = {}) {
+  const { questions: q, signals: s, leads: l, drafts: d, posts, convo } = data;
+  const stat = (n, label) =>
+    `<td align="center" style="padding:14px 6px;"><div style="font-size:30px;line-height:1;font-weight:700;color:${PAL.navy};">${n}</div><div style="font-size:12px;color:${PAL.ink2};margin-top:6px;">${label}</div></td>`;
+  const section = (label, figures, note) =>
+    `<tr><td style="padding:12px 26px;border-top:1px solid ${PAL.line};"><div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:${PAL.blue};font-weight:700;">${label}</div><div style="font-size:14px;color:${PAL.navy};margin-top:4px;line-height:1.5;">${figures}</div>${note ? `<div style="font-size:12px;color:${PAL.ink2};margin-top:3px;">${note}</div>` : ''}</td></tr>`;
+  const rate = convo && convo.sent > 0 ? `, a reply rate of ${Math.round((convo.replies / convo.sent) * 100)} percent` : '';
+  const rows = [
+    section('Signals', `${s.news} data centre stor${s.news === 1 ? 'y' : 'ies'} kept, ${s.uk} UK project and ${s.watch} watchlist, with ${s.filings} register filing${s.filings === 1 ? '' : 's'} tracked.`),
+    section('Leads', `${l.created} new, ${l.refreshed} refreshed.`),
+    section('Outbound', `${d.waiting} draft${d.waiting === 1 ? '' : 's'} awaiting review, ${d.approved} approved, ${d.drafted_this_week} drafted this week.`, 'Nothing sends without a person.'),
+    convo ? section('Conversations', `${convo.sent} prospect send${convo.sent === 1 ? '' : 's'}, ${convo.replies} repl${convo.replies === 1 ? 'y' : 'ies'}${rate}. ${convo.live} live, ${convo.closed} clear no. Meetings booked ${convo.meetings}, handed off ${convo.handoffs}.`) : '',
+    section('Co-pilot', `${q.questions} question${q.questions === 1 ? '' : 's'} (${q.teams} from Teams), ${q.declined} it could not answer, feedback ${q.fb_up} helpful and ${q.fb_down} not.`),
+    posts ? section('Studio', `${posts.waiting} post draft${posts.waiting === 1 ? '' : 's'} waiting, ${posts.posted} posted this week.`) : '',
+  ].join('');
+  const button = appUrl
+    ? `<div style="margin-top:14px;"><a href="${appUrl}" style="display:inline-block;background:${PAL.blue};color:#ffffff;text-decoration:none;font-size:13px;font-weight:600;padding:9px 18px;border-radius:6px;">Open the engine</a></div>`
+    : '';
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAL.paper};padding:24px 0;"><tr><td align="center">
+<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid ${PAL.line};border-radius:10px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
+<tr><td style="padding:22px 26px 4px;"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:${PAL.ink2};font-weight:700;">PCT engine</div>
+<div style="font-size:20px;font-weight:700;color:${PAL.navy};margin-top:6px;">The week to ${humanDate(weekEnding)}</div></td></tr>
+<tr><td style="padding:6px 20px 12px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+${stat(s.news, `signal${s.news === 1 ? '' : 's'} kept`)}${stat(l.created, `new lead${l.created === 1 ? '' : 's'}`)}${stat(d.waiting, `draft${d.waiting === 1 ? '' : 's'} waiting`)}
+</tr></table></td></tr>
+${rows}
+<tr><td style="padding:16px 26px 22px;border-top:1px solid ${PAL.line};"><div style="font-size:12px;color:${PAL.ink2};line-height:1.5;">The detail is in the app: pipeline, watchlist, drafts and gaps. This is an internal summary, sent to the digest list only.</div>${button}</td></tr>
+</table></td></tr></table>`;
 }
 
 // Due on a Monday morning (07:00 UTC or later) when nothing has been sent since

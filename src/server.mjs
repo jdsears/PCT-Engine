@@ -12,7 +12,7 @@ import { matchParty } from './research/match.mjs';
 import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
 import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, prospectHtml, signatureBlock } from './mail.mjs';
-import { gatherDigestData, renderDigest, digestDue } from './digest.mjs';
+import { gatherDigestData, renderDigest, renderDigestHtml, digestDue } from './digest.mjs';
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
@@ -1260,10 +1260,14 @@ async function runDraftsOnce(trigger, limit = autodraftLimit()) {
 async function sendDigestOnce(trigger) {
   const recipients = digestRecipients();
   if (!recipients.length) return { sent: 0, reason: 'DIGEST_RECIPIENTS is not set' };
-  const { subject, text } = renderDigest(await gatherDigestData());
+  // The designed card goes out; the plain text stays the wording of record
+  // and the preview the API returns.
+  const data = await gatherDigestData();
+  const { subject } = renderDigest(data);
+  const html = renderDigestHtml(data);
   let sent = 0;
   for (const to of recipients) {
-    try { const r = await sendInternal({ to, subject, html: textToHtml(text) }); if (r.sent) sent++; }
+    try { const r = await sendInternal({ to, subject, html }); if (r.sent) sent++; }
     catch (e) { console.error('[digest] send failed:', e.message); }
   }
   try { await kvSet('digest_last_sent', { at: new Date().toISOString(), trigger, sent, of: recipients.length }); } catch { /* next tick retries */ }
