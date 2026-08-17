@@ -763,6 +763,21 @@ await check('the email spend can be aimed at one campaign', async () => {
   assert(/discoverEmails\(\{ limit: cap, log/.test(server), 'the engine cycle spend stays campaign-blind, working the global backlog');
 });
 
+await check('the unipile check proves every lane, not only the default', async () => {
+  // 17 August 2026: the dashboard and the check both said Andy's account
+  // was fine while every search through it failed, because the accounts
+  // list reports the basic session and searching needs the Sales Navigator
+  // one. The check now runs its minimal search through each healthy
+  // account, so a dead lane is named before a force run spends cap on it.
+  const u = read('scripts/unipile-check.mjs');
+  assert(/for \(const a of healthyAccounts\)/.test(u) && /account_id: a\.id/.test(u),
+    'the minimal search runs per healthy account, through that account');
+  assert(/expired_credentials/i.test(u) && /reconnect, not delete/.test(u),
+    'the expired-session shape is named with its exact fix');
+  assert(!/UNIPILE_ACCOUNT_ID=\$\{healthy\.id\}/.test(u),
+    'the one-account-era advice that promoted the wrong default is gone');
+});
+
 await check('people-discovery pacing is untouched', async () => {
   const src = read('src/research/peopleDiscovery.mjs');
   assert(!/party_review|proposal|contractor/i.test(src), 'people discovery knows nothing of proposals');

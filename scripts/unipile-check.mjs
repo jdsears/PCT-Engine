@@ -102,10 +102,11 @@ if (linked.length === 0) {
   process.exit(1);
 }
 let healthy = null;
+const healthyAccounts = [];
 for (const a of linked) {
   const status = accountStatus(a);
   const line = `LinkedIn account "${a.name || a.id}": provider LINKEDIN, status ${status}, account_id ${a.id}`;
-  if (status === 'OK') { pass(line); healthy = healthy || a; }
+  if (status === 'OK') { pass(line); healthy = healthy || a; healthyAccounts.push(a); }
   else {
     fail(line);
     if (/CREDENTIALS/i.test(status)) console.log('   The saved sign-in has expired. James reconnects from the Unipile dashboard.');
@@ -124,21 +125,35 @@ console.log('  UNIPILE_ACCOUNT_ID=<the data centre account id, the default lane>
 console.log('  UNIPILE_CAMPAIGN_ACCOUNTS={"marwin_dc":"<that same id>","pharma_steriflow":"<the pharma account id>"}');
 console.log('A campaign not named in the map rides the default id.\n');
 
-// 4. One minimal Sales Navigator search to confirm reachability, then stop.
-try {
-  const res = await unipile(ROUTES.search, {
-    query: { account_id: healthy.id, limit: '1' },
-    body: { api: 'sales_navigator', category: 'people', keywords: '"Ark Data Centres"' },
-    target: 'check: minimal sales navigator search',
-  });
-  const items = Array.isArray(res?.items) ? res.items : [];
-  pass(`sales navigator search reachable, ${items.length} result${items.length === 1 ? '' : 's'} returned`);
-} catch (e) {
-  const msg = String(e.message || e);
-  if (/sales.?nav|premium|subscription|upsell/i.test(msg)) {
-    fail('the search endpoint answered but Sales Navigator is not active on this account. The lane needs the Sales Navigator subscription on the James account.');
-  } else {
-    fail(`sales navigator search failed: ${msg.slice(0, 200)}`);
+// 4. One minimal Sales Navigator search PER healthy account, then stop.
+// Per-account since 17 August 2026, when the dashboard and this check both
+// said Andy's account was fine while every search through it failed with
+// expired credentials: the accounts list reports the basic LinkedIn
+// session, but searching needs the Sales Navigator session, and a
+// connection made before the subscription was added does not carry it.
+// Only searching down each lane proves each lane.
+for (const a of healthyAccounts) {
+  try {
+    const res = await unipile(ROUTES.search, {
+      query: { account_id: a.id, limit: '1' },
+      body: { api: 'sales_navigator', category: 'people', keywords: '"Ark Data Centres"' },
+      target: `check: minimal sales navigator search (${a.name || a.id})`,
+    });
+    const items = Array.isArray(res?.items) ? res.items : [];
+    pass(`sales navigator search via "${a.name || a.id}": reachable, ${items.length} result${items.length === 1 ? '' : 's'} returned`);
+  } catch (e) {
+    const msg = String(e.message || e);
+    if (/expired_credentials/i.test(msg)) {
+      fail(`sales navigator search via "${a.name || a.id}": expired credentials, even though the account lists as OK.`);
+      console.log('   The stored session predates the Sales Navigator subscription on this profile.');
+      console.log('   Fix: the account owner opens Sales Navigator once in their own browser, then');
+      console.log('   James reconnects this account in the Unipile dashboard (reconnect, not delete');
+      console.log('   and re-add, so the account id stays the same), and the owner completes the sign-in.');
+    } else if (/sales.?nav|premium|subscription|upsell/i.test(msg)) {
+      fail(`sales navigator search via "${a.name || a.id}": the endpoint answered but Sales Navigator is not active on this profile.`);
+    } else {
+      fail(`sales navigator search via "${a.name || a.id}" failed: ${msg.slice(0, 200)}`);
+    }
   }
 }
 
