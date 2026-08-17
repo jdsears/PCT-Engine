@@ -705,6 +705,51 @@ app.get('/api/accounts/:id', async (req, res) => {
       `SELECT full_name, role_title, email, linkedin_url FROM contacts
        WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed
        ORDER BY email_verified_at IS NULL, email_confidence DESC NULLS LAST, full_name LIMIT 12`, [id]);
+    // The truth about this account's own people search, John's ask of
+    // 17 August 2026, when a 100-scorer read "none found yet" and nothing
+    // could say whether it had ever been searched, found nobody, or sat
+    // three places from the front of the queue. The call ledger knows all
+    // three, and the queue position is computed with the same ordering the
+    // in-cycle search uses, so the number is the truth, not an estimate.
+    let peopleSearch = null;
+    try {
+      const led = await pool.query(
+        `SELECT count(*)::int AS attempts, max(called_at) AS last_at FROM unipile_calls
+         WHERE target = 'findContacts: ' || $1`, [c.name]);
+      const attempts = led.rows[0]?.attempts || 0;
+      const lastAt = led.rows[0]?.last_at || null;
+      const cooling = lastAt && (Date.now() - new Date(lastAt).getTime()) < 30 * 86_400_000;
+      let queuePosition = null;
+      if (!cooling) {
+        const pos = await pool.query(`
+          WITH eligible AS (
+            SELECT id, name, icp_score, EXISTS (
+              SELECT 1 FROM leads l WHERE l.company_id = companies.id AND l.stage = 'researched'
+                AND NOT EXISTS (
+                  SELECT 1 FROM contacts ct WHERE ct.company_id = companies.id
+                    AND ct.in_decision_orbit AND NOT ct.suppressed AND NOT ct.rehearsal
+                    AND ct.email IS NOT NULL AND ct.email_bounced_at IS NULL)
+            ) AS blocked
+            FROM companies
+            WHERE named_account AND NOT EXISTS (
+              SELECT 1 FROM unipile_calls u
+              WHERE u.target = 'findContacts: ' || companies.name
+                AND u.called_at > now() - interval '30 days'))
+          SELECT count(*)::int AS ahead FROM eligible,
+            (SELECT blocked AS b, icp_score AS s, name AS n FROM eligible WHERE id = $1) me
+          WHERE eligible.id <> $1 AND (
+            (eligible.blocked AND NOT me.b)
+            OR (eligible.blocked = me.b AND coalesce(eligible.icp_score, -1) > coalesce(me.s, -1))
+            OR (eligible.blocked = me.b AND coalesce(eligible.icp_score, -1) = coalesce(me.s, -1) AND eligible.name < me.n))`, [id]);
+        if (pos.rows.length) queuePosition = (pos.rows[0].ahead ?? 0) + 1;
+      }
+      peopleSearch = {
+        attempts, lastAt,
+        coolingUntil: cooling ? new Date(new Date(lastAt).getTime() + 30 * 86_400_000).toISOString() : null,
+        queuePosition,
+        autoSearch: (await kvGet('autopeople_enabled')) === 'on',
+      };
+    } catch { peopleSearch = null; }
     const bd = c.icp_breakdown || {};
     res.json({
       id: c.id, name: c.name, type: c.company_type, region: regionName(c.region),
@@ -718,6 +763,7 @@ app.get('/api/accounts/:id', async (req, res) => {
         })),
       recentSignals: sigs.rows.map(s => ({ title: s.title, type: s.signal_type, observedAt: s.observed_at })),
       people: people.rows.map(p => ({ name: p.full_name, role: p.role_title, email: p.email, linkedin: p.linkedin_url })),
+      peopleSearch,
       directors: dirs.rows.map(d => ({ name: d.full_name, appointed: d.appointed })),
     });
   } catch (e) { res.status(500).json({ error: String(e) }); }

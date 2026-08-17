@@ -702,9 +702,32 @@ await check('the people search speaks each campaign\'s own language', async () =
   assert(/searchRoles\?\.length \? searchRoles/.test(lane) && /orbitExtra/.test(lane),
     'findContacts lets the campaign vocabulary replace the search keys and widen the orbit');
   const disc = read('src/research/peopleDiscovery.mjs');
-  assert(/orbitTitles/.test(disc) && /searchRoles: titles\.slice\(0, 8\)/.test(disc), 'the in-cycle search wires the definition\'s titles');
+  assert(/orbitTitles/.test(disc) && /searchRoles: roleWindow\(titles, co\.prior_searches\)/.test(disc), 'the in-cycle search wires the definition\'s titles through the rotating window');
   const s = read('scripts/linkedin-enrich.mjs');
-  assert(/lanePeople/.test(s) && /orbitExtra: laneTitles/.test(s), 'the force lever wires them too');
+  assert(/lanePeople/.test(s) && /searchRoles: roleWindow\(laneTitles, co\.prior_searches\)/.test(s) && /orbitExtra: laneTitles/.test(s), 'the force lever wires them too');
+});
+
+await check('a revisit asks a fresh set of roles, and the first pass is byte-frozen', async () => {
+  // John's push, 17 August 2026: the same eight keywords were asked of every
+  // account on every pass. Now attempt zero is exactly the keys as before,
+  // and each later pass slides the window through the campaign's own
+  // vocabulary, wrapping at the end, so a revisit spends the same one call
+  // on a question it has not asked.
+  const { roleWindow } = await import('./orbitRules.mjs');
+  const { getCampaign } = await import('../campaigns/registry.mjs');
+  const pharma = getCampaign('pharma_steriflow').orbitTitles;
+  assert(JSON.stringify(roleWindow(pharma, 0)) === JSON.stringify(pharma.slice(0, 8)), 'attempt zero is the original keys, byte for byte');
+  assert(JSON.stringify(roleWindow(pharma, 1)) === JSON.stringify(pharma.slice(8, 16)), 'attempt one asks the next eight');
+  const windows = Math.ceil(pharma.length / 8);
+  assert(JSON.stringify(roleWindow(pharma, windows)) === JSON.stringify(pharma.slice(0, 8)), 'the window wraps back to the start');
+  assert(JSON.stringify(roleWindow(['a', 'b'], 3)) === JSON.stringify(['a', 'b']), 'a short vocabulary is always itself');
+  const srv = read('src/server.mjs');
+  assert(/peopleSearch/.test(srv) && /queuePosition/.test(srv) && /interval '30 days'/.test(srv),
+    'the account panel is told the search history and the queue position');
+  const disc = read('src/research/peopleDiscovery.mjs');
+  for (const shape of ["stage = 'researched'", 'in_decision_orbit', 'email_bounced_at IS NULL']) {
+    assert(srv.includes(shape) && disc.includes(shape), `the panel's queue ordering mirrors the search's own: ${shape}`);
+  }
 });
 
 await check('a Findymail miss is recorded and stood down, never re-bought blind', async () => {

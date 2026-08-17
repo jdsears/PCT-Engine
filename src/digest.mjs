@@ -59,7 +59,25 @@ export async function gatherDigestData() {
               count(*) FILTER (WHERE status = 'posted' AND posted_at >= ${week})::int AS posted
        FROM li_posts`)).rows[0];
   } catch { posts = null; }
-  return { questions: q, signals: s, leads: l, drafts: d, posts, convo };
+  // The decision-maker lane keeps score in the weekly rhythm, John's ask of
+  // 17 August 2026: how many accounts were searched, who was found, and
+  // whether the automatic search is actually on, because a latched-off
+  // switch once hid for days behind quiet cycles. Guarded like the studio
+  // block so an older database simply says nothing.
+  let people = null;
+  try {
+    const searched = (await pool.query(
+      `SELECT count(*)::int AS searches FROM unipile_calls
+       WHERE target LIKE 'findContacts: %' AND called_at >= ${week}`)).rows[0];
+    const found = (await pool.query(
+      `SELECT count(*) FILTER (WHERE created_at >= ${week} AND source = 'linkedin')::int AS found,
+              count(*) FILTER (WHERE created_at >= ${week} AND source = 'linkedin' AND in_decision_orbit)::int AS orbit,
+              count(*) FILTER (WHERE email_verified_at >= ${week})::int AS emails
+       FROM contacts WHERE NOT rehearsal`)).rows[0];
+    const sw = (await pool.query(`SELECT value FROM kv WHERE key = 'autopeople_enabled'`)).rows[0]?.value;
+    people = { ...searched, ...found, autoOn: sw === 'on' };
+  } catch { people = null; }
+  return { questions: q, signals: s, leads: l, drafts: d, posts, convo, people };
 }
 
 // The digest speaks dates like a person: 2026-08-17 reads as 17 August 2026.
@@ -73,7 +91,7 @@ export function humanDate(iso) {
 // Plain text in the house voice. The subject carries the three numbers that
 // matter; the body stays short enough to read on a phone.
 export function renderDigest(data, { weekEnding = new Date().toISOString().slice(0, 10) } = {}) {
-  const { questions: q, signals: s, leads: l, drafts: d, posts, convo } = data;
+  const { questions: q, signals: s, leads: l, drafts: d, posts, convo, people } = data;
   const lines = [
     `The engine's week to ${humanDate(weekEnding)}.`,
     '',
@@ -85,6 +103,9 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
   if (convo) {
     const rate = convo.sent > 0 ? `, a reply rate of ${Math.round((convo.replies / convo.sent) * 100)} percent` : '';
     lines.push(`Conversations: ${convo.sent} prospect send${convo.sent === 1 ? '' : 's'}, ${convo.replies} repl${convo.replies === 1 ? 'y' : 'ies'}${rate}, ${convo.live} live (interested or asking), ${convo.closed} clear no. Meetings booked: ${convo.meetings}. Handed off: ${convo.handoffs}.`);
+  }
+  if (people) {
+    lines.push(`Decision makers: ${people.searches} compan${people.searches === 1 ? 'y' : 'ies'} searched, ${people.found} ${people.found === 1 ? 'person' : 'people'} found (${people.orbit} in orbit), ${people.emails} email${people.emails === 1 ? '' : 's'} resolved.${people.autoOn ? '' : ' The automatic people search is switched off; the Health page turns it back on.'}`);
   }
   if (posts) lines.push(`Studio: ${posts.waiting} post draft${posts.waiting === 1 ? '' : 's'} waiting, ${posts.posted} posted this week.`);
   lines.push('', 'The detail is in the app: pipeline, watchlist, drafts and gaps. This is an internal summary, sent to the digest list only.');
@@ -103,7 +124,7 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
 // record and the two renderers share their arithmetic by construction.
 const PAL = { navy: '#1F386B', blue: '#009ADE', ink2: '#5B6B8C', line: '#E3E7EE', paper: '#F7F8FA' };
 export function renderDigestHtml(data, { weekEnding = new Date().toISOString().slice(0, 10), appUrl = process.env.APP_URL || '' } = {}) {
-  const { questions: q, signals: s, leads: l, drafts: d, posts, convo } = data;
+  const { questions: q, signals: s, leads: l, drafts: d, posts, convo, people } = data;
   const stat = (n, label) =>
     `<td align="center" style="padding:14px 6px;"><div style="font-size:30px;line-height:1;font-weight:700;color:${PAL.navy};">${n}</div><div style="font-size:12px;color:${PAL.ink2};margin-top:6px;">${label}</div></td>`;
   const section = (label, figures, note) =>
@@ -114,6 +135,8 @@ export function renderDigestHtml(data, { weekEnding = new Date().toISOString().s
     section('Leads', `${l.created} new, ${l.refreshed} refreshed.`),
     section('Outbound', `${d.waiting} draft${d.waiting === 1 ? '' : 's'} awaiting review, ${d.approved} approved, ${d.drafted_this_week} drafted this week.`, 'Nothing sends without a person.'),
     convo ? section('Conversations', `${convo.sent} prospect send${convo.sent === 1 ? '' : 's'}, ${convo.replies} repl${convo.replies === 1 ? 'y' : 'ies'}${rate}. ${convo.live} live, ${convo.closed} clear no. Meetings booked ${convo.meetings}, handed off ${convo.handoffs}.`) : '',
+    people ? section('Decision makers', `${people.searches} compan${people.searches === 1 ? 'y' : 'ies'} searched, ${people.found} ${people.found === 1 ? 'person' : 'people'} found (${people.orbit} in orbit), ${people.emails} email${people.emails === 1 ? '' : 's'} resolved.`,
+      people.autoOn ? '' : `<span style="color:#D97706;font-weight:600;">The automatic people search is switched off; the Health page turns it back on.</span>`) : '',
     section('Co-pilot', `${q.questions} question${q.questions === 1 ? '' : 's'} (${q.teams} from Teams), ${q.declined} it could not answer, feedback ${q.fb_up} helpful and ${q.fb_down} not.`),
     posts ? section('Studio', `${posts.waiting} post draft${posts.waiting === 1 ? '' : 's'} waiting, ${posts.posted} posted this week.`) : '',
   ].join('');

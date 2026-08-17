@@ -1,6 +1,7 @@
 import { pool } from '../db.mjs';
 import { findContacts, laneReady } from './linkedinResearch.mjs';
 import { CapReached, AccountUnhealthy, accountForCampaign } from './unipile.mjs';
+import { roleWindow } from './orbitRules.mjs';
 import { getCampaign } from '../campaigns/registry.mjs';
 
 // The in-cycle people search: a small batch of named accounts per engine
@@ -36,7 +37,8 @@ export async function discoverPeople({ limit = peopleSearchLimit(), log = () => 
   // backlog that is actually blocking outreach before it explores.
   const { rows: companies } = await pool.query(
     `SELECT id, name,
-            (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = companies.id) AS memberships
+            (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = companies.id) AS memberships,
+            (SELECT count(*)::int FROM unipile_calls u WHERE u.target = 'findContacts: ' || companies.name) AS prior_searches
      FROM companies
      WHERE named_account
        AND NOT EXISTS (
@@ -65,7 +67,7 @@ export async function discoverPeople({ limit = peopleSearchLimit(), log = () => 
       const campaign = known.length === 1 ? known[0] : 'marwin_dc';
       const titles = getCampaign(campaign)?.orbitTitles || [];
       const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(campaign),
-        searchRoles: titles.slice(0, 8), orbitExtra: titles });
+        searchRoles: roleWindow(titles, co.prior_searches), orbitExtra: titles });
       report.companies++;
       report.created += f.created || 0;
       report.updated += f.updated || 0;
