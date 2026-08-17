@@ -37,6 +37,20 @@ export const EXCLUDE_TITLES = [
   'recruit', 'talent', 'account executive', 'business development', 'project controls',
 ];
 
+// Each pass over the same account asks a fresh window of the campaign's
+// vocabulary instead of repeating the first eight forever, John's push of
+// 17 August 2026 on optimising the decision-maker hunt: attempt zero is
+// byte-identical to the original keys, attempt one asks titles nine to
+// sixteen, and the window wraps. A revisit spends the same one call and
+// asks a question it has not asked before.
+export function roleWindow(titles, attempt = 0) {
+  const t = (titles || []).filter(Boolean);
+  if (t.length <= 8) return t;
+  const windows = Math.ceil(t.length / 8);
+  const start = (Math.max(0, Number(attempt) || 0) % windows) * 8;
+  return t.slice(start, start + 8);
+}
+
 // Lowercase match against the includes, then the excludes. Excludes win unless
 // the title also mentions procurement. Null or empty titles return null, not
 // false, so unknowns stay visible rather than quietly out of orbit.

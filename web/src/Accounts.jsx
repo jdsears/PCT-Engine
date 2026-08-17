@@ -203,6 +203,23 @@ function AddPerson({ id, onSaved }) {
   );
 }
 
+// The empty decision-makers state tells the truth about this account's own
+// search history rather than shrugging: never searched and where it sits in
+// the queue, searched and found nobody with when the next pass comes, or the
+// automatic search being off, which is the one state that needs a human.
+const shortDate = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+function peopleSearchCopy(ps) {
+  if (!ps) return 'None found for this account yet. The LinkedIn lane fills these in small, capped batches.';
+  if (!ps.attempts) {
+    if (!ps.autoSearch) return 'Never searched, and the automatic people search is switched off. Turn it on from the Health page, or run the enrich script, and this account joins the queue.';
+    if (ps.queuePosition != null) return `Never searched yet. Position ${ps.queuePosition} in the automatic search queue, which works blocked accounts first.`;
+    return 'Never searched yet. It joins the automatic queue on the next cycle.';
+  }
+  const last = ps.lastAt ? ` The last pass was ${shortDate(ps.lastAt)}.` : '';
+  if (ps.coolingUntil) return `Searched ${ps.attempts} time${ps.attempts === 1 ? '' : 's'} and nobody has qualified yet.${last} It stands down until ${shortDate(ps.coolingUntil)}, and the next pass asks a fresh set of roles.`;
+  return `Searched ${ps.attempts} time${ps.attempts === 1 ? '' : 's'}, nobody qualified yet, and it is eligible again${ps.queuePosition != null ? `, position ${ps.queuePosition} in the queue` : ''}.${last}`;
+}
+
 function DetailPanel({ id, isMobile, onClose, onChanged }) {
   const [detail, setDetail] = useState(null);
   const [state, setState] = useState('loading');
@@ -256,7 +273,7 @@ function DetailPanel({ id, isMobile, onClose, onChanged }) {
               <div className="panel-block">
                 <div className="eyebrow">Decision makers</div>
                 {(detail.people || []).length === 0 && (
-                  <div className="muted-small">None found for this account yet. The LinkedIn lane fills these in small, capped batches, and a register director only counts when the stated role is a specifier one.</div>
+                  <div className="muted-small">{peopleSearchCopy(detail.peopleSearch)}</div>
                 )}
                 {(detail.people || []).map((p, i) => (
                   <div className="person-row" key={i}>

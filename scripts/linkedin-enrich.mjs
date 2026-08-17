@@ -3,6 +3,7 @@ import { findContacts, enrichDirectors, laneReady } from '../src/research/linked
 import { callsUsedToday, dailyCap, CapReached, AccountUnhealthy, accountForCampaign } from '../src/research/unipile.mjs';
 import { ensureContactEmail, getCreditsSpent } from '../src/research/findymail.mjs';
 import { getCampaign, requireCampaign } from '../src/campaigns/registry.mjs';
+import { roleWindow } from '../src/research/orbitRules.mjs';
 
 // The LinkedIn lane's orchestrator. Dry run by default: it prints what it
 // would search and write, calling nothing. --apply does the work, within the
@@ -59,7 +60,8 @@ if (camp) { params.push(camp.id); scope = ` AND EXISTS (SELECT 1 FROM company_ca
 params.push(companyLimit);
 const { rows: companies } = await pool.query(
   `SELECT id, name, domain, ch_number,
-          (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = companies.id) AS memberships
+          (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = companies.id) AS memberships,
+          (SELECT count(*)::int FROM unipile_calls u WHERE u.target = 'findContacts: ' || companies.name) AS prior_searches
    FROM companies
    WHERE named_account AND ($1 = '' OR name ILIKE '%' || $1 || '%')${scope}
    ${newClause}
@@ -115,7 +117,7 @@ for (const co of companies) {
   console.log(`${co.name}`);
 
   if (!apply) {
-    console.log(`  would run one people search: "${co.name}" for the specifier roles (${lanePeople(laneFor(co)).slice(0, 4).join(', ')}, ...), limit 5, via the ${laneFor(co)} account`);
+    console.log(`  would run one people search: "${co.name}" for the specifier roles (${roleWindow(lanePeople(laneFor(co)), co.prior_searches).slice(0, 4).join(', ')}, ...), limit 5, via the ${laneFor(co)} account${co.prior_searches ? `, pass ${co.prior_searches + 1}` : ''}`);
     if (doDirectors) {
       const { rows: pending } = await pool.query(
         `SELECT full_name FROM contacts
@@ -146,7 +148,7 @@ for (const co of companies) {
     // enriched only when asked for, since they are not the specifiers.
     const laneTitles = lanePeople(laneFor(co));
     const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(laneFor(co)),
-      searchRoles: laneTitles.slice(0, 8), orbitExtra: laneTitles });
+      searchRoles: roleWindow(laneTitles, co.prior_searches), orbitExtra: laneTitles });
     const d = doDirectors
       ? await enrichDirectors(co)
       : { enriched: 0, left: 0, ambiguous: 0, examples: [] };

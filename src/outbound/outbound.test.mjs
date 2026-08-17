@@ -152,6 +152,23 @@ await check('the digest email is a designed card, same numbers, same voice', () 
   const bare = renderDigestHtml({ ...data, convo: null, posts: null }, { weekEnding: '2026-08-17', appUrl: '' });
   assert(!bare.includes('Conversations') && !bare.includes('Studio') && !bare.includes('Open the engine'),
     'absent lanes and an unset URL render nothing rather than zeros');
+  // The decision-maker lane keeps score, and a stood-down switch is loud.
+  const withPeople = { ...data, people: { searches: 14, found: 22, orbit: 9, emails: 6, autoOn: false } };
+  const ph = renderDigestHtml(withPeople, { weekEnding: '2026-08-17', appUrl: '' });
+  assert(ph.includes('14 companies searched') && ph.includes('22 people found') && ph.includes('9 in orbit'),
+    'the card counts the decision-maker hunt');
+  assert(ph.includes('automatic people search is switched off'), 'a latched-off switch cannot hide for a week');
+  const pt = renderDigest(withPeople, { weekEnding: '2026-08-17' });
+  assert(pt.text.includes('Decision makers: 14 companies searched') && pt.text.includes('switched off'),
+    'the text digest carries the same score');
+  const on = renderDigestHtml({ ...withPeople, people: { ...withPeople.people, autoOn: true } }, { weekEnding: '2026-08-17', appUrl: '' });
+  assert(!on.includes('switched off'), 'no warning when the switch is on');
+  // The gather cannot run offline, so its wiring is frozen as source: the
+  // people block is really assembled and really reads the switch.
+  const ROOT2 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const dig = readFileSync(join(ROOT2, 'src/digest.mjs'), 'utf8');
+  assert(/people = \{ \.\.\.searched, \.\.\.found, autoOn: sw === 'on' \}/.test(dig) && /autopeople_enabled/.test(dig),
+    'gatherDigestData assembles the decision-maker score from the ledger and the switch');
   const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
   const srv = readFileSync(join(ROOT, 'src/server.mjs'), 'utf8');
   assert(/const html = renderDigestHtml\(data\)/.test(srv), 'the scheduled send posts the designed card');

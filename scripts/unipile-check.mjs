@@ -116,7 +116,13 @@ for (const a of linked) {
 }
 if (!healthy) { await pool.end(); process.exit(1); }
 
-console.log(`\nSet this in Railway and .env, then the lane is live:\n  UNIPILE_ACCOUNT_ID=${healthy.id}\n`);
+// Two-account guidance, corrected 17 August 2026 after the one-account-era
+// advice told John to make Andy's profile the default lane. The default id
+// is the data centre lane; each campaign maps its own account.
+console.log('\nSet these in Railway and .env, pasting the ids from the list above:');
+console.log('  UNIPILE_ACCOUNT_ID=<the data centre account id, the default lane>');
+console.log('  UNIPILE_CAMPAIGN_ACCOUNTS={"marwin_dc":"<that same id>","pharma_steriflow":"<the pharma account id>"}');
+console.log('A campaign not named in the map rides the default id.\n');
 
 // 4. One minimal Sales Navigator search to confirm reachability, then stop.
 try {
