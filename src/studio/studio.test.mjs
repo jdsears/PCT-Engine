@@ -385,5 +385,24 @@ await check('publishing, invites and engagement reads all route by campaign (sta
   assert(/ADD COLUMN IF NOT EXISTS account_id/.test(mig) && !/INSERT INTO/i.test(mig), 'the ledger column is idempotent and data free');
 });
 
+check('the studio splits by campaign, posts and connects alike', () => {
+  // John's ask, 18 August 2026: James works the data centre queue and Andy
+  // the pharma one, each behind the same switcher every other page uses.
+  // The server filters must derive a row's campaign exactly as the mapping
+  // does, and filter before the limit, so a narrow view is never starved by
+  // the other campaign's fifty best.
+  const srv = freshRead('src/server.mjs');
+  assert(/COALESCE\(lp\.grounding->>'campaign', s\.campaign, 'marwin_dc'\) = \$/.test(srv),
+    'the posts filter derives grounding first, signal second, default last, the same as the mapping');
+  assert(/CASE WHEN array_length\(m\.memberships, 1\) = 1 THEN m\.memberships\[1\] ELSE 'marwin_dc' END/.test(srv),
+    'the connects filter derives one registered membership or the default, the same as the mapping');
+  const studio = freshRead('web/src/Studio.jsx');
+  assert(/withCampaign\('\/api\/studio\/connects', campaign\)/.test(studio) && /withCampaign\(`\/api\/studio\/posts\?status=\$\{t\}`, campaign\)/.test(studio),
+    'both studio fetches carry the switcher');
+  assert(/\[campaign\]/.test(studio), 'a switch reloads the queue');
+  const appShell = freshRead('web/src/App.jsx');
+  assert(/<Studio campaign=\{campaign\} \/>/.test(appShell), 'the shell hands the studio the switcher');
+});
+
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);
