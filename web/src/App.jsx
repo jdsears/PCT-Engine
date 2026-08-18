@@ -28,7 +28,7 @@ const ORDER = ['copilot', 'insights', 'pipeline', 'accounts', 'signals', 'watchl
 // Campaign-shaped sections take the switcher; the co-pilot, studio and health
 // are campaign-neutral and ignore it, so the control is hidden rather than
 // shown doing nothing.
-const CAMPAIGN_SCOPED = new Set(['insights', 'pipeline', 'accounts', 'signals', 'watchlist', 'outbound']);
+const CAMPAIGN_SCOPED = new Set(['insights', 'pipeline', 'accounts', 'signals', 'watchlist', 'studio', 'outbound']);
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 720);

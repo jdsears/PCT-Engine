@@ -28,7 +28,7 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc', 
   const crmCol = (await hasColumn('companies', 'crm')) ? ", c.crm->>'segment' AS crm_segment" : '';
   const lead = (await pool.query(
     `SELECT l.id, l.company_id, l.contact_id, l.campaign, l.score, l.score_breakdown,
-            c.name AS company, c.company_type, c.region${statusCol}${crmCol}
+            c.name AS company, c.company_type, c.region, c.domain${statusCol}${crmCol}
      FROM leads l JOIN companies c ON c.id = l.company_id WHERE l.id = $1`, [leadId])).rows[0];
   if (!lead) throw new Error(`lead ${leadId} not found`);
 
@@ -108,6 +108,7 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc', 
   return {
     leadId: lead.id, companyId: lead.company_id, contactId: contact?.id ?? null, campaign: lead.campaign,
     company: { name: lead.company, type: lead.company_type || null, region: lead.region || null,
+               domain: lead.domain || null,
                customerStatus: lead.customer_status || null, segment: lead.crm_segment || null },
     contact, signal, openerGrade, openerNote: openerNote(signal, openerGrade),
     icpReason: topReason(lead.score_breakdown),

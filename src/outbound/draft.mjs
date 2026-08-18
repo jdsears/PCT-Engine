@@ -251,11 +251,13 @@ export function reflagText({ subject = '', body = '', grounding = {} }) {
   const namesake = flagNamesake(grounding?.contact, grounding?.company?.name);
   const employer = flagStatedEmployer(grounding?.contact, grounding?.company?.name);
   const greeting = flagGreetingMismatch(body, grounding?.contact);
+  const mailbox = flagForeignMailbox(grounding?.contact, grounding?.company);
   const foreign = flagForeignRegister(text, getCampaign(grounding?.campaign || 'marwin_dc'));
   return [
     ...(namesake ? [namesake] : []),
     ...(employer ? [employer] : []),
     ...(greeting ? [greeting] : []),
+    ...(mailbox ? [mailbox] : []),
     ...(foreign ? [foreign] : []),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
     ...suppliers.map(n => `blocking: names a supplier that may not be named (${n})`),
@@ -352,17 +354,42 @@ export function flagNamesake(contact, companyName) {
 // the person almost certainly works somewhere else, however they came to be
 // attached. Same discipline as the namesake: block for a human eye,
 // suppress nobody, and a segment that does mention the company (a partner,
-// a second hat) is evidence enough to pass.
+// a second hat) is evidence enough to pass. "with" joined "at" on 18 August
+// 2026, when Joseph Wilson, Project Engineer with Syscom BMS, was drafted
+// twice on the card of his previous employer; a segment reading as prose
+// rather than an employer ("with 25 years", "with a passion for") says
+// nothing, so headline flourish never blocks anyone.
+const PROSE_SEGMENT = /^\s*(?:a|an|the|my|our|his|her|their|over|more|than|extensive|proven|strong|deep|hands|experience|passion|focus|expertise|background)\b|^\s*\d/;
 export function flagStatedEmployer(contact, companyName) {
   const role = String(contact?.role || '');
   const coTok = String(companyName || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(/\s+/)
     .filter(t => t && !NAMESAKE_STOP.includes(t));
   if (!coTok.length) return null;
-  const segs = role.toLowerCase().split(/\bat\b/).slice(1);
+  const segs = role.toLowerCase().split(/\b(?:at|with)\b/).slice(1).filter(s => !PROSE_SEGMENT.test(s));
   if (!segs.length) return null;
   const segTokens = s => s.replace(/[^a-z0-9]+/g, ' ').split(/\s+/).filter(t => t && !NAMESAKE_STOP.includes(t)).slice(0, 4);
   if (segs.some(s => segTokens(s).some(t => coTok.includes(t)))) return null;
   return `blocking: stated employer differs, the contact's recorded role reads "${role}" and does not place them at ${companyName}; confirm they really work at ${companyName} before this can send`;
+}
+
+// The mailbox tells the truth the headline may not, 18 August 2026: every
+// misattached contact this week carried an email at somebody else's domain,
+// Mark Quest at aecom.com on the Flakt Woods card, Joseph Wilson at
+// syscombms.com on Varicon Aqua's. When the contact's mail domain and the
+// company's own domain share no identity (the first label of one inside the
+// other covers group and country arms, vantage-dc.com against vantage.com),
+// the person may no longer work there. Free mailboxes say nothing about an
+// employer and never judge.
+const FREE_MAIL = ['gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'yahoo.com',
+  'yahoo.co.uk', 'icloud.com', 'live.com', 'btinternet.com', 'aol.com', 'protonmail.com', 'proton.me'];
+export function flagForeignMailbox(contact, company) {
+  const dom = String(contact?.email || '').toLowerCase().split('@')[1] || '';
+  const coDom = String(company?.domain || '').toLowerCase().replace(/^www\./, '');
+  if (!dom || !coDom || FREE_MAIL.includes(dom)) return null;
+  const a = dom.split('.')[0];
+  const b = coDom.split('.')[0];
+  if (dom.includes(b) || coDom.includes(a)) return null;
+  return `blocking: foreign mailbox, ${contact?.name || 'the contact'}'s address is at ${dom} while the company's domain is ${coDom}; they may no longer work there. Confirm before this can send`;
 }
 
 // The foreign-register net, 18 August 2026: a pharma draft reached the queue
@@ -429,11 +456,13 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
   // campaign's register blocks the same way.
   const namesake = flagNamesake(grounding.contact, grounding.company?.name);
   const employer = flagStatedEmployer(grounding.contact, grounding.company?.name);
+  const mailbox = flagForeignMailbox(grounding.contact, grounding.company);
   const foreign = flagForeignRegister(`${s.text}\n${b.text}`, getCampaign(grounding.campaign || 'marwin_dc'));
   const flags = [
     ...check.unsupported,
     ...(namesake ? [namesake] : []),
     ...(employer ? [employer] : []),
+    ...(mailbox ? [mailbox] : []),
     ...(foreign ? [foreign] : []),
     ...(swept.removed ? ['a trailing sign-off block was removed; the signature is appended at send'] : []),
     ...redacted.map(n => `supplier name redacted: ${n}`),

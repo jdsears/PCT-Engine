@@ -132,6 +132,55 @@ await check('a namesake cannot be cold-opened on a guess', async () => {
   assert(edited.some(f => /namesake/.test(f)), 'editing the words cannot clear a wrong recipient');
 });
 
+await check('the contact must still work there: with joins at, and the mailbox testifies', async () => {
+  const { flagStatedEmployer, flagForeignMailbox } = await import('./draft.mjs');
+  // Frozen from the live queue, 18 August 2026: Joseph Wilson, Project
+  // Engineer with Syscom BMS, a former Varicon Aqua technician, drafted
+  // twice on his old employer's card with an email at his new one.
+  const joseph = flagStatedEmployer({ name: 'Joseph Wilson', role: 'Project Engineer with Syscom BMS' }, 'Varicon Aqua');
+  assert(joseph && /^blocking:/.test(joseph) && /Syscom BMS/.test(joseph), 'a role naming another employer after with blocks');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Director with 25 years experience' }, 'Varicon Aqua') === null,
+    'a duration after with is prose, not an employer');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Engineer with a passion for delivery' }, 'Varicon Aqua') === null,
+    'headline flourish never blocks anyone');
+  assert(flagStatedEmployer({ name: 'Sam Lee', role: 'Operations Lead with Varicon Aqua' }, 'Varicon Aqua') === null,
+    'the card company after with is evidence, not doubt');
+  const mail = flagForeignMailbox({ name: 'Joseph Wilson', email: 'joe.wilson@syscombms.com' }, { name: 'Varicon Aqua', domain: 'variconaqua.com' });
+  assert(mail && /^blocking: foreign mailbox/.test(mail) && /syscombms\.com/.test(mail), 'a mailbox at another company blocks');
+  assert(flagForeignMailbox({ email: 'ameer.ibrahim@vantage-dc.com' }, { domain: 'vantage.com' }) === null,
+    'a group arm of the same identity passes: vantage-dc is vantage');
+  assert(flagForeignMailbox({ email: 'a.b@uk.gsk.com' }, { domain: 'gsk.com' }) === null, 'a country arm passes');
+  assert(flagForeignMailbox({ email: 'sam@gmail.com' }, { domain: 'variconaqua.com' }) === null, 'a free mailbox says nothing');
+  assert(flagForeignMailbox({ email: 'sam@x.com' }, { domain: '' }) === null, 'no company domain, no verdict');
+  const edited = reflagText({ subject: 's', body: 'Rewritten.', grounding: {
+    campaign: 'pharma_steriflow',
+    contact: { name: 'Joseph Wilson', email: 'joe.wilson@syscombms.com' },
+    company: { name: 'Varicon Aqua', domain: 'variconaqua.com' }, blockedSuppliers: [],
+  } });
+  assert(edited.some(f => /foreign mailbox/.test(f)), 'editing the words cannot clear a departed recipient');
+  const g = read('src/outbound/grounding.mjs');
+  assert(/c\.domain/.test(g) && /domain: lead\.domain/.test(g), 'the grounding carries the company domain for the mailbox check');
+});
+
+await check('a filing belongs to the register, not a campaign, and the damage walks back', async () => {
+  // The root of the Varicon leak: migration 023 defaulted signals.campaign
+  // to marwin_dc and the filings insert never named one, so every filing
+  // dragged its company into the data centre run. Filings now carry the
+  // 'register' sentinel, which no campaign's research arm can match, and
+  // the repair script walks back the leads the default created.
+  const ch = read('src/research/companiesHouse.mjs');
+  assert(/INSERT INTO signals \(company_id, signal_type, title, url, url_hash, payload, campaign\)/.test(ch) && /'register'\) ON CONFLICT/.test(ch),
+    'filings are stamped campaign-neutral at the insert');
+  const rr = read('src/research/runResearch.mjs');
+  assert(/s\.campaign = \$1/.test(rr), 'the research signals arm still matches only its own campaign, so register never qualifies');
+  const rp = read('scripts/repair-cross-campaign-leads.mjs');
+  assert(/Dry run\. Nothing changed\./.test(rp) && /--apply/.test(rp), 'the repair is dry by default');
+  assert(/pharma_manufacturer/.test(rp) && /biotech_manufacturer/.test(rp) && /campaign = 'marwin_dc'/.test(rp),
+    'scope is the unambiguous case only: data centre leads on pharma-typed companies');
+  assert(/r\.sent/.test(rp) && /hand review/.test(rp) && !/DELETE FROM outbound_drafts/i.test(rp),
+    'a sent thread is never touched and drafts are rejected, never deleted');
+});
+
 await check('a campaign never speaks another campaign\'s register', async () => {
   const { flagForeignRegister } = await import('./draft.mjs');
   const { requireCampaign } = await import('../campaigns/registry.mjs');
