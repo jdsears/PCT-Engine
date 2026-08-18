@@ -168,9 +168,17 @@ export async function pollCompaniesHouse() {
       const type = f.category === 'officers' ? 'ch_director_change' : 'ch_filing';
       const urlHash = hash(`${co.ch_number}:${f.transaction_id}`);
       const url = `https://find-and-update.company-information.service.gov.uk/company/${co.ch_number}/filing-history`;
+      // Filings are campaign-neutral: the register knows companies, not
+      // campaigns. Left to the column default they landed as marwin_dc
+      // (migration 023's single-tenant assumption), and that one word
+      // dragged pharma-only companies into the data centre run, built them
+      // data centre leads, and drafted hyperscale copy to a bioreactor
+      // maker. The 'register' sentinel belongs to no campaign, so a filing
+      // can never again be the door into the wrong one; members still score
+      // through their memberships, exactly as they should.
       const { rowCount } = await pool.query(
-        `INSERT INTO signals (company_id, signal_type, title, url, url_hash, payload)
-         VALUES ($1, $2, $3, $4, $5, $6::jsonb) ON CONFLICT (url_hash) DO NOTHING`,
+        `INSERT INTO signals (company_id, signal_type, title, url, url_hash, payload, campaign)
+         VALUES ($1, $2, $3, $4, $5, $6::jsonb, 'register') ON CONFLICT (url_hash) DO NOTHING`,
         [co.id, type, f.description || f.type || 'filing', url, urlHash, JSON.stringify(f)]);
       if (rowCount) counts[type]++;
     }
