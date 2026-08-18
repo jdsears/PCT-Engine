@@ -1,6 +1,6 @@
 import { voiceGate } from '../answer.mjs';
 import { isOpenerGrade } from './openerGrade.mjs';
-import { requireCampaign } from '../campaigns/registry.mjs';
+import { requireCampaign, getCampaign } from '../campaigns/registry.mjs';
 import { buildDraftSystem, buildRangeLines } from '../campaigns/prompts.mjs';
 import { approvedLinkList } from './links.mjs';
 import { writtenCompanyName } from './companyName.mjs';
@@ -251,10 +251,12 @@ export function reflagText({ subject = '', body = '', grounding = {} }) {
   const namesake = flagNamesake(grounding?.contact, grounding?.company?.name);
   const employer = flagStatedEmployer(grounding?.contact, grounding?.company?.name);
   const greeting = flagGreetingMismatch(body, grounding?.contact);
+  const foreign = flagForeignRegister(text, getCampaign(grounding?.campaign || 'marwin_dc'));
   return [
     ...(namesake ? [namesake] : []),
     ...(employer ? [employer] : []),
     ...(greeting ? [greeting] : []),
+    ...(foreign ? [foreign] : []),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),
     ...suppliers.map(n => `blocking: names a supplier that may not be named (${n})`),
     ...links.map(u => `blocking: web address not on the approved list (${u}); only the booking link and the approved PCT pages may appear, never a manufacturer site`),
@@ -363,6 +365,23 @@ export function flagStatedEmployer(contact, companyName) {
   return `blocking: stated employer differs, the contact's recorded role reads "${role}" and does not place them at ${companyName}; confirm they really work at ${companyName} before this can send`;
 }
 
+// The foreign-register net, 18 August 2026: a pharma draft reached the queue
+// speaking the data centre campaign's language, hyperscale builds and
+// chilled-water cooling to a bioreactor manufacturer's engineer. Whatever
+// upstream slip produces it, a campaign's drafts must never carry another
+// campaign's register, so each definition may list the words it never says
+// (foreignRegister) and a draft containing one blocks for a human. The list
+// is the campaign's own data, like every voice rule; a campaign with no
+// list, and any word not on it, stays unjudged here.
+export function flagForeignRegister(text, def) {
+  const terms = Array.isArray(def?.foreignRegister) ? def.foreignRegister : [];
+  if (!terms.length) return null;
+  const hay = String(text || '').toLowerCase();
+  const hit = terms.find(t => new RegExp(`\\b${escapeRe(String(t).toLowerCase())}\\b`).test(hay));
+  if (!hit) return null;
+  return `blocking: foreign register, the ${def.displayName || def.id} campaign never says "${hit}"; this draft reads like another campaign's positioning. Redraft or reject`;
+}
+
 // The thread-drift net, 18 August 2026: thirty-two break-up drafts sat in
 // the queue greeting a different person than their recipient, because the
 // follow-up grounding re-resolved the lead's best contact while the thread
@@ -406,13 +425,16 @@ export async function finaliseDraft(draft, grounding, { callModel = callClaude, 
   // pages, never a factory's.
   const links = findLinks(`${s.text}\n${b.text}`).filter(u => !allowedLink(u));
   // A wrong recipient is a fault no wording can fix, so it flags here with
-  // everything else the reviewer must see.
+  // everything else the reviewer must see, and a draft speaking another
+  // campaign's register blocks the same way.
   const namesake = flagNamesake(grounding.contact, grounding.company?.name);
   const employer = flagStatedEmployer(grounding.contact, grounding.company?.name);
+  const foreign = flagForeignRegister(`${s.text}\n${b.text}`, getCampaign(grounding.campaign || 'marwin_dc'));
   const flags = [
     ...check.unsupported,
     ...(namesake ? [namesake] : []),
     ...(employer ? [employer] : []),
+    ...(foreign ? [foreign] : []),
     ...(swept.removed ? ['a trailing sign-off block was removed; the signature is appended at send'] : []),
     ...redacted.map(n => `supplier name redacted: ${n}`),
     ...named.map(n => `blocking: names or implies a specific end customer (${n}); the operator must never be named`),

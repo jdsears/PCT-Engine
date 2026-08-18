@@ -79,6 +79,7 @@
     "connectLineShort": "I'm the sales director at PCT, supplier of the Steriflow sanitary valve range"
   },
 
+  "foreignRegister": ["data centre", "data center", "hyperscale", "hyperscaler", "colocation", "chilled-water", "chilled water"],
   "orbitTitles": [
     "process engineer", "validation", "project engineer", "project manager",
     "commissioning engineer", "utilities", "engineering manager", "cqv",

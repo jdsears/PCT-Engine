@@ -132,6 +132,29 @@ await check('a namesake cannot be cold-opened on a guess', async () => {
   assert(edited.some(f => /namesake/.test(f)), 'editing the words cannot clear a wrong recipient');
 });
 
+await check('a campaign never speaks another campaign\'s register', async () => {
+  const { flagForeignRegister } = await import('./draft.mjs');
+  const { requireCampaign } = await import('../campaigns/registry.mjs');
+  const pharma = requireCampaign('pharma_steriflow');
+  const dc = requireCampaign('marwin_dc');
+  // Frozen from the live queue, 18 August 2026: a pharma draft to a
+  // bioreactor manufacturer's engineer, speaking hyperscale builds and
+  // data centre chilled-water cooling. Whatever upstream slip produced it,
+  // the register itself now blocks.
+  const line = 'PCT can meet the delivery requirements that hyperscale projects typically impose across the largest data centre builds.';
+  const hit = flagForeignRegister(line, pharma);
+  assert(hit && /^blocking: foreign register/.test(hit) && /never says/.test(hit), 'the data centre register blocks on a pharma draft');
+  assert(flagForeignRegister(line, dc) === null, 'the same words are the data centre campaign\'s own and pass there');
+  assert(flagForeignRegister('Steriflow sanitary valves suit sterile process lines and clean utilities.', pharma) === null,
+    'pharma language passes on pharma');
+  assert(flagForeignRegister(line, null) === null && flagForeignRegister(line, { id: 'rehearsal' }) === null,
+    'no definition or no list means no verdict, so rehearsal drafts stay editable');
+  const edited = reflagText({ subject: 'Marwin control valves for data centre chilled-water cooling', body: 'Rewritten.', grounding: {
+    campaign: 'pharma_steriflow', contact: { name: 'Joseph Wilson' }, company: { name: 'Varicon Aqua' }, blockedSuppliers: [],
+  } });
+  assert(edited.some(f => /foreign register/.test(f)), 'a saved edit re-judges the register from the lead\'s own campaign');
+});
+
 await check('a stated employer elsewhere blocks the same way', async () => {
   const { flagStatedEmployer } = await import('./draft.mjs');
   // Frozen from the same morning's queue: Mark Quest, Principle Mechanical
