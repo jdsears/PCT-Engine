@@ -77,6 +77,12 @@ export function renderGrounding(g, campaign = 'marwin_dc') {
   lines.push(g.contact?.name
     ? `Contact: ${g.contact.name}${g.contact.role ? ', ' + g.contact.role : ', role not recorded'}.`
     : `Contact: not recorded. Address a specifier or buyer in neutral terms, do not assume a role.`);
+  // A referral is the one new claim a wrong-person reply licenses, and it is
+  // quotable because their colleague wrote it to us. When present it is the
+  // opener; the rest of the grounding stays context.
+  if (g.referral?.note) {
+    lines.push(`Referral to open on, quotable because their colleague wrote it to us: ${g.referral.note}. Open on this in one plain sentence, without flattery, before anything else.`);
+  }
   // Grade decides the opening. Fall back to deriving it from the signal type so
   // an older grounding without the flag still classifies correctly.
   const openerGrade = g.openerGrade ?? isOpenerGrade(g.signal);
