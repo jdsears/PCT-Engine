@@ -464,6 +464,41 @@ await check('the digest reports outcomes, not open rates', async () => {
   assert(!/open rate/i.test(text), 'no open-rate theatre');
 });
 
+await check('a wrong-person reply adapts the register: suppress, create, re-point, draft', async () => {
+  // Frozen from the live inbox, 18 August 2026: Ed Vigor-Messenger at KAO
+  // DATA replied "I have now left the Kao Data, so can you contact Mr Jason
+  // Pullen (Jason.Pullen@kaodata.com)". The engine stopped and notified; now
+  // a confident redirect with a stated name and address also adapts.
+  assert(decideAction({ category: 'wrong_person', confidence: 'high' }).redirect === true, 'a confident redirect acts');
+  assert(!decideAction({ category: 'wrong_person', confidence: 'low' }).redirect
+    && decideAction({ category: 'wrong_person', confidence: 'low' }).needsHuman, 'a doubtful one stays a human read');
+  const fake = async () => JSON.stringify({ category: 'wrong_person', confidence: 'high', reason: 'left the company',
+    return_date: null, referral: 'Jason Pullen', referral_email: 'Jason.Pullen@kaodata.com' });
+  const v = await classifyReply({ from: 'ed@kaodata.com', subject: 're', text: 'contact Jason Pullen' }, { callModel: fake });
+  assert(v.referral === 'Jason Pullen' && v.referralEmail === 'jason.pullen@kaodata.com', 'name and address extracted, address lowercased');
+  const junk = await classifyReply({ from: 'x@y.com', subject: 're', text: 'z' }, { callModel: async () =>
+    JSON.stringify({ category: 'wrong_person', confidence: 'high', reason: 'x', referral: 'A B', referral_email: 'not an address' }) });
+  assert(junk.referralEmail === null, 'a malformed address is refused, never guessed');
+  const t = read('src/outbound/triage.mjs');
+  assert(/suppressed_reason/.test(t) && /left the company, their own reply of/.test(t),
+    'the departed contact keeps their own words as provenance');
+  assert(/'referral'/.test(t) && /lower\(email\) = \$2/.test(t), 'the successor is created or reused by address, in orbit, source referral');
+  assert(/UPDATE leads SET contact_id = \$2/.test(t), 'the lead re-points to the successor');
+  assert(/gatherGrounding\(r\.lead_id, \{ campaign: r\.campaign \|\| 'marwin_dc', contactId: newId \}\)/.test(t),
+    'the fresh draft grounds on the successor, pinned');
+  assert(/action\.redirect && verdict\.referral && verdict\.referralEmail && r\.lead_id && r\.company_id/.test(t),
+    'confidence alone never acts: a stated name and address are required');
+  assert(/'cold_open', \$5, \$6/.test(t) && /'draft'\)/.test(t) && !/sendMail/.test(t),
+    'the referral cold open lands in the review queue and nothing sends itself');
+  const { renderGrounding } = await import('./draft.mjs');
+  const gt = renderGrounding({ company: { name: 'KAO DATA' }, contact: { name: 'Jason Pullen' },
+    referral: { note: 'ed@kaodata.com, on leaving the company, directed contact to Jason Pullen' } }, 'marwin_dc');
+  assert(/quotable because their colleague wrote it to us/.test(gt) && /directed contact to Jason Pullen/.test(gt),
+    'the referral is in the grounding, so the claim is supportable and the checker keeps it');
+  assert(!/quotable because their colleague/.test(renderGrounding({ company: { name: 'X' }, contact: null }, 'marwin_dc')),
+    'no referral, no line');
+});
+
 await check('a thread belongs to one person: pinned grounding, drift blocks, the card shows the sends', async () => {
   const { flagGreetingMismatch } = await import('./draft.mjs');
   // Frozen from the live queue, 18 August 2026: thirty-two break-ups, and
