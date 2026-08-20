@@ -149,6 +149,16 @@ await check('the contact must still work there: with joins at, and the mailbox t
   assert(mail && /^blocking: foreign mailbox/.test(mail) && /syscombms\.com/.test(mail), 'a mailbox at another company blocks');
   assert(flagForeignMailbox({ email: 'ameer.ibrahim@vantage-dc.com' }, { domain: 'vantage.com' }) === null,
     'a group arm of the same identity passes: vantage-dc is vantage');
+  // The Emcor lesson, 20 August 2026: emcoruk.com and emcorgroup.com are
+  // the same identity once the arm words come off the stem, and the real
+  // mailbox of a real employee must never block against the group domain.
+  assert(flagForeignMailbox({ email: 'mark.cowburn@emcoruk.com' }, { name: 'Emcor Group (UK) Limited', domain: 'emcorgroup.com' }) === null,
+    'emcoruk and emcorgroup share the stem emcor and pass');
+  assert(flagForeignMailbox({ email: 'james.bramley@uk.thalesgroup.com' }, { name: 'Flakt Woods', domain: 'flaktwoods.com' }),
+    'thales against flaktwoods still blocks: stems must actually agree');
+  const web = read('web/src/Outbound.jsx');
+  assert(/namesake risk\|stated employer differs\|foreign mailbox\|greeting names/.test(web),
+    'every recipient-class block carries the one-click suppress exit');
   assert(flagForeignMailbox({ email: 'a.b@uk.gsk.com' }, { domain: 'gsk.com' }) === null, 'a country arm passes');
   assert(flagForeignMailbox({ email: 'sam@gmail.com' }, { domain: 'variconaqua.com' }) === null, 'a free mailbox says nothing');
   assert(flagForeignMailbox({ email: 'sam@x.com' }, { domain: '' }) === null, 'no company domain, no verdict');

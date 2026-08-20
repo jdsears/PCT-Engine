@@ -165,6 +165,13 @@ export async function dueFollowups({ now = new Date() } = {}) {
        AND (l.snoozed_until IS NULL OR l.snoozed_until < now())
        AND ct.id IS NOT NULL AND NOT ct.suppressed AND ct.email IS NOT NULL AND ct.email_bounced_at IS NULL
        AND NOT EXISTS (SELECT 1 FROM outbound_drafts o WHERE o.lead_id = l.id AND o.status IN ('draft','approved'))
+       -- A human's reject on a touch is terminal for the thread, John's
+       -- call of 20 August 2026 when blocked follow-ups respawned on every
+       -- sweep: reject, redraft, block, forever. Once any draft at the next
+       -- step has been rejected, the machine stops chasing this thread; a
+       -- wording fix is an edit and save, never a reject.
+       AND NOT EXISTS (SELECT 1 FROM outbound_drafts o2 WHERE o2.lead_id = l.id
+                       AND o2.status = 'rejected' AND o2.sequence_step = d.sequence_step + 1)
        -- Any real reply ends the machine's initiative. A bounce or an away
        -- reply is not engagement, and an untriaged reply pauses the sequence
        -- until triage has read it.
