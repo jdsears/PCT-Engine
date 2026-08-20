@@ -5,6 +5,7 @@ import { registerAuthRoutes, verifiedUser, msSigninConfigured, actorEmail } from
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pool, hasColumn } from './db.mjs';
+import { normName } from './research/partyActions.mjs';
 import { search } from './retrieve.mjs';
 import { ask } from './answer.mjs';
 import { REGIONS, regionForPostcode } from './research/region.mjs';
@@ -613,6 +614,63 @@ app.patch('/api/accounts/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// Not a prospect: the one verb the queue and the panel lacked, John's build
+// of 20 August 2026. The company stays on the register, exactly as Republic
+// customers do; what ends is one campaign's prospecting of it, completely
+// and in a single act: open drafts rejected, the campaign's leads closed so
+// drafting and follow-ups end at the source, the membership removed so the
+// next research run cannot re-score it, and a dismissed row written into
+// the review queue's memory, which is never relitigated, so the census
+// cannot re-propose the same name to the same campaign. A live
+// conversation refuses the act: a thread in flight is a human decision,
+// not a bulk verb.
+async function removeFromCampaign(companyId, campaignId, by) {
+  if (!getCampaign(campaignId)) return { status: 409, error: 'unknown campaign' };
+  const { rows: co } = await pool.query(`SELECT id, name FROM companies WHERE id = $1`, [companyId]);
+  if (!co.length) return { status: 404, error: 'no such account' };
+  const { rows: live } = await pool.query(
+    `SELECT 1 FROM leads l WHERE l.company_id = $1 AND l.campaign = $2
+       AND (l.stage IN ('replied', 'handed_off')
+            OR EXISTS (SELECT 1 FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
+                       WHERE d.lead_id = l.id AND (r.category IS NULL OR r.category NOT IN ('bounce', 'out_of_office'))))
+     LIMIT 1`, [companyId, campaignId]);
+  if (live.length) return { status: 409, error: 'a conversation is live on this campaign; hand it off or close it first' };
+  const rej = await pool.query(
+    `UPDATE outbound_drafts SET status = 'rejected', decided_by = $3
+     WHERE company_id = $1 AND campaign = $2 AND status IN ('draft', 'approved')`,
+    [companyId, campaignId, by || 'remove prospect']);
+  const led = await pool.query(
+    `UPDATE leads SET stage = 'closed', updated_at = now()
+     WHERE company_id = $1 AND campaign = $2 AND stage <> 'closed'`, [companyId, campaignId]);
+  await pool.query(`DELETE FROM company_campaigns WHERE company_id = $1 AND campaign = $2`, [companyId, campaignId]);
+  await pool.query(
+    `INSERT INTO party_reviews (kind, printed_name, name_norm, party, campaign, status, decided_at, decision_note, decided_by)
+     VALUES ('proposal', $1, $2, 'operator', $3, 'dismissed', now(), $4, $5)
+     ON CONFLICT (name_norm, campaign)
+     DO UPDATE SET status = 'dismissed', decided_at = now(), decision_note = $4, decided_by = $5`,
+    [co[0].name, normName(co[0].name), campaignId, 'removed as not a prospect', by || null]);
+  return { removed: true, company: co[0].name, campaign: campaignId, draftsRejected: rej.rowCount, leadsClosed: led.rowCount };
+}
+
+app.post('/api/accounts/:id/remove-from-campaign', async (req, res) => {
+  try {
+    const out = await removeFromCampaign(parseInt(req.params.id, 10), String(req.body?.campaign || ''), actorEmail(req));
+    if (out.error) return res.status(out.status || 500).json({ error: out.error });
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.post('/api/outbound/drafts/:id/remove-prospect', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT company_id, campaign FROM outbound_drafts WHERE id = $1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'no such draft' });
+    if (rows[0].campaign === 'rehearsal') return res.status(409).json({ error: 'a rehearsal is not a prospect to remove' });
+    const out = await removeFromCampaign(rows[0].company_id, rows[0].campaign, actorEmail(req));
+    if (out.error) return res.status(out.status || 500).json({ error: out.error });
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 // Add a person to an account by hand: James found Echelon's London people on
 // LinkedIn himself. A human choosing one named person for one account is the
 // decision-orbit judgement, so the contact enters the orbit directly, source
@@ -687,7 +745,8 @@ app.get('/api/accounts/:id', async (req, res) => {
     const statusCol = (await hasColumn('companies', 'customer_status')) ? ' customer_status,' : '';
     const comp = await pool.query(
       `SELECT id, name, company_type, region, domain, ch_number,${statusCol}
-              round(icp_score)::int AS score, icp_breakdown
+              round(icp_score)::int AS score, icp_breakdown,
+              (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc WHERE cc.company_id = companies.id) AS memberships
        FROM companies WHERE id = $1`, [id]);
     if (!comp.rows.length) return res.status(404).json({ error: 'not found' });
     const c = comp.rows[0];
@@ -755,6 +814,7 @@ app.get('/api/accounts/:id', async (req, res) => {
       id: c.id, name: c.name, type: c.company_type, region: regionName(c.region),
       domain: c.domain, chNumber: c.ch_number, score: c.score,
       customerStatus: c.customer_status || null,
+      memberships: (c.memberships || []).filter(m => getCampaign(m)),
       // Stored breakdowns carry their own max per component, so rows scored
       // under the contactability draft display against the right caps.
       icp: [...ICP_ROWS, ...(bd.contactability ? [['contactability', 'Contactability', 10]] : [])]
@@ -1975,7 +2035,9 @@ app.post('/api/outbound/drafts/:id/suppress-contact', async (req, res) => {
       `SELECT contact_id, grounding_flags FROM outbound_drafts WHERE id = $1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'no such draft' });
     const flags = Array.isArray(rows[0].grounding_flags) ? rows[0].grounding_flags : [];
-    const recipientBlock = flags.find(f => /namesake risk|stated employer differs/.test(String(f)));
+    // Widened with the web in step: every recipient-class block earns the
+    // suppress exit, the foreign-mailbox and greeting blocks included.
+    const recipientBlock = flags.find(f => /namesake risk|stated employer differs|foreign mailbox|greeting names/.test(String(f)));
     if (!recipientBlock) return res.status(409).json({ error: 'this draft carries no recipient block; use reject' });
     if (!rows[0].contact_id) return res.status(409).json({ error: 'no contact recorded on this draft' });
     const by = actorEmail(req);
