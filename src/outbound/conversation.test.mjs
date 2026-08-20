@@ -514,6 +514,11 @@ await check('a thread belongs to one person: pinned grounding, drift blocks, the
   const fu = read('src/outbound/followups.mjs');
   assert(/gatherGrounding\(t\.lead_id, \{ campaign: t\.campaign, contactId: t\.contact_id \}\)/.test(fu),
     'the sweeper grounds on the thread\'s own contact, never the lead\'s current best');
+  // John's call, 20 August 2026: blocked follow-ups respawned on every
+  // sweep, reject, redraft, block, forever. A human's reject on a touch is
+  // now terminal for the thread.
+  assert(/o2\.status = 'rejected' AND o2\.sequence_step = d\.sequence_step \+ 1/.test(fu),
+    'a rejected touch ends the machine\'s chasing of that thread');
   assert(/flagGreetingMismatch\(body, grounding\.contact\)/.test(fu), 'the net runs on the final body after the greeting is guaranteed');
   const gr = read('src/outbound/grounding.mjs');
   assert(/contactId = null/.test(gr) && /\[contactId\]/.test(gr), 'gatherGrounding accepts the pin');

@@ -388,6 +388,13 @@ export function flagStatedEmployer(contact, companyName) {
 // employer and never judge.
 const FREE_MAIL = ['gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'yahoo.com',
   'yahoo.co.uk', 'icloud.com', 'live.com', 'btinternet.com', 'aol.com', 'protonmail.com', 'proton.me'];
+// Trailing marks of arms and forms, stripped from a domain's first label so
+// emcoruk and emcorgroup read as the same identity, emcor. Learned live on
+// 20 August 2026 when EMCOR UK's real mailbox blocked against the group's
+// domain. The stems must still differ to block: syscombms never becomes
+// variconaqua, aecom never becomes flaktwoods.
+const LABEL_ARMS = /(?:uk|gb|group|holdings|global|europe|eu|intl|international|hq|dc)+$/;
+const labelStem = l => String(l || '').replace(/[^a-z0-9]/g, '').replace(LABEL_ARMS, '');
 export function flagForeignMailbox(contact, company) {
   const dom = String(contact?.email || '').toLowerCase().split('@')[1] || '';
   const coDom = String(company?.domain || '').toLowerCase().replace(/^www\./, '');
@@ -395,6 +402,9 @@ export function flagForeignMailbox(contact, company) {
   const a = dom.split('.')[0];
   const b = coDom.split('.')[0];
   if (dom.includes(b) || coDom.includes(a)) return null;
+  const sa = labelStem(a);
+  const sb = labelStem(b);
+  if (sa && sb && (sa === sb || sa.includes(sb) || sb.includes(sa))) return null;
   return `blocking: foreign mailbox, ${contact?.name || 'the contact'}'s address is at ${dom} while the company's domain is ${coDom}; they may no longer work there. Confirm before this can send`;
 }
 

@@ -53,7 +53,10 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
   // A recipient block means the person is wrong, not the words, and a plain
   // reject regenerates a fresh draft to the same person next cycle. This
   // stands the contact down and rejects in one act, ending the loop.
-  const recipientBlock = flags.some(f => /namesake risk|stated employer differs/.test(String(f)));
+  // Every recipient-class block earns the one-click exit: the fault is who
+  // the email goes to, so suppressing the contact is the fix, and it also
+  // ends the thread's follow-up loop at the source.
+  const recipientBlock = flags.some(f => /namesake risk|stated employer differs|foreign mailbox|greeting names/.test(String(f)));
   const suppressContact = () => run(async () => { await action(`/api/outbound/drafts/${draft.id}/suppress-contact`, jsonOpts('POST')); onChanged(); });
   const sendTest = () => run(async () => {
     const res = await action(`/api/outbound/drafts/${draft.id}/send-test`, jsonOpts('POST', { to }));
