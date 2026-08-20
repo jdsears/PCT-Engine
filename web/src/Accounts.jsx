@@ -220,6 +220,47 @@ function peopleSearchCopy(ps) {
   return `Searched ${ps.attempts} time${ps.attempts === 1 ? '' : 's'}, nobody qualified yet, and it is eligible again${ps.queuePosition != null ? `, position ${ps.queuePosition} in the queue` : ''}.${last}`;
 }
 
+// The panel's campaign row with the one verb it lacked: remove from this
+// campaign. Two clicks (arm, then confirm), the company stays on the
+// register, the census never re-proposes it, and a live conversation is
+// refused by the server with its reason shown.
+function CampaignMemberships({ id, memberships, onChanged }) {
+  const campaignList = useCampaignList();
+  const [arm, setArm] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(null);
+  if (!memberships || memberships.length === 0) return null;
+  const label = (m) => campaignList.find(c => c.id === m)?.displayName || m;
+  const remove = async (m) => {
+    if (arm !== m) { setArm(m); return; }
+    setBusy(true); setNote(null); setArm(null);
+    try {
+      const res = await apiFetch(`/api/accounts/${id}/remove-from-campaign`, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ campaign: m }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setNote(d.error || 'Could not remove.'); }
+      else { setNote(`Removed from ${label(m)}: ${d.draftsRejected} draft(s) rejected, ${d.leadsClosed} lead(s) closed. The census will not re-propose it.`); onChanged(); }
+    } catch (e) { setNote(String(e.message || e)); }
+    setBusy(false);
+  };
+  return (
+    <div className="panel-block">
+      <div className="eyebrow">Campaigns</div>
+      {memberships.map(m => (
+        <div className="director-row" key={m}>
+          <span className="director-name">{label(m)}</span>
+          <button className="ob-btn ghost" onClick={() => remove(m)} disabled={busy}>
+            {arm === m ? 'Confirm: not a prospect' : 'Remove'}
+          </button>
+        </div>
+      ))}
+      <div className="muted-small">Removing ends prospecting on that campaign only. The company stays on the register.</div>
+      {note && <div className="muted-small">{note}</div>}
+    </div>
+  );
+}
+
 function DetailPanel({ id, isMobile, onClose, onChanged }) {
   const [detail, setDetail] = useState(null);
   const [state, setState] = useState('loading');
@@ -309,6 +350,7 @@ function DetailPanel({ id, isMobile, onClose, onChanged }) {
                   </div>
                 ))}
               </div>
+              <CampaignMemberships id={id} memberships={detail.memberships} onChanged={changed} />
               <AmendAccount id={id} detail={detail} onSaved={changed} />
             </div>
           </>

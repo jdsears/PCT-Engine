@@ -174,6 +174,35 @@ await check('the digest email is a designed card, same numbers, same voice', () 
   assert(/const html = renderDigestHtml\(data\)/.test(srv), 'the scheduled send posts the designed card');
 });
 
+await check('not a prospect is one act: reject, close, remove, remember', () => {
+  // John's build, 20 August 2026: the queue had every verb except the one
+  // that removes the company itself from a campaign. The close-out is
+  // complete in a single server act, and the dismissal memory means the
+  // census can never re-propose the same name to the same campaign.
+  const ROOT3 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const srv = readFileSync(join(ROOT3, 'src/server.mjs'), 'utf8');
+  assert(/async function removeFromCampaign/.test(srv), 'one shared act behind both routes');
+  assert(/stage IN \('replied', 'handed_off'\)/.test(srv) && /a conversation is live on this campaign/.test(srv),
+    'a live conversation refuses the act with its reason');
+  assert(/SET status = 'rejected', decided_by = \$3\s*\n?\s*WHERE company_id = \$1 AND campaign = \$2/.test(srv),
+    'open drafts reject, scoped to the one company and campaign');
+  assert(/SET stage = 'closed', updated_at = now\(\)\s*\n?\s*WHERE company_id = \$1 AND campaign = \$2/.test(srv),
+    'leads close so drafting and follow-ups end at the source');
+  assert(/DELETE FROM company_campaigns WHERE company_id = \$1 AND campaign = \$2/.test(srv),
+    'the membership goes, so research cannot re-score it');
+  assert(/'dismissed', now\(\)/.test(srv) && /DO UPDATE SET status = 'dismissed'/.test(srv) && /normName\(co\[0\]\.name\)/.test(srv),
+    'the dismissal memory is written under the shared normaliser and holds on conflict');
+  assert(/remove-prospect/.test(srv) && /a rehearsal is not a prospect to remove/.test(srv),
+    'the draft-card route resolves company and campaign and refuses rehearsals');
+  assert(/namesake risk\|stated employer differs\|foreign mailbox\|greeting names/.test(srv),
+    'the suppress endpoint accepts every recipient-class block, matching the web');
+  const ob = readFileSync(join(ROOT3, 'web/src/Outbound.jsx'), 'utf8');
+  assert(/Not a prospect/.test(ob) && /Confirm: remove from campaign/.test(ob), 'the card carries the two-click verb');
+  const acc = readFileSync(join(ROOT3, 'web/src/Accounts.jsx'), 'utf8');
+  assert(/CampaignMemberships/.test(acc) && /Confirm: not a prospect/.test(acc) && /stays on the register/.test(acc),
+    'the panel lists memberships with the same two-click verb and says what removal means');
+});
+
 console.log('\nReal send gate and reply matching:');
 
 await check('a real send is allowed only for an approved draft with a deliverable recipient', () => {

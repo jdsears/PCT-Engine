@@ -58,6 +58,15 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
   // ends the thread's follow-up loop at the source.
   const recipientBlock = flags.some(f => /namesake risk|stated employer differs|foreign mailbox|greeting names/.test(String(f)));
   const suppressContact = () => run(async () => { await action(`/api/outbound/drafts/${draft.id}/suppress-contact`, jsonOpts('POST')); onChanged(); });
+  // The judgement one level up from suppress: this company is not a
+  // prospect on this campaign at all. Two clicks, and the server does the
+  // whole close-out or refuses with its reason when a conversation is live.
+  const [armRemove, setArmRemove] = useState(false);
+  const removeProspect = () => {
+    if (!armRemove) { setArmRemove(true); return; }
+    setArmRemove(false);
+    run(async () => { await action(`/api/outbound/drafts/${draft.id}/remove-prospect`, jsonOpts('POST')); onChanged(); });
+  };
   const sendTest = () => run(async () => {
     const res = await action(`/api/outbound/drafts/${draft.id}/send-test`, jsonOpts('POST', { to }));
     setMsg(res.sent ? `Test sent to ${to}.` : `Not sent: ${res.reason}.`);
@@ -146,6 +155,11 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
             <span className="ob-spacer" />
             {recipientBlock && draft.contact && (
               <button className="ob-btn danger" onClick={suppressContact} disabled={busy}>Not them, suppress contact</button>
+            )}
+            {draft.campaign && !draft.rehearsal && (
+              <button className="ob-btn ghost" onClick={removeProspect} disabled={busy}>
+                {armRemove ? 'Confirm: remove from campaign' : 'Not a prospect'}
+              </button>
             )}
             <button className="ob-btn ghost" onClick={reject} disabled={busy}>Reject</button>
             {draft.status === 'draft' && <button className="ob-btn primary" onClick={approve} disabled={busy || dirty}>Approve</button>}
