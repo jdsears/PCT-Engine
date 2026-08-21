@@ -203,6 +203,22 @@ await check('not a prospect is one act: reject, close, remove, remember', () => 
     'the panel lists memberships with the same two-click verb and says what removal means');
 });
 
+check('the thread shows every email in full, with who approved and who sent', () => {
+  // John's catch, 20 August 2026: decided_by and sent_by were recorded on
+  // every draft since the attribution migration but shown nowhere, so the
+  // claim that the thread shows who clicked was untrue in the UI.
+  const ROOT4 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const srv = readFileSync(join(ROOT4, 'src/server.mjs'), 'utf8');
+  assert(/d\.decided_by, d\.sent_by, ct\.full_name AS to_name/.test(srv),
+    'the thread endpoint carries recipient and both names per email');
+  assert(/decidedBy: d\.decided_by \|\| null, sentBy: d\.sent_by \|\| null/.test(srv), 'and maps them into the items');
+  const ob = readFileSync(join(ROOT4, 'web/src/Outbound.jsx'), 'utf8');
+  assert(/approved by \$\{it\.decidedBy\}/.test(ob) && /sent by \$\{it\.sentBy\}/.test(ob),
+    'the card prints the audit line on every sent email');
+  assert(/Read in full/.test(ob) && /whiteSpace: 'pre-wrap'/.test(ob),
+    'every email expands to its full text and subject');
+});
+
 console.log('\nReal send gate and reply matching:');
 
 await check('a real send is allowed only for an approved draft with a deliverable recipient', () => {

@@ -265,9 +265,16 @@ function ConversationCard({ convo, onChanged }) {
   const suppress = () => act(() => action(`/api/outbound/leads/${convo.leadId}/suppress`, jsonOpts('POST')), 'Closed and suppressed.');
   const toggleThread = async () => {
     if (items) { setItems(null); return; }
+    setExpandedItems(new Set());
     try { const r = await action(`/api/outbound/conversations/${convo.leadId}`); setItems(r.items || []); }
     catch { setItems([]); }
   };
+  const [expandedItems, setExpandedItems] = useState(() => new Set());
+  const toggleItem = (i) => setExpandedItems(prev => {
+    const n = new Set(prev);
+    if (n.has(i)) n.delete(i); else n.add(i);
+    return n;
+  });
 
   const c = convo.contact;
   const live = convo.stage !== 'handed_off' && convo.stage !== 'closed';
@@ -318,12 +325,27 @@ function ConversationCard({ convo, onChanged }) {
       {items && (
         <div className="ob-evidence">
           {items.length === 0 && <div className="ob-ev-line muted">Nothing on the thread yet.</div>}
+          {/* Each email in full, with its audit line: recipient, who
+              approved, who sent. John's catch: the names were recorded on
+              every draft but shown nowhere. */}
           {items.map((it, i) => (
             <div className="ob-ev-line" key={i}>
-              <span className="ob-ev-k">
-                {it.kind === 'sent' ? `sent ${it.emailType === 'cold_open' ? 'opener' : it.emailType}` : it.kind === 'reply' ? (CATEGORY_LABELS[it.category] || 'reply') : `${it.status} ${it.emailType}`}
-              </span>
-              {it.at ? `${fmtClockDay(it.at)} · ` : ''}{(it.body || '').slice(0, 220)}
+              <div>
+                <span className="ob-ev-k">
+                  {it.kind === 'sent' ? `sent ${it.emailType === 'cold_open' ? 'opener' : it.emailType}${it.step ? ` step ${it.step}` : ''}` : it.kind === 'reply' ? (CATEGORY_LABELS[it.category] || 'reply') : `${it.status} ${it.emailType}`}
+                </span>
+                {it.at ? fmtClockDay(it.at) : ''}
+                {it.kind === 'reply' ? (it.from ? ` · from ${it.from}` : '') : (it.to ? ` · to ${it.to}` : '')}
+                {it.kind === 'sent' && (it.decidedBy || it.sentBy)
+                  ? ` · ${it.decidedBy ? `approved by ${it.decidedBy}` : ''}${it.decidedBy && it.sentBy ? ', ' : ''}${it.sentBy ? `sent by ${it.sentBy}` : ''}`
+                  : ''}
+              </div>
+              {expandedItems.has(i)
+                ? <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>{it.subject ? `Subject: ${it.subject}\n\n` : ''}{it.body || ''}</div>
+                : <div className="muted-small" style={{ marginTop: 2 }}>{(it.body || '').slice(0, 180)}{(it.body || '').length > 180 ? '...' : ''}</div>}
+              <button className="ob-btn ghost" style={{ marginTop: 4 }} onClick={() => toggleItem(i)} disabled={busy}>
+                {expandedItems.has(i) ? 'Collapse' : 'Read in full'}
+              </button>
             </div>
           ))}
         </div>
