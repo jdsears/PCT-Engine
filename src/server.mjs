@@ -2224,10 +2224,17 @@ app.get('/api/outbound/conversations', async (_req, res) => {
 // open draft, merged newest last, for the timeline view.
 app.get('/api/outbound/conversations/:leadId', async (req, res) => {
   try {
+    // The audit made visible, John's catch of 20 August 2026: who approved
+    // and who sent were recorded on every draft since the attribution
+    // migration but never shown anywhere, so the claim "the thread shows
+    // who clicked" was untrue in the UI. Each item now carries its
+    // recipient and both names.
     const drafts = (await pool.query(
-      `SELECT id, email_type, sequence_step, subject, body, status, grounding_flags, sent_at, created_at
-       FROM outbound_drafts WHERE lead_id = $1 AND status IN ('sent','draft','approved')
-       ORDER BY created_at ASC`, [req.params.leadId])).rows;
+      `SELECT d.id, d.email_type, d.sequence_step, d.subject, d.body, d.status, d.grounding_flags, d.sent_at, d.created_at,
+              d.decided_by, d.sent_by, ct.full_name AS to_name
+       FROM outbound_drafts d LEFT JOIN contacts ct ON ct.id = d.contact_id
+       WHERE d.lead_id = $1 AND d.status IN ('sent','draft','approved')
+       ORDER BY d.created_at ASC`, [req.params.leadId])).rows;
     const replies = (await pool.query(
       `SELECT r.id, r.from_email, r.subject, COALESCE(r.body, r.snippet) AS text, r.category, r.confidence,
               r.triage, r.received_at
@@ -2237,6 +2244,7 @@ app.get('/api/outbound/conversations/:leadId', async (req, res) => {
       ...drafts.map(d => ({
         kind: d.status === 'sent' ? 'sent' : 'open_draft', id: d.id, emailType: d.email_type, step: d.sequence_step,
         subject: d.subject, body: d.body, status: d.status, flags: d.grounding_flags || [],
+        to: d.to_name || null, decidedBy: d.decided_by || null, sentBy: d.sent_by || null,
         at: d.sent_at || d.created_at,
       })),
       ...replies.map(r => ({
