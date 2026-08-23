@@ -202,7 +202,7 @@ export function pickLinkedInCompany(registerName, items) {
   const target = normCo(registerName);
   if (!target) return null;
   const cands = (items || [])
-    .map(it => ({ id: it.id || it.provider_id || null, name: it.name || '' }))
+    .map(it => ({ id: it.id || it.provider_id || null, name: it.name || it.title || '' }))
     .filter(c => c.id && c.name);
   const exact = cands.filter(c => normCo(c.name) === target);
   if (exact.length === 1) return exact[0];
@@ -265,20 +265,26 @@ async function searchPeopleScoped(liCompanyId, limit, target, acct = accountId()
   throw new Error('scoped search rejected by the API; keyword mode from here');
 }
 
-// Resolve and cache the company's LinkedIn identity. The literal 'none'
-// records a lookup that found no confident match, so the walk never
-// re-spends that call; the amend path is a human clearing the column.
-async function linkedInCompanyIdFor(company, acct) {
-  if (!company?.id || !(await hasColumn('companies', 'linkedin_company_id'))) return null;
+// Resolve and cache the company's LinkedIn identity, and always say what
+// happened: the note travels to the run report, John's ask of 20 August
+// 2026 after a silent miss read simply as keyword mode. The literal 'none'
+// records a lookup that found no confident match, so routine walks never
+// re-spend that call; a run that names the company (retryNone) is a human
+// sanction to look again.
+async function linkedInCompanyIdFor(company, acct, { retryNone = false } = {}) {
+  if (!company?.id) return { id: null, note: 'no register row' };
+  if (!(await hasColumn('companies', 'linkedin_company_id'))) return { id: null, note: 'migration 031 not applied' };
   const { rows } = await pool.query(`SELECT linkedin_company_id FROM companies WHERE id = $1`, [company.id]);
   const cached = rows[0]?.linkedin_company_id || null;
-  if (cached === 'none') return null;
-  if (cached) return cached;
+  if (cached === 'none' && !retryNone) return { id: null, note: 'LinkedIn page: no confident match on a previous look' };
+  if (cached && cached !== 'none') return { id: cached, note: 'LinkedIn page known' };
   const items = await searchLinkedInCompanies(corePhrase(company.name), 5, `companyLookup: ${company.name}`, acct);
   const pick = pickLinkedInCompany(company.name, items);
   await pool.query(`UPDATE companies SET linkedin_company_id = $2 WHERE id = $1`,
     [company.id, pick?.id ? String(pick.id) : 'none']);
-  return pick?.id ? String(pick.id) : null;
+  if (pick?.id) return { id: String(pick.id), note: `LinkedIn page matched: ${pick.name}` };
+  const seen = (items || []).slice(0, 3).map(it => it.name || it.title || 'unnamed').join('; ');
+  return { id: null, note: `LinkedIn page: no confident match among ${items?.length || 0} result(s)${seen ? ` (${seen})` : ''}` };
 }
 
 // ---- contact writes, guarded by the freshness rule ----
@@ -349,14 +355,17 @@ export async function findContacts(company, optsOrRoles = {}) {
   // both modes, so attempt counting and the thirty-day stand-down hold.
   let found = null;
   let mode = 'keyword';
+  let lookupNote = null;
   try {
-    const liId = await linkedInCompanyIdFor(company, acct);
+    const { id: liId, note } = await linkedInCompanyIdFor(company, acct, { retryNone: Boolean(opts.retryNone) });
+    lookupNote = note;
     if (liId) {
       found = await searchPeopleScoped(liId, candidatePool, `findContacts: ${company.name}`, acct);
       mode = 'company_scoped';
     }
   } catch (e) {
     if (e instanceof CapReached || e instanceof AccountUnhealthy) throw e;
+    lookupNote = `${lookupNote || 'LinkedIn page lookup'} failed: ${String(e.message).slice(0, 100)}`;
     found = null;
   }
   if (!found) {
@@ -372,7 +381,7 @@ export async function findContacts(company, optsOrRoles = {}) {
   // test: membership of the company was the query.
   const kept = mode === 'keyword' ? uk.filter(c => employerFitsCompany(c.positionCompany, company.name)) : uk;
 
-  const out = { available: true, mode, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0,
+  const out = { available: true, mode, lookupNote, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0,
     filteredOutOfArea: found.length - uk.length, filteredWrongEmployer: uk.length - kept.length };
   for (const c of kept.slice(0, limit)) {
     if (!c.url) { out.skipped++; continue; }

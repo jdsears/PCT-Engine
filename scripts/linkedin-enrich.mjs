@@ -148,7 +148,7 @@ for (const co of companies) {
     // enriched only when asked for, since they are not the specifiers.
     const laneTitles = lanePeople(laneFor(co));
     const f = await findContacts(co, { limit: 5, accountId: accountForCampaign(laneFor(co)),
-      searchRoles: roleWindow(laneTitles, co.prior_searches), orbitExtra: laneTitles });
+      searchRoles: roleWindow(laneTitles, co.prior_searches), orbitExtra: laneTitles, retryNone: Boolean(companyFilter) });
     const d = doDirectors
       ? await enrichDirectors(co)
       : { enriched: 0, left: 0, ambiguous: 0, examples: [] };
@@ -159,7 +159,7 @@ for (const co of companies) {
     report.found.push(...(f.contacts || []).filter(c => c.outcome === 'created'));
     const oa = f.filteredOutOfArea ? `, ${f.filteredOutOfArea} dropped as out of area` : '';
     const we = f.filteredWrongEmployer ? `, ${f.filteredWrongEmployer} dropped as employed elsewhere` : '';
-    const how = f.mode === 'company_scoped' ? 'searched within the company page' : 'keyword search';
+    const how = f.mode === 'company_scoped' ? 'searched within the company page' : `keyword search${f.lookupNote ? ', ' + f.lookupNote : ''}`;
     const dir = doDirectors ? ` Directors: ${d.enriched} enriched, ${d.left} left as register data.` : '';
     console.log(`  people search (${how}): ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh${oa}${we}.${dir}`);
 
