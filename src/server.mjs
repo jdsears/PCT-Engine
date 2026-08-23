@@ -2202,17 +2202,24 @@ app.post('/api/outbound/drafts/:id/send', async (req, res) => {
 // Captured prospect replies, newest first, with their triage verdicts.
 app.get('/api/outbound/replies', async (_req, res) => {
   try {
+    // The card says what the engine did with each reply, John's ask of
+    // 20 August 2026: the triage record and the lead's live snooze ride
+    // along, so an away reply reads "snoozed until the day after return,
+    // then the next touch drafts itself" instead of a bare category pill.
     const { rows } = await pool.query(
       `SELECT r.id, r.from_email, r.subject, r.snippet, r.received_at, r.draft_id,
-              r.category, r.confidence, r.triaged_at, c.name AS company
+              r.category, r.confidence, r.triaged_at, r.triage, c.name AS company,
+              l.snoozed_until
        FROM outbound_replies r
        LEFT JOIN outbound_drafts d ON d.id = r.draft_id
        LEFT JOIN companies c ON c.id = d.company_id
+       LEFT JOIN leads l ON l.id = d.lead_id
        ORDER BY r.received_at DESC NULLS LAST LIMIT 200`);
     res.json({ replies: rows.map(r => ({
       id: r.id, from: r.from_email, subject: r.subject, snippet: r.snippet,
       receivedAt: r.received_at, draftId: r.draft_id, company: r.company,
       category: r.category, confidence: r.confidence, triagedAt: r.triaged_at,
+      triage: r.triage || null, snoozedUntil: r.snoozed_until,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -2289,6 +2296,29 @@ app.get('/api/outbound/conversations/:leadId', async (req, res) => {
       })),
     ].sort((a, b) => new Date(a.at || 0) - new Date(b.at || 0));
     res.json({ items });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// An away reply with an unparseable return, "after the christmas break",
+// snoozes a blind week; the correction is one field, John's ask of 20 August
+// 2026. A human states the return date the reply gave, the lead sleeps
+// until the day after, and on waking the sweep drafts the next touch into
+// the review queue, exactly as a parsed date would have arranged.
+app.post('/api/outbound/replies/:id/snooze', async (req, res) => {
+  try {
+    const d = String(req.body?.returns || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return res.status(400).json({ error: 'returns must be a date, YYYY-MM-DD' });
+    const until = new Date(new Date(d + 'T00:00:00Z').getTime() + 86_400_000);
+    if (Number.isNaN(until.getTime()) || until.getTime() < Date.now()) return res.status(400).json({ error: 'the return date must be in the future' });
+    if (until.getTime() > Date.now() + 400 * 86_400_000) return res.status(400).json({ error: 'more than a year away; check the date' });
+    const { rows } = await pool.query(
+      `SELECT d.lead_id FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id WHERE r.id = $1`, [req.params.id]);
+    if (!rows.length || !rows[0].lead_id) return res.status(404).json({ error: 'no lead behind this reply' });
+    await pool.query(
+      `UPDATE leads SET snoozed_until = $2, updated_at = now(),
+         stage = CASE WHEN stage = 'replied' THEN 'outbound' ELSE stage END
+       WHERE id = $1`, [rows[0].lead_id, until.toISOString()]);
+    res.json({ ok: true, snoozedUntil: until.toISOString() });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

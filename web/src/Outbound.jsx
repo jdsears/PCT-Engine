@@ -189,9 +189,36 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
   );
 }
 
+// What the engine did with a triaged reply, in one plain sentence, so the
+// card is a record and not just a category pill.
+function actedLine(reply) {
+  const t = reply.triage || {};
+  const bits = [];
+  if (t.redirected) bits.push(`Adapted: redirected to ${t.redirected}${t.redirectDrafted ? ', a referral draft is in To review' : ''}.`);
+  if (t.suppressed) bits.push('The contact was suppressed.');
+  if (t.responseDrafted) bits.push('A grounded response was drafted into To review.');
+  if (reply.snoozedUntil && new Date(reply.snoozedUntil) > new Date()) {
+    bits.push(`Snoozed until ${fmtClockDay(reply.snoozedUntil)}; the day after, the next touch drafts itself into To review.`);
+  } else if (t.snoozedUntil) {
+    bits.push(`Was snoozed until ${fmtClockDay(t.snoozedUntil)}; the sequence has since resumed.`);
+  }
+  if (!bits.length) bits.push('Left for a human read; nothing was changed automatically.');
+  return bits.join(' ');
+}
+
 function ReplyCard({ reply, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [returns, setReturns] = useState('');
+  const setReturn = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await action(`/api/outbound/replies/${reply.id}/snooze`, jsonOpts('POST', { returns }));
+      setMsg(`Snoozed until ${fmtClockDay(r.snoozedUntil)}. The next touch drafts itself the day after they return.`);
+      onChanged();
+    } catch (e) { setMsg(String(e.message || e)); }
+    setBusy(false);
+  };
   const respond = async () => {
     setBusy(true); setMsg(null);
     try {
@@ -213,8 +240,19 @@ function ReplyCard({ reply, onChanged }) {
       <div className="ob-to">From {reply.from || 'unknown sender'}{!reply.triagedAt ? ' · not yet triaged' : ''}</div>
       {reply.subject && <div className="ob-ev-line"><strong>{reply.subject}</strong></div>}
       {reply.snippet && <div className="ob-ev-line muted">{reply.snippet}</div>}
+      {reply.triagedAt && <div className="ob-ev-line muted">{actedLine(reply)}</div>}
       {reply.category && reply.category !== 'bounce' && (
         <div className="ob-actions">
+          {reply.category === 'out_of_office' && (
+            <>
+              <span className="eyebrow">They return on</span>
+              <input className="ob-select" type="date" value={returns} disabled={busy} onChange={e => setReturns(e.target.value)} />
+              <button className="ob-btn" onClick={setReturn} disabled={busy || !returns}
+                title="Sets the snooze to the day after this date; the next touch then drafts itself into To review.">
+                Set return date
+              </button>
+            </>
+          )}
           <span className="ob-spacer" />
           <button className="ob-btn" onClick={respond} disabled={busy}>Draft a response</button>
         </div>
