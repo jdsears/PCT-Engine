@@ -5,7 +5,7 @@
 //
 // Both capabilities respect the shared limiter in unipile.mjs: sequential
 // calls, randomised delays, and the LINKEDIN_DAILY_CAP per UTC day.
-import { pool } from '../db.mjs';
+import { pool, hasColumn } from '../db.mjs';
 import { unipile, ROUTES, unipileConfigured, CapReached, AccountUnhealthy } from './unipile.mjs';
 import { ORBIT_TITLES, inOrbit } from './orbitRules.mjs';
 
@@ -181,6 +181,106 @@ async function searchPeople(keywords, limit, target, acct = accountId()) {
   return items.map(mapResult).filter(r => r.name);
 }
 
+// ---- searching within the company, John's build of 20 August 2026 ----
+// Keyword search matched headlines across all of LinkedIn, which caught
+// namesakes and missed staff whose headlines never named their employer:
+// three empty passes on AtlasEdge while its own company page listed the
+// decision makers. The smarter shape resolves the company's LinkedIn
+// identity once, caches it on the row, and searches within the company, so
+// results are actual employees whose titles our own rules classify.
+
+// Company-name normalisation for matching a register name to a LinkedIn
+// company result: legal dressing and trade words off, then bare characters.
+const normCo = s => String(s || '').toLowerCase()
+  .replace(/\b(ltd|limited|plc|llp|group|holdings|uk|consulting|services|international)\b/g, ' ')
+  .replace(/[^a-z0-9]/g, '');
+
+// Exactly one confident match or nothing: an exact normalised name wins
+// alone; else a single containment either way; several fits mean the walk
+// stays in keyword mode rather than guessing an employer for a register row.
+export function pickLinkedInCompany(registerName, items) {
+  const target = normCo(registerName);
+  if (!target) return null;
+  const cands = (items || [])
+    .map(it => ({ id: it.id || it.provider_id || null, name: it.name || '' }))
+    .filter(c => c.id && c.name);
+  const exact = cands.filter(c => normCo(c.name) === target);
+  if (exact.length === 1) return exact[0];
+  if (exact.length > 1) return null;
+  const fits = cands.filter(c => {
+    const n = normCo(c.name);
+    return n && (target.startsWith(n) || n.startsWith(target));
+  });
+  return fits.length === 1 ? fits[0] : null;
+}
+
+// The one employer truth a people result carries: its current position's
+// company. In keyword mode a candidate whose position names a different
+// employer is a namesake or a leaver and never enters the register; gary
+// armstrong (Jaguar Building Services), Joseph Wilson (Syscom BMS) and Mark
+// Quest (AECOM) all fail this test. Nothing stated passes, honestly: an
+// empty field is not evidence either way.
+export function employerFitsCompany(positionCompany, companyName) {
+  if (!positionCompany) return true;
+  const a = normCo(positionCompany);
+  const b = normCo(companyName);
+  return !a || !b || a.includes(b) || b.includes(a);
+}
+
+async function searchLinkedInCompanies(keywords, limit, target, acct = accountId()) {
+  const res = await unipile(ROUTES.search, {
+    query: { account_id: acct || accountId(), limit: String(limit) },
+    body: { api: 'sales_navigator', category: 'companies', keywords },
+    target,
+  });
+  const items = Array.isArray(res?.items) ? res.items : [];
+  return items;
+}
+
+// The scope parameter's name is learned once per process: 'company' is
+// tried first, 'current_company' second, and an API that refuses both
+// stands scoped mode down for the rest of the process so the lane never
+// breaks, it just stays keyword-shaped.
+let scopedParam = 'company';
+let scopedUnsupported = false;
+async function searchPeopleScoped(liCompanyId, limit, target, acct = accountId()) {
+  if (scopedUnsupported) throw new Error('scoped search unsupported by the API');
+  const order = scopedParam === 'company' ? ['company', 'current_company'] : ['current_company', 'company'];
+  for (const p of order) {
+    try {
+      const res = await unipile(ROUTES.search, {
+        query: { account_id: acct || accountId(), limit: String(limit) },
+        body: { api: 'sales_navigator', category: 'people', [p]: [liCompanyId] },
+        target,
+      });
+      scopedParam = p;
+      const items = Array.isArray(res?.items) ? res.items : [];
+      return items.map(mapResult).filter(r => r.name);
+    } catch (e) {
+      if (e instanceof CapReached || e instanceof AccountUnhealthy) throw e;
+      if (!/400|422|invalid|unknown|bad request/i.test(String(e.message))) throw e;
+    }
+  }
+  scopedUnsupported = true;
+  throw new Error('scoped search rejected by the API; keyword mode from here');
+}
+
+// Resolve and cache the company's LinkedIn identity. The literal 'none'
+// records a lookup that found no confident match, so the walk never
+// re-spends that call; the amend path is a human clearing the column.
+async function linkedInCompanyIdFor(company, acct) {
+  if (!company?.id || !(await hasColumn('companies', 'linkedin_company_id'))) return null;
+  const { rows } = await pool.query(`SELECT linkedin_company_id FROM companies WHERE id = $1`, [company.id]);
+  const cached = rows[0]?.linkedin_company_id || null;
+  if (cached === 'none') return null;
+  if (cached) return cached;
+  const items = await searchLinkedInCompanies(corePhrase(company.name), 5, `companyLookup: ${company.name}`, acct);
+  const pick = pickLinkedInCompany(company.name, items);
+  await pool.query(`UPDATE companies SET linkedin_company_id = $2 WHERE id = $1`,
+    [company.id, pick?.id ? String(pick.id) : 'none']);
+  return pick?.id ? String(pick.id) : null;
+}
+
 // ---- contact writes, guarded by the freshness rule ----
 
 // Only rows never enriched, or enriched more than thirty days ago, may be
@@ -239,17 +339,42 @@ export async function findContacts(company, optsOrRoles = {}) {
     console.log(`  LinkedIn lane not configured, skipping contact discovery for ${company.name}`);
     return { available: false, contacts: [] };
   }
-  const keys = searchRoles?.length ? searchRoles : [...new Set([...roles, ...ORBIT_TITLES.slice(0, 8)])];
-  const terms = keys.map(t => `"${t}"`).join(' OR ');
-  const keywords = `"${corePhrase(company.name)}" (${terms})`;
   // Over-fetch, then keep the UK ones, so the daily-capped single call still
   // returns a full batch after the global noise is dropped.
   const candidatePool = Math.min(Math.max(limit * 4, limit), 25);
-  const found = await searchPeople(keywords, candidatePool, `findContacts: ${company.name}`, acct);
+  // Within the company first: actual employees, titles classified by our
+  // own rules, no headline lottery and no namesakes. Keyword mode remains
+  // the fallback for companies LinkedIn cannot confidently match and for an
+  // API that refuses the scope; the cooldown target string is identical in
+  // both modes, so attempt counting and the thirty-day stand-down hold.
+  let found = null;
+  let mode = 'keyword';
+  try {
+    const liId = await linkedInCompanyIdFor(company, acct);
+    if (liId) {
+      found = await searchPeopleScoped(liId, candidatePool, `findContacts: ${company.name}`, acct);
+      mode = 'company_scoped';
+    }
+  } catch (e) {
+    if (e instanceof CapReached || e instanceof AccountUnhealthy) throw e;
+    found = null;
+  }
+  if (!found) {
+    const keys = searchRoles?.length ? searchRoles : [...new Set([...roles, ...ORBIT_TITLES.slice(0, 8)])];
+    const terms = keys.map(t => `"${t}"`).join(' OR ');
+    const keywords = `"${corePhrase(company.name)}" (${terms})`;
+    found = await searchPeople(keywords, candidatePool, `findContacts: ${company.name}`, acct);
+  }
   const uk = found.filter(c => inTargetCountry(c.location));
+  // In keyword mode, the result's own current-position company is the one
+  // employer truth on offer, and a candidate whose position names a
+  // different employer never enters the register. Scoped mode needs no such
+  // test: membership of the company was the query.
+  const kept = mode === 'keyword' ? uk.filter(c => employerFitsCompany(c.positionCompany, company.name)) : uk;
 
-  const out = { available: true, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0, filteredOutOfArea: found.length - uk.length };
-  for (const c of uk.slice(0, limit)) {
+  const out = { available: true, mode, contacts: [], created: 0, updated: 0, kept: 0, skipped: 0,
+    filteredOutOfArea: found.length - uk.length, filteredWrongEmployer: uk.length - kept.length };
+  for (const c of kept.slice(0, limit)) {
     if (!c.url) { out.skipped++; continue; }
     // Drop a headline that is only the company name, so we never store it as a
     // role; the row keeps whatever real title it already had.
