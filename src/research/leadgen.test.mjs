@@ -822,6 +822,14 @@ await check('the people search searches within the company, and keyword mode che
   const s2 = read('scripts/linkedin-enrich.mjs');
   assert(/retryNone: Boolean\(companyFilter\)/.test(s2) && /f\.lookupNote/.test(s2),
     'the enrich report prints the lookup outcome and --company sanctions the retry');
+  // The query pollution caught live: "atlasedge consulting" found Atlas
+  // consultancies and never AtlasEdge. The page query is identity only.
+  const { companyQuery } = await import('./linkedinResearch.mjs');
+  assert(companyQuery('Atlasedge Consulting LTD') === 'atlasedge', 'trade dressing leaves the page query');
+  assert(companyQuery('Flakt Woods Limited') === 'flakt woods', 'multi-word identities survive whole');
+  assert(companyQuery('SPX Cooling Technologies UK Limited') === 'spx cooling', 'stacked dressing all comes off');
+  assert(companyQuery('Consulting') === 'consulting', 'a name that IS a trade word is never emptied');
+  assert(/searchLinkedInCompanies\(companyQuery\(company\.name\)/.test(lane), 'the lookup uses the identity query');
 });
 
 await check('people-discovery pacing is untouched', async () => {
