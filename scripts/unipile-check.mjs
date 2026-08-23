@@ -68,6 +68,54 @@ if (process.argv.includes('--post-schema')) {
   process.exit(0);
 }
 
+// --probe "Company Name": the scoped-search microscope, 23 August 2026,
+// after the AtlasEdge scope matched a page and returned nobody. Shows the
+// company search's raw first item (so the id shape is visible), every
+// candidate with its id, the confident pick, then a people search per
+// scope parameter with counts and first names. Read-only, at most three
+// ledgered calls, and it never writes a contact.
+const probeIx = process.argv.indexOf('--probe');
+if (probeIx !== -1) {
+  const probeName = process.argv[probeIx + 1] || '';
+  if (!probeName) { fail('give a company name: --probe "Atlasedge Consulting"'); process.exit(1); }
+  const { companyQuery, pickLinkedInCompany } = await import('../src/research/linkedinResearch.mjs');
+  const acct = process.env.UNIPILE_ACCOUNT_ID;
+  const q = companyQuery(probeName);
+  console.log(`\nCompany search query: "${q}"`);
+  const cres = await unipile(ROUTES.search, {
+    query: { account_id: acct, limit: '5' },
+    body: { api: 'sales_navigator', category: 'companies', keywords: q },
+    target: `check: company probe ${probeName}`,
+  });
+  const citems = Array.isArray(cres?.items) ? cres.items : [];
+  console.log(`${citems.length} compan${citems.length === 1 ? 'y' : 'ies'} returned. First item, raw:`);
+  console.log(JSON.stringify(citems[0] || null, null, 2).slice(0, 1200));
+  for (const it of citems) console.log(`  - ${it.name || it.title || 'unnamed'}  id=${it.id ?? it.provider_id ?? 'none'}`);
+  const pick = pickLinkedInCompany(probeName, citems);
+  console.log(pick ? `Confident pick: ${pick.name} (id ${pick.id})` : 'No confident pick; keyword mode would stand.');
+  if (pick) {
+    for (const p of ['company', 'current_company']) {
+      try {
+        const res = await unipile(ROUTES.search, {
+          query: { account_id: acct, limit: '5' },
+          body: { api: 'sales_navigator', category: 'people', [p]: [pick.id] },
+          target: `check: scoped probe ${p}`,
+        });
+        const items = Array.isArray(res?.items) ? res.items : [];
+        console.log(`\nScope parameter "${p}": accepted, ${items.length} result(s).`);
+        for (const it of items.slice(0, 3)) {
+          console.log(`  - ${it.name || [it.first_name, it.last_name].filter(Boolean).join(' ')}  ${it.headline || it.title || ''}`);
+        }
+      } catch (e) {
+        console.log(`\nScope parameter "${p}": refused: ${String(e.message).slice(0, 200)}`);
+      }
+    }
+  }
+  console.log(`\nUnipile calls used today: ${await callsUsedToday()} of ${dailyCap()} (UTC day).`);
+  await pool.end();
+  process.exit(0);
+}
+
 // 2. List connected accounts. Distinguishes a bad key from a bad DSN.
 let accounts = null;
 try {

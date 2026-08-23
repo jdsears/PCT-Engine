@@ -376,6 +376,14 @@ export async function findContacts(company, optsOrRoles = {}) {
     if (liId) {
       found = await searchPeopleScoped(liId, candidatePool, `findContacts: ${company.name}`, acct);
       mode = 'company_scoped';
+      // A page with staff returning nobody means the scope misfired, not
+      // that the company is empty: fall through to keyword rather than
+      // starve the account, and say so. Live on AtlasEdge, 23 August 2026.
+      if (!found.length) {
+        lookupNote = `${lookupNote}; the company scope returned nobody, keyword fallback ran`;
+        found = null;
+        mode = 'keyword';
+      }
     }
   } catch (e) {
     if (e instanceof CapReached || e instanceof AccountUnhealthy) throw e;
