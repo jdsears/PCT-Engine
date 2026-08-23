@@ -811,6 +811,17 @@ await check('the people search searches within the company, and keyword mode che
     'keyword mode polices the stated employer before anything is written');
   const mig = read('src/migrations/031_linkedin_company.sql');
   assert(/ADD COLUMN IF NOT EXISTS linkedin_company_id text/.test(mig), 'migration 031 carries the cache column');
+  // The lookup always says what happened, 20 August 2026, after a silent
+  // miss read simply as keyword mode: the note travels to the run report,
+  // and a run that names the company is a human sanction to look again
+  // past a cached miss.
+  assert(/const \{ id: liId, note \}/.test(lane) && /retryNone: Boolean\(opts\.retryNone\)/.test(lane),
+    'the lookup outcome travels and a named run may retry a cached miss');
+  assert(/no confident match among/.test(lane) && /lookupNote/.test(lane),
+    'a miss names what LinkedIn offered instead of failing silently');
+  const s2 = read('scripts/linkedin-enrich.mjs');
+  assert(/retryNone: Boolean\(companyFilter\)/.test(s2) && /f\.lookupNote/.test(s2),
+    'the enrich report prints the lookup outcome and --company sanctions the retry');
 });
 
 await check('people-discovery pacing is untouched', async () => {
