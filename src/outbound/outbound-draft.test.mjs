@@ -191,6 +191,35 @@ await check('a filing belongs to the register, not a campaign, and the damage wa
     'a sent thread is never touched and drafts are rejected, never deleted');
 });
 
+await check('a recorded confirmation outranks every recipient heuristic', async () => {
+  const { flagNamesake, flagStatedEmployer, flagForeignMailbox } = await import('./draft.mjs');
+  // John's build, 20 August 2026: the blocks said confirm before this can
+  // send and offered no way to confirm. A human attestation, stamped with
+  // name and date, stands the three recipient nets down for that contact.
+  const confirmed = { confirmed: true };
+  assert(flagNamesake({ name: 'gary armstrong', role: 'Mechanical engineer jaguar building services', ...confirmed }, 'Armstrong Limited') === null,
+    'a confirmed namesake passes');
+  assert(flagStatedEmployer({ name: 'Mark Quest', role: 'Principle Mechanical Engineer at AECOM', ...confirmed }, 'Flakt Woods Limited') === null,
+    'a confirmed stated-employer passes');
+  assert(flagForeignMailbox({ email: 'joe.wilson@syscombms.com', ...confirmed }, { domain: 'variconaqua.com' }) === null,
+    'a confirmed mailbox passes');
+  assert(flagForeignMailbox({ email: 'joe.wilson@syscombms.com' }, { domain: 'variconaqua.com' }) !== null,
+    'without the attestation nothing changes');
+  const srv = read('src/server.mjs');
+  assert(/confirm-contact/.test(srv) && /recipient_confirmed/.test(srv) && /overrode/.test(srv),
+    'the attestation is stamped on the contact with who, when and what it overrode');
+  assert(/recipient confirmed by \$\{by \|\| 'a signed-in user'\}/.test(srv),
+    'the draft keeps a visible advisory naming the confirmer');
+  assert(/jsonb_set\(COALESCE\(grounding, '\{\}'::jsonb\), '\{contact,confirmed\}', 'true'::jsonb\)/.test(srv),
+    'the stored grounding learns it, so an edit cannot re-flag');
+  assert(/no recipient block to confirm past/.test(srv), 'a draft without a recipient block refuses the verb');
+  const g = read('src/outbound/grounding.mjs');
+  assert(/recipient_confirmed' IS NOT NULL AS confirmed/.test(g) && /confirmed: !!row\.confirmed/.test(g),
+    'every future grounding carries the attestation live');
+  const web = read('web/src/Outbound.jsx');
+  assert(/They do work here/.test(web) && /confirm-contact/.test(web), 'the card offers the confirm verb beside suppress');
+});
+
 await check('a campaign never speaks another campaign\'s register', async () => {
   const { flagForeignRegister } = await import('./draft.mjs');
   const { requireCampaign } = await import('../campaigns/registry.mjs');

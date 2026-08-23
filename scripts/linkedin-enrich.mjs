@@ -158,8 +158,10 @@ for (const co of companies) {
     report.newContacts += f.created || 0; report.updated += f.updated || 0; report.kept += f.kept || 0;
     report.found.push(...(f.contacts || []).filter(c => c.outcome === 'created'));
     const oa = f.filteredOutOfArea ? `, ${f.filteredOutOfArea} dropped as out of area` : '';
+    const we = f.filteredWrongEmployer ? `, ${f.filteredWrongEmployer} dropped as employed elsewhere` : '';
+    const how = f.mode === 'company_scoped' ? 'searched within the company page' : 'keyword search';
     const dir = doDirectors ? ` Directors: ${d.enriched} enriched, ${d.left} left as register data.` : '';
-    console.log(`  people search: ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh${oa}.${dir}`);
+    console.log(`  people search (${how}): ${f.created || 0} new, ${f.updated || 0} updated, ${f.kept || 0} kept fresh${oa}${we}.${dir}`);
 
     if (emailDiscovery && co.domain) {
       const { rows: orbit } = await pool.query(

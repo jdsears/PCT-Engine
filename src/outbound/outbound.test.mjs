@@ -219,6 +219,25 @@ check('the thread shows every email in full, with who approved and who sent', ()
     'every email expands to its full text and subject');
 });
 
+check('a reply card says what the engine did, and an away reply takes a hand-set return', () => {
+  // John's ask, 20 August 2026: the replies tab offered only Draft a
+  // response, the wrong verb for an away message, and said nothing about
+  // the snooze already arranged. The card now states the action, and when
+  // the parser could not read the return ("after the christmas break") a
+  // human sets the date and the lead sleeps until the day after it.
+  const ROOT5 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const srv = readFileSync(join(ROOT5, 'src/server.mjs'), 'utf8');
+  assert(/r\.triage, c\.name AS company,\s*\n?\s*l\.snoozed_until/.test(srv), 'the replies list carries the triage record and the live snooze');
+  assert(/replies\/:id\/snooze/.test(srv) && /returns must be a date/.test(srv), 'the return date is a validated hand-set field');
+  assert(/getTime\(\) \+ 86_400_000\)/.test(srv) && /the return date must be in the future/.test(srv),
+    'the snooze lands the day after the stated return, never in the past');
+  assert(/CASE WHEN stage = 'replied' THEN 'outbound' ELSE stage END/.test(srv),
+    'setting the return also resumes the sequence stage, as a parsed date would');
+  const ob = readFileSync(join(ROOT5, 'web/src/Outbound.jsx'), 'utf8');
+  assert(/They return on/.test(ob) && /the next touch drafts itself/.test(ob), 'the away card offers the date and says what follows');
+  assert(/actedLine/.test(ob) && /Left for a human read/.test(ob), 'every triaged card states the action taken, including none');
+});
+
 console.log('\nReal send gate and reply matching:');
 
 await check('a real send is allowed only for an approved draft with a deliverable recipient', () => {

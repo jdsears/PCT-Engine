@@ -778,6 +778,41 @@ await check('the unipile check proves every lane, not only the default', async (
     'the one-account-era advice that promoted the wrong default is gone');
 });
 
+await check('the people search searches within the company, and keyword mode checks the employer', async () => {
+  // John's exhibit, 20 August 2026: three empty passes on AtlasEdge while
+  // its own LinkedIn page listed the decision makers. The search now
+  // resolves the company's LinkedIn identity once, caches it, and searches
+  // within the company; keyword fallback drops any candidate whose stated
+  // position names a different employer, the test gary armstrong, Joseph
+  // Wilson and Mark Quest would all have failed on arrival.
+  const { pickLinkedInCompany, employerFitsCompany } = await import('./linkedinResearch.mjs');
+  const atlas = pickLinkedInCompany('Atlasedge Consulting LTD', [
+    { id: '123', name: 'AtlasEdge' }, { id: '9', name: 'Atlas Copco' },
+  ]);
+  assert(atlas && atlas.id === '123', 'the register name finds its LinkedIn identity across the dressing');
+  assert(pickLinkedInCompany('Armstrong Limited', [
+    { id: '1', name: 'Armstrong' }, { id: '2', name: 'Armstrong Group' },
+  ]) === null, 'two names of the same identity mean no guess, keyword mode stands');
+  assert(pickLinkedInCompany('GSK PLC', [{ id: '7', name: 'GSK' }, { id: '8', name: 'GSK Consumer Healthcare' }])?.id === '7',
+    'an exact normalised name wins alone');
+  assert(employerFitsCompany('Jaguar Building Services', 'Armstrong Limited') === false, 'gary would have failed on arrival');
+  assert(employerFitsCompany('Syscom BMS', 'Varicon Aqua') === false, 'Joseph too');
+  assert(employerFitsCompany('AECOM', 'Flakt Woods Limited') === false, 'and Mark');
+  assert(employerFitsCompany(null, 'Anything Ltd') === true, 'no stated employer is not evidence either way');
+  assert(employerFitsCompany('AtlasEdge', 'Atlasedge Consulting LTD') === true, 'the same identity passes');
+  const lane = read('src/research/linkedinResearch.mjs');
+  assert(/searchPeopleScoped\(liId, candidatePool/.test(lane) && /mode = 'company_scoped'/.test(lane),
+    'the scoped search runs first when the identity is known');
+  assert(/linkedin_company_id/.test(lane) && /'none'/.test(lane) && /hasColumn\('companies', 'linkedin_company_id'\)/.test(lane),
+    'the identity caches on the row, misses cache as none, and the schema is asked first');
+  assert(/current_company/.test(lane) && /scopedUnsupported = true/.test(lane),
+    'the scope parameter is learned, and an API that refuses both stands scoped mode down without breaking the lane');
+  assert(/employerFitsCompany\(c\.positionCompany, company\.name\)/.test(lane),
+    'keyword mode polices the stated employer before anything is written');
+  const mig = read('src/migrations/031_linkedin_company.sql');
+  assert(/ADD COLUMN IF NOT EXISTS linkedin_company_id text/.test(mig), 'migration 031 carries the cache column');
+});
+
 await check('people-discovery pacing is untouched', async () => {
   const src = read('src/research/peopleDiscovery.mjs');
   assert(!/party_review|proposal|contractor/i.test(src), 'people discovery knows nothing of proposals');
