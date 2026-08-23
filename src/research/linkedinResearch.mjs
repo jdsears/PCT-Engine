@@ -56,6 +56,20 @@ export const coreTokens = name => {
 };
 export const corePhrase = name => coreTokens(name).join(' ');
 
+// The query for finding a company's own LinkedIn page: identity tokens
+// only. Trade words in a register name polluted the search live on
+// 20 August 2026, "atlasedge consulting" returned consultancies named
+// Atlas and never AtlasEdge, so the query drops trade dressing from the
+// end the way the matcher's normaliser does, while the register name keeps
+// every word for the confidence check afterwards.
+const TRADE_TAIL = new Set(['ltd', 'limited', 'plc', 'llp', 'uk', 'group', 'holdings',
+  'consulting', 'services', 'international', 'solutions', 'technologies']);
+export const companyQuery = name => {
+  const t = coreTokens(name);
+  while (t.length > 1 && TRADE_TAIL.has(t[t.length - 1])) t.pop();
+  return t.join(' ');
+};
+
 // First and last name only for searching: the register stores middle names
 // and titles ("Heidi Alexa Durrant", "Jonathan, Lord Evans") that LinkedIn
 // profiles rarely carry, and a quoted full register string finds nobody.
@@ -278,7 +292,7 @@ async function linkedInCompanyIdFor(company, acct, { retryNone = false } = {}) {
   const cached = rows[0]?.linkedin_company_id || null;
   if (cached === 'none' && !retryNone) return { id: null, note: 'LinkedIn page: no confident match on a previous look' };
   if (cached && cached !== 'none') return { id: cached, note: 'LinkedIn page known' };
-  const items = await searchLinkedInCompanies(corePhrase(company.name), 5, `companyLookup: ${company.name}`, acct);
+  const items = await searchLinkedInCompanies(companyQuery(company.name), 5, `companyLookup: ${company.name}`, acct);
   const pick = pickLinkedInCompany(company.name, items);
   await pool.query(`UPDATE companies SET linkedin_company_id = $2 WHERE id = $1`,
     [company.id, pick?.id ? String(pick.id) : 'none']);
