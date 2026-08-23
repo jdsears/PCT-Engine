@@ -58,6 +58,7 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
   // ends the thread's follow-up loop at the source.
   const recipientBlock = flags.some(f => /namesake risk|stated employer differs|foreign mailbox|greeting names/.test(String(f)));
   const suppressContact = () => run(async () => { await action(`/api/outbound/drafts/${draft.id}/suppress-contact`, jsonOpts('POST')); onChanged(); });
+  const confirmContact = () => run(async () => { await action(`/api/outbound/drafts/${draft.id}/confirm-contact`, jsonOpts('POST')); onChanged(); });
   // The judgement one level up from suppress: this company is not a
   // prospect on this campaign at all. Two clicks, and the server does the
   // whole close-out or refuses with its reason when a conversation is live.
@@ -153,6 +154,12 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
           <div className="ob-actions">
             {dirty && <button className="ob-btn" onClick={save} disabled={busy}>Save changes</button>}
             <span className="ob-spacer" />
+            {recipientBlock && draft.contact && (
+              <button className="ob-btn" onClick={confirmContact} disabled={busy}
+                title="Records your confirmation that this person works at this company; the block clears here and on every future draft to them.">
+                They do work here
+              </button>
+            )}
             {recipientBlock && draft.contact && (
               <button className="ob-btn danger" onClick={suppressContact} disabled={busy}>Not them, suppress contact</button>
             )}

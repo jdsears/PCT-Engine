@@ -343,7 +343,16 @@ export function flagEndCustomers(text, recipientName) {
 // Armstrong may be exactly the right reader, so this blocks for a human eye
 // rather than suppressing anyone.
 const NAMESAKE_STOP = ['ltd', 'limited', 'plc', 'llp', 'uk', 'group', 'holdings', 'the'];
+// A recorded human attestation outranks every recipient heuristic, John's
+// build of 20 August 2026: the blocks said confirm before this can send and
+// offered no way to confirm. Once a person has clicked "they do work here",
+// with their name and the date stamped on the contact, the namesake,
+// stated-employer and mailbox nets stand aside for that contact. The
+// greeting net does not: a wrong name in the text is fixed by editing the
+// text, whoever the recipient is.
 export function flagNamesake(contact, companyName) {
+  if (contact?.confirmed) return null;
+  
   const words = String(contact?.name || '').toLowerCase().replace(/[^a-z\s'-]/g, ' ').trim().split(/\s+/).filter(Boolean);
   const surname = words[words.length - 1] || '';
   const token = String(companyName || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(/\s+/)
@@ -367,6 +376,7 @@ export function flagNamesake(contact, companyName) {
 // nothing, so headline flourish never blocks anyone.
 const PROSE_SEGMENT = /^\s*(?:a|an|the|my|our|his|her|their|over|more|than|extensive|proven|strong|deep|hands|experience|passion|focus|expertise|background)\b|^\s*\d/;
 export function flagStatedEmployer(contact, companyName) {
+  if (contact?.confirmed) return null;
   const role = String(contact?.role || '');
   const coTok = String(companyName || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(/\s+/)
     .filter(t => t && !NAMESAKE_STOP.includes(t));
@@ -396,6 +406,7 @@ const FREE_MAIL = ['gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 
 const LABEL_ARMS = /(?:uk|gb|group|holdings|global|europe|eu|intl|international|hq|dc)+$/;
 const labelStem = l => String(l || '').replace(/[^a-z0-9]/g, '').replace(LABEL_ARMS, '');
 export function flagForeignMailbox(contact, company) {
+  if (contact?.confirmed) return null;
   const dom = String(contact?.email || '').toLowerCase().split('@')[1] || '';
   const coDom = String(company?.domain || '').toLowerCase().replace(/^www\./, '');
   if (!dom || !coDom || FREE_MAIL.includes(dom)) return null;

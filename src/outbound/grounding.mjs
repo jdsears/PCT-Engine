@@ -40,14 +40,16 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc', 
   let contact = null;
   const pick = async (sql, p) => (await pool.query(sql, p)).rows[0] || null;
   const row = contactId
-    ? await pick(`SELECT id, full_name, role_title, email FROM contacts WHERE id = $1`, [contactId])
+    ? await pick(`SELECT id, full_name, role_title, email, payload->'recipient_confirmed' IS NOT NULL AS confirmed FROM contacts WHERE id = $1`, [contactId])
     : lead.contact_id
-    ? await pick(`SELECT id, full_name, role_title, email FROM contacts WHERE id = $1`, [lead.contact_id])
+    ? await pick(`SELECT id, full_name, role_title, email, payload->'recipient_confirmed' IS NOT NULL AS confirmed FROM contacts WHERE id = $1`, [lead.contact_id])
     : await pick(
-        `SELECT id, full_name, role_title, email FROM contacts
+        `SELECT id, full_name, role_title, email, payload->'recipient_confirmed' IS NOT NULL AS confirmed FROM contacts
          WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed
          ORDER BY email_verified_at IS NULL, email_confidence DESC NULLS LAST LIMIT 1`, [lead.company_id]);
-  if (row) contact = { id: row.id, name: row.full_name || null, role: row.role_title || null, email: row.email || null };
+  // confirmed carries a recorded human attestation that this person works
+  // at this company, which stands the recipient nets down for them.
+  if (row) contact = { id: row.id, name: row.full_name || null, role: row.role_title || null, email: row.email || null, confirmed: !!row.confirmed };
 
   // The triggering signal: the most recent real, titled signal linked to the
   // company on either side. Which side matters: a contractor contact reads
