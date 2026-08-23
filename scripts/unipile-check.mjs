@@ -94,20 +94,26 @@ if (probeIx !== -1) {
   const pick = pickLinkedInCompany(probeName, citems);
   console.log(pick ? `Confident pick: ${pick.name} (id ${pick.id})` : 'No confident pick; keyword mode would stand.');
   if (pick) {
-    for (const p of ['company', 'current_company']) {
+    // Shapes in likelihood order, full error text, and stop at the first
+    // shape that returns actual people: an accepted filter that matches
+    // nobody is a dud, not an answer.
+    const { SCOPE_SHAPES } = await import('../src/research/linkedinResearch.mjs');
+    for (const [key, build] of SCOPE_SHAPES) {
       try {
         const res = await unipile(ROUTES.search, {
           query: { account_id: acct, limit: '5' },
-          body: { api: 'sales_navigator', category: 'people', [p]: [pick.id] },
-          target: `check: scoped probe ${p}`,
+          body: { api: 'sales_navigator', category: 'people', ...build(pick.id) },
+          target: `check: scoped probe ${key}`,
         });
         const items = Array.isArray(res?.items) ? res.items : [];
-        console.log(`\nScope parameter "${p}": accepted, ${items.length} result(s).`);
+        console.log(`\nShape "${key}": accepted, ${items.length} result(s).`);
         for (const it of items.slice(0, 3)) {
           console.log(`  - ${it.name || [it.first_name, it.last_name].filter(Boolean).join(' ')}  ${it.headline || it.title || ''}`);
         }
+        if (items.length) { console.log('This is the working shape; the search learns it by itself.'); break; }
       } catch (e) {
-        console.log(`\nScope parameter "${p}": refused: ${String(e.message).slice(0, 200)}`);
+        console.log(`\nShape "${key}": refused. Full response:`);
+        console.log(String(e.message));
       }
     }
   }

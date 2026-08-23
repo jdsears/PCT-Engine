@@ -838,8 +838,21 @@ await check('the people search searches within the company, and keyword mode che
   assert(/the company scope returned nobody, keyword fallback ran/.test(lane) && /found = null;\s*\n\s*mode = 'keyword';/.test(lane),
     'an empty scope never starves the account');
   const chk = read('scripts/unipile-check.mjs');
-  assert(/--probe/.test(chk) && /Scope parameter/.test(chk) && /First item, raw/.test(chk),
-    'the probe shows the raw company item and each scope parameter\'s answer');
+  assert(/--probe/.test(chk) && /SCOPE_SHAPES/.test(chk) && /First item, raw/.test(chk) && /Full response:/.test(chk),
+    'the probe walks the shape list with full error text and the raw company item');
+  // The shape is learned by evidence, 23 August 2026: bare-array company
+  // was refused with a schema error and bare-array current_company matched
+  // nobody, so include-objects lead and a shape is memorised only when it
+  // returns actual people.
+  const { SCOPE_SHAPES } = await import('./linkedinResearch.mjs');
+  assert(SCOPE_SHAPES[0][0] === 'company_include' && SCOPE_SHAPES[1][0] === 'current_company_include',
+    'include-object shapes are tried first');
+  assert(JSON.stringify(SCOPE_SHAPES[0][1]('74928753')) === '{"company":{"include":["74928753"]}}',
+    'the include shape is exactly the convention, frozen on the AtlasEdge id');
+  assert(/if \(items\.length\) \{ learnedShape = key; return items; \}/.test(lane),
+    'a shape is memorised only when it returns people');
+  assert(/if \(!anyAccepted\) scopedUnsupported = true;/.test(lane),
+    'the scope stands down only when every shape is refused outright');
 });
 
 await check('people-discovery pacing is untouched', async () => {
