@@ -830,6 +830,16 @@ await check('the people search searches within the company, and keyword mode che
   assert(companyQuery('SPX Cooling Technologies UK Limited') === 'spx cooling', 'stacked dressing all comes off');
   assert(companyQuery('Consulting') === 'consulting', 'a name that IS a trade word is never emptied');
   assert(/searchLinkedInCompanies\(companyQuery\(company\.name\)/.test(lane), 'the lookup uses the identity query');
+  // AtlasEdge again, 23 August 2026: the scope matched the page and
+  // returned nobody, a misfired filter, not an empty company. An empty
+  // scoped result now falls through to keyword and says so, and the check
+  // script carries a probe that shows the raw id shape and each scope
+  // parameter's answer, so the next fix is made on evidence.
+  assert(/the company scope returned nobody, keyword fallback ran/.test(lane) && /found = null;\s*\n\s*mode = 'keyword';/.test(lane),
+    'an empty scope never starves the account');
+  const chk = read('scripts/unipile-check.mjs');
+  assert(/--probe/.test(chk) && /Scope parameter/.test(chk) && /First item, raw/.test(chk),
+    'the probe shows the raw company item and each scope parameter\'s answer');
 });
 
 await check('people-discovery pacing is untouched', async () => {
