@@ -251,32 +251,47 @@ async function searchLinkedInCompanies(keywords, limit, target, acct = accountId
   return items;
 }
 
-// The scope parameter's name is learned once per process: 'company' is
-// tried first, 'current_company' second, and an API that refuses both
-// stands scoped mode down for the rest of the process so the lane never
-// breaks, it just stays keyword-shaped.
-let scopedParam = 'company';
+// The scope's body shape is learned by evidence, John's probe of 23 August
+// 2026: "company" as a bare array is refused with a schema error, and
+// "current_company" as a bare array is accepted yet matches nobody, which
+// points at the include-object convention. The shapes below are tried in
+// likelihood order and a shape is memorised only when it returns actual
+// people, because an accepted parameter that selects nothing is a dud, not
+// an answer. While unlearned, an empty shape falls through to the next;
+// when every shape is refused outright the scope stands down for the
+// process and the lane stays keyword-shaped.
+export const SCOPE_SHAPES = [
+  ['company_include', id => ({ company: { include: [id] } })],
+  ['current_company_include', id => ({ current_company: { include: [id] } })],
+  ['current_company_array', id => ({ current_company: [id] })],
+  ['company_array', id => ({ company: [id] })],
+];
+let learnedShape = null;
 let scopedUnsupported = false;
 async function searchPeopleScoped(liCompanyId, limit, target, acct = accountId()) {
   if (scopedUnsupported) throw new Error('scoped search unsupported by the API');
-  const order = scopedParam === 'company' ? ['company', 'current_company'] : ['current_company', 'company'];
-  for (const p of order) {
+  const order = learnedShape
+    ? [SCOPE_SHAPES.find(([k]) => k === learnedShape), ...SCOPE_SHAPES.filter(([k]) => k !== learnedShape)]
+    : SCOPE_SHAPES;
+  let anyAccepted = false;
+  for (const [key, build] of order) {
     try {
       const res = await unipile(ROUTES.search, {
         query: { account_id: acct || accountId(), limit: String(limit) },
-        body: { api: 'sales_navigator', category: 'people', [p]: [liCompanyId] },
+        body: { api: 'sales_navigator', category: 'people', ...build(liCompanyId) },
         target,
       });
-      scopedParam = p;
-      const items = Array.isArray(res?.items) ? res.items : [];
-      return items.map(mapResult).filter(r => r.name);
+      anyAccepted = true;
+      const items = (Array.isArray(res?.items) ? res.items : []).map(mapResult).filter(r => r.name);
+      if (items.length) { learnedShape = key; return items; }
+      if (learnedShape === key) return items; // a proven shape's empty answer is real
     } catch (e) {
       if (e instanceof CapReached || e instanceof AccountUnhealthy) throw e;
       if (!/400|422|invalid|unknown|bad request/i.test(String(e.message))) throw e;
     }
   }
-  scopedUnsupported = true;
-  throw new Error('scoped search rejected by the API; keyword mode from here');
+  if (!anyAccepted) scopedUnsupported = true;
+  throw new Error('no scope shape returned people; keyword mode runs instead');
 }
 
 // Resolve and cache the company's LinkedIn identity, and always say what
