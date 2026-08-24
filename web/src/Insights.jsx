@@ -91,6 +91,228 @@ function CampaignFigures({ c }) {
   );
 }
 
+// One campaign's after-send picture: the conversation funnel with conversion
+// between steps, reply rate per sequence step, what opened the conversations
+// that replied, reply timing, weekly bounce health, and the LinkedIn lane.
+// Every figure is an outcome the engine already records. No pixels, no open
+// tracking: opens are unknowable honestly, replies are the metric that pays.
+
+// Blend two hexes. The funnel's fill deepens from a pale wash at the volume
+// end to the brand navy where volume has become value, so the eye reads the
+// narrowing without a legend.
+function mixHex(a, b, t) {
+  const ch = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const [pa, pb] = [ch(a), ch(b)];
+  return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(',')})`;
+}
+
+function AfterSend({ c }) {
+  const funnel = c.funnel || [];
+  const get = label => funnel.find(s => s.label === label)?.n || 0;
+  const started = get('Conversations drafted') > 0;
+  const fMax = Math.max(1, ...funnel.map(s => s.n));
+  const sent = get('Sent');
+  const replied = get('Replied');
+  const replyRate = sent > 0 ? Math.round((replied / sent) * 100) : null;
+  const t = c.timing || {};
+  const li = c.linkedin || {};
+  const sendSpark = buildSpark(c.daily?.sends);
+  const replySpark = buildSpark(c.daily?.replies);
+  const buckets = [
+    { label: 'Same day', n: t.sameDay || 0 },
+    { label: '1 to 2 days', n: t.oneToTwo || 0 },
+    { label: '3 to 7 days', n: t.threeToSeven || 0 },
+    { label: 'Later', n: t.overSeven || 0 },
+  ];
+  const bMax = Math.max(1, ...buckets.map(b => b.n));
+  const weeks = c.bounceWeeks || [];
+  const hotWeek = w => w.rate != null && w.sent >= 5 && w.rate >= 5;
+  const latest = weeks.filter(w => w.rate != null).slice(-1)[0] || null;
+  const srcMax = Math.max(1, ...(c.sources || []).map(s => s.conversations));
+
+  if (!started) {
+    return <p className="ins-caption">No conversations started on this campaign yet. The funnel appears with the first draft.</p>;
+  }
+  return (
+    <>
+      {/* The four numbers that matter, before any chart. */}
+      <div className="ins-cards">
+        <div className="ins-card ins-card--rate">
+          <div className="ins-hero">{replyRate == null ? '\u2014' : `${replyRate}%`}</div>
+          <div className="eyebrow">Conversations replied</div>
+          <div className="ins-gauge" aria-hidden="true">
+            <div className="ins-gauge-rail" />
+            <div className="ins-gauge-teal" style={{ width: `${replyRate || 0}%` }} />
+            <div className="ins-gauge-tick" style={{ left: `${replyRate || 0}%` }} />
+          </div>
+          <div className="ins-scale"><span>0</span><span>100</span></div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{t.medianDays == null ? '\u2014' : t.medianDays}</div>
+          <div className="eyebrow">Median days to reply</div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{get('Live interest')}</div>
+          <div className="eyebrow">Live interest</div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{get('Meetings booked')}</div>
+          <div className="eyebrow">Meetings booked</div>
+        </div>
+      </div>
+
+      <div className="ins-section">
+        <Head>The funnel, campaign to date</Head>
+        <div className="ins-bars">
+          {funnel.map((s, i) => (
+            <div className="ins-bar ins-bar--funnel" key={s.label}>
+              <div className="ins-bar-label">{s.label}</div>
+              <div className="ins-bar-track ins-bar-track--tall">
+                <span className="ins-bar-fill" style={{
+                  width: `${Math.max(2, Math.round((s.n / fMax) * 100))}%`,
+                  background: mixHex('#B9D3EA', '#1F386B', funnel.length > 1 ? i / (funnel.length - 1) : 1),
+                }} />
+              </div>
+              <div className="ins-bar-count">{s.n}{s.pct != null && <span className="ins-bar-pct"> {s.pct}%</span>}</div>
+            </div>
+          ))}
+        </div>
+        <p className="ins-caption">Each percentage is that step's share of the one before it. Delivered nets off bounces; opens are not measured, deliberately, because open tracking is unreliable and costs deliverability.</p>
+      </div>
+
+      <div className="ins-section">
+        <Head>Replies by sequence step</Head>
+        {c.steps.length === 0 ? <p className="ins-caption">Nothing sent yet.</p> : (
+          <div className="ins-steps">
+            {c.steps.map(s => (
+              <div className="ins-step" key={s.step}>
+                <div className="ins-step-rate">{s.rate == null ? '\u2014' : `${s.rate}%`}</div>
+                <div className="eyebrow">Email {s.step}</div>
+                <div className="ins-step-meta">{s.sends} sent, {s.replies} replied</div>
+                <div className="ins-step-bar" aria-hidden="true"><span style={{ width: `${Math.min(100, s.rate || 0)}%` }} /></div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="ins-section">
+        <Head>What opened the conversations</Head>
+        {c.sources.length === 0 ? <p className="ins-caption">Nothing sent yet.</p> : (
+          <div className="ins-bars">
+            {c.sources.map(s => (
+              <div className="ins-bar ins-bar--src" key={s.source}>
+                <div className="ins-bar-label">{s.source}</div>
+                <div className="ins-bar-track ins-bar-track--tall">
+                  <span className="ins-bar-fill ins-bar-fill--pale" style={{ width: `${Math.round((s.conversations / srcMax) * 100)}%` }} />
+                  <span className="ins-bar-fill" style={{ width: `${Math.round((s.replied / srcMax) * 100)}%` }} />
+                </div>
+                <div className="ins-bar-count">{s.replied} of {s.conversations} replied</div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="ins-caption">The pale bar is conversations opened, the navy bar those that replied. A post engagement or referral opener credits the person; otherwise the signal that opened it.</p>
+      </div>
+
+      <div className="ins-section">
+        <Head>How long replies take</Head>
+        {t.count > 0 ? (
+          <>
+            <div className="ins-hist" role="img" aria-label="Reply timing">
+              {buckets.map(b => (
+                <div className="ins-hist-col" key={b.label}>
+                  <div className="ins-hist-n">{b.n}</div>
+                  <div className="ins-hist-stack"><span className="ins-hist-bar" style={{ height: `${Math.round((b.n / bMax) * 100)}%` }} /></div>
+                  <div className="ins-hist-label">{b.label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="ins-caption">Worth reading against the follow-up cadence.</p>
+          </>
+        ) : <p className="ins-caption">No replies timed yet.</p>}
+      </div>
+
+      <div className="ins-section">
+        <Head>Delivery health</Head>
+        {weeks.length === 0 ? <p className="ins-caption">No sends in the last eight weeks.</p> : (
+          <>
+            <div className="ins-hist ins-hist--weeks" role="img" aria-label="Weekly bounce rate">
+              {weeks.map(w => (
+                <div className="ins-hist-col" key={w.week} title={`Week of ${w.week}: ${w.rate == null ? 'no sends' : `${w.bounced} of ${w.sent} bounced`}`}>
+                  <div className="ins-hist-n">{w.rate == null ? '' : `${w.rate}%`}</div>
+                  <div className="ins-hist-stack">
+                    <span className={`ins-hist-bar${hotWeek(w) ? ' ins-hist-bar--hot' : ''}`}
+                      style={{ height: `${w.rate == null ? 0 : Math.max(4, Math.min(100, w.rate * 5))}%` }} />
+                  </div>
+                  <div className="ins-hist-label">{String(w.week).slice(5)}</div>
+                </div>
+              ))}
+            </div>
+            <p className="ins-caption">
+              Bounce rate per week; the scale tops out at twenty percent.
+              {latest && hotWeek(latest) && <span className="ins-warn"> The latest week bounced {latest.rate} percent of {latest.sent} sends; worth a look at address quality before volume grows.</span>}
+            </p>
+          </>
+        )}
+      </div>
+
+      <div className="ins-section">
+        <Head>LinkedIn lane</Head>
+        <div className="ins-cards ins-cards--mini">
+          {[
+            { n: li.invited, l: 'Invites sent' },
+            { n: li.postsThirtyDays, l: 'Posts this month' },
+            { n: li.engagersThirtyDays, l: 'Engagers gathered' },
+            { n: li.interestWaiting, l: 'In the interest queue' },
+            { n: li.engagementContacts, l: 'Contacts from engagement' },
+            { n: li.engagementConversations, l: 'Now in conversation' },
+          ].map(x => (
+            <div className="ins-card ins-card--mini" key={x.l}>
+              <div className="ins-hero ins-hero--mini">{x.n}</div>
+              <div className="eyebrow">{x.l}</div>
+            </div>
+          ))}
+        </div>
+        <p className="ins-caption">Invite acceptance is not observable yet, so it is not shown rather than guessed.</p>
+      </div>
+
+      <div className="ins-cards">
+        <div className="ins-card ins-card--spark">
+          <div className="ins-card-figure">
+            <div className="ins-hero">{(c.daily?.sends || []).reduce((n, d) => n + d.n, 0)}</div>
+            <div className="eyebrow">Sends, last 30 days</div>
+          </div>
+          <div className="ins-spark">
+            <svg viewBox="0 0 320 56" className="ins-spark-svg" aria-hidden="true">
+              <line x1="4" y1="50" x2="316" y2="50" stroke="var(--line)" strokeWidth="1" />
+              <polyline points={sendSpark.points} fill="none" stroke="var(--navy)" strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+              <circle cx={sendSpark.cx} cy={sendSpark.cy} r="3" fill="var(--blue)" />
+            </svg>
+            <div className="ins-spark-dates"><span>{sendSpark.left}</span><span>{sendSpark.right}</span></div>
+          </div>
+        </div>
+        <div className="ins-card ins-card--spark">
+          <div className="ins-card-figure">
+            <div className="ins-hero">{(c.daily?.replies || []).reduce((n, d) => n + d.n, 0)}</div>
+            <div className="eyebrow">Replies, last 30 days</div>
+          </div>
+          <div className="ins-spark">
+            <svg viewBox="0 0 320 56" className="ins-spark-svg" aria-hidden="true">
+              <line x1="4" y1="50" x2="316" y2="50" stroke="var(--line)" strokeWidth="1" />
+              <polyline points={replySpark.points} fill="none" stroke="var(--blue)" strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+              <circle cx={replySpark.cx} cy={replySpark.cy} r="3" fill="var(--navy)" />
+            </svg>
+            <div className="ins-spark-dates"><span>{replySpark.left}</span><span>{replySpark.right}</span></div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function Insights({ campaign }) {
   const [state, setState] = useState('loading');
   const [data, setData] = useState(null);
@@ -103,8 +325,9 @@ export default function Insights({ campaign }) {
       apiFetch('/api/insights/gaps?days=90').then(r => r.json()),
       apiFetch('/api/insights/top-docs?days=90').then(r => r.json()),
       apiFetch('/api/insights/campaigns?days=30').then(r => (r.ok ? r.json() : { campaigns: [] })).catch(() => ({ campaigns: [] })),
+      apiFetch('/api/insights/outbound').then(r => (r.ok ? r.json() : { campaigns: [] })).catch(() => ({ campaigns: [] })),
     ])
-      .then(([summary, gaps, docs, camp]) => { if (live) { setData({ summary, gaps, docs, camp }); setState('ready'); } })
+      .then(([summary, gaps, docs, camp, outbound]) => { if (live) { setData({ summary, gaps, docs, camp, outbound }); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
   }, []);
@@ -116,10 +339,12 @@ export default function Insights({ campaign }) {
     return <div className="content-pad"><p className="muted-note">Insights are not available right now.</p></div>;
   }
 
-  const { summary, gaps, docs, camp } = data;
+  const { summary, gaps, docs, camp, outbound } = data;
   const allCampaigns = camp?.campaigns || [];
   const scoped = !isAll(campaign);
   const shown = scoped ? allCampaigns.filter(c => c.id === campaign) : allCampaigns;
+  const outboundAll = outbound?.campaigns || [];
+  const outboundShown = scoped ? outboundAll.filter(c => c.id === campaign) : outboundAll;
   const showCampaigns = allCampaigns.length > 1 || scoped;
   const questions = summary.questions || 0;
   const declined = summary.declined || 0;
@@ -184,6 +409,26 @@ export default function Insights({ campaign }) {
                 ))}
               </div>
             )}
+          </section>
+        )}
+
+        {outboundShown.length > 0 && (
+          <section className="ins-zone">
+            <div className="ins-zone-head">
+              <div className="ins-zone-title">After the send</div>
+              <div className="ins-zone-sub">What the conversations did once they went out: the funnel, the steps, the openers, delivery health and the LinkedIn lane. Scoped to the switcher. No open tracking; outcomes only.</div>
+            </div>
+            {outboundShown.map(c => (
+              <div className="ins-campaign" key={c.id}>
+                {!scoped && (
+                  <div className="ins-campaign-head">
+                    <span className="ins-campaign-name">{c.displayName}</span>
+                    {c.status && c.status !== 'active' && <span className="pill">{c.status}</span>}
+                  </div>
+                )}
+                <AfterSend c={c} />
+              </div>
+            ))}
           </section>
         )}
 
@@ -286,11 +531,6 @@ export default function Insights({ campaign }) {
           </div>
         </div>
 
-          {/* Engine metrics */}
-          <div className="ins-section">
-            <Head>Engine metrics</Head>
-            <p className="muted-note">Reply rates, deliverability and pipeline timing arrive with the outbound stage.</p>
-          </div>
         </section>
       </div>
     </div>
