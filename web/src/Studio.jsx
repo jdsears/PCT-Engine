@@ -3,16 +3,19 @@ import { apiFetch } from './api.js';
 import { companyLabel } from './labels.js';
 import { withCampaign } from './CampaignSwitcher.jsx';
 
-// The LinkedIn studio. The engine drafts posts from its gated signals and
-// queues the decision-orbit people worth connecting with. Posts are never
-// published on James's behalf: he copies and posts himself. Invites can send
-// through the connected account, but only one at a time, only when a person
-// clicks Send invite on a named contact, and only within the daily cap; the
-// note is editable first and Mark done still records invites sent by hand.
+// The LinkedIn studio. The engine drafts posts from its gated signals, a
+// person approves each one, and since 24 August 2026 the autopilot releases
+// approved posts at the standing Tuesday, Wednesday and Thursday morning
+// slots, one per lane per day, story link as the first comment. Post to
+// LinkedIn still publishes immediately on a click. Invites are untouched:
+// one at a time, only when a person clicks Send invite on a named contact,
+// within the daily cap, note editable first.
 
 const TABS = [
   { id: 'draft', label: 'Post drafts' },
+  { id: 'approved', label: 'Approved queue' },
   { id: 'posted', label: 'Posted' },
+  { id: 'interest', label: 'Interest' },
   { id: 'connects', label: 'Connect queue' },
 ];
 
@@ -41,6 +44,7 @@ function PostCard({ post, onChanged }) {
   const [msg, setMsg] = useState(null);
   const dirty = body !== post.body;
   const open = post.status === 'draft';
+  const queued = post.status === 'approved';
 
   // A refused action must say why. This used to swallow the server's reason,
   // and a reject that failed looked like a button doing nothing, which is how
@@ -54,6 +58,8 @@ function PostCard({ post, onChanged }) {
   const save = () => run(() => action(`/api/studio/posts/${post.id}`, jsonOpts('PATCH', { body })));
   const posted = () => run(() => action(`/api/studio/posts/${post.id}/posted`, jsonOpts('POST')));
   const reject = () => run(() => action(`/api/studio/posts/${post.id}/reject`, jsonOpts('POST')));
+  const approve = () => run(() => action(`/api/studio/posts/${post.id}/approve`, jsonOpts('POST')));
+  const unapprove = () => run(() => action(`/api/studio/posts/${post.id}/unapprove`, jsonOpts('POST')));
   const publish = async () => {
     setBusy(true); setMsg(null);
     try {
@@ -97,11 +103,32 @@ function PostCard({ post, onChanged }) {
             title="For a post you published by hand: records it as posted without sending anything.">
             Mark as posted
           </button>
-          <button className="ob-btn primary" onClick={publish} disabled={busy || dirty || post.flags.length > 0}
+          <button className="ob-btn" onClick={publish} disabled={busy || dirty || post.flags.length > 0}
             title={post.flags.length ? 'Clear the flags by editing before posting'
               : dirty ? 'Save your edit first, so what posts is what you see'
-              : 'Posts this text, with the story link and hashtags, through the connected LinkedIn account. One click, one post, capped per day.'}>
-            Post to LinkedIn
+              : 'Posts this text immediately, with the hashtags and the story link as the first comment, through the connected LinkedIn account.'}>
+            Post now
+          </button>
+          <button className="ob-btn primary" onClick={approve} disabled={busy || dirty || post.flags.length > 0}
+            title={post.flags.length ? 'Clear the flags by editing before approving'
+              : dirty ? 'Save your edit first, so what queues is what you see'
+              : 'Approves this text into the queue. The next open slot (Tuesday, Wednesday or Thursday morning) posts it exactly as approved.'}>
+            Approve for the queue
+          </button>
+        </div>
+      )}
+      {queued && (
+        <div className="ob-actions">
+          <span className="muted-small">Approved and queued. The next open slot posts it, oldest first, one per day.</span>
+          <span className="ob-spacer" />
+          <button className="ob-btn ghost" onClick={reject} disabled={busy}>Reject</button>
+          <button className="ob-btn" onClick={unapprove} disabled={busy}
+            title="Returns the post to the drafts for editing. Nothing is lost.">
+            Back to drafts
+          </button>
+          <button className="ob-btn primary" onClick={publish} disabled={busy}
+            title="Posts it now rather than waiting for the slot.">
+            Post now
           </button>
         </div>
       )}
@@ -139,6 +166,18 @@ function Engagers({ postId }) {
     } catch (err) { setNotes(n => ({ ...n, [i]: String(err.message || err) })); }
   };
 
+  // An unmatched company whose people engage goes to the review queue, where
+  // confirming it is what creates the account. The engine never adds it alone.
+  const propose = async (i, e) => {
+    try {
+      const r = await action('/api/studio/engagers/propose', jsonOpts('POST', {
+        companyName: e.company, campaign: data.campaign,
+        engager: { name: e.name, headline: e.headline || e.role || null }, postId,
+      }));
+      setNotes(n => ({ ...n, [i]: r.note }));
+    } catch (err) { setNotes(n => ({ ...n, [i]: String(err.message || err) })); }
+  };
+
   if (state === 'idle') {
     return <div><button className="ob-btn" onClick={load}
       title="Reads who reacted to this post through the connected account. One call, counted against the daily cap.">Who engaged</button></div>;
@@ -165,12 +204,84 @@ function Engagers({ postId }) {
             {e.matchedCompanyName && <span className="pill">{e.matchedCompanyName}</span>}
             {e.matchedCompanyId
               ? <button className="ob-btn" onClick={() => addContact(i, e)}>Add as contact</button>
-              : <span className="muted-small">Sales Navigator material</span>}
+              : e.company
+                ? <button className="ob-btn" onClick={() => propose(i, e)}
+                    title="Sends the company to the review queue with this engagement as evidence. Confirming it there is what creates the account.">
+                    Propose company
+                  </button>
+                : <span className="muted-small">No company in the headline</span>}
           </div>
           {notes[i] && <div className="muted-small eng-note">{notes[i]}</div>}
         </div>
       ))}
       {data.unparsed > 0 && <div className="muted-small">{data.unparsed} reaction(s) could not be read into a name and were not shown.</div>}
+    </div>
+  );
+}
+
+// The interest queue: everything the automatic sweeps gathered across the
+// lane's posts, strongest prospects first, each row decided once by a person.
+// Add as contact needs a matched account; propose sends an unknown company to
+// the review queue with the engagement as evidence; dismiss is remembered.
+function InterestQueue({ campaign }) {
+  const [data, setData] = useState(null);
+  const [state, setState] = useState('loading');
+  const [notes, setNotes] = useState({});
+
+  const load = useCallback(() => {
+    setState('loading');
+    apiFetch(withCampaign('/api/studio/interest', campaign)).then(r => r.json())
+      .then(d => { setData(d); setState('ready'); })
+      .catch(() => setState('error'));
+  }, [campaign]);
+  useEffect(() => { load(); }, [load]);
+
+  const act = async (row, verb) => {
+    try {
+      const r = await action(`/api/studio/interest/${row.id}/${verb}`, jsonOpts('POST'));
+      if (r.note) setNotes(n => ({ ...n, [row.id]: r.note }));
+      if (verb !== 'propose' || r.proposed) setTimeout(load, 1200);
+      if (verb === 'propose' && r.matched) load();
+    } catch (e) { setNotes(n => ({ ...n, [row.id]: String(e.message || e) })); }
+  };
+
+  if (state === 'loading') return <p className="muted-note">Loading the interest queue.</p>;
+  if (state === 'error') return <p className="muted-note">The interest queue is not available right now.</p>;
+  if (data?.migrationPending) return <p className="muted-note">The interest queue arrives with the next migration.</p>;
+  if (!data?.interest?.length) {
+    return <p className="muted-note">Nothing waiting. The autopilot reads each published post's reactions a couple of days after it goes up and sorts them here.</p>;
+  }
+  return (
+    <div className="eng-list">
+      <div className="eyebrow">Interest, strongest prospects first</div>
+      {data.interest.map(e => (
+        <div className="eng-row" key={e.id}>
+          <div className="eng-main">
+            <span className="eng-name">{e.profileUrl
+              ? <a href={e.profileUrl} target="_blank" rel="noreferrer">{e.name}</a> : e.name}</span>
+            {e.role && <span className="muted-small">{e.role}</span>}
+            {e.company && <span className="muted-small">{e.company}</span>}
+            <span className="muted-small">engaged with: {e.postTopic}</span>
+          </div>
+          <div className="eng-side">
+            {e.orbitFit && <span className="pill">Orbit fit</span>}
+            {e.matchedCompanyName && <span className="pill">{e.matchedCompanyName}</span>}
+            {e.matchedCompanyId
+              ? <button className="ob-btn" onClick={() => act(e, 'contact')}>Add as contact</button>
+              : e.company
+                ? <button className="ob-btn" onClick={() => act(e, 'propose')}
+                    title="Sends the company to the review queue with this engagement as evidence.">
+                    Propose company
+                  </button>
+                : null}
+            <button className="ob-btn ghost" onClick={() => act(e, 'dismiss')}
+              title="Remembered: this person will not queue again on this campaign.">
+              Dismiss
+            </button>
+          </div>
+          {notes[e.id] && <div className="muted-small eng-note">{notes[e.id]}</div>}
+        </div>
+      ))}
     </div>
   );
 }
@@ -232,6 +343,9 @@ export default function Studio({ campaign }) {
   // John's ask of 18 August 2026, so James works the data centre posts and
   // connects while Andy works pharma, each seeing only their own queue.
   const load = useCallback((t) => {
+    // The interest tab loads itself inside its component; the shell only has
+    // to stand out of the way.
+    if (t === 'interest') { setState('ready'); return; }
     const req = t === 'connects'
       ? apiFetch(withCampaign('/api/studio/connects', campaign)).then(r => r.json()).then(d => {
           setConnects(d.connects || []);
@@ -256,7 +370,7 @@ export default function Studio({ campaign }) {
   return (
     <div className="content-pad outbound-queue">
       <div className="card ob-banner">
-        <p className="ob-banner-sub">The engine drafts the posts and queues the people. A post publishes through the connected account only when you click Post to LinkedIn on it, one at a time, capped per day, with the story link and hashtags added underneath; copy and publish by hand still works. Invites send the same way, one click per person, note editable first. Nothing ever posts or invites on a schedule.</p>
+        <p className="ob-banner-sub">The engine drafts the posts and queues the people; you approve each post you want published. Approved posts go out by themselves on Tuesday, Wednesday and Thursday mornings, one per campaign per day, hashtags in the post and the story link as its first comment, and Post now still publishes immediately. Nothing unapproved ever posts. Invites are unchanged: one click per person, note editable first, never on a schedule.</p>
         <div className="ob-banner-controls">
           <button className="ob-btn primary" onClick={generate} disabled={genBusy}>{genBusy ? 'Drafting now' : 'Draft posts from this week'}</button>
         </div>
@@ -271,10 +385,13 @@ export default function Studio({ campaign }) {
 
       {state === 'loading' && <p className="muted-note">Loading the studio.</p>}
       {state === 'error' && <p className="muted-note">The studio is not available right now.</p>}
-      {state === 'ready' && tab !== 'connects' && posts.length === 0 && (
-        <p className="muted-note">{tab === 'draft' ? 'No post drafts yet. Draft posts from this week to get started.' : 'Nothing marked posted yet.'}</p>
+      {state === 'ready' && tab === 'interest' && <InterestQueue campaign={campaign} />}
+      {state === 'ready' && !['connects', 'interest'].includes(tab) && posts.length === 0 && (
+        <p className="muted-note">{tab === 'draft' ? 'No post drafts yet. Draft posts from this week to get started.'
+          : tab === 'approved' ? 'Nothing approved and waiting. Approve a draft and the next open slot posts it.'
+          : 'Nothing marked posted yet.'}</p>
       )}
-      {state === 'ready' && tab !== 'connects' && posts.map(p => <PostCard key={p.id} post={p} onChanged={refresh} />)}
+      {state === 'ready' && !['connects', 'interest'].includes(tab) && posts.map(p => <PostCard key={p.id} post={p} onChanged={refresh} />)}
       {state === 'ready' && tab === 'connects' && inviteInfo && (
         <p className="muted-note">
           {inviteInfo.ready

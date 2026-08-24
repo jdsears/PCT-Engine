@@ -142,8 +142,11 @@ export async function writePost({ headline, story, operator, campaign = 'marwin_
 
 // Draft posts from the newest gated signals that do not already have one. The
 // classifier and gate upstream mean everything here is a real data centre story.
-// callModel is injectable so the pipeline is testable offline.
-export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}) {
+// callModel is injectable so the pipeline is testable offline. A campaign
+// narrows the pull to one lane, which is how the autopilot tops up a thin
+// queue without drafting for the other lane; null keeps the original
+// all-lanes behaviour the studio button uses.
+export async function generateLiPosts({ limit = 3, campaign = null, callModel = callClaude } = {}) {
   const take = Math.min(Math.max(1, limit), 5);
   // Over-fetch, then keep only stories that are not evidenced stale: a signal
   // is stored when WE saw it, and a republished three-year-old story carries a
@@ -155,8 +158,9 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
             s.payload->>'content' AS content, s.payload->>'published' AS published
      FROM signals s
      WHERE s.dc_relevant AND s.geo_scope IN ('uk_project', 'expansion_watch') AND s.title IS NOT NULL
-       AND NOT EXISTS (SELECT 1 FROM li_posts p WHERE p.signal_id = s.id AND p.status IN ('draft', 'posted'))
-     ORDER BY s.observed_at DESC LIMIT $1`, [take * 3]);
+       AND ($2::text IS NULL OR s.campaign = $2)
+       AND NOT EXISTS (SELECT 1 FROM li_posts p WHERE p.signal_id = s.id AND p.status IN ('draft', 'approved', 'posted'))
+     ORDER BY s.observed_at DESC LIMIT $1`, [take * 3, campaign]);
   // The POST window, not the signal window: an old story can still be a good
   // lead, it cannot be a good post.
   const fresh = freshOnly(fetched, r => r.published, { maxAgeDays: postMaxAgeDays() });
@@ -190,7 +194,11 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
 // with John in July 2026: one post per human click on one open, unflagged
 // draft, through the connected account, capped per day, with the exact text
 // assembled here from the approved body, the story link and the curated
-// hashtags. Nothing ever posts on a schedule.
+// hashtags. Since 24 August 2026, John's autopilot decision, the click can
+// happen ahead of time instead of at the moment of posting: a person approves
+// a draft into the queue and the scheduler releases approved posts at the
+// standing slots. Approval is the sanction; nothing unapproved ever posts,
+// scheduled or not.
 export const postDailyCap = () => Math.max(1, parseInt(process.env.LINKEDIN_POST_DAILY_CAP || '2', 10));
 
 // Posts published today, per connected account when the ledger can say
@@ -208,14 +216,19 @@ export async function postsPublishedToday(accountId = null) {
   return rows[0].n;
 }
 
-export async function publishPost(id, { actor = null } = {}) {
+export async function publishPost(id, { actor = null, auto = false } = {}) {
   // The campaign travels in the draft's grounding; posts drafted before it
   // did fall back through their signal, then to the data centre default.
   const p = (await pool.query(
     `SELECT lp.id, lp.topic, lp.body, lp.grounding, lp.status, s.campaign AS signal_campaign
      FROM li_posts lp LEFT JOIN signals s ON s.id = lp.signal_id WHERE lp.id = $1`, [id])).rows[0];
   if (!p) return { posted: false, reason: 'post not found' };
-  if (p.status !== 'draft') return { posted: false, reason: 'only an open draft can be posted' };
+  // The scheduler may release only what a person approved; a human click may
+  // also post a draft directly, the original behaviour, or an approved post
+  // early. Approval is the sanction either way.
+  if (auto ? p.status !== 'approved' : !['draft', 'approved'].includes(p.status)) {
+    return { posted: false, reason: auto ? 'only an approved post publishes on the schedule' : 'only an open draft or approved post can be posted' };
+  }
   const flags = p.grounding?.flags || [];
   if (flags.length) return { posted: false, reason: 'the draft carries a blocking flag; edit it clean first' };
   if (!unipileConfigured()) return { posted: false, reason: 'the LinkedIn lane is not configured on this service' };
@@ -267,13 +280,17 @@ export async function publishPost(id, { actor = null } = {}) {
     commentLink = p.grounding?.signal?.source || null;
   }
   // Who clicked Post, when the schema holds it (migration 027) and a person
-  // is signed in. Never worth failing a publish that has already happened.
-  const by = (actor && await hasColumn('li_posts', 'decided_by')) ? actor : null;
+  // is signed in. A scheduled release keeps the approver already stamped at
+  // approval time, which is the attribution that matters. Never worth failing
+  // a publish that has already happened.
+  const by = (!auto && actor && await hasColumn('li_posts', 'decided_by')) ? actor : null;
   await pool.query(
-    `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now()${by ? ', decided_by = $4' : ''},
+    `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now()${by ? ', decided_by = $5' : ''},
             grounding = COALESCE(grounding, '{}'::jsonb)
-              || jsonb_build_object('postedText', $2::text, 'linkedinPostId', $3::text)
-     WHERE id = $1`, by ? [p.id, text, linkedinPostId, by] : [p.id, text, linkedinPostId]);
+              || jsonb_build_object('postedText', $2::text, 'linkedinPostId', $3::text, 'postedVia', $4::text)
+     WHERE id = $1`,
+    by ? [p.id, text, linkedinPostId, auto ? 'schedule' : 'click', by]
+       : [p.id, text, linkedinPostId, auto ? 'schedule' : 'click']);
   return { posted: true, commented, commentLink };
 }
 

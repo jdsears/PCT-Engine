@@ -52,6 +52,13 @@ function ProposalRow({ r, accounts, onDone }) {
               : r.signal.title}
           </div>
         )}
+        {r.source === 'post_engagement' && (
+          <div className="rq-signal">
+            From post engagement{r.evidence?.engager?.name ? `: ${r.evidence.engager.name}` : ''}
+            {r.evidence?.engager?.headline ? `, ${r.evidence.engager.headline}` : ''}
+            {r.evidence?.postTopic ? `, reacted to "${r.evidence.postTopic}"` : ''}
+          </div>
+        )}
         <select className="rq-select" value={entity} onChange={e => setEntity(e.target.value)}
           aria-label="Companies House entity">
           <option value="">{r.chCandidates.length ? 'Companies House entity, pick to confirm against' : 'No Companies House suggestion; confirm as printed'}</option>

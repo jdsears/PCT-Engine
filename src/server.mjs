@@ -17,7 +17,9 @@ import { gatherDigestData, renderDigest, renderDigestHtml, digestDue } from './d
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
-import { fetchPostEngagers, titleFitsCampaign } from './studio/postEngagers.mjs';
+import { fetchPostEngagers, titleFitsCampaign, sweepEngagersOnce } from './studio/postEngagers.mjs';
+import { autopostOnce, topUpStudioPosts } from './studio/autopost.mjs';
+import { resolveDomain } from './research/domains.mjs';
 import { searchCompanies, candidateRows, companyProfile, cleanChNumber } from './research/companiesHouse.mjs';
 import { cleanDomain } from './research/customerImport.mjs';
 import { staleDays, isStale } from './research/staleness.mjs';
@@ -937,9 +939,13 @@ app.get('/api/health/campaigns', async (_req, res) => {
 app.get('/api/reviews', async (req, res) => {
   try {
     const campaign = campaignFilter(req);
+    // Provenance columns arrived with the studio autopilot (migration 032);
+    // until the schema has them the queue reads as before.
+    const withProvenance = await hasColumn('party_reviews', 'source');
     const { rows } = await pool.query(
       `SELECT r.id, r.kind, r.printed_name, r.party, r.campaign, r.ch_candidates,
               r.account_candidates, r.domain, r.created_at,
+              ${withProvenance ? 'r.source, r.evidence,' : ''}
               s.title AS signal_title, s.url AS signal_url, s.geo_scope
        FROM party_reviews r LEFT JOIN signals s ON s.id = r.signal_id
        WHERE r.status = 'open' AND ($1::text IS NULL OR r.campaign = $1)
@@ -956,6 +962,7 @@ app.get('/api/reviews', async (req, res) => {
         chCandidates: r.ch_candidates || [], accountCandidates: r.account_candidates || [],
         domain: r.domain, createdAt: r.created_at,
         signal: r.signal_title ? { title: r.signal_title, url: r.signal_url, geoScope: r.geo_scope } : null,
+        source: r.source || null, evidence: r.evidence || null,
       })),
       unmatched: unmatched.map(u => ({ name: u.printed, campaign: u.campaign, n: u.n, lastSeen: u.last_seen })),
     });
@@ -1241,6 +1248,8 @@ async function engineStatus() {
     autoDiscover: (await kvGet('autodiscover_enabled')) === 'on',
     autoPeople: (await kvGet('autopeople_enabled')) === 'on',
     autoSync: (await kvGet('sharepoint_sync_enabled')) === 'on',
+    studioAutopilot: (await kvGet('studio_autopilot_enabled')) === 'on',
+    studioLast: await kvGet('studio_autopilot_last'),
     syncConfigured: syncRoots().length > 0,
     intervalHours: ENGINE_INTERVAL_MS / 3600_000,
     lastRun,
@@ -1350,6 +1359,13 @@ async function runEngineOnce(trigger) {
     // the review queue at the end of the cycle. Review, approval and sending
     // are untouched: a generated draft is still only a draft.
     if ((await kvGet('autodraft_enabled')) === 'on') await runDraftsOnce('engine');
+    // With the studio autopilot on, thin posting queues top themselves up from
+    // the fresh gated signals this run just stored. Drafts only: a person
+    // still approves every post before any slot can release it.
+    if ((await kvGet('studio_autopilot_enabled')) === 'on') {
+      try { await topUpStudioPosts({ log: m => console.log('[studio]', m) }); }
+      catch (e) { console.error('[studio] top-up failed:', e.message); }
+    }
   } catch (e) {
     console.error('[engine] run failed:', e.message);
     try { await kvSet('engine_last_run', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* reported on the next status read */ }
@@ -1484,6 +1500,51 @@ async function pollIntelOnce(trigger) {
   return true;
 }
 
+// The studio autopilot's tick half: release approved posts whose slot is
+// open, then read the engagement due a sweep. One at a time, and any
+// account-health error from either half switches the autopilot off and says
+// so, the people-search pattern: the account is the asset, and a schedule
+// must never knock on a checkpointed account.
+let studioAutopilotRunning = false;
+async function studioAutopilotOnce(trigger) {
+  if (studioAutopilotRunning) return false;
+  studioAutopilotRunning = true;
+  const startedAt = new Date().toISOString();
+  try {
+    const posts = await autopostOnce({ log: m => console.log('[studio]', m) });
+    const sweep = posts.unhealthy ? null : await sweepEngagersOnce({ log: m => console.log('[studio]', m) });
+    const unhealthy = posts.unhealthy || sweep?.unhealthy || null;
+    if (unhealthy) {
+      await kvSet('studio_autopilot_enabled', 'off');
+      await kvSet('studio_autopilot_last', { ok: false, at: startedAt, trigger, unhealthy });
+      await sendTeamNote('LinkedIn account health stopped the studio autopilot',
+        `Unipile reported an account health problem during the studio autopilot, so scheduled posting and engagement sweeps have switched themselves off and nothing will retry.\n\n${unhealthy}\n\nCheck the LinkedIn account (a login prompt or checkpoint usually explains it), then turn the switch back on from the Health page.`);
+      return true;
+    }
+    // Record only when something happened, so a quiet tick does not churn the
+    // record; an empty-queue skip is written once and not rewritten all
+    // morning.
+    const acted = posts.posted.length > 0 || (sweep?.swept ?? 0) > 0;
+    const skipsOnly = posts.skipped.length > 0;
+    if (acted || skipsOnly) {
+      const prev = await kvGet('studio_autopilot_last');
+      const record = {
+        ok: true, at: startedAt, trigger,
+        posted: posts.posted, skipped: posts.skipped,
+        swept: sweep?.swept ?? 0, engagers: sweep?.engagers ?? 0,
+        capStopped: sweep?.capStopped || undefined,
+      };
+      const sameQuietDay = !acted && prev?.ok && String(prev.at).slice(0, 10) === startedAt.slice(0, 10)
+        && JSON.stringify(prev.skipped) === JSON.stringify(posts.skipped) && (prev.posted || []).length === 0;
+      if (!sameQuietDay) await kvSet('studio_autopilot_last', record);
+    }
+  } catch (e) {
+    console.error('[studio] autopilot failed:', e.message);
+    try { await kvSet('studio_autopilot_last', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* next read */ }
+  } finally { studioAutopilotRunning = false; }
+  return true;
+}
+
 // The tick is cheap: read the switch and the last run, decide, maybe run. Any
 // error is logged and the next tick tries again.
 setInterval(async () => {
@@ -1496,6 +1557,7 @@ setInterval(async () => {
     if (intelSenders().length) await pollIntelOnce('schedule');
     if ((await kvGet('replycapture_enabled')) === 'on') await pollAndTriageOnce('schedule');
     if ((await kvGet('followups_enabled')) === 'on') await sweepFollowupsOnce('schedule');
+    if ((await kvGet('studio_autopilot_enabled')) === 'on') await studioAutopilotOnce('schedule');
     if (digestRecipients().length) {
       const lastDigest = await kvGet('digest_last_sent');
       if (digestDue({ lastSentAt: lastDigest?.at ?? null })) await sendDigestOnce('schedule');
@@ -1582,6 +1644,19 @@ app.post('/api/engine/autosync', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// The studio autopilot switch: when on, approved posts release themselves at
+// the standing Tuesday, Wednesday and Thursday morning slots, thin queues top
+// up from fresh signals, and published posts have their engagement swept and
+// sorted. Approval stays human; the switch stands itself down on any
+// account-health error.
+app.post('/api/engine/studio-autopilot', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('studio_autopilot_enabled', enabled ? 'on' : 'off');
+    res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 app.post('/api/engine/run-now', async (_req, res) => {
   try {
     if (engineRunning) return res.json({ started: false, reason: 'a run is already in flight' });
@@ -1592,9 +1667,10 @@ app.post('/api/engine/run-now', async (_req, res) => {
 
 // ----- The LinkedIn studio -----
 // Post drafts from the engine's gated signals, and the connect queue over the
-// decision-orbit contacts. Nothing here posts to LinkedIn or sends an invite:
-// the human copies and acts from their own account, then marks it done, and the
-// engine keeps the books. The lane's read-only rule stands untouched.
+// decision-orbit contacts. The studio's writes are the sanctioned three, post,
+// first comment and invite, each resting on a human decision: an invite on its
+// click, a post on its approval, whether the publish happens on the click
+// itself or at a standing slot the autopilot releases.
 app.get('/api/studio/posts', async (req, res) => {
   try {
     const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : 'draft';
@@ -1671,6 +1747,170 @@ app.post('/api/studio/engagers/contact', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// An engager's company proposed into the review queue, John's ask folded into
+// the autopilot build: engagement is self-selected interest, and an unknown
+// company whose people engage is exactly what the queue exists to judge. The
+// proposal follows the research proposals' own discipline: it is not an
+// account, it does not score or draft, a human confirms or dismisses it, and
+// a name already decided is never re-proposed. Read-only enrichment only.
+async function proposeEngagerCompany({ companyName, campaign, evidence }) {
+  const name = String(companyName || '').trim();
+  if (!name) return { status: 400, error: 'the engager names no company to propose' };
+  if (!getCampaign(campaign)) return { status: 400, error: 'unknown campaign' };
+  // The register first: a name the matcher can already place needs no review.
+  const { rows: register } = await pool.query(`SELECT id, name FROM companies`);
+  const aliases = Object.fromEntries(
+    (await pool.query(`SELECT alias, canonical FROM matcher_aliases`)).rows.map(r => [r.alias, r.canonical]));
+  const m = matchParty(name, register, { aliases });
+  if (m.status === 'matched') {
+    return { ok: true, matched: true, companyId: m.company.id,
+      note: `already on the register as ${m.company.name}; add the person as a contact instead` };
+  }
+  // Companies House candidates and a domain, so the reviewer decides over
+  // evidence; either failing leaves the proposal standing without it.
+  let chCandidates = null, domain = null;
+  try { chCandidates = candidateRows(await searchCompanies(name)); } catch { /* stands without candidates */ }
+  try { domain = await resolveDomain(name); } catch { /* optional */ }
+  const withProvenance = await hasColumn('party_reviews', 'source');
+  const { rowCount } = await pool.query(
+    `INSERT INTO party_reviews (kind, printed_name, name_norm, party, campaign, ch_candidates, domain${withProvenance ? ', source, evidence' : ''})
+     VALUES ('proposal', $1, $2, 'operator', $3, $4::jsonb, $5${withProvenance ? ', $6, $7::jsonb' : ''})
+     ON CONFLICT (name_norm, campaign) DO NOTHING`,
+    withProvenance
+      ? [name, normName(name), campaign, chCandidates ? JSON.stringify(chCandidates) : null, domain,
+         'post_engagement', evidence ? JSON.stringify(evidence) : null]
+      : [name, normName(name), campaign, chCandidates ? JSON.stringify(chCandidates) : null, domain]);
+  if (!rowCount) {
+    const prior = (await pool.query(
+      `SELECT status FROM party_reviews WHERE name_norm = $1 AND campaign = $2`,
+      [normName(name), campaign])).rows[0];
+    return { ok: true, proposed: false,
+      note: prior?.status === 'open' ? 'already waiting in the review queue'
+        : `already decided at review (${prior?.status || 'unknown'}); a decision is remembered` };
+  }
+  return { ok: true, proposed: true, note: 'proposed into the review queue' };
+}
+
+// The propose verb from the live Who engaged panel, so a name seen there can
+// go straight to the review queue without waiting for a sweep.
+app.post('/api/studio/engagers/propose', async (req, res) => {
+  try {
+    const { companyName, campaign = 'marwin_dc', engager = null, postId = null } = req.body || {};
+    const out = await proposeEngagerCompany({
+      companyName, campaign,
+      evidence: { engager, postId, proposedBy: actorEmail(req) || null },
+    });
+    if (out.error) return res.status(out.status || 500).json({ error: out.error });
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// ----- The interest queue -----
+// Everything the automatic sweeps gathered, sorted strongest first, across all
+// of a lane's posts: orbit fit and a register match lead, and a person decided
+// anywhere in the campaign never queues again. Three verbs, all human: add as
+// contact on a matched account, propose the company for review, dismiss.
+app.get('/api/studio/interest', async (req, res) => {
+  try {
+    const reg = (await pool.query(`SELECT to_regclass('post_engagers') AS t`)).rows[0]?.t;
+    if (!reg) return res.json({ interest: [], migrationPending: true });
+    const camp = campaignFilter(req);
+    const { rows } = await pool.query(
+      `SELECT t.* FROM (
+         SELECT DISTINCT ON (pe.campaign, pe.person_key)
+                pe.id, pe.campaign, pe.name, pe.headline, pe.role_title, pe.company_guess,
+                pe.linkedin_url, pe.reaction, pe.orbit_fit, pe.matched_company_id,
+                c.name AS matched_company_name, pe.last_seen_at, lp.topic AS post_topic
+         FROM post_engagers pe
+         LEFT JOIN companies c ON c.id = pe.matched_company_id
+         JOIN li_posts lp ON lp.id = pe.li_post_id
+         WHERE pe.status = 'new'
+           AND NOT EXISTS (SELECT 1 FROM post_engagers d
+                           WHERE d.campaign = pe.campaign AND d.person_key = pe.person_key AND d.status <> 'new')
+           AND ($1::text IS NULL OR pe.campaign = $1)
+         ORDER BY pe.campaign, pe.person_key, pe.last_seen_at DESC
+       ) t
+       ORDER BY (t.orbit_fit::int * 2 + (t.matched_company_id IS NOT NULL)::int) DESC, t.last_seen_at DESC
+       LIMIT 100`, [camp]);
+    res.json({
+      interest: rows.map(r => ({
+        id: r.id, campaign: r.campaign, name: r.name, role: r.role_title, headline: r.headline,
+        company: r.company_guess, profileUrl: r.linkedin_url, reaction: r.reaction,
+        orbitFit: r.orbit_fit, matchedCompanyId: r.matched_company_id, matchedCompanyName: r.matched_company_name,
+        lastSeenAt: r.last_seen_at, postTopic: r.post_topic,
+      })),
+    });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// An interest row becomes a contact, by a human, only on a matched account:
+// the same rule and the same books as the per-post panel.
+app.post('/api/studio/interest/:id/contact', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT * FROM post_engagers WHERE id = $1 AND status = 'new'`, [req.params.id]);
+    if (!rows.length) return res.status(409).json({ error: 'this row is already decided or unknown' });
+    const e = rows[0];
+    if (!e.matched_company_id) {
+      return res.status(400).json({ error: 'only an engager at a matched account can become a contact; propose the company first' });
+    }
+    const actor = actorEmail(req);
+    const withActor = actor && await hasColumn('contacts', 'added_by');
+    const { rows: created } = await pool.query(
+      `INSERT INTO contacts (company_id, full_name, role_title, linkedin_url, in_decision_orbit, source${withActor ? ', added_by' : ''})
+       VALUES ($1, $2, $3, $4, $5, 'post_engagement'${withActor ? ', $6' : ''})
+       ON CONFLICT (linkedin_url) DO NOTHING RETURNING id`,
+      withActor ? [e.matched_company_id, e.name, e.role_title, e.linkedin_url, e.orbit_fit, actor]
+                : [e.matched_company_id, e.name, e.role_title, e.linkedin_url, e.orbit_fit]);
+    await pool.query(
+      `UPDATE post_engagers SET status = 'added', decided_by = $2, decided_at = now() WHERE id = $1`,
+      [e.id, actor || null]);
+    res.json({ ok: true, created: created.length > 0, inOrbit: e.orbit_fit,
+      note: created.length ? null : 'a contact with this LinkedIn profile already exists; nothing was duplicated' });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The propose verb from the queue: the row's company guess goes to the review
+// queue with its evidence, and the row is marked so it never queues again. If
+// the register has since learned the name, the row is re-pointed instead and
+// says so, because the right verb is then add as contact.
+app.post('/api/studio/interest/:id/propose', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT pe.*, lp.topic AS post_topic FROM post_engagers pe JOIN li_posts lp ON lp.id = pe.li_post_id
+       WHERE pe.id = $1 AND pe.status = 'new'`, [req.params.id]);
+    if (!rows.length) return res.status(409).json({ error: 'this row is already decided or unknown' });
+    const e = rows[0];
+    if (e.matched_company_id) return res.status(400).json({ error: 'this engager is at a matched account; add them as a contact instead' });
+    if (!e.company_guess) return res.status(400).json({ error: 'the headline names no company to propose' });
+    const actor = actorEmail(req);
+    const out = await proposeEngagerCompany({
+      companyName: e.company_guess, campaign: e.campaign,
+      evidence: { engager: { name: e.name, headline: e.headline }, postTopic: e.post_topic, proposedBy: actor || null },
+    });
+    if (out.error) return res.status(out.status || 500).json({ error: out.error });
+    if (out.matched) {
+      await pool.query(`UPDATE post_engagers SET matched_company_id = $2 WHERE id = $1`, [e.id, out.companyId]);
+      return res.json(out);
+    }
+    await pool.query(
+      `UPDATE post_engagers SET status = 'proposed', decided_by = $2, decided_at = now() WHERE id = $1`,
+      [e.id, actor || null]);
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Dismissed is a decision and is remembered: the person never queues again on
+// this campaign, on any post.
+app.post('/api/studio/interest/:id/dismiss', async (req, res) => {
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE post_engagers SET status = 'dismissed', decided_by = $2, decided_at = now()
+       WHERE id = $1 AND status = 'new'`, [req.params.id, actorEmail(req) || null]);
+    if (!rowCount) return res.status(409).json({ error: 'this row is already decided or unknown' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 // Publish one post through the connected account: one human click on one
 // open, unflagged draft, capped per day. A refusal returns its plain reason.
 app.post('/api/studio/posts/:id/post', async (req, res) => {
@@ -1707,14 +1947,16 @@ app.patch('/api/studio/posts/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-// Marked by the human after they have posted it from their own account.
+// Marked by the human after they have posted it from their own account. An
+// approved post can be marked too: hand-posting the queue's content is still
+// posting it, and the slot then stands down for the day.
 app.post('/api/studio/posts/:id/posted', async (req, res) => {
   try {
     const by = await actorFor('li_posts', 'decided_by', req);
     const { rowCount } = await pool.query(
       `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now()${by ? ', decided_by = $2' : ''}
-       WHERE id = $1 AND status = 'draft'`, by ? [req.params.id, by] : [req.params.id]);
-    if (!rowCount) return res.status(409).json({ error: 'only a draft post can be marked posted' });
+       WHERE id = $1 AND status IN ('draft', 'approved')`, by ? [req.params.id, by] : [req.params.id]);
+    if (!rowCount) return res.status(409).json({ error: 'only an open draft or approved post can be marked posted' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -1724,8 +1966,40 @@ app.post('/api/studio/posts/:id/reject', async (req, res) => {
     const by = await actorFor('li_posts', 'decided_by', req);
     const { rowCount } = await pool.query(
       `UPDATE li_posts SET status = 'rejected', updated_at = now()${by ? ', decided_by = $2' : ''}
+       WHERE id = $1 AND status IN ('draft', 'approved')`, by ? [req.params.id, by] : [req.params.id]);
+    if (!rowCount) return res.status(409).json({ error: 'only an open draft or approved post can be rejected' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Approval, the autopilot's human click moved ahead of time: an unflagged
+// draft joins the lane's queue and the next open slot releases the oldest.
+// Who approved is stamped, because the post publishes under a person's name
+// days later and the answer to "who said yes" must never be a shrug.
+app.post('/api/studio/posts/:id/approve', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT status, grounding FROM li_posts WHERE id = $1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'no such post' });
+    if (rows[0].status !== 'draft') return res.status(409).json({ error: 'only an open draft can be approved' });
+    if ((rows[0].grounding?.flags || []).length) {
+      return res.status(409).json({ error: 'the draft carries a blocking flag; edit it clean before approving' });
+    }
+    const by = await actorFor('li_posts', 'decided_by', req);
+    await pool.query(
+      `UPDATE li_posts SET status = 'approved', updated_at = now()${by ? ', decided_by = $2' : ''}
        WHERE id = $1 AND status = 'draft'`, by ? [req.params.id, by] : [req.params.id]);
-    if (!rowCount) return res.status(409).json({ error: 'only a draft post can be rejected' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Back out of the queue: an approved post returns to the drafts, where it can
+// be edited or rejected. Nothing about the post is lost.
+app.post('/api/studio/posts/:id/unapprove', async (req, res) => {
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE li_posts SET status = 'draft', updated_at = now() WHERE id = $1 AND status = 'approved'`,
+      [req.params.id]);
+    if (!rowCount) return res.status(409).json({ error: 'only an approved post can go back to the drafts' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });

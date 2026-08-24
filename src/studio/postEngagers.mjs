@@ -1,5 +1,5 @@
 import { pool } from '../db.mjs';
-import { unipile, ROUTES, accountForCampaign } from '../research/unipile.mjs';
+import { unipile, ROUTES, accountForCampaign, CapReached, AccountUnhealthy } from '../research/unipile.mjs';
 import { matchParty } from '../research/match.mjs';
 import { EXCLUDE_TITLES } from '../research/orbitRules.mjs';
 import { getCampaign } from '../campaigns/registry.mjs';
@@ -120,4 +120,78 @@ export async function fetchPostEngagers(liPostId) {
   const aliases = Object.fromEntries(
     (await pool.query(`SELECT alias, canonical FROM matcher_aliases`)).rows.map(r => [r.alias, r.canonical]));
   return { ok: true, campaign, raw: items.length, ...analyseEngagers(items, { register, aliases, campaign }) };
+}
+
+// When is a published post's engagement worth reading again? Twice in its
+// life: once after two days, when the early reactions have landed, and once
+// after six, when the tail has. Nothing after fourteen days, because a post
+// that old is finished and every read spends the account's cap. Pure, so the
+// gate proves the cadence without a provider.
+export function sweepDue({ postedAt, sweeps = [], now = Date.now() }) {
+  const posted = new Date(postedAt).getTime();
+  if (Number.isNaN(posted)) return false;
+  const ageDays = (now - posted) / 86_400_000;
+  if (ageDays > 14) return false;
+  if (sweeps.length === 0) return ageDays >= 2;
+  if (sweeps.length === 1) return ageDays >= 6;
+  return false;
+}
+
+// One sweep pass, the autopilot's gathering half: every engine-published post
+// whose sweep is due has its reactions read through the same capped,
+// sequential lane the button uses, and each engager lands once in
+// post_engagers with its analysis, ready sorted for the interest queue. A row
+// a person has already decided keeps its decision; only the observation
+// fields refresh. A cap refusal stops the pass cleanly and the next tick
+// resumes; an account-health error is returned for the caller to stand the
+// autopilot down. Hand-copied posts have no LinkedIn id and are never swept.
+export async function sweepEngagersOnce({ log = () => {} } = {}) {
+  const reg = (await pool.query(`SELECT to_regclass('post_engagers') AS t`)).rows[0]?.t;
+  if (!reg) return { skipped: 'the post_engagers table is missing; run npm run migrate first' };
+  const { rows: posts } = await pool.query(
+    `SELECT lp.id, lp.posted_at, lp.grounding
+     FROM li_posts lp
+     WHERE lp.status = 'posted' AND lp.grounding->>'linkedinPostId' IS NOT NULL
+       AND lp.posted_at >= now() - interval '14 days'
+     ORDER BY lp.posted_at ASC`);
+  const out = { considered: posts.length, swept: 0, engagers: 0, capStopped: false };
+  for (const p of posts) {
+    const sweeps = Array.isArray(p.grounding?.engagerSweeps) ? p.grounding.engagerSweeps : [];
+    if (!sweepDue({ postedAt: p.posted_at, sweeps })) continue;
+    let r;
+    try {
+      r = await fetchPostEngagers(p.id);
+    } catch (e) {
+      if (e instanceof CapReached) { out.capStopped = true; break; }
+      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); break; }
+      log(`sweep failed on post ${p.id}: ${String(e.message).slice(0, 160)}`);
+      continue;
+    }
+    if (r.ok) {
+      for (const e of r.engagers) {
+        // One row per person per post; the profile URL is the identity when
+        // LinkedIn gives one, the name when it does not.
+        const key = String(e.profileUrl || e.name).toLowerCase();
+        await pool.query(
+          `INSERT INTO post_engagers (li_post_id, campaign, person_key, name, headline, role_title,
+                                      company_guess, linkedin_url, reaction, orbit_fit, matched_company_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           ON CONFLICT (li_post_id, person_key) DO UPDATE
+             SET last_seen_at = now(), reaction = EXCLUDED.reaction, headline = EXCLUDED.headline,
+                 role_title = EXCLUDED.role_title, company_guess = EXCLUDED.company_guess,
+                 orbit_fit = EXCLUDED.orbit_fit, matched_company_id = EXCLUDED.matched_company_id`,
+          [p.id, r.campaign, key, e.name, e.headline || null, e.role, e.company,
+           e.profileUrl, e.reaction, e.orbitFit, e.matchedCompanyId]);
+        out.engagers++;
+      }
+      out.swept++;
+    }
+    // The sweep is recorded either way, ok or not, so a post that cannot be
+    // read (no id on record) is not knocked on every tick forever.
+    await pool.query(
+      `UPDATE li_posts SET grounding = jsonb_set(COALESCE(grounding, '{}'::jsonb), '{engagerSweeps}', $2::jsonb)
+       WHERE id = $1`,
+      [p.id, JSON.stringify([...sweeps, new Date().toISOString()])]);
+  }
+  return out;
 }

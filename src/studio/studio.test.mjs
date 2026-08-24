@@ -4,7 +4,8 @@
 import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText, storyComment, postSystem } from './liPosts.mjs';
 import { accountForCampaign } from '../research/unipile.mjs';
 import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
-import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers } from './postEngagers.mjs';
+import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers, sweepDue } from './postEngagers.mjs';
+import { londonClock, slotFor, slotDue, POST_DAYS, SLOT_WINDOW_MINUTES } from './autopost.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -415,6 +416,111 @@ check('the studio splits by campaign, posts and connects alike', () => {
   assert(/\[campaign\]/.test(studio), 'a switch reloads the queue');
   const appShell = freshRead('web/src/App.jsx');
   assert(/<Studio campaign=\{campaign\} \/>/.test(appShell), 'the shell hands the studio the switcher');
+});
+
+console.log('\nThe autopilot: approval moves ahead, the slot releases (pure):');
+
+check('slots fire Tuesday to Thursday mornings on the London wall clock, winter and summer', () => {
+  // 25 August 2026 is a Tuesday; 07:41 UTC is 08:41 BST, one minute past the
+  // data centre slot. 13 January 2026 is a Tuesday in GMT.
+  assert(JSON.stringify(POST_DAYS) === JSON.stringify(['Tue', 'Wed', 'Thu']), 'the posting days are John\'s three');
+  const bst = new Date('2026-08-25T07:41:00Z');
+  assert(londonClock(bst).day === 'Tue' && londonClock(bst).minutes === 8 * 60 + 41, 'the London clock reads BST');
+  assert(slotDue({ campaign: 'marwin_dc', now: bst }).due, 'the data centre slot is open at 08:41 BST');
+  assert(!slotDue({ campaign: 'pharma_steriflow', now: bst }).due, 'the pharma slot is later, so the accounts never fire together');
+  assert(slotDue({ campaign: 'pharma_steriflow', now: new Date('2026-08-25T08:11:00Z') }).due, 'and opens at its own time');
+  assert(slotDue({ campaign: 'marwin_dc', now: new Date('2026-01-13T08:41:00Z') }).due, 'the same wall time fires in GMT');
+  assert(!slotDue({ campaign: 'marwin_dc', now: new Date('2026-08-25T07:39:00Z') }).due, 'never before the slot');
+  assert(!slotDue({ campaign: 'marwin_dc', now: new Date('2026-08-24T07:41:00Z') }).due, 'Monday never posts');
+  assert(!slotDue({ campaign: 'marwin_dc', now: new Date('2026-08-28T07:41:00Z') }).due, 'Friday never posts');
+  const lapsed = slotDue({ campaign: 'marwin_dc', now: new Date('2026-08-25T11:00:00Z') });
+  assert(!lapsed.due && /lapsed/.test(lapsed.reason) && SLOT_WINDOW_MINUTES === 180,
+    'a slot missed for three hours lapses rather than posting at odd hours');
+  assert(!slotDue({ campaign: 'marwin_dc', now: bst, postedToday: true }).due,
+    'a lane that already posted today stands down, hand-post or slot alike');
+  assert(!slotDue({ campaign: 'richards_reactivation', now: bst }).due, 'a lane with no slot never auto-posts');
+});
+
+check('the slot map is env-overridable and a malformed value falls back to the defaults', () => {
+  const saved = process.env.STUDIO_POST_SLOTS;
+  try {
+    assert(slotFor('marwin_dc') === 8 * 60 + 40 && slotFor('pharma_steriflow') === 9 * 60 + 10, 'the standing slots');
+    process.env.STUDIO_POST_SLOTS = '{"marwin_dc":"10:05"}';
+    assert(slotFor('marwin_dc') === 10 * 60 + 5, 'an override reads');
+    assert(slotFor('pharma_steriflow') === null, 'a lane missing from the override has no slot, the safe direction');
+    process.env.STUDIO_POST_SLOTS = 'not json';
+    assert(slotFor('marwin_dc') === 8 * 60 + 40, 'malformed config falls back rather than silencing the lane');
+  } finally {
+    if (saved === undefined) delete process.env.STUDIO_POST_SLOTS; else process.env.STUDIO_POST_SLOTS = saved;
+  }
+});
+
+check('engagement sweeps twice in a post\'s life and never after fourteen days', () => {
+  const posted = '2026-08-20T08:00:00Z';
+  const at = d => Date.parse(posted) + d * 86_400_000;
+  assert(!sweepDue({ postedAt: posted, sweeps: [], now: at(1) }), 'not on day one; the early reactions are still landing');
+  assert(sweepDue({ postedAt: posted, sweeps: [], now: at(2.1) }), 'the first sweep comes after two days');
+  assert(!sweepDue({ postedAt: posted, sweeps: ['x'], now: at(4) }), 'once swept, it waits for day six');
+  assert(sweepDue({ postedAt: posted, sweeps: ['x'], now: at(6.1) }), 'the second sweep reads the tail');
+  assert(!sweepDue({ postedAt: posted, sweeps: ['x', 'y'], now: at(10) }), 'twice is the whole life');
+  assert(!sweepDue({ postedAt: posted, sweeps: [], now: at(15) }), 'a finished post is never read again; every read spends the cap');
+  assert(!sweepDue({ postedAt: 'garbage', sweeps: [], now: at(3) }), 'a junk date never sweeps and never throws');
+});
+
+check('approval is the sanction and the wiring holds it (static)', () => {
+  const posts = freshRead('src/studio/liPosts.mjs');
+  assert(/auto \? p\.status !== 'approved'/.test(posts), 'the scheduler may release only what a person approved');
+  assert(/'postedVia', \$4::text/.test(posts), 'how a post published, click or schedule, is recorded');
+  const ap = freshRead('src/studio/autopost.mjs');
+  assert(/publishPost\(id, \{ auto: true \}\)/.test(ap), 'the slot releases through the same code the button runs, caps and flags included');
+  assert(/ORDER BY lp\.updated_at ASC LIMIT 1/.test(ap), 'oldest approved first, the order a person expects');
+  assert(/jsonb_array_length\(lp\.grounding->'flags'\), 0\) = 0/.test(ap), 'a flagged post never queues for a slot');
+  assert(/AT TIME ZONE 'Europe\/London'/.test(ap), 'posted-today means London today, both sides of the clock change');
+  assert(/instanceof AccountUnhealthy/.test(ap), 'an account-health error is surfaced, never swallowed');
+  const srv = freshRead('src/server.mjs');
+  assert(/=== 'on'\) await studioAutopilotOnce\('schedule'\);/.test(srv), 'the tick runs the autopilot only when the switch is on');
+  assert(/await kvSet\('studio_autopilot_enabled', 'off'\)/.test(srv), 'an account-health error stands the autopilot down itself');
+  assert(/LinkedIn account health stopped the studio autopilot/.test(srv), 'and tells the team why');
+  assert(/only an open draft can be approved/.test(srv), 'approval takes open drafts only');
+  assert(/edit it clean before approving/.test(srv), 'a flagged draft cannot be approved');
+  assert(/status IN \('draft', 'approved'\)/.test(srv), 'reject and mark-posted accept queued posts too');
+  const mig = freshRead('src/migrations/032_studio_autopilot.sql');
+  assert(/status IN \('draft', 'approved', 'posted'\)/.test(mig), 'the one-open-post-per-signal index treats approved as open');
+  const ui = freshRead('web/src/Studio.jsx');
+  assert(/Nothing unapproved ever posts/.test(ui), 'the studio banner states the sanction plainly');
+  assert(/Approve for the queue/.test(ui) && /Back to drafts/.test(ui), 'the approve and unapprove verbs are on the cards');
+  const health = freshRead('web/src/Health.jsx');
+  assert(/studio-autopilot/.test(health) && /Studio autopilot: on/.test(health), 'the Health page carries the switch');
+});
+
+check('interest is gathered and sorted automatically, acted on by a person (static)', () => {
+  const pe = freshRead('src/studio/postEngagers.mjs');
+  assert(/ON CONFLICT \(li_post_id, person_key\) DO UPDATE/.test(pe), 'a person lands once per post, refreshed never duplicated');
+  assert(/status = EXCLUDED/.test(pe) === false, 'a refresh never touches a decision someone has made');
+  assert(/instanceof CapReached/.test(pe) && /instanceof AccountUnhealthy/.test(pe), 'the sweep stops cleanly on the cap and surfaces account health');
+  const srv = freshRead('src/server.mjs');
+  assert(/d\.status <> 'new'/.test(srv), 'a person decided anywhere in the campaign never queues again');
+  assert(/api\/studio\/interest\/:id\/(contact|propose|dismiss)/.test(srv), 'the three verbs are all human endpoints');
+  const mig = freshRead('src/migrations/032_studio_autopilot.sql');
+  assert(/CREATE TABLE IF NOT EXISTS post_engagers/.test(mig), 'the interest table ships in the migration');
+  // The standing rule survives the autopilot: engagement informs targeting,
+  // never wording. Nothing in the draft or grounding layers may read it.
+  const dg = freshRead('src/outbound/draft.mjs') + freshRead('src/outbound/grounding.mjs');
+  assert(!/post_engagers|engag|liked/i.test(dg), 'engagement never enters draft grounding or wording');
+});
+
+check('the propose-company verb reviews, never registers (static)', () => {
+  const srv = freshRead('src/server.mjs');
+  const fn = srv.slice(srv.indexOf('async function proposeEngagerCompany'), srv.indexOf("app.post('/api/studio/engagers/propose"));
+  assert(fn.length > 100, 'the shared propose helper exists');
+  assert(/INSERT INTO party_reviews/.test(fn), 'the proposal lands in the review queue');
+  assert(/ON CONFLICT \(name_norm, campaign\) DO NOTHING/.test(fn), 'a name already reviewed is never re-proposed');
+  assert(!/INSERT INTO companies/i.test(fn), 'the verb never creates an account itself; confirming at review does that');
+  assert(/already on the register as/.test(fn), 'a name the matcher can place is redirected to add-as-contact');
+  assert(/'post_engagement', evidence/.test(fn), 'provenance and evidence travel with the proposal');
+  assert(/hasColumn\('party_reviews', 'source'\)/.test(fn), 'the insert asks the schema first, so deploy order cannot break it');
+  const rq = freshRead('web/src/ReviewQueue.jsx');
+  assert(/From post engagement/.test(rq), 'the reviewer sees who engaged before deciding');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);

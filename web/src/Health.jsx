@@ -81,6 +81,19 @@ function EngineCard() {
     setBusy(false);
   };
 
+  const toggleStudio = async () => {
+    if (!engine || busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/studio-autopilot', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !engine.studioAutopilot }),
+      });
+      setEngine(await res.json());
+    } catch { setNote('The studio autopilot switch is not available right now.'); }
+    setBusy(false);
+  };
+
   if (!engine) {
     return (
       <div className="card health-card">
@@ -123,6 +136,9 @@ function EngineCard() {
   if (lr?.ok && lr.peopleStopped) {
     attentions.push({ key: 'people', text: `The people search stood down on ${lr.peopleStopped} during the last run.` });
   }
+  if (engine.studioLast && engine.studioLast.ok === false && engine.studioLast.unhealthy) {
+    attentions.push({ key: 'studio', text: 'The studio autopilot stood itself down on a LinkedIn account-health error. Check the account, then turn the switch back on.' });
+  }
 
   // The calm summary of what is acknowledged: one line, plain text, with the
   // full list behind a disclosure. Counted, never dropped.
@@ -161,6 +177,10 @@ function EngineCard() {
             ? 'Refreshes the document corpus from the configured Sales Engine folders each cycle. Documents only; price files are refused by the sync itself.'
             : 'Set SHAREPOINT_SYNC_FOLDERS on the service to name the folders first; nothing syncs without it.'}>
           {engine.autoSync ? 'SharePoint sync: on' : 'SharePoint sync: off'}
+        </button>
+        <button className="engine-btn" onClick={toggleStudio} disabled={busy}
+          title="Publishes approved studio posts at the standing Tuesday, Wednesday and Thursday morning slots, tops up thin queues with fresh drafts, and sweeps engagement into the interest queue. Approval stays human, and any account-health error stands it down.">
+          {engine.studioAutopilot ? 'Studio autopilot: on' : 'Studio autopilot: off'}
         </button>
       </div>
       <div className="health-sub">
