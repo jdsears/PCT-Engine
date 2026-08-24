@@ -50,15 +50,34 @@ export async function gatherDigestData() {
     convo = { ...sends, ...reps, ...goals };
   } catch { convo = null; }
   // The studio ships separately, so its table may not exist yet; the digest
-  // simply says nothing about posts until it does.
+  // simply says nothing about posts until it does. Since the autopilot the
+  // block also carries the approved queue depth and the switch, because a
+  // thin queue means a silent slot and a latched-off switch must not hide
+  // for a week.
   let posts = null;
   try {
     const reg = (await pool.query(`SELECT to_regclass('li_posts') AS t`)).rows[0]?.t;
-    if (reg) posts = (await pool.query(
-      `SELECT count(*) FILTER (WHERE status = 'draft')::int AS waiting,
-              count(*) FILTER (WHERE status = 'posted' AND posted_at >= ${week})::int AS posted
-       FROM li_posts`)).rows[0];
+    if (reg) {
+      posts = (await pool.query(
+        `SELECT count(*) FILTER (WHERE status = 'draft')::int AS waiting,
+                count(*) FILTER (WHERE status = 'approved')::int AS approved,
+                count(*) FILTER (WHERE status = 'posted' AND posted_at >= ${week})::int AS posted
+         FROM li_posts`)).rows[0];
+      const sw = (await pool.query(`SELECT value FROM kv WHERE key = 'studio_autopilot_enabled'`)).rows[0]?.value;
+      posts.autoOn = sw === 'on';
+    }
   } catch { posts = null; }
+  // The interest queue, the autopilot's gathering half: who engaged this week
+  // and how many wait for a decision. Absent before migration 032.
+  let interest = null;
+  try {
+    const reg = (await pool.query(`SELECT to_regclass('post_engagers') AS t`)).rows[0]?.t;
+    if (reg) interest = (await pool.query(
+      `SELECT count(*) FILTER (WHERE first_seen_at >= ${week})::int AS gathered,
+              count(*) FILTER (WHERE first_seen_at >= ${week} AND orbit_fit)::int AS orbit,
+              count(*) FILTER (WHERE status = 'new')::int AS waiting
+       FROM post_engagers`)).rows[0];
+  } catch { interest = null; }
   // The decision-maker lane keeps score in the weekly rhythm, John's ask of
   // 17 August 2026: how many accounts were searched, who was found, and
   // whether the automatic search is actually on, because a latched-off
@@ -77,7 +96,23 @@ export async function gatherDigestData() {
     const sw = (await pool.query(`SELECT value FROM kv WHERE key = 'autopeople_enabled'`)).rows[0]?.value;
     people = { ...searched, ...found, autoOn: sw === 'on' };
   } catch { people = null; }
-  return { questions: q, signals: s, leads: l, drafts: d, posts, convo, people };
+  return { questions: q, signals: s, leads: l, drafts: d, posts, interest, convo, people };
+}
+
+// The studio line and its warning, shared by both renderers so the wording
+// and the arithmetic can never drift apart. Old-shaped data (no approved, no
+// switch) renders exactly as it used to.
+function studioLine(posts) {
+  const line = `${posts.waiting} post draft${posts.waiting === 1 ? '' : 's'} waiting`
+    + (posts.approved != null ? `, ${posts.approved} approved in the queue` : '')
+    + `, ${posts.posted} posted this week.`;
+  let warn = '';
+  if (posts.autoOn === false) warn = 'The studio autopilot is switched off; posts publish only by hand.';
+  else if (posts.autoOn === true && (posts.approved ?? 0) === 0) warn = 'The approved queue is empty, so the next posting slot will pass silently.';
+  return { line, warn };
+}
+function interestLine(i) {
+  return `${i.gathered} ${i.gathered === 1 ? 'person' : 'people'} engaged with the posts this week (${i.orbit} in the decision orbit), ${i.waiting} waiting in the interest queue.`;
 }
 
 // The digest speaks dates like a person: 2026-08-17 reads as 17 August 2026.
@@ -91,7 +126,7 @@ export function humanDate(iso) {
 // Plain text in the house voice. The subject carries the three numbers that
 // matter; the body stays short enough to read on a phone.
 export function renderDigest(data, { weekEnding = new Date().toISOString().slice(0, 10) } = {}) {
-  const { questions: q, signals: s, leads: l, drafts: d, posts, convo, people } = data;
+  const { questions: q, signals: s, leads: l, drafts: d, posts, interest, convo, people } = data;
   const lines = [
     `The engine's week to ${humanDate(weekEnding)}.`,
     '',
@@ -107,7 +142,11 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
   if (people) {
     lines.push(`Decision makers: ${people.searches} compan${people.searches === 1 ? 'y' : 'ies'} searched, ${people.found} ${people.found === 1 ? 'person' : 'people'} found (${people.orbit} in orbit), ${people.emails} email${people.emails === 1 ? '' : 's'} resolved.${people.autoOn ? '' : ' The automatic people search is switched off; the Health page turns it back on.'}`);
   }
-  if (posts) lines.push(`Studio: ${posts.waiting} post draft${posts.waiting === 1 ? '' : 's'} waiting, ${posts.posted} posted this week.`);
+  if (posts) {
+    const st = studioLine(posts);
+    lines.push(`Studio: ${st.line}${st.warn ? ` ${st.warn}` : ''}`);
+  }
+  if (interest) lines.push(`Interest: ${interestLine(interest)}`);
   lines.push('', 'The detail is in the app: pipeline, watchlist, drafts and gaps. This is an internal summary, sent to the digest list only.');
   return {
     subject: `Engine week: ${s.news} signal${s.news === 1 ? '' : 's'}, ${l.created} new lead${l.created === 1 ? '' : 's'}, ${d.waiting} draft${d.waiting === 1 ? '' : 's'} waiting`,
@@ -124,7 +163,7 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
 // record and the two renderers share their arithmetic by construction.
 const PAL = { navy: '#1F386B', blue: '#009ADE', ink2: '#5B6B8C', line: '#E3E7EE', paper: '#F7F8FA' };
 export function renderDigestHtml(data, { weekEnding = new Date().toISOString().slice(0, 10), appUrl = process.env.APP_URL || '' } = {}) {
-  const { questions: q, signals: s, leads: l, drafts: d, posts, convo, people } = data;
+  const { questions: q, signals: s, leads: l, drafts: d, posts, interest, convo, people } = data;
   const stat = (n, label) =>
     `<td align="center" style="padding:14px 6px;"><div style="font-size:30px;line-height:1;font-weight:700;color:${PAL.navy};">${n}</div><div style="font-size:12px;color:${PAL.ink2};margin-top:6px;">${label}</div></td>`;
   const section = (label, figures, note) =>
@@ -138,7 +177,9 @@ export function renderDigestHtml(data, { weekEnding = new Date().toISOString().s
     people ? section('Decision makers', `${people.searches} compan${people.searches === 1 ? 'y' : 'ies'} searched, ${people.found} ${people.found === 1 ? 'person' : 'people'} found (${people.orbit} in orbit), ${people.emails} email${people.emails === 1 ? '' : 's'} resolved.`,
       people.autoOn ? '' : `<span style="color:#D97706;font-weight:600;">The automatic people search is switched off; the Health page turns it back on.</span>`) : '',
     section('Co-pilot', `${q.questions} question${q.questions === 1 ? '' : 's'} (${q.teams} from Teams), ${q.declined} it could not answer, feedback ${q.fb_up} helpful and ${q.fb_down} not.`),
-    posts ? section('Studio', `${posts.waiting} post draft${posts.waiting === 1 ? '' : 's'} waiting, ${posts.posted} posted this week.`) : '',
+    posts ? section('Studio', studioLine(posts).line,
+      studioLine(posts).warn ? `<span style="color:#D97706;font-weight:600;">${studioLine(posts).warn}</span>` : '') : '',
+    interest ? section('Interest', interestLine(interest)) : '',
   ].join('');
   const button = appUrl
     ? `<div style="margin-top:14px;"><a href="${appUrl}" style="display:inline-block;background:${PAL.blue};color:#ffffff;text-decoration:none;font-size:13px;font-weight:600;padding:9px 18px;border-radius:6px;">Open the engine</a></div>`

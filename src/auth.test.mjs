@@ -175,7 +175,8 @@ check('every human action stamps its actor behind a schema check (static)', () =
   assert(/actorFor\('contacts', 'li_invited_by', req\)/.test(server), 'the invite is stamped');
   assert(/actorFor\('li_posts', 'decided_by', req\)/.test(server), 'the post transitions are stamped');
   const posts = read('src/studio/liPosts.mjs');
-  assert(/publishPost\(id, \{ actor = null \} = \{\}\)/.test(posts) && /hasColumn\('li_posts', 'decided_by'\)/.test(posts), 'publishing records who clicked, schema permitting');
+  assert(/publishPost\(id, \{ actor = null, auto = false \} = \{\}\)/.test(posts) && /hasColumn\('li_posts', 'decided_by'\)/.test(posts), 'publishing records who clicked, schema permitting');
+  assert(/\(!auto && actor && await hasColumn/.test(posts), 'a scheduled release keeps the approver stamped at approval, never overwrites');
 });
 
 console.log('\nThe server keeps its shape (static):');

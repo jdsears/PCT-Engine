@@ -47,6 +47,11 @@ export const ROUTES = {
   profile: { method: 'GET', path: '/api/v1/users' },           // /{identifier}?account_id=
   invite: { method: 'POST', path: '/api/v1/users/invite' },    // { account_id, provider_id, message }
   createPost: { method: 'POST', path: '/api/v1/posts' },       // multipart form fields account_id and text; the endpoint's own 400 echoed a file-upload schema at JSON, which is how the shape was pinned down without posting
+  // The third write, added 24 August 2026 and sanctioned by the same human
+  // click as the post it belongs to: the story link publishes as the first
+  // comment on OUR OWN just-created post, never anywhere else. rawSuffix
+  // carries {post_id}/comments.
+  commentPost: { method: 'POST', path: '/api/v1/posts' },      // {post_id}/comments, JSON body { account_id, text }
   // Who reacted to a post: GET /api/v1/posts/{post_id}/reactions, a read on
   // our own published posts through the connected account, the same thing a
   // person sees under their post. rawSuffix carries the nested path.

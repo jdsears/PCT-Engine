@@ -105,11 +105,21 @@ export function hashtagsFor({ title = '', body = '', geoScope = '', campaign = '
 
 // The full text as it should appear on LinkedIn: the shaped body, the story
 // link on its own line so readers can check the source, then the hashtags.
-export function renderPostText({ body, sourceUrl = null, hashtags = [] }) {
+// The story link left the post body on 24 August 2026, John's call after
+// James's best-performing post: an external link in the body is widely
+// believed to cost reach, and the hedge costs nothing. The post carries the
+// body and hashtags; the link publishes as the post's own first comment,
+// automatically, as part of the same human click.
+export function renderPostText({ body, hashtags = [] }) {
   const parts = [formatPost(body)];
-  if (sourceUrl) parts.push(`Story: ${sourceUrl}`);
   if (hashtags.length) parts.push(hashtags.join(' '));
   return parts.filter(Boolean).join('\n\n');
+}
+
+// The first comment: the story link alone, or nothing when the signal has
+// no url, never an invented line.
+export function storyComment(sourceUrl) {
+  return sourceUrl ? `Story: ${sourceUrl}` : null;
 }
 
 // The end-customer check for a post, with the story's own subject exempted,
@@ -132,8 +142,11 @@ export async function writePost({ headline, story, operator, campaign = 'marwin_
 
 // Draft posts from the newest gated signals that do not already have one. The
 // classifier and gate upstream mean everything here is a real data centre story.
-// callModel is injectable so the pipeline is testable offline.
-export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}) {
+// callModel is injectable so the pipeline is testable offline. A campaign
+// narrows the pull to one lane, which is how the autopilot tops up a thin
+// queue without drafting for the other lane; null keeps the original
+// all-lanes behaviour the studio button uses.
+export async function generateLiPosts({ limit = 3, campaign = null, callModel = callClaude } = {}) {
   const take = Math.min(Math.max(1, limit), 5);
   // Over-fetch, then keep only stories that are not evidenced stale: a signal
   // is stored when WE saw it, and a republished three-year-old story carries a
@@ -145,8 +158,9 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
             s.payload->>'content' AS content, s.payload->>'published' AS published
      FROM signals s
      WHERE s.dc_relevant AND s.geo_scope IN ('uk_project', 'expansion_watch') AND s.title IS NOT NULL
-       AND NOT EXISTS (SELECT 1 FROM li_posts p WHERE p.signal_id = s.id AND p.status IN ('draft', 'posted'))
-     ORDER BY s.observed_at DESC LIMIT $1`, [take * 3]);
+       AND ($2::text IS NULL OR s.campaign = $2)
+       AND NOT EXISTS (SELECT 1 FROM li_posts p WHERE p.signal_id = s.id AND p.status IN ('draft', 'approved', 'posted'))
+     ORDER BY s.observed_at DESC LIMIT $1`, [take * 3, campaign]);
   // The POST window, not the signal window: an old story can still be a good
   // lead, it cannot be a good post.
   const fresh = freshOnly(fetched, r => r.published, { maxAgeDays: postMaxAgeDays() });
@@ -180,7 +194,11 @@ export async function generateLiPosts({ limit = 3, callModel = callClaude } = {}
 // with John in July 2026: one post per human click on one open, unflagged
 // draft, through the connected account, capped per day, with the exact text
 // assembled here from the approved body, the story link and the curated
-// hashtags. Nothing ever posts on a schedule.
+// hashtags. Since 24 August 2026, John's autopilot decision, the click can
+// happen ahead of time instead of at the moment of posting: a person approves
+// a draft into the queue and the scheduler releases approved posts at the
+// standing slots. Approval is the sanction; nothing unapproved ever posts,
+// scheduled or not.
 export const postDailyCap = () => Math.max(1, parseInt(process.env.LINKEDIN_POST_DAILY_CAP || '2', 10));
 
 // Posts published today, per connected account when the ledger can say
@@ -198,14 +216,19 @@ export async function postsPublishedToday(accountId = null) {
   return rows[0].n;
 }
 
-export async function publishPost(id, { actor = null } = {}) {
+export async function publishPost(id, { actor = null, auto = false } = {}) {
   // The campaign travels in the draft's grounding; posts drafted before it
   // did fall back through their signal, then to the data centre default.
   const p = (await pool.query(
     `SELECT lp.id, lp.topic, lp.body, lp.grounding, lp.status, s.campaign AS signal_campaign
      FROM li_posts lp LEFT JOIN signals s ON s.id = lp.signal_id WHERE lp.id = $1`, [id])).rows[0];
   if (!p) return { posted: false, reason: 'post not found' };
-  if (p.status !== 'draft') return { posted: false, reason: 'only an open draft can be posted' };
+  // The scheduler may release only what a person approved; a human click may
+  // also post a draft directly, the original behaviour, or an approved post
+  // early. Approval is the sanction either way.
+  if (auto ? p.status !== 'approved' : !['draft', 'approved'].includes(p.status)) {
+    return { posted: false, reason: auto ? 'only an approved post publishes on the schedule' : 'only an open draft or approved post can be posted' };
+  }
   const flags = p.grounding?.flags || [];
   if (flags.length) return { posted: false, reason: 'the draft carries a blocking flag; edit it clean first' };
   if (!unipileConfigured()) return { posted: false, reason: 'the LinkedIn lane is not configured on this service' };
@@ -221,12 +244,12 @@ export async function publishPost(id, { actor = null } = {}) {
   }
   const text = renderPostText({
     body: p.body,
-    sourceUrl: p.grounding?.signal?.source || null,
     hashtags: hashtagsFor({
       title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope,
       campaign,
     }),
   });
+  const comment = storyComment(p.grounding?.signal?.source || null);
   const created = await unipile(ROUTES.createPost, {
     form: { account_id: accountId, text },
     target: `li_post ${p.id}`,
@@ -235,15 +258,40 @@ export async function publishPost(id, { actor = null } = {}) {
   // The response shape is taken defensively; a post published without an id on
   // record simply cannot list its engagers, and the UI says so plainly.
   const linkedinPostId = created?.post_id ?? created?.id ?? created?.social_id ?? null;
+  // The story link as the post's own first comment, part of the same human
+  // click that published: the click sanctioned the post's whole content,
+  // and this is that content split across two calls, only ever on the post
+  // just created. A failed comment never fails a publish that has already
+  // happened; the caller gets the link back to paste by hand.
+  let commented = false;
+  let commentLink = null;
+  if (comment && linkedinPostId) {
+    try {
+      await unipile(ROUTES.commentPost, {
+        pathSuffix: `${encodeURIComponent(linkedinPostId)}/comments`, rawSuffix: true,
+        body: { account_id: accountId, text: comment },
+        target: `li_post ${p.id} story comment`,
+      });
+      commented = true;
+    } catch { commentLink = p.grounding?.signal?.source || null; }
+  } else if (comment) {
+    // The post published but LinkedIn returned no id, so there is nothing to
+    // comment on; the link goes back to the human to paste.
+    commentLink = p.grounding?.signal?.source || null;
+  }
   // Who clicked Post, when the schema holds it (migration 027) and a person
-  // is signed in. Never worth failing a publish that has already happened.
-  const by = (actor && await hasColumn('li_posts', 'decided_by')) ? actor : null;
+  // is signed in. A scheduled release keeps the approver already stamped at
+  // approval time, which is the attribution that matters. Never worth failing
+  // a publish that has already happened.
+  const by = (!auto && actor && await hasColumn('li_posts', 'decided_by')) ? actor : null;
   await pool.query(
-    `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now()${by ? ', decided_by = $4' : ''},
+    `UPDATE li_posts SET status = 'posted', posted_at = now(), updated_at = now()${by ? ', decided_by = $5' : ''},
             grounding = COALESCE(grounding, '{}'::jsonb)
-              || jsonb_build_object('postedText', $2::text, 'linkedinPostId', $3::text)
-     WHERE id = $1`, by ? [p.id, text, linkedinPostId, by] : [p.id, text, linkedinPostId]);
-  return { posted: true };
+              || jsonb_build_object('postedText', $2::text, 'linkedinPostId', $3::text, 'postedVia', $4::text)
+     WHERE id = $1`,
+    by ? [p.id, text, linkedinPostId, auto ? 'schedule' : 'click', by]
+       : [p.id, text, linkedinPostId, auto ? 'schedule' : 'click']);
+  return { posted: true, commented, commentLink };
 }
 
 // LinkedIn headlines arrive as stored: often "Role at Company | Sector | Tag"

@@ -163,12 +163,34 @@ await check('the digest email is a designed card, same numbers, same voice', () 
     'the text digest carries the same score');
   const on = renderDigestHtml({ ...withPeople, people: { ...withPeople.people, autoOn: true } }, { weekEnding: '2026-08-17', appUrl: '' });
   assert(!on.includes('switched off'), 'no warning when the switch is on');
+  // The studio autopilot's own score and warnings: queue depth beside the
+  // counts, an off switch stated plainly, an empty queue loud while the
+  // switch is on, and the interest line when the sweeps have a table. Old
+  // -shaped posts data (no approved, no switch) renders exactly as before.
+  const auto = { ...data, posts: { waiting: 3, approved: 2, posted: 2, autoOn: true } };
+  const ah = renderDigestHtml(auto, { weekEnding: '2026-08-17', appUrl: '' });
+  assert(ah.includes('2 approved in the queue'), 'the approved queue depth is scored');
+  assert(!ah.includes('autopilot is switched off') && !ah.includes('queue is empty'), 'no warning with the switch on and posts queued');
+  const thin = renderDigestHtml({ ...data, posts: { waiting: 3, approved: 0, posted: 2, autoOn: true } }, { weekEnding: '2026-08-17', appUrl: '' });
+  assert(thin.includes('The approved queue is empty, so the next posting slot will pass silently.'), 'an empty queue is loud while the autopilot is on');
+  const off = renderDigest({ ...data, posts: { waiting: 3, approved: 1, posted: 2, autoOn: false } }, { weekEnding: '2026-08-17' });
+  assert(off.text.includes('The studio autopilot is switched off; posts publish only by hand.'), 'an off switch cannot hide for a week');
+  const withInterest = { ...data, interest: { gathered: 12, orbit: 4, waiting: 9 } };
+  const ih = renderDigestHtml(withInterest, { weekEnding: '2026-08-17', appUrl: '' });
+  assert(ih.includes('12 people engaged with the posts this week (4 in the decision orbit), 9 waiting in the interest queue.'),
+    'the interest line counts the gathering half');
+  const it = renderDigest(withInterest, { weekEnding: '2026-08-17' });
+  assert(it.text.includes('Interest: 12 people engaged'), 'the text digest carries the same line');
+  assert(!renderDigestHtml(data, { weekEnding: '2026-08-17', appUrl: '' }).includes('Interest'),
+    'no interest section before the table exists');
   // The gather cannot run offline, so its wiring is frozen as source: the
   // people block is really assembled and really reads the switch.
   const ROOT2 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
   const dig = readFileSync(join(ROOT2, 'src/digest.mjs'), 'utf8');
   assert(/people = \{ \.\.\.searched, \.\.\.found, autoOn: sw === 'on' \}/.test(dig) && /autopeople_enabled/.test(dig),
     'gatherDigestData assembles the decision-maker score from the ledger and the switch');
+  assert(/studio_autopilot_enabled/.test(dig) && /post_engagers/.test(dig),
+    'and the studio block really reads the autopilot switch and the interest table');
   const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
   const srv = readFileSync(join(ROOT, 'src/server.mjs'), 'utf8');
   assert(/const html = renderDigestHtml\(data\)/.test(srv), 'the scheduled send posts the designed card');
