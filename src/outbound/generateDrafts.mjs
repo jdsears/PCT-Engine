@@ -1,6 +1,6 @@
 import { pool } from '../db.mjs';
 import { gatherGrounding } from './grounding.mjs';
-import { composeDraft } from './draft.mjs';
+import { composeDraft, recipientMismatch } from './draft.mjs';
 import { crossCampaignClause, crossCampaignDays } from './crossCampaign.mjs';
 import { staleDays, staleSql } from '../research/staleness.mjs';
 
@@ -108,13 +108,16 @@ export async function generateDrafts({ limit = 5, leadId = null, campaign = 'mar
 
   log(`Drafting cold-open emails for ${leadIds.length} lead(s) in campaign ${campaign}${waiting ? `; ${waiting} lead(s) waiting on contact discovery` : ''}.`);
 
-  const report = { considered: leadIds.length, drafted: 0, flagged: 0, failed: 0, waitingContact: waiting, heldByWindow };
+  const report = { considered: leadIds.length, drafted: 0, flagged: 0, failed: 0, waitingContact: waiting, heldByWindow, passedOver: 0 };
   for (const id of leadIds) {
     try {
       // The campaign travels: retrieval scope, drafter positioning and the
       // checker's permitted facts all follow it. Left to default here, a
       // pharma lead would ground and draft as a data centre one.
-      const grounding = await gatherGrounding(id, { campaign });
+      // The recipient nets screen the free pick, so a company with one
+      // mismatched and one clean contact drafts to the clean one instead
+      // of manufacturing a blocked card.
+      const grounding = await gatherGrounding(id, { campaign, screen: recipientMismatch });
       const d = await composeDraft(grounding);
       const rationale = { reason: grounding.signal?.text || grounding.icpReason || null, score: grounding.icpReason || null };
       await pool.query(
@@ -124,7 +127,9 @@ export async function generateDrafts({ limit = 5, leadId = null, campaign = 'mar
          JSON.stringify(grounding), JSON.stringify(d.flags), JSON.stringify(rationale), d.model]);
       report.drafted++;
       if (d.flags.length) report.flagged++;
+      report.passedOver += grounding.passedOver || 0;
       log(`  ${grounding.company.name}: ${d.subject}${d.flags.length ? `  [${d.flags.length} flag(s)]` : ''}`
+        + (grounding.passedOver ? `  (picked past ${grounding.passedOver} mismatched contact(s))` : '')
         + (grounding.missing.length ? `  (thin grounding: ${grounding.missing.join(', ')})` : ''));
     } catch (e) {
       report.failed++;

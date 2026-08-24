@@ -20,7 +20,7 @@ function topReason(breakdown) {
 // recorded), and grounded product facts retrieved from the corpus with citations.
 // Missing pieces are reported in `missing`, never invented around; the drafter
 // must write less when grounding is thin, not fill the gap.
-export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc', contactId = null } = {}) {
+export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc', contactId = null, screen = null } = {}) {
   // customer_status and the crm payload arrived with the customer list
   // import (migration 026); the service can deploy before the migration is
   // applied, so ask the schema rather than fail every draft in that window.
@@ -38,15 +38,32 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc', 
   // emails went to, and re-resolving the lead's current best mid-thread put
   // one person's greeting on another person's break-up.
   let contact = null;
+  let passedOver = 0;
   const pick = async (sql, p) => (await pool.query(sql, p)).rows[0] || null;
   const row = contactId
     ? await pick(`SELECT id, full_name, role_title, email, payload->'recipient_confirmed' IS NOT NULL AS confirmed FROM contacts WHERE id = $1`, [contactId])
     : lead.contact_id
     ? await pick(`SELECT id, full_name, role_title, email, payload->'recipient_confirmed' IS NOT NULL AS confirmed FROM contacts WHERE id = $1`, [lead.contact_id])
-    : await pick(
-        `SELECT id, full_name, role_title, email, payload->'recipient_confirmed' IS NOT NULL AS confirmed FROM contacts
-         WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed
-         ORDER BY email_verified_at IS NULL, email_confidence DESC NULLS LAST LIMIT 1`, [lead.company_id]);
+    : await (async () => {
+        // Recipient truth applies at selection since 24 August 2026: the pool
+        // still holds contacts attached by the old loose people search, and
+        // drafting them only manufactures blocked cards. The usual order
+        // stands, and the first candidate the caller's screen passes clean is
+        // the recipient. When nobody passes, the best candidate stands and
+        // the card blocks for a human exactly as before, so a company is
+        // never silently skipped. A pinned or lead-recorded contact is never
+        // screened away: that choice was already made.
+        const cands = (await pool.query(
+          `SELECT id, full_name, role_title, email, payload->'recipient_confirmed' IS NOT NULL AS confirmed FROM contacts
+           WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed
+           ORDER BY email_verified_at IS NULL, email_confidence DESC NULLS LAST LIMIT 6`, [lead.company_id])).rows;
+        if (!screen || cands.length <= 1) return cands[0] || null;
+        const co = { name: lead.company, domain: lead.domain };
+        const idx = cands.findIndex(r => screen(
+          { name: r.full_name, role: r.role_title, email: r.email, confirmed: !!r.confirmed }, co).length === 0);
+        passedOver = idx > 0 ? idx : 0;
+        return idx >= 0 ? cands[idx] : cands[0];
+      })();
   // confirmed carries a recorded human attestation that this person works
   // at this company, which stands the recipient nets down for them.
   if (row) contact = { id: row.id, name: row.full_name || null, role: row.role_title || null, email: row.email || null, confirmed: !!row.confirmed };
@@ -114,6 +131,6 @@ export async function gatherGrounding(leadId, { k = 4 , campaign = 'marwin_dc', 
                customerStatus: lead.customer_status || null, segment: lead.crm_segment || null },
     contact, signal, openerGrade, openerNote: openerNote(signal, openerGrade),
     icpReason: topReason(lead.score_breakdown),
-    product, blockedSuppliers, missing,
+    product, blockedSuppliers, missing, passedOver,
   };
 }

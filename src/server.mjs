@@ -1400,11 +1400,11 @@ async function runDraftsOnce(trigger, limit = autodraftLimit()) {
     // assumption runResearch shed when pharma went live. The totals keep the
     // banner's shape; per-campaign detail rides along in the same record.
     const campaigns = activeCampaignIds();
-    const totals = { considered: 0, drafted: 0, flagged: 0, failed: 0, waitingContact: 0, campaigns: [] };
+    const totals = { considered: 0, drafted: 0, flagged: 0, failed: 0, waitingContact: 0, passedOver: 0, campaigns: [] };
     for (const id of campaigns) {
       try {
         const r = await generateDrafts({ limit, campaign: id, log: m => console.log(`[drafts:${id}]`, m) });
-        for (const k of ['considered', 'drafted', 'flagged', 'failed', 'waitingContact']) totals[k] += r[k] || 0;
+        for (const k of ['considered', 'drafted', 'flagged', 'failed', 'waitingContact', 'passedOver']) totals[k] += r[k] || 0;
         totals.campaigns.push({ campaign: id, ...r });
       } catch (e) {
         console.error(`[drafts:${id}] run failed:`, e.message);

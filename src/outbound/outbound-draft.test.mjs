@@ -263,6 +263,65 @@ await check('a stated employer elsewhere blocks the same way', async () => {
   assert(edited.some(f => /stated employer differs/.test(f)), 'editing cannot clear this wrong recipient either');
 });
 
+await check('a shared trade word never passes the employer comparison', async () => {
+  const { flagStatedEmployer } = await import('./draft.mjs');
+  // Frozen from John's screen, 24 August 2026: Anna at Invox Pharma drafted
+  // on the Cambridge Pharma card, and the net stayed quiet because both
+  // names contain "pharma". Identity words decide; trade words do not.
+  const anna = flagStatedEmployer({ name: 'Anna Imola Nagy', role: 'Senior Program Manager at Invox Pharma' }, 'CAMBRIDGE PHARMA LTD');
+  assert(anna && /Invox Pharma/.test(anna), 'Invox Pharma is not Cambridge Pharma, whatever word they share');
+  assert(flagStatedEmployer({ name: 'S L', role: 'Engineer at Cambridge Pharma' }, 'CAMBRIDGE PHARMA LTD') === null,
+    'the card company itself still passes on its identity word');
+  assert(flagStatedEmployer({ name: 'S L', role: 'Director at GSK Pharmaceuticals' }, 'GSK PLC') === null,
+    'a generic tail beside the real identity never blocks the right person');
+  assert(flagStatedEmployer({ name: 'S L', role: 'Manager at Precision Engineering' }, 'PRECISION ENGINEERING LTD') === null,
+    'a company whose name includes a trade word matches on its identity word');
+  assert(flagStatedEmployer({ name: 'S L', role: 'Manager at Somewhere Else' }, 'Industrial Technology Solutions Ltd') === null,
+    'a company named only in generics offers no identity and stays unjudged');
+});
+
+await check('recipient truth screens the pick and sweeps the pool, one question everywhere', async () => {
+  const { recipientMismatch } = await import('./draft.mjs');
+  const bad = recipientMismatch(
+    { name: 'Paul Burnett', role: 'Engineering Project Manager at Solvay', email: 'paul.burnett@londonenergyltd.com' },
+    { name: 'BPR Medical Limited', domain: 'bprmedical.com' });
+  assert(bad.length === 2, `Solvay role and londonenergy mailbox both dispute BPR Medical: ${bad.length}`);
+  assert(recipientMismatch(
+    { name: 'Paul Burnett', role: 'Engineering Project Manager at Solvay', email: 'x@londonenergyltd.com', confirmed: true },
+    { name: 'BPR Medical Limited', domain: 'bprmedical.com' }).length === 0,
+    'a recorded human attestation stands every net down');
+  assert(recipientMismatch(
+    { name: 'Dena Ali', role: 'Design Director at Ark Data Centres', email: 'dena@arkdatacentres.co.uk' },
+    { name: 'ARK DATA CENTRES LIMITED', domain: 'arkdatacentres.co.uk' }).length === 0,
+    'a clean record raises nothing');
+  // The selection screen: the free pick prefers the first clean candidate,
+  // never re-chooses a pinned or lead-recorded contact, and falls back to
+  // the best candidate when nobody is clean, so a company is never silently
+  // skipped. Frozen as source, since the pick needs a database.
+  const g = readFileSync(join(ROOT, 'src/outbound/grounding.mjs'), 'utf8');
+  assert(/screen = null/.test(g) && /LIMIT 6/.test(g), 'the pick takes a screen and a handful of candidates');
+  assert(/if \(!screen \|\| cands\.length <= 1\) return cands\[0\] \|\| null;/.test(g),
+    'without a screen, or a single candidate, the original pick stands byte for byte');
+  assert(/const idx = cands\.findIndex\(r => screen\(/.test(g),
+    'the screen actually runs over the candidates; an inert screen is no screen');
+  assert(/idx >= 0 \? cands\[idx\] : cands\[0\]/.test(g), 'nobody clean means the best candidate stands and the card blocks');
+  assert(/passedOver/.test(g), 'how many were passed over travels with the grounding');
+  const gen = readFileSync(join(ROOT, 'src/outbound/generateDrafts.mjs'), 'utf8');
+  assert(/screen: recipientMismatch/.test(gen), 'cold-open generation screens with the shared nets');
+  assert(/report\.passedOver \+= grounding\.passedOver/.test(gen), 'and reports what it screened past');
+  const srv = readFileSync(join(ROOT, 'src/server.mjs'), 'utf8');
+  assert(/'waitingContact', 'passedOver'/.test(srv), 'the engine banner sums the screen too');
+  // The sweep script: dry by default, provenance on every suppression, live
+  // conversations held for a human, open drafts cleared in the same act.
+  const sw = readFileSync(join(ROOT, 'scripts/sweep-mismatched-contacts.mjs'), 'utf8');
+  assert(/--apply/.test(sw) && /Dry run: nothing changes without --apply/.test(sw), 'the sweep is dry by default');
+  assert(/recipientMismatch/.test(sw), 'the sweep asks the same question the gate asks, never its own');
+  assert(/by: 'recipient sweep'/.test(sw) && /reversible only by hand/.test(sw), 'suppression carries provenance, the suppress verb\'s own shape');
+  assert(/HELD, live conversation/.test(sw) && /r\.live/.test(sw), 'a person who replied is never swept');
+  assert(/status = 'rejected', decided_by = 'recipient sweep'/.test(sw), 'open drafts for swept contacts are rejected, which empties the blocked queue');
+  assert(!/DELETE FROM/.test(sw), 'the sweep never deletes anything');
+});
+
 await check('a recipient block can end the loop: suppress and reject in one act (static)', async () => {
   // James, 16 August 2026: "these keep appearing". Rejection frees the
   // lead's slot by design, so the cycle re-picks the same wrong contact and
