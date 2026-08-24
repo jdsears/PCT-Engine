@@ -6,10 +6,12 @@ import { withCampaign } from './CampaignSwitcher.jsx';
 // The LinkedIn studio. The engine drafts posts from its gated signals, a
 // person approves each one, and since 24 August 2026 the autopilot releases
 // approved posts at the standing Tuesday, Wednesday and Thursday morning
-// slots, one per lane per day, story link as the first comment. Post to
-// LinkedIn still publishes immediately on a click. Invites are untouched:
-// one at a time, only when a person clicks Send invite on a named contact,
-// within the daily cap, note editable first.
+// slots, one per lane per day, story link as the first comment. Post now
+// still publishes immediately on a click. Invites carry the same doctrine
+// since the drip: send one immediately on a click, or approve it with its
+// note frozen and the drip releases it in a weekday working-hours slot,
+// spaced, capped tighter than the hand cap, and timed around the emails.
+// Nothing unapproved ever posts or invites.
 
 const TABS = [
   { id: 'draft', label: 'Post drafts' },
@@ -301,6 +303,7 @@ function ConnectCard({ person, inviteInfo, onChanged }) {
     } catch (e) { setMsg(String(e.message || e)); }
     setBusy(false);
   };
+  const queued = !!person.approvedAt;
   return (
     <div className="card ob-card">
       <div className="ob-head">
@@ -308,23 +311,43 @@ function ConnectCard({ person, inviteInfo, onChanged }) {
         <div className="ob-pills">
           {person.score != null && <span className="pill">ICP {person.score}</span>}
           <span className="pill">{companyLabel(person.company)}</span>
+          {queued && <span className="pill">Approved for the drip</span>}
         </div>
       </div>
       <div className="ob-to">{person.role || 'Role not recorded'}</div>
       <label className="ob-field">
-        <span className="eyebrow">Invite note (sent with the invite, edit first)</span>
-        <textarea className="ob-body" rows={3} maxLength={300} value={note} disabled={busy} onChange={e => setNote(e.target.value)} />
+        <span className="eyebrow">{queued ? 'Invite note, frozen at approval' : 'Invite note (sent with the invite, edit first)'}</span>
+        <textarea className="ob-body" rows={3} maxLength={300} value={note} disabled={busy || queued} onChange={e => setNote(e.target.value)} />
       </label>
-      <div className="ob-actions">
-        <CopyButton text={note} label="Copy note" />
-        <a className="ob-btn" href={person.linkedin} target="_blank" rel="noreferrer">Open profile</a>
-        <span className="ob-spacer" />
-        <button className="ob-btn ghost" onClick={() => act('invited')} disabled={busy}>Mark done</button>
-        <button className="ob-btn primary" onClick={() => act('send-invite')} disabled={busy || !inviteInfo?.ready}
-          title={!inviteInfo?.ready ? 'Unipile is not configured on this service' : undefined}>
-          Send invite
-        </button>
-      </div>
+      {queued ? (
+        <div className="ob-actions">
+          <span className="muted-small">The drip releases it in a weekday working-hours slot, spaced and capped, timed around any emails to this person.</span>
+          <span className="ob-spacer" />
+          <button className="ob-btn" onClick={() => act('unapprove-invite')} disabled={busy}
+            title="Returns the person to the ordinary queue. Nothing sends.">
+            Unapprove
+          </button>
+          <button className="ob-btn primary" onClick={() => act('send-invite')} disabled={busy || !inviteInfo?.ready}
+            title={!inviteInfo?.ready ? 'Unipile is not configured on this service' : 'Sends it now rather than waiting for the drip.'}>
+            Send now
+          </button>
+        </div>
+      ) : (
+        <div className="ob-actions">
+          <CopyButton text={note} label="Copy note" />
+          <a className="ob-btn" href={person.linkedin} target="_blank" rel="noreferrer">Open profile</a>
+          <span className="ob-spacer" />
+          <button className="ob-btn ghost" onClick={() => act('invited')} disabled={busy}>Mark done</button>
+          <button className="ob-btn" onClick={() => act('approve-invite')} disabled={busy}
+            title="Approves this person's invite with this exact note. The drip releases approved invites one at a time, weekdays, working hours, within tight caps, a few days after any email with no reply.">
+            Approve for the drip
+          </button>
+          <button className="ob-btn primary" onClick={() => act('send-invite')} disabled={busy || !inviteInfo?.ready}
+            title={!inviteInfo?.ready ? 'Unipile is not configured on this service' : undefined}>
+            Send invite
+          </button>
+        </div>
+      )}
       {msg && <div className="ob-msg">{msg}</div>}
     </div>
   );
@@ -349,7 +372,7 @@ export default function Studio({ campaign }) {
     const req = t === 'connects'
       ? apiFetch(withCampaign('/api/studio/connects', campaign)).then(r => r.json()).then(d => {
           setConnects(d.connects || []);
-          setInviteInfo({ ready: !!d.inviteReady, today: d.invitesToday ?? 0, cap: d.inviteCap ?? 0 });
+          setInviteInfo({ ready: !!d.inviteReady, today: d.invitesToday ?? 0, cap: d.inviteCap ?? 0, dripOn: !!d.dripOn });
         })
       : apiFetch(withCampaign(`/api/studio/posts?status=${t}`, campaign)).then(r => r.json()).then(d => setPosts(d.posts || []));
     req.then(() => setState('ready')).catch(() => setState('error'));
@@ -370,7 +393,7 @@ export default function Studio({ campaign }) {
   return (
     <div className="content-pad outbound-queue">
       <div className="card ob-banner">
-        <p className="ob-banner-sub">The engine drafts the posts and queues the people; you approve each post you want published. Approved posts go out by themselves on Tuesday, Wednesday and Thursday mornings, one per campaign per day, hashtags in the post and the story link as its first comment, and Post now still publishes immediately. Nothing unapproved ever posts. Invites are unchanged: one click per person, note editable first, never on a schedule.</p>
+        <p className="ob-banner-sub">The engine drafts the posts and queues the people; you approve each post you want published. Approved posts go out by themselves on Tuesday, Wednesday and Thursday mornings, one per campaign per day, hashtags in the post and the story link as its first comment, and Post now still publishes immediately. Nothing unapproved ever posts. Invites rest on the same approval: send one immediately with a click, or approve it into the drip, which releases a few per weekday through working hours, timed around the emails. Nothing unapproved ever invites.</p>
         <div className="ob-banner-controls">
           <button className="ob-btn primary" onClick={generate} disabled={genBusy}>{genBusy ? 'Drafting now' : 'Draft posts from this week'}</button>
         </div>
@@ -395,7 +418,7 @@ export default function Studio({ campaign }) {
       {state === 'ready' && tab === 'connects' && inviteInfo && (
         <p className="muted-note">
           {inviteInfo.ready
-            ? `Invites send from James's own account, one per click, with your approval on each. ${inviteInfo.today} of ${inviteInfo.cap} used today.`
+            ? `Invites send through each campaign's own connected account, on your click or through the drip once approved${inviteInfo.dripOn ? ' (the drip is on)' : ' (the drip is off; the Health page turns it on)'}. ${inviteInfo.today} of ${inviteInfo.cap} used today.`
             : 'Sending is off until Unipile is configured on the service; Copy note and Mark done record invites sent by hand.'}
         </p>
       )}

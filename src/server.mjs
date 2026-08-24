@@ -45,6 +45,7 @@ import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady, inviteRefusal } from './studio/liInvite.mjs';
+import { dripInvitesOnce } from './studio/inviteDrip.mjs';
 import { CapReached, AccountUnhealthy, accountForCampaign } from './research/unipile.mjs';
 import { generateLiPosts, connectNote, postFlags, hashtagsFor, renderPostText, publishPost } from './studio/liPosts.mjs';
 
@@ -1260,6 +1261,8 @@ async function engineStatus() {
     autoSync: (await kvGet('sharepoint_sync_enabled')) === 'on',
     studioAutopilot: (await kvGet('studio_autopilot_enabled')) === 'on',
     studioLast: await kvGet('studio_autopilot_last'),
+    inviteDrip: (await kvGet('invite_drip_enabled')) === 'on',
+    inviteDripLast: await kvGet('invite_drip_last'),
     syncConfigured: syncRoots().length > 0,
     intervalHours: ENGINE_INTERVAL_MS / 3600_000,
     lastRun,
@@ -1555,6 +1558,35 @@ async function studioAutopilotOnce(trigger) {
   return true;
 }
 
+// The invite drip's tick half: within the working window, release at most one
+// approved invite per lane, spaced and capped, and stand the whole drip down
+// on any account-health error. Its own switch, separate from the posting
+// autopilot, so John can run posts with invites off until James and Andy have
+// each said yes to dripped invites under their names.
+let inviteDripRunning = false;
+async function inviteDripOnce(trigger) {
+  if (inviteDripRunning) return false;
+  inviteDripRunning = true;
+  const startedAt = new Date().toISOString();
+  try {
+    const r = await dripInvitesOnce({ log: m => console.log('[drip]', m) });
+    if (r.unhealthy) {
+      await kvSet('invite_drip_enabled', 'off');
+      await kvSet('invite_drip_last', { ok: false, at: startedAt, trigger, unhealthy: r.unhealthy });
+      await sendTeamNote('LinkedIn account health stopped the invite drip',
+        `Unipile reported an account health problem while the invite drip was releasing an approved invite, so the drip has switched itself off and nothing will retry.\n\n${r.unhealthy}\n\nCheck the LinkedIn account (a login prompt or checkpoint usually explains it), then turn the switch back on from the Health page.`);
+      return true;
+    }
+    if (r.sent.length || r.skipped.length) {
+      await kvSet('invite_drip_last', { ok: true, at: startedAt, trigger, sent: r.sent, skipped: r.skipped });
+    }
+  } catch (e) {
+    console.error('[drip] failed:', e.message);
+    try { await kvSet('invite_drip_last', { ok: false, at: startedAt, trigger, error: String(e.message).slice(0, 300) }); } catch { /* next read */ }
+  } finally { inviteDripRunning = false; }
+  return true;
+}
+
 // The tick is cheap: read the switch and the last run, decide, maybe run. Any
 // error is logged and the next tick tries again.
 setInterval(async () => {
@@ -1568,6 +1600,7 @@ setInterval(async () => {
     if ((await kvGet('replycapture_enabled')) === 'on') await pollAndTriageOnce('schedule');
     if ((await kvGet('followups_enabled')) === 'on') await sweepFollowupsOnce('schedule');
     if ((await kvGet('studio_autopilot_enabled')) === 'on') await studioAutopilotOnce('schedule');
+    if ((await kvGet('invite_drip_enabled')) === 'on') await inviteDripOnce('schedule');
     if (digestRecipients().length) {
       const lastDigest = await kvGet('digest_last_sent');
       if (digestDue({ lastSentAt: lastDigest?.at ?? null })) await sendDigestOnce('schedule');
@@ -1663,6 +1696,18 @@ app.post('/api/engine/studio-autopilot', async (req, res) => {
   try {
     const enabled = (req.body || {}).enabled === true;
     await kvSet('studio_autopilot_enabled', enabled ? 'on' : 'off');
+    res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The invite drip switch, deliberately separate from the posting autopilot:
+// invites go out under James's and Andy's own names, so each lane's consent
+// is a conversation, not a default. When on, approved invites release one at
+// a time through weekday working hours within the drip cap.
+app.post('/api/engine/invite-drip', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('invite_drip_enabled', enabled ? 'on' : 'off');
     res.json(await engineStatus());
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -2034,9 +2079,12 @@ app.get('/api/studio/connects', async (req, res) => {
       params.push(camp);
       scope = ` AND (CASE WHEN array_length(m.memberships, 1) = 1 THEN m.memberships[1] ELSE 'marwin_dc' END) = $${params.length}`;
     }
+    // Approval state rides along once the drip's columns exist (migration
+    // 033); before then the queue reads exactly as it did.
+    const withApproval = await hasColumn('contacts', 'li_invite_approved_at');
     const { rows } = await pool.query(
       `SELECT ct.id, ct.full_name, ct.role_title, ct.linkedin_url, c.name AS company, round(c.icp_score)::int AS score,
-              m.memberships
+              ${withApproval ? 'ct.li_invite_approved_at,' : ''} m.memberships
        FROM contacts ct
        JOIN companies c ON c.id = ct.company_id
        CROSS JOIN LATERAL (
@@ -2049,6 +2097,7 @@ app.get('/api/studio/connects', async (req, res) => {
       inviteReady: inviteReady(),
       invitesToday: inviteReady() ? await invitesUsedToday() : 0,
       inviteCap: inviteDailyCap(),
+      dripOn: (await kvGet('invite_drip_enabled')) === 'on',
       connects: rows.map(ct => {
         // Only registered campaigns count towards the derivation: a stray
         // membership value must never take the whole queue down, because the
@@ -2058,10 +2107,46 @@ app.get('/api/studio/connects', async (req, res) => {
         return {
           id: ct.id, name: ct.full_name, role: ct.role_title, linkedin: ct.linkedin_url,
           company: ct.company, score: ct.score, campaign,
+          approvedAt: ct.li_invite_approved_at || null,
           note: connectNote({ full_name: ct.full_name, role_title: ct.role_title }, ct.company, campaign),
         };
       }),
     });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Approval, the drip's human click moved ahead of time: one named contact,
+// the note frozen exactly as approved, who approved stamped. The drip may
+// release only what carries this stamp.
+app.post('/api/studio/connects/:id/approve-invite', async (req, res) => {
+  try {
+    if (!(await hasColumn('contacts', 'li_invite_approved_at'))) {
+      return res.status(503).json({ error: 'the approval columns are missing; run npm run migrate first' });
+    }
+    const { rows } = await pool.query(`SELECT * FROM contacts WHERE id = $1`, [req.params.id]);
+    const gate = canInvite(rows[0]);
+    if (!gate.ok) return res.status(409).json({ error: gate.reason });
+    const note = String((req.body || {}).note || '').slice(0, 300);
+    if (!note.trim()) return res.status(400).json({ error: 'an invite note is required; it is frozen at approval' });
+    const by = actorEmail(req);
+    await pool.query(
+      `UPDATE contacts SET li_invite_approved_at = now(), li_invite_approved_by = $3, li_invite_note = $2
+       WHERE id = $1`, [req.params.id, note, by || null]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Back out: an approved invite returns to the ordinary queue. Nothing sends.
+app.post('/api/studio/connects/:id/unapprove-invite', async (req, res) => {
+  try {
+    if (!(await hasColumn('contacts', 'li_invite_approved_at'))) {
+      return res.status(503).json({ error: 'the approval columns are missing; run npm run migrate first' });
+    }
+    const { rowCount } = await pool.query(
+      `UPDATE contacts SET li_invite_approved_at = NULL, li_invite_approved_by = NULL
+       WHERE id = $1 AND li_invite_approved_at IS NOT NULL AND li_invited_at IS NULL`, [req.params.id]);
+    if (!rowCount) return res.status(409).json({ error: 'this contact is not waiting in the drip' });
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

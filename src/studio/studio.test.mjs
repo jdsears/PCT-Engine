@@ -6,6 +6,7 @@ import { accountForCampaign } from '../research/unipile.mjs';
 import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
 import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers, sweepDue } from './postEngagers.mjs';
 import { londonClock, slotFor, slotDue, POST_DAYS, SLOT_WINDOW_MINUTES } from './autopost.mjs';
+import { dripWindowOpen, gapClear, emailTimingClear, dripDailyCap, DRIP_MIN_GAP_MINUTES } from './inviteDrip.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -521,6 +522,65 @@ check('the propose-company verb reviews, never registers (static)', () => {
   assert(/hasColumn\('party_reviews', 'source'\)/.test(fn), 'the insert asks the schema first, so deploy order cannot break it');
   const rq = freshRead('web/src/ReviewQueue.jsx');
   assert(/From post engagement/.test(rq), 'the reviewer sees who engaged before deciding');
+});
+
+console.log('\nThe invite drip: approval ahead, released like a person (pure):');
+
+check('the drip works weekday working hours on the London wall clock', () => {
+  assert(dripWindowOpen(new Date('2026-08-24T09:00:00Z')), 'Monday 10:00 BST is a working hour');
+  assert(!dripWindowOpen(new Date('2026-08-24T08:00:00Z')), 'Monday 09:00 BST is before the window');
+  assert(!dripWindowOpen(new Date('2026-08-24T16:00:00Z')), 'Monday 17:00 BST is after the window');
+  assert(dripWindowOpen(new Date('2026-08-28T10:00:00Z')), 'Friday drips');
+  assert(!dripWindowOpen(new Date('2026-08-29T10:00:00Z')) && !dripWindowOpen(new Date('2026-08-30T10:00:00Z')),
+    'the weekend never drips');
+  assert(dripWindowOpen(new Date('2026-01-13T10:00:00Z')), 'the same wall time works in GMT');
+  const now = Date.parse('2026-08-24T10:00:00Z');
+  assert(!gapClear({ now, lastInviteAt: new Date(now - 40 * 60_000).toISOString() }), 'forty minutes is inside the gap');
+  assert(gapClear({ now, lastInviteAt: new Date(now - 50 * 60_000).toISOString() }), 'fifty minutes clears it');
+  assert(gapClear({ now, lastInviteAt: null }) && gapClear({ now, lastInviteAt: 'garbage' }), 'an unknown last time never blocks');
+  assert(DRIP_MIN_GAP_MINUTES >= 30 && dripDailyCap() >= 1, 'the pace is bounded by construction');
+});
+
+check('the drip times itself around the email sequence and parks on any reply', () => {
+  const now = Date.parse('2026-08-24T10:00:00Z');
+  const daysAgo = d => new Date(now - d * 86_400_000).toISOString();
+  assert(!emailTimingClear({ now, lastEmailAt: daysAgo(2), replied: false, afterDays: 3 }),
+    'two days after email one is too soon; the touch lands between emails, not on top of them');
+  assert(emailTimingClear({ now, lastEmailAt: daysAgo(3.5), replied: false, afterDays: 3 }), 'three and a half days is clear');
+  assert(!emailTimingClear({ now, lastEmailAt: daysAgo(10), replied: true, afterDays: 3 }),
+    'a reply parks the invite for a human, however old the email');
+  assert(emailTimingClear({ now, lastEmailAt: null, replied: false }), 'a contact never emailed is clear immediately');
+  assert(emailTimingClear({ now, lastEmailAt: 'garbage', replied: false }), 'a junk date never blocks and never throws');
+});
+
+check('nothing unapproved ever invites, and the wiring holds it (static)', () => {
+  const drip = freshRead('src/studio/inviteDrip.mjs');
+  assert(/li_invite_approved_at IS NOT NULL AND ct\.li_invited_at IS NULL/.test(drip),
+    'the drip may release only what carries the approval stamp, never twice');
+  assert(/NOT ct\.suppressed AND NOT ct\.rehearsal/.test(drip), 'suppressed and rehearsal contacts never drip');
+  assert(/canInvite\(x\)\.ok && emailTimingClear\(/.test(drip), 'eligibility and email timing gate every release');
+  assert(/sendConnectionInvite\(pick, note, \{ accountId \}\)/.test(drip), 'the release goes through the same send path the button uses');
+  assert(/array_agg\(cc\.campaign ORDER BY cc\.campaign\)/.test(drip), 'the lane derives through the membership rule');
+  assert(/instanceof AccountUnhealthy/.test(drip) && /out\.unhealthy = /.test(drip), 'an account-health error is surfaced, never swallowed');
+  assert(/already pending on LinkedIn, recorded/.test(drip), 'a pending invitation is recorded truth, exactly as the button records it');
+  const srv = freshRead('src/server.mjs');
+  assert(/invite_drip_enabled'\)\) === 'on'\) await inviteDripOnce\('schedule'\);/.test(srv), 'the tick runs the drip only when its own switch is on');
+  assert(/await kvSet\('invite_drip_enabled', 'off'\)/.test(srv) && /LinkedIn account health stopped the invite drip/.test(srv),
+    'an account-health error stands the drip down and tells the team');
+  assert(/an invite note is required; it is frozen at approval/.test(srv), 'approval freezes a real note, never an empty one');
+  assert(/li_invite_approved_at = now\(\), li_invite_approved_by = \$3, li_invite_note = \$2/.test(srv),
+    'approval stamps who and freezes the note in one write');
+  assert(/li_invite_approved_at = NULL, li_invite_approved_by = NULL/.test(srv), 'unapproval backs out cleanly, nothing sends');
+  const mig = freshRead('src/migrations/033_invite_drip.sql');
+  assert(/li_invite_approved_at/.test(mig) && /li_invite_approved_by/.test(mig), 'the approval columns ship in migration 033');
+  const ui = freshRead('web/src/Studio.jsx');
+  assert(/Approve for the drip/.test(ui) && /Unapprove/.test(ui), 'the approve and unapprove verbs are on the connect cards');
+  assert(/Nothing unapproved ever posts or invites/.test(ui), 'the banner states the widened sanction');
+  const health = freshRead('web/src/Health.jsx');
+  assert(/invite-drip/.test(health) && /Invite drip: on/.test(health), 'the Health page carries the switch, separate from the autopilot');
+  const inv = freshRead('src/studio/liInvite.mjs');
+  assert(/its own tighter caps \(inviteDrip\.mjs\)/.test(inv) && /Nothing unapproved/.test(inv),
+    'the invite doctrine names the drip and its sanction');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);
