@@ -322,6 +322,40 @@ await check('recipient truth screens the pick and sweeps the pool, one question 
   assert(!/DELETE FROM/.test(sw), 'the sweep never deletes anything');
 });
 
+await check('a group-arm mailbox is vouched by the company name, never by accident', async () => {
+  const { flagForeignMailbox } = await import('./draft.mjs');
+  // John's first live sweep, 24 August 2026: nine right people were caught
+  // because their companies' register rows held another arm's domain. The
+  // company's own identity word now vouches for a mailbox whose label starts
+  // with it and carries at most a short arm tail.
+  assert(flagForeignMailbox({ name: "Ed O'Donovan", email: 'edward.odonovan@coltdcs.com' },
+    { name: 'COLT DATA CENTRE SERVICES HOLDINGS S.À.R.L.', domain: 'colt.net' }) === null,
+    'coltdcs is Colt, whatever domain the register row holds');
+  assert(flagForeignMailbox({ name: 'Jacob Bates', email: 'jacob.bates@virtusdcs.com' },
+    { name: 'VIRTUS (DATA CENTRES) LTD', domain: 'virtusdatacentres.com' }) === null, 'virtusdcs is Virtus');
+  assert(flagForeignMailbox({ name: 'Dave Rudd', email: 'drudd@ses-ltd.co.uk' },
+    { name: 'SES (ENGINEERING SERVICES) LIMITED', domain: 'wates.co.uk' }) === null, 'ses-ltd is SES, generic trade words never the identity');
+  assert(flagForeignMailbox({ name: 'A Googler', email: 'someone@google.com' },
+    { name: 'GOOGLE UK LIMITED', domain: 'alphabet.com' }) === null,
+    'google.com is Google UK, the arm question John asked');
+  const fuse = flagForeignMailbox({ name: 'Jody Powell', email: 'jody.powell@fuseintegration.com' },
+    { name: 'Fuse', domain: 'meridianworkspace.com' });
+  assert(fuse && /foreign mailbox/.test(fuse), 'a long tail after the name is a different firm; fuseintegration never vouches for Fuse');
+  const zen = flagForeignMailbox({ name: 'Dave Horner', email: 'davehorner@google.com' },
+    { name: 'Zenlayer', domain: 'zenlayer.com' });
+  assert(zen && /google\.com/.test(zen), 'the same mailbox on another company\'s card still blocks; the card decides');
+  assert(flagForeignMailbox({ name: 'Adam Blakiston', email: 'adam.blakiston@aecom.com' },
+    { name: 'TELEHOUSE INTERNATIONAL CORPORATION OF EUROPE LTD', domain: 'telehouse.net' }) !== null,
+    'aecom on Telehouse still blocks');
+  // The correction path for the nine already swept: scoped to the sweep's
+  // own suppressions, and restoring records the human attestation so every
+  // net stands down for them from then on.
+  const rs = readFileSync(join(ROOT, 'scripts/restore-swept-contacts.mjs'), 'utf8');
+  assert(/payload->'suppressed'->>'by' = 'recipient sweep'/.test(rs), 'restore touches only rows the sweep itself suppressed, never a hand suppression');
+  assert(/recipient_confirmed/.test(rs) && /'sweep correction'/.test(rs), 'restoring stamps the attestation, the confirm verb\'s own shape');
+  assert(/Dry run: nothing changes without --apply/.test(rs) && !/DELETE FROM/.test(rs), 'dry by default and never deletes');
+});
+
 await check('a recipient block can end the loop: suppress and reject in one act (static)', async () => {
   // James, 16 August 2026: "these keep appearing". Rejection frees the
   // lead's slot by design, so the cycle re-picks the same wrong contact and

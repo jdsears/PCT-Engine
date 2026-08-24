@@ -436,11 +436,27 @@ export function flagForeignMailbox(contact, company) {
   if (contact?.confirmed) return null;
   const dom = String(contact?.email || '').toLowerCase().split('@')[1] || '';
   const coDom = String(company?.domain || '').toLowerCase().replace(/^www\./, '');
-  if (!dom || !coDom || FREE_MAIL.includes(dom)) return null;
+  if (!dom || FREE_MAIL.includes(dom)) return null;
   const a = dom.split('.')[0];
+  const sa = labelStem(a);
+  // The company's own identity word vouches for a mailbox even when the
+  // stored domain names a different arm, John's sweep of 24 August 2026:
+  // Colt's people mail from coltdcs.com, Virtus's from virtusdcs.com, SES's
+  // from ses-ltd.co.uk, and nine right people were caught because the
+  // register rows held another arm's domain. The mailbox label must START
+  // with the identity word with at most a short arm tail after it (dcs, ltd,
+  // grp), so coltdcs vouches for Colt while fuseintegration never vouches
+  // for Fuse and assessments never vouches for SES.
+  const nameTok = String(company?.name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(/\s+/)
+    .find(t => t.length >= 3 && !NAMESAKE_STOP.includes(t) && !GENERIC_TRADE.includes(t)) || '';
+  if (nameTok && sa && (
+    sa === nameTok
+    || (sa.startsWith(nameTok) && sa.length - nameTok.length <= 5)
+    || (nameTok.startsWith(sa) && nameTok.length - sa.length <= 5 && sa.length >= 3)
+  )) return null;
+  if (!coDom) return null;
   const b = coDom.split('.')[0];
   if (dom.includes(b) || coDom.includes(a)) return null;
-  const sa = labelStem(a);
   const sb = labelStem(b);
   if (sa && sb && (sa === sb || sa.includes(sb) || sb.includes(sa))) return null;
   return `blocking: foreign mailbox, ${contact?.name || 'the contact'}'s address is at ${dom} while the company's domain is ${coDom}; they may no longer work there. Confirm before this can send`;
