@@ -261,7 +261,9 @@ export async function publishPost(id, { actor = null } = {}) {
       });
       commented = true;
     } catch { commentLink = p.grounding?.signal?.source || null; }
-  } else if (comment && linkedinPostId) {
+  } else if (comment) {
+    // The post published but LinkedIn returned no id, so there is nothing to
+    // comment on; the link goes back to the human to paste.
     commentLink = p.grounding?.signal?.source || null;
   }
   // Who clicked Post, when the schema holds it (migration 027) and a person

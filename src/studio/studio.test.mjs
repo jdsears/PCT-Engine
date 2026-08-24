@@ -168,6 +168,8 @@ check('the post carries hashtags only; the story link is the first comment', () 
     'the comment posts only after the post exists, through the same account');
   assert(/catch \{ commentLink = /.test(src),
     'a failed comment never fails a publish; the link goes back for a human to paste');
+  assert(/\} else if \(comment\) \{/.test(src),
+    'a post published without an id also hands its link back, never loses it');
   const uni = freshRead('src/research/unipile.mjs');
   assert(/commentPost/.test(uni) && /OUR OWN just-created post/.test(uni),
     'the third write is declared with its sanction: same click, own post only');
