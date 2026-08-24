@@ -3,6 +3,7 @@
 // gate runs offline. The actual delivery path is not tested here, by design.
 import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients, textToHtml, blockedByKillSwitch } from '../mail.mjs';
 import { renderDigest, renderDigestHtml, humanDate, digestDue, laneSplit } from '../digest.mjs';
+import { openerSource, funnelSteps, replyBuckets, bounceWeeks, HUMAN_REPLIES } from './analytics.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -244,6 +245,72 @@ await check('the digest splits every lane by campaign, and pharma is never invis
   assert(/GROUP BY d\.campaign/.test(dg3), 'sends and replies split through their drafts');
   assert(/array_agg\(cc\.campaign ORDER BY cc\.campaign\)/.test(dg3), 'contacts derive their lane through the membership rule, never a guess');
   assert(/COALESCE\(lp\.grounding->>'campaign', s2\.campaign, 'marwin_dc'\)/.test(dg3), 'posts derive their lane exactly as the studio does');
+});
+
+console.log('\nAfter the send: analytics from outcomes, never from pixels:');
+
+await check('a human reply is a person, never a mail server or an autoresponder', () => {
+  assert(JSON.stringify(HUMAN_REPLIES) === JSON.stringify(['interested', 'question', 'not_interested', 'wrong_person', 'unclear']),
+    'the human categories are exactly the five');
+  assert(!HUMAN_REPLIES.includes('bounce') && !HUMAN_REPLIES.includes('out_of_office'),
+    'bounces and out-of-office never count as a reply');
+});
+
+await check('the opener credits the person before the signal, and no signal is honest profile fit', () => {
+  assert(openerSource({ signalType: 'news_dc_build', contactSource: 'post_engagement' }) === 'Post engagement',
+    'a contact who exists because they engaged is that source, whatever seasoned the draft');
+  assert(openerSource({ signalType: 'ch_filing', contactSource: 'referral' }) === 'Referral',
+    'a referred colleague is a referral, not a filing');
+  assert(openerSource({ signalType: 'news_contract', contactSource: 'linkedin' }) === 'Project news', 'news signals credit the news');
+  assert(openerSource({ signalType: 'ch_director_change', contactSource: null }) === 'Register filing', 'filings credit the register');
+  assert(openerSource({ signalType: null, contactSource: 'linkedin' }) === 'Profile fit', 'no signal is profile fit, stated plainly');
+  assert(openerSource({}) === 'Profile fit' && openerSource({ signalType: 'something_else' }) === 'Profile fit',
+    'unknown shapes fall to profile fit rather than inventing a category');
+});
+
+await check('funnel percentages are each step\'s share of the one before, never invented', () => {
+  const f = funnelSteps([{ label: 'a', n: 200 }, { label: 'b', n: 100 }, { label: 'c', n: 15 }]);
+  assert(f[0].pct === null, 'the first step has no denominator');
+  assert(f[1].pct === 50 && f[2].pct === 15, 'shares compute against the previous step');
+  const z = funnelSteps([{ label: 'a', n: 0 }, { label: 'b', n: 0 }]);
+  assert(z[1].pct === null, 'a zero step yields no percentage for the next, not a division by zero');
+  assert(funnelSteps([]).length === 0 && funnelSteps(null).length === 0, 'empty and absent are tolerated');
+});
+
+await check('reply timing buckets and medians read honestly', () => {
+  const t = replyBuckets([0.2, 0.8, 1.5, 2, 4, 9, -0.5]);
+  assert(t.count === 7 && t.sameDay === 3 && t.oneToTwo === 2 && t.threeToSeven === 1 && t.overSeven === 1,
+    'buckets split at one, two and seven days, negatives clamp to same day');
+  assert(t.medianDays === 1.5, 'the median reads from the sorted middle');
+  const none = replyBuckets([]);
+  assert(none.count === 0 && none.medianDays === null, 'no replies means no median, never a zero that reads as instant');
+});
+
+await check('bounce weeks merge sends and bounces, and a quiet week has no rate', () => {
+  const w = bounceWeeks(
+    [{ wk: '2026-08-10', sent: 20 }, { wk: '2026-08-17', sent: 10 }],
+    [{ wk: '2026-08-17', bounced: 1 }, { wk: '2026-08-03', bounced: 2 }]);
+  assert(w.length === 3 && w[0].week === '2026-08-03', 'weeks sort oldest first, bounce-only weeks included');
+  assert(w[0].rate === null, 'a week with bounces but no recorded sends shows no rate rather than a lie');
+  assert(w[1].rate === 0 && w[2].rate === 10, 'rates compute where sends exist');
+});
+
+await check('the analytics stay outcome-only and rehearsal never leaks in (static)', () => {
+  const ROOT4 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const an = readFileSync(join(ROOT4, 'src/outbound/analytics.mjs'), 'utf8');
+  assert(/No pixels/.test(an), 'the no-tracking position is stated where the queries live');
+  assert((an.match(/<> 'rehearsal'/g) || []).length >= 9, 'every draft, send, reply and lead query excludes the rehearsal lane');
+  assert((an.match(/NOT ct\.rehearsal/g) || []).length >= 3, 'every contact query excludes rehearsal contacts');
+  assert(/s\.sent AND NOT s\.test_mode/.test(an), 'only real prospect sends count, never internal tests');
+  assert(/array_agg\(cc\.campaign ORDER BY cc\.campaign\)/.test(an), 'contacts derive their campaign through the membership rule');
+  assert(/to_regclass\('post_engagers'\)/.test(an) && /to_regclass\('li_posts'\)/.test(an),
+    'the LinkedIn blocks guard their tables for deploy order');
+  const srv4 = readFileSync(join(ROOT4, 'src/server.mjs'), 'utf8');
+  assert(/api\/insights\/outbound/.test(srv4) && /gatherOutboundAnalytics/.test(srv4), 'the endpoint serves the gather');
+  const ui = readFileSync(join(ROOT4, 'web/src/Insights.jsx'), 'utf8');
+  assert(/api\/insights\/outbound/.test(ui) && /After the send/.test(ui), 'the Insights page shows the after-send zone');
+  assert(/No open tracking/.test(ui), 'and states the no-tracking position to the reader');
+  assert(/Invite acceptance is not observable yet/.test(ui), 'what cannot be measured is said, not guessed');
 });
 
 await check('not a prospect is one act: reject, close, remove, remember', () => {

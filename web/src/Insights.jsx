@@ -91,6 +91,126 @@ function CampaignFigures({ c }) {
   );
 }
 
+// One campaign's after-send picture: the conversation funnel with conversion
+// between steps, reply rate per sequence step, what opened the conversations
+// that replied, reply timing, weekly bounce health, and the LinkedIn lane.
+// Every figure is an outcome the engine already records. No pixels, no open
+// tracking: opens are unknowable honestly, replies are the metric that pays.
+function AfterSend({ c }) {
+  const started = (c.funnel.find(s => s.label === 'Conversations drafted')?.n || 0) > 0;
+  const fMax = Math.max(1, ...c.funnel.map(s => s.n));
+  const sendSpark = buildSpark(c.daily?.sends);
+  const replySpark = buildSpark(c.daily?.replies);
+  const bounceLatest = (c.bounceWeeks || []).filter(w => w.rate != null).slice(-1)[0] || null;
+  const bounceHot = bounceLatest && bounceLatest.sent >= 5 && bounceLatest.rate >= 5;
+  const t = c.timing || {};
+  const li = c.linkedin || {};
+  if (!started) {
+    return <p className="ins-caption">No conversations started on this campaign yet. The funnel appears with the first draft.</p>;
+  }
+  return (
+    <>
+      <div className="ins-section">
+        <Head>The funnel, campaign to date</Head>
+        <div className="ins-bars">
+          {c.funnel.map((s, i) => (
+            <div className="ins-bar" key={i}>
+              <div className="ins-bar-label">{s.label}</div>
+              <div className="ins-bar-track"><span className="ins-bar-fill" style={{ width: `${Math.round((s.n / fMax) * 100)}%` }} /></div>
+              <div className="ins-bar-count">{s.n}{s.pct != null && <span className="ins-bar-pct"> {s.pct}%</span>}</div>
+            </div>
+          ))}
+        </div>
+        <p className="ins-caption">Each percentage is that step's share of the one before it. Delivered nets off bounces; opens are not measured, deliberately, because open tracking is unreliable and costs deliverability.</p>
+      </div>
+
+      <div className="ins-section">
+        <Head>Replies by sequence step</Head>
+        <div className="ins-campaign-figs">
+          {c.steps.length === 0 && <span>Nothing sent yet.</span>}
+          {c.steps.map(s => (
+            <span key={s.step}><b>Email {s.step}</b>: {s.sends} send{s.sends === 1 ? '' : 's'}, {s.replies} repl{s.replies === 1 ? 'y' : 'ies'}{s.rate != null ? `, ${s.rate}%` : ''}</span>
+          ))}
+        </div>
+        {t.count > 0 && (
+          <p className="ins-caption">
+            Replies arrive at a median of {t.medianDays} day{t.medianDays === 1 ? '' : 's'}: {t.sameDay} same day, {t.oneToTwo} in one to two days, {t.threeToSeven} in three to seven, {t.overSeven} later. Worth reading against the follow-up cadence.
+          </p>
+        )}
+      </div>
+
+      <div className="ins-section">
+        <Head>What opened the conversations</Head>
+        <div className="ins-campaign-figs">
+          {c.sources.length === 0 && <span>Nothing sent yet.</span>}
+          {c.sources.map(s => (
+            <span key={s.source}><b>{s.source}</b>: {s.conversations} conversation{s.conversations === 1 ? '' : 's'}, {s.replied} replied</span>
+          ))}
+        </div>
+        <p className="ins-caption">Where the research that starts conversations pays. A post engagement or referral opener credits the person; otherwise the signal that opened it.</p>
+      </div>
+
+      <div className="ins-section">
+        <Head>Delivery health</Head>
+        {(c.bounceWeeks || []).length === 0 ? (
+          <p className="ins-caption">No sends in the last eight weeks.</p>
+        ) : (
+          <p className="ins-caption">
+            Bounce rate by week: {c.bounceWeeks.map(w => (w.rate == null ? 'no sends' : `${w.rate}%`)).join(', ')}.
+            {bounceHot ? ' ' : ''}
+            {bounceHot && <span className="ins-warn">The latest week bounced {bounceLatest.rate} percent of {bounceLatest.sent} sends; worth a look at address quality before volume grows.</span>}
+          </p>
+        )}
+      </div>
+
+      <div className="ins-section">
+        <Head>LinkedIn lane</Head>
+        <div className="ins-campaign-figs">
+          <span><b>{li.invited}</b> invite{li.invited === 1 ? '' : 's'} sent</span>
+          <span><b>{li.postsThirtyDays}</b> post{li.postsThirtyDays === 1 ? '' : 's'} this month</span>
+          <span><b>{li.engagersThirtyDays}</b> engager{li.engagersThirtyDays === 1 ? '' : 's'} gathered</span>
+          <span><b>{li.interestWaiting}</b> in the interest queue</span>
+          <span><b>{li.engagementContacts}</b> contact{li.engagementContacts === 1 ? '' : 's'} from engagement, <b>{li.engagementConversations}</b> in conversation</span>
+        </div>
+        <p className="ins-caption">Invite acceptance is not observable yet, so it is not shown rather than guessed.</p>
+      </div>
+
+      <div className="ins-cards">
+        <div className="ins-card ins-card--spark">
+          <div className="ins-card-figure">
+            <div className="ins-hero">{(c.daily?.sends || []).reduce((n, d) => n + d.n, 0)}</div>
+            <div className="eyebrow">Sends, last 30 days</div>
+          </div>
+          <div className="ins-spark">
+            <svg viewBox="0 0 320 56" className="ins-spark-svg" aria-hidden="true">
+              <line x1="4" y1="50" x2="316" y2="50" stroke="var(--line)" strokeWidth="1" />
+              <polyline points={sendSpark.points} fill="none" stroke="var(--navy)" strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+              <circle cx={sendSpark.cx} cy={sendSpark.cy} r="3" fill="var(--blue)" />
+            </svg>
+            <div className="ins-spark-dates"><span>{sendSpark.left}</span><span>{sendSpark.right}</span></div>
+          </div>
+        </div>
+        <div className="ins-card ins-card--spark">
+          <div className="ins-card-figure">
+            <div className="ins-hero">{(c.daily?.replies || []).reduce((n, d) => n + d.n, 0)}</div>
+            <div className="eyebrow">Replies, last 30 days</div>
+          </div>
+          <div className="ins-spark">
+            <svg viewBox="0 0 320 56" className="ins-spark-svg" aria-hidden="true">
+              <line x1="4" y1="50" x2="316" y2="50" stroke="var(--line)" strokeWidth="1" />
+              <polyline points={replySpark.points} fill="none" stroke="var(--navy)" strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+              <circle cx={replySpark.cx} cy={replySpark.cy} r="3" fill="var(--blue)" />
+            </svg>
+            <div className="ins-spark-dates"><span>{replySpark.left}</span><span>{replySpark.right}</span></div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function Insights({ campaign }) {
   const [state, setState] = useState('loading');
   const [data, setData] = useState(null);
@@ -103,8 +223,9 @@ export default function Insights({ campaign }) {
       apiFetch('/api/insights/gaps?days=90').then(r => r.json()),
       apiFetch('/api/insights/top-docs?days=90').then(r => r.json()),
       apiFetch('/api/insights/campaigns?days=30').then(r => (r.ok ? r.json() : { campaigns: [] })).catch(() => ({ campaigns: [] })),
+      apiFetch('/api/insights/outbound').then(r => (r.ok ? r.json() : { campaigns: [] })).catch(() => ({ campaigns: [] })),
     ])
-      .then(([summary, gaps, docs, camp]) => { if (live) { setData({ summary, gaps, docs, camp }); setState('ready'); } })
+      .then(([summary, gaps, docs, camp, outbound]) => { if (live) { setData({ summary, gaps, docs, camp, outbound }); setState('ready'); } })
       .catch(() => { if (live) setState('error'); });
     return () => { live = false; };
   }, []);
@@ -116,10 +237,12 @@ export default function Insights({ campaign }) {
     return <div className="content-pad"><p className="muted-note">Insights are not available right now.</p></div>;
   }
 
-  const { summary, gaps, docs, camp } = data;
+  const { summary, gaps, docs, camp, outbound } = data;
   const allCampaigns = camp?.campaigns || [];
   const scoped = !isAll(campaign);
   const shown = scoped ? allCampaigns.filter(c => c.id === campaign) : allCampaigns;
+  const outboundAll = outbound?.campaigns || [];
+  const outboundShown = scoped ? outboundAll.filter(c => c.id === campaign) : outboundAll;
   const showCampaigns = allCampaigns.length > 1 || scoped;
   const questions = summary.questions || 0;
   const declined = summary.declined || 0;
@@ -184,6 +307,26 @@ export default function Insights({ campaign }) {
                 ))}
               </div>
             )}
+          </section>
+        )}
+
+        {outboundShown.length > 0 && (
+          <section className="ins-zone">
+            <div className="ins-zone-head">
+              <div className="ins-zone-title">After the send</div>
+              <div className="ins-zone-sub">What the conversations did once they went out: the funnel, the steps, the openers, delivery health and the LinkedIn lane. Scoped to the switcher. No open tracking; outcomes only.</div>
+            </div>
+            {outboundShown.map(c => (
+              <div className="ins-campaign" key={c.id}>
+                {!scoped && (
+                  <div className="ins-campaign-head">
+                    <span className="ins-campaign-name">{c.displayName}</span>
+                    {c.status && c.status !== 'active' && <span className="pill">{c.status}</span>}
+                  </div>
+                )}
+                <AfterSend c={c} />
+              </div>
+            ))}
           </section>
         )}
 
@@ -286,11 +429,6 @@ export default function Insights({ campaign }) {
           </div>
         </div>
 
-          {/* Engine metrics */}
-          <div className="ins-section">
-            <Head>Engine metrics</Head>
-            <p className="muted-note">Reply rates, deliverability and pipeline timing arrive with the outbound stage.</p>
-          </div>
         </section>
       </div>
     </div>

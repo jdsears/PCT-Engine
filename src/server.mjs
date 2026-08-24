@@ -14,6 +14,7 @@ import { graphToken } from './msgraph.mjs';
 import { handleTeamsMessage } from './teams.mjs';
 import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, prospectHtml, signatureBlock } from './mail.mjs';
 import { gatherDigestData, renderDigest, renderDigestHtml, digestDue } from './digest.mjs';
+import { gatherOutboundAnalytics } from './outbound/analytics.mjs';
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
@@ -384,6 +385,15 @@ app.get('/api/insights/campaigns', async (req, res) => {
       }),
     });
   } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// What happens after Send: the conversation funnel, reply rate per sequence
+// step, what opened the conversations that replied, reply timing, weekly
+// bounce health, and the LinkedIn lane, per campaign. Read-only over data the
+// engine already records; no pixels and no tracking of prospects, ever.
+app.get('/api/insights/outbound', async (_req, res) => {
+  try { res.json(await gatherOutboundAnalytics()); }
+  catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
 // Read-only views over the research stage for the web app. Same posture as the

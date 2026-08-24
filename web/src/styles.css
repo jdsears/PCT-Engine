@@ -246,6 +246,8 @@ button, input { font: inherit; }
 .ins-bar-track { position: relative; height: 6px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .ins-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--navy); display: block; }
 .ins-bar-count { font-family: var(--mono); font-size: 13px; text-align: right; }
+.ins-bar-pct { color: var(--ink-2, #5B6B8C); font-size: 11.5px; }
+.ins-warn { color: var(--amber); font-weight: 600; }
 
 .ins-gaps { display: flex; flex-direction: column; }
 .ins-gap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--line); }
