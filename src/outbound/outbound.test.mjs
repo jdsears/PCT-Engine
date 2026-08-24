@@ -2,7 +2,7 @@
 // exercise only the refusal paths, which return before any network call, so the
 // gate runs offline. The actual delivery path is not tested here, by design.
 import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients, textToHtml, blockedByKillSwitch } from '../mail.mjs';
-import { renderDigest, renderDigestHtml, humanDate, digestDue } from '../digest.mjs';
+import { renderDigest, renderDigestHtml, humanDate, digestDue, laneSplit } from '../digest.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -177,7 +177,7 @@ await check('the digest email is a designed card, same numbers, same voice', () 
   assert(off.text.includes('The studio autopilot is switched off; posts publish only by hand.'), 'an off switch cannot hide for a week');
   const withInterest = { ...data, interest: { gathered: 12, orbit: 4, waiting: 9 } };
   const ih = renderDigestHtml(withInterest, { weekEnding: '2026-08-17', appUrl: '' });
-  assert(ih.includes('12 people engaged with the posts this week (4 in the decision orbit), 9 waiting in the interest queue.'),
+  assert(ih.includes('12 people engaged with the posts this week, 4 in the decision orbit, 9 waiting in the interest queue.'),
     'the interest line counts the gathering half');
   const it = renderDigest(withInterest, { weekEnding: '2026-08-17' });
   assert(it.text.includes('Interest: 12 people engaged'), 'the text digest carries the same line');
@@ -194,6 +194,56 @@ await check('the digest email is a designed card, same numbers, same voice', () 
   const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
   const srv = readFileSync(join(ROOT, 'src/server.mjs'), 'utf8');
   assert(/const html = renderDigestHtml\(data\)/.test(srv), 'the scheduled send posts the designed card');
+});
+
+await check('the digest splits every lane by campaign, and pharma is never invisible again', () => {
+  // John's screenshot, 24 August 2026: the digest read as a data centre
+  // report, because every figure was a whole-engine total from the
+  // single-campaign era and the signals line hardcoded "data centre stories"
+  // over both lanes. The totals stay; each lane's share rides beside them.
+  const twoLanes = [{ campaign: 'marwin_dc', news: 41 }, { campaign: 'pharma_steriflow', news: 13 }];
+  assert(laneSplit(twoLanes, 'news') === ' (Data centres 41, Pharma 13)', 'the split is labelled by display name');
+  assert(laneSplit([{ campaign: 'marwin_dc', news: 41 }], 'news') === '', 'one lane renders no bracket; a single-campaign digest reads as before');
+  assert(laneSplit(null, 'news') === '' && laneSplit(undefined, 'news') === '', 'absent lanes render nothing, so old-shaped data is untouched');
+  const data = {
+    questions: { questions: 1, declined: 0, fb_up: 0, fb_down: 0, teams: 0 },
+    signals: { news: 54, uk: 17, watch: 37, filings: 29, lanes: twoLanes },
+    leads: { created: 6, refreshed: 258, lanes: [
+      { campaign: 'marwin_dc', created: 5, refreshed: 240 }, { campaign: 'pharma_steriflow', created: 1, refreshed: 18 }] },
+    drafts: { waiting: 39, approved: 0, drafted_this_week: 140, lanes: [
+      { campaign: 'marwin_dc', waiting: 31, drafted_this_week: 121 }, { campaign: 'pharma_steriflow', waiting: 8, drafted_this_week: 19 }] },
+    convo: { sent: 58, replies: 8, live: 0, closed: 0, meetings: 0, handoffs: 0, lanes: [
+      { campaign: 'marwin_dc', sent: 50, replies: 7 }, { campaign: 'pharma_steriflow', sent: 8, replies: 1 }] },
+    people: { searches: 128, found: 364, orbit: 135, emails: 103, autoOn: true, lanes: [
+      { campaign: 'marwin_dc', found: 300, emails: 90 }, { campaign: 'pharma_steriflow', found: 64, emails: 13 }] },
+    posts: { waiting: 10, approved: 3, posted: 2, autoOn: true, lanes: [
+      { campaign: 'marwin_dc', waiting: 7, approved: 3, posted: 2 },
+      { campaign: 'pharma_steriflow', waiting: 3, approved: 0, posted: 0 }] },
+    interest: { gathered: 12, orbit: 4, waiting: 9, lanes: [
+      { campaign: 'marwin_dc', gathered: 9, waiting: 7 }, { campaign: 'pharma_steriflow', gathered: 3, waiting: 2 }] },
+  };
+  const t = renderDigest(data, { weekEnding: '2026-08-24' });
+  assert(!/data centre stor/.test(t.text), 'the hardcoded label is gone; the stories were never all data centre');
+  assert(t.text.includes('54 stories kept (Data centres 41, Pharma 13)'), 'signals split');
+  assert(t.text.includes('across the whole register'), 'the filings stay register-wide and the wording says so');
+  assert(t.text.includes('6 new (Data centres 5, Pharma 1), 258 refreshed (Data centres 240, Pharma 18)'), 'leads split');
+  assert(t.text.includes('39 drafts awaiting review (Data centres 31, Pharma 8)'), 'outbound split');
+  assert(t.text.includes('58 prospect sends (Data centres 50, Pharma 8), 8 replies (Data centres 7, Pharma 1)'), 'conversation split');
+  assert(t.text.includes('364 people found (Data centres 300, Pharma 64)'), 'decision makers split through the membership rule');
+  assert(t.text.includes('2 posted this week (Data centres 2, Pharma 0)'), 'a quiet lane shows its zero rather than disappearing');
+  assert(t.text.includes('The approved queue is empty for Pharma, so its next posting slot will pass silently.'),
+    'the warning names the lane whose slot will pass');
+  const h = renderDigestHtml(data, { weekEnding: '2026-08-24', appUrl: '' });
+  assert(!/data centre stor/.test(h) && h.includes('(Data centres 41, Pharma 13)')
+    && h.includes('The approved queue is empty for Pharma'), 'the designed card splits the same way');
+  assert(!/[—–!]/.test(t.text) && !/genuinely/i.test(t.text), 'house voice holds with the splits in');
+  // The gather needs a database, so its split wiring is frozen as source.
+  const ROOT3 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const dg3 = readFileSync(join(ROOT3, 'src/digest.mjs'), 'utf8');
+  assert((dg3.match(/GROUP BY campaign/g) || []).length >= 4, 'signals, leads, drafts and interest split in SQL');
+  assert(/GROUP BY d\.campaign/.test(dg3), 'sends and replies split through their drafts');
+  assert(/array_agg\(cc\.campaign ORDER BY cc\.campaign\)/.test(dg3), 'contacts derive their lane through the membership rule, never a guess');
+  assert(/COALESCE\(lp\.grounding->>'campaign', s2\.campaign, 'marwin_dc'\)/.test(dg3), 'posts derive their lane exactly as the studio does');
 });
 
 await check('not a prospect is one act: reject, close, remove, remember', () => {
