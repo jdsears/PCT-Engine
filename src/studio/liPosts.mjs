@@ -105,11 +105,21 @@ export function hashtagsFor({ title = '', body = '', geoScope = '', campaign = '
 
 // The full text as it should appear on LinkedIn: the shaped body, the story
 // link on its own line so readers can check the source, then the hashtags.
-export function renderPostText({ body, sourceUrl = null, hashtags = [] }) {
+// The story link left the post body on 24 August 2026, John's call after
+// James's best-performing post: an external link in the body is widely
+// believed to cost reach, and the hedge costs nothing. The post carries the
+// body and hashtags; the link publishes as the post's own first comment,
+// automatically, as part of the same human click.
+export function renderPostText({ body, hashtags = [] }) {
   const parts = [formatPost(body)];
-  if (sourceUrl) parts.push(`Story: ${sourceUrl}`);
   if (hashtags.length) parts.push(hashtags.join(' '));
   return parts.filter(Boolean).join('\n\n');
+}
+
+// The first comment: the story link alone, or nothing when the signal has
+// no url, never an invented line.
+export function storyComment(sourceUrl) {
+  return sourceUrl ? `Story: ${sourceUrl}` : null;
 }
 
 // The end-customer check for a post, with the story's own subject exempted,
@@ -221,12 +231,12 @@ export async function publishPost(id, { actor = null } = {}) {
   }
   const text = renderPostText({
     body: p.body,
-    sourceUrl: p.grounding?.signal?.source || null,
     hashtags: hashtagsFor({
       title: p.grounding?.signal?.title || p.topic, body: p.body, geoScope: p.grounding?.signal?.geoScope,
       campaign,
     }),
   });
+  const comment = storyComment(p.grounding?.signal?.source || null);
   const created = await unipile(ROUTES.createPost, {
     form: { account_id: accountId, text },
     target: `li_post ${p.id}`,
@@ -235,6 +245,25 @@ export async function publishPost(id, { actor = null } = {}) {
   // The response shape is taken defensively; a post published without an id on
   // record simply cannot list its engagers, and the UI says so plainly.
   const linkedinPostId = created?.post_id ?? created?.id ?? created?.social_id ?? null;
+  // The story link as the post's own first comment, part of the same human
+  // click that published: the click sanctioned the post's whole content,
+  // and this is that content split across two calls, only ever on the post
+  // just created. A failed comment never fails a publish that has already
+  // happened; the caller gets the link back to paste by hand.
+  let commented = false;
+  let commentLink = null;
+  if (comment && linkedinPostId) {
+    try {
+      await unipile(ROUTES.commentPost, {
+        pathSuffix: `${encodeURIComponent(linkedinPostId)}/comments`, rawSuffix: true,
+        body: { account_id: accountId, text: comment },
+        target: `li_post ${p.id} story comment`,
+      });
+      commented = true;
+    } catch { commentLink = p.grounding?.signal?.source || null; }
+  } else if (comment && linkedinPostId) {
+    commentLink = p.grounding?.signal?.source || null;
+  }
   // Who clicked Post, when the schema holds it (migration 027) and a person
   // is signed in. Never worth failing a publish that has already happened.
   const by = (actor && await hasColumn('li_posts', 'decided_by')) ? actor : null;
@@ -243,7 +272,7 @@ export async function publishPost(id, { actor = null } = {}) {
             grounding = COALESCE(grounding, '{}'::jsonb)
               || jsonb_build_object('postedText', $2::text, 'linkedinPostId', $3::text)
      WHERE id = $1`, by ? [p.id, text, linkedinPostId, by] : [p.id, text, linkedinPostId]);
-  return { posted: true };
+  return { posted: true, commented, commentLink };
 }
 
 // LinkedIn headlines arrive as stored: often "Role at Company | Sector | Tag"

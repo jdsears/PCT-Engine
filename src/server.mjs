@@ -1623,7 +1623,7 @@ app.get('/api/studio/posts', async (req, res) => {
         // the source stated none, which is shown as unknown rather than hidden.
         storyDate: p.grounding?.signal?.publishedAt ?? null,
         hashtags,
-        preview: renderPostText({ body: p.body, sourceUrl: p.grounding?.signal?.source || null, hashtags }),
+        preview: renderPostText({ body: p.body, hashtags }),
         createdAt: p.created_at, postedAt: p.posted_at,
       };
     }) });

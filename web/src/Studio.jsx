@@ -57,8 +57,12 @@ function PostCard({ post, onChanged }) {
   const publish = async () => {
     setBusy(true); setMsg(null);
     try {
-      await action(`/api/studio/posts/${post.id}/post`, jsonOpts('POST'));
-      setMsg('Posted through the connected account.');
+      const r = await action(`/api/studio/posts/${post.id}/post`, jsonOpts('POST'));
+      setMsg(r.commented
+        ? 'Posted, and the story link went up as the first comment.'
+        : r.commentLink
+          ? `Posted. The story comment could not be added; paste it yourself: ${r.commentLink}`
+          : 'Posted through the connected account.');
       onChanged();
     } catch (e) { setMsg(String(e.message || e)); }
     setBusy(false);
@@ -81,7 +85,7 @@ function PostCard({ post, onChanged }) {
       )}
       <textarea className="ob-body" rows={8} value={body} disabled={!open || busy} onChange={e => setBody(e.target.value)} />
       <div className="muted-small">
-        Added underneath automatically:{post.source ? ' the story link and' : ''} {(post.hashtags || []).join(' ')}
+        Hashtags publish with the post: {(post.hashtags || []).join(' ')}{post.source ? '. The story link posts as the first comment automatically, in the same click.' : ''}
       </div>
       {open && (
         <div className="ob-actions">

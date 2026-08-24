@@ -1,7 +1,7 @@
 // The studio's pure parts. Post generation needs the database and a model, so
 // it is exercised on the deploy; the note builder and its invite-length bound
 // are provable here.
-import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText, postSystem } from './liPosts.mjs';
+import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText, storyComment, postSystem } from './liPosts.mjs';
 import { accountForCampaign } from '../research/unipile.mjs';
 import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
 import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers } from './postEngagers.mjs';
@@ -152,14 +152,25 @@ check('hashtags are curated, never invented: the base pair, cooling and UK when 
   assert(cool.every(t => /^#[a-z]+$/.test(t)), 'every tag is a plain lowercase hashtag');
 });
 
-check('the full post text puts the story link then the hashtags at the bottom', () => {
-  const text = renderPostText({ body: 'A point.\n\nA second point.', sourceUrl: 'https://news.example/story', hashtags: ['#datacentres', '#valves'] });
+check('the post carries hashtags only; the story link is the first comment', () => {
+  // John's call, 24 August 2026, after James's best-performing post: an
+  // external link in the body is widely believed to cost reach, so the link
+  // moved to the post's own first comment, published in the same click.
+  const text = renderPostText({ body: 'A point.\n\nA second point.', hashtags: ['#datacentres', '#valves'] });
   const parts = text.split('\n\n');
   assert(parts[parts.length - 1] === '#datacentres #valves', 'hashtags close the post');
-  assert(parts[parts.length - 2] === 'Story: https://news.example/story', 'the story link sits above them');
+  assert(!/Story:/.test(text) && !/https?:/.test(text), 'no link ever sits in the post body');
   assert(!/[—–]/.test(text) && !/!/.test(text), 'voice rules hold in the assembled text');
-  const noLink = renderPostText({ body: 'A point.', sourceUrl: null, hashtags: ['#valves'] });
-  assert(!/Story:/.test(noLink), 'no link line is invented when the signal has no url');
+  assert(storyComment('https://news.example/story') === 'Story: https://news.example/story', 'the comment is the link line');
+  assert(storyComment(null) === null, 'no comment is invented when the signal has no url');
+  const src = freshRead('src/studio/liPosts.mjs');
+  assert(/if \(comment && linkedinPostId\)/.test(src) && /ROUTES\.commentPost/.test(src),
+    'the comment posts only after the post exists, through the same account');
+  assert(/catch \{ commentLink = /.test(src),
+    'a failed comment never fails a publish; the link goes back for a human to paste');
+  const uni = freshRead('src/research/unipile.mjs');
+  assert(/commentPost/.test(uni) && /OUR OWN just-created post/.test(uni),
+    'the third write is declared with its sanction: same click, own post only');
 });
 
 console.log('\nStory freshness, the three-year-old post that started it:');
