@@ -1,0 +1,130 @@
+import { pool, hasColumn } from '../db.mjs';
+import { londonClock } from './autopost.mjs';
+import { activeCampaignIds } from '../campaigns/registry.mjs';
+import { accountForCampaign, AccountUnhealthy, CapReached, unipileConfigured } from '../research/unipile.mjs';
+import { canInvite, sendConnectionInvite, invitesUsedToday, inviteRefusal } from './liInvite.mjs';
+import { connectNote } from './liPosts.mjs';
+
+// The invite drip, John's decision of 24 August 2026: connection requests
+// join the autopilot, timed with the outreach engine. The sanction is the
+// approval, exactly the posting queue's doctrine: a person approves one named
+// contact in the connect queue, note frozen at that moment, and the drip
+// releases approved invites one at a time. Invitations are the touchiest
+// LinkedIn action of all, so the drip is deliberately boring: weekdays only,
+// working hours only, one release per lane per tick, a minimum gap per
+// account, a daily cap tighter than the hand cap, and the whole thing stands
+// itself down on any account-health error. Timing with the email sequence:
+// a contact who has been emailed is only invited a few days after the last
+// send, and never once a person has replied, because a reply makes it a
+// conversation and conversations are handled by humans.
+
+export const dripDailyCap = () => Math.max(1, parseInt(process.env.STUDIO_INVITE_DRIP_CAP || '5', 10) || 5);
+export const inviteAfterEmailDays = () => Math.max(0, parseInt(process.env.INVITE_AFTER_EMAIL_DAYS || '3', 10) || 3);
+export const DRIP_MIN_GAP_MINUTES = 45;
+
+// Weekday working hours on the London wall clock, 09:30 to 16:30: invites
+// land when a person would plausibly be at a desk, never at 03:00, never at
+// the weekend.
+export function dripWindowOpen(now = new Date()) {
+  const c = londonClock(now);
+  if (!['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(c.day)) return false;
+  return c.minutes >= 9 * 60 + 30 && c.minutes <= 16 * 60 + 30;
+}
+
+// Spacing per account: no two dripped invites inside the gap, so the pattern
+// reads as a person, not a queue. An unknown last time never blocks.
+export function gapClear({ now = Date.now(), lastInviteAt = null, minGapMinutes = DRIP_MIN_GAP_MINUTES } = {}) {
+  if (!lastInviteAt) return true;
+  const t = new Date(lastInviteAt).getTime();
+  if (Number.isNaN(t)) return true;
+  return now - t >= minGapMinutes * 60_000;
+}
+
+// The email-sequence timing: a reply parks the invite for a human, and an
+// emailed contact waits the configured days after the last send, so the
+// LinkedIn touch lands between the emails rather than on top of them. A
+// contact never emailed is clear immediately.
+export function emailTimingClear({ lastEmailAt = null, replied = false, now = Date.now(), afterDays = inviteAfterEmailDays() } = {}) {
+  if (replied) return false;
+  if (!lastEmailAt) return true;
+  const t = new Date(lastEmailAt).getTime();
+  if (Number.isNaN(t)) return true;
+  return now - t >= afterDays * 86_400_000;
+}
+
+// One pass: for each lane, release at most one approved invite whose timing
+// is clear, through the same send path the button uses, with the same
+// bookkeeping. Quiet outside the window and under the gap; an account-health
+// error is returned for the caller to stand the drip down.
+export async function dripInvitesOnce({ log = () => {} } = {}) {
+  const out = { sent: [], skipped: [] };
+  if (!unipileConfigured()) return out;
+  if (!(await hasColumn('contacts', 'li_invite_approved_at'))) {
+    return { ...out, skipped: [{ reason: 'the approval columns are missing; run npm run migrate first' }] };
+  }
+  if (!dripWindowOpen()) return out;
+  const perAcct = await hasColumn('unipile_calls', 'account_id');
+  const byCol = await hasColumn('contacts', 'li_invited_by');
+  // Approved, not yet invited, oldest approval first, each with its lane and
+  // its email-sequence facts. The lane derives through the membership rule
+  // the connect queue uses.
+  const { rows: approved } = await pool.query(
+    `SELECT ct.*, c.name AS company,
+            (CASE WHEN array_length(m.memberships, 1) = 1 THEN m.memberships[1] ELSE 'marwin_dc' END) AS lane,
+            (SELECT max(s.created_at) FROM outbound_sends s JOIN outbound_drafts d ON d.id = s.draft_id
+             WHERE d.contact_id = ct.id AND s.sent AND NOT s.test_mode) AS last_email_at,
+            EXISTS (SELECT 1 FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
+                    WHERE d.contact_id = ct.id
+                      AND (r.category IS NULL OR r.category NOT IN ('bounce', 'out_of_office'))) AS replied
+     FROM contacts ct JOIN companies c ON c.id = ct.company_id
+     CROSS JOIN LATERAL (
+       SELECT (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc
+               WHERE cc.company_id = c.id) AS memberships
+     ) m
+     WHERE ct.li_invite_approved_at IS NOT NULL AND ct.li_invited_at IS NULL
+       AND NOT ct.suppressed AND NOT ct.rehearsal
+     ORDER BY ct.li_invite_approved_at ASC`);
+  for (const campaign of activeCampaignIds()) {
+    const accountId = accountForCampaign(campaign);
+    if (!accountId) continue;
+    const used = await invitesUsedToday(accountId);
+    if (used >= dripDailyCap()) continue;
+    const { rows: g } = await pool.query(
+      `SELECT max(called_at) AS last FROM unipile_calls
+       WHERE endpoint = 'POST /api/v1/users/invite' AND outcome = 'ok'${perAcct ? ' AND account_id = $1' : ''}`,
+      perAcct ? [accountId] : []);
+    if (!gapClear({ lastInviteAt: g[0]?.last })) continue;
+    const pick = approved.filter(x => x.lane === campaign)
+      .find(x => canInvite(x).ok && emailTimingClear({ lastEmailAt: x.last_email_at, replied: x.replied }));
+    if (!pick) continue;
+    try {
+      const note = String(pick.li_invite_note || '').slice(0, 300)
+        || connectNote({ full_name: pick.full_name, role_title: pick.role_title }, pick.company, campaign);
+      const r = await sendConnectionInvite(pick, note, { accountId });
+      if (r.sent) {
+        await pool.query(
+          `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2${byCol ? `, li_invited_by = COALESCE(li_invited_by, 'invite drip')` : ''}
+           WHERE id = $1`, [pick.id, note]);
+        out.sent.push({ campaign, contact: pick.full_name });
+        log(`dripped an invite to ${pick.full_name} (${campaign})`);
+      } else {
+        out.skipped.push({ campaign, reason: r.reason });
+      }
+    } catch (e) {
+      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); break; }
+      if (e instanceof CapReached) { out.skipped.push({ campaign, reason: 'the daily Unipile call cap is reached' }); continue; }
+      const refusal = inviteRefusal(e);
+      if (refusal?.alreadyInvited) {
+        // Truth from LinkedIn's side, recorded exactly as the button records
+        // it, so the queue moves on rather than re-raising every tick.
+        await pool.query(
+          `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2 WHERE id = $1 AND li_invited_at IS NULL`,
+          [pick.id, 'recorded from LinkedIn: an invitation was already pending']);
+        out.skipped.push({ campaign, reason: 'already pending on LinkedIn, recorded' });
+        continue;
+      }
+      out.skipped.push({ campaign, reason: String(e.message).slice(0, 160) });
+    }
+  }
+  return out;
+}

@@ -81,6 +81,19 @@ function EngineCard() {
     setBusy(false);
   };
 
+  const toggleDrip = async () => {
+    if (!engine || busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/invite-drip', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !engine.inviteDrip }),
+      });
+      setEngine(await res.json());
+    } catch { setNote('The invite drip switch is not available right now.'); }
+    setBusy(false);
+  };
+
   const toggleStudio = async () => {
     if (!engine || busy) return;
     setBusy(true); setNote(null);
@@ -139,6 +152,9 @@ function EngineCard() {
   if (engine.studioLast && engine.studioLast.ok === false && engine.studioLast.unhealthy) {
     attentions.push({ key: 'studio', text: 'The studio autopilot stood itself down on a LinkedIn account-health error. Check the account, then turn the switch back on.' });
   }
+  if (engine.inviteDripLast && engine.inviteDripLast.ok === false && engine.inviteDripLast.unhealthy) {
+    attentions.push({ key: 'drip', text: 'The invite drip stood itself down on a LinkedIn account-health error. Check the account, then turn the switch back on.' });
+  }
 
   // The calm summary of what is acknowledged: one line, plain text, with the
   // full list behind a disclosure. Counted, never dropped.
@@ -181,6 +197,10 @@ function EngineCard() {
         <button className="engine-btn" onClick={toggleStudio} disabled={busy}
           title="Publishes approved studio posts at the standing Tuesday, Wednesday and Thursday morning slots, tops up thin queues with fresh drafts, and sweeps engagement into the interest queue. Approval stays human, and any account-health error stands it down.">
           {engine.studioAutopilot ? 'Studio autopilot: on' : 'Studio autopilot: off'}
+        </button>
+        <button className="engine-btn" onClick={toggleDrip} disabled={busy}
+          title="Releases approved connection invites one at a time through weekday working hours, spaced per account, within a cap tighter than the hand cap, a few days after any email with no reply. Approval stays human, and any account-health error stands it down. Worth James's and Andy's own yes before switching on.">
+          {engine.inviteDrip ? 'Invite drip: on' : 'Invite drip: off'}
         </button>
       </div>
       <div className="health-sub">

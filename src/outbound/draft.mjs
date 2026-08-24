@@ -375,17 +375,44 @@ export function flagNamesake(contact, companyName) {
 // rather than an employer ("with 25 years", "with a passion for") says
 // nothing, so headline flourish never blocks anyone.
 const PROSE_SEGMENT = /^\s*(?:a|an|the|my|our|his|her|their|over|more|than|extensive|proven|strong|deep|hands|experience|passion|focus|expertise|background)\b|^\s*\d/;
+// Words that name a trade rather than a company. A shared generic word must
+// never satisfy the employer comparison: on 24 August 2026 "Senior Program
+// Manager at Invox Pharma" passed on the Cambridge Pharma card because both
+// names contain "pharma". Identity words decide the match; a company named
+// only in generics offers no identity to compare, so it stays unjudged, the
+// same honest silence as a role with no stated employer.
+const GENERIC_TRADE = ['pharma', 'pharmaceutical', 'pharmaceuticals', 'medical', 'healthcare', 'biotech',
+  'bioscience', 'biosciences', 'laboratories', 'laboratory', 'labs', 'sciences', 'scientific',
+  'engineering', 'engineers', 'technology', 'technologies', 'tech', 'solutions', 'systems', 'services',
+  'consulting', 'consultants', 'industries', 'industrial', 'international', 'global', 'energy', 'power',
+  'construction', 'manufacturing', 'automation', 'controls', 'digital', 'partners', 'associates',
+  'logistics', 'environmental', 'electrical', 'mechanical'];
 export function flagStatedEmployer(contact, companyName) {
   if (contact?.confirmed) return null;
   const role = String(contact?.role || '');
   const coTok = String(companyName || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(/\s+/)
     .filter(t => t && !NAMESAKE_STOP.includes(t));
   if (!coTok.length) return null;
+  const core = coTok.filter(t => !GENERIC_TRADE.includes(t));
+  if (!core.length) return null;
   const segs = role.toLowerCase().split(/\b(?:at|with)\b/).slice(1).filter(s => !PROSE_SEGMENT.test(s));
   if (!segs.length) return null;
   const segTokens = s => s.replace(/[^a-z0-9]+/g, ' ').split(/\s+/).filter(t => t && !NAMESAKE_STOP.includes(t)).slice(0, 4);
-  if (segs.some(s => segTokens(s).some(t => coTok.includes(t)))) return null;
+  if (segs.some(s => segTokens(s).some(t => core.includes(t)))) return null;
   return `blocking: stated employer differs, the contact's recorded role reads "${role}" and does not place them at ${companyName}; confirm they really work at ${companyName} before this can send`;
+}
+
+// The three recipient nets as one question, for selection-time screening and
+// the pool sweep: does anything in this person's own record dispute that they
+// work at this company? Empty means nothing does. A confirmed contact answers
+// empty by definition, because a recorded human attestation outranks every
+// heuristic here.
+export function recipientMismatch(contact, company) {
+  return [
+    flagNamesake(contact, company?.name),
+    flagStatedEmployer(contact, company?.name),
+    flagForeignMailbox(contact, company),
+  ].filter(Boolean);
 }
 
 // The mailbox tells the truth the headline may not, 18 August 2026: every

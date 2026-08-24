@@ -1,13 +1,16 @@
 import { pool, hasColumn } from '../db.mjs';
 import { unipile, ROUTES, unipileConfigured, accountForCampaign } from '../research/unipile.mjs';
 
-// The one sanctioned LinkedIn write: a connection invite, sent only when a
-// person clicks Send invite on one named contact in the studio, authorised by
-// John with James's consent. Every send goes through the shared Unipile queue,
-// so it is sequential, paced, ledgered against the daily call cap, and an
+// The connection invite, the lane's touchiest write. Sent on one named
+// contact only, authorised by John with James's consent, and always resting
+// on a human decision: the Send invite click, or, since 24 August 2026 and
+// John's drip decision, an approval recorded ahead of time that the drip
+// releases within its own tighter caps (inviteDrip.mjs). Nothing unapproved
+// ever invites. Every send goes through the shared Unipile queue, so it is
+// sequential, paced, ledgered against the daily call cap, and an
 // account-health error stops everything with no retry. On top of that sits a
-// stricter invites-per-day cap, because invitations are the touchiest LinkedIn
-// action of all.
+// stricter invites-per-day cap, because invitations are the touchiest
+// LinkedIn action of all.
 
 export const inviteDailyCap = () => Math.max(1, parseInt(process.env.LINKEDIN_INVITE_DAILY_CAP || '10', 10));
 
