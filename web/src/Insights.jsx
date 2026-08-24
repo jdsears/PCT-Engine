@@ -96,27 +96,83 @@ function CampaignFigures({ c }) {
 // that replied, reply timing, weekly bounce health, and the LinkedIn lane.
 // Every figure is an outcome the engine already records. No pixels, no open
 // tracking: opens are unknowable honestly, replies are the metric that pays.
+
+// Blend two hexes. The funnel's fill deepens from a pale wash at the volume
+// end to the brand navy where volume has become value, so the eye reads the
+// narrowing without a legend.
+function mixHex(a, b, t) {
+  const ch = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const [pa, pb] = [ch(a), ch(b)];
+  return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(',')})`;
+}
+
 function AfterSend({ c }) {
-  const started = (c.funnel.find(s => s.label === 'Conversations drafted')?.n || 0) > 0;
-  const fMax = Math.max(1, ...c.funnel.map(s => s.n));
-  const sendSpark = buildSpark(c.daily?.sends);
-  const replySpark = buildSpark(c.daily?.replies);
-  const bounceLatest = (c.bounceWeeks || []).filter(w => w.rate != null).slice(-1)[0] || null;
-  const bounceHot = bounceLatest && bounceLatest.sent >= 5 && bounceLatest.rate >= 5;
+  const funnel = c.funnel || [];
+  const get = label => funnel.find(s => s.label === label)?.n || 0;
+  const started = get('Conversations drafted') > 0;
+  const fMax = Math.max(1, ...funnel.map(s => s.n));
+  const sent = get('Sent');
+  const replied = get('Replied');
+  const replyRate = sent > 0 ? Math.round((replied / sent) * 100) : null;
   const t = c.timing || {};
   const li = c.linkedin || {};
+  const sendSpark = buildSpark(c.daily?.sends);
+  const replySpark = buildSpark(c.daily?.replies);
+  const buckets = [
+    { label: 'Same day', n: t.sameDay || 0 },
+    { label: '1 to 2 days', n: t.oneToTwo || 0 },
+    { label: '3 to 7 days', n: t.threeToSeven || 0 },
+    { label: 'Later', n: t.overSeven || 0 },
+  ];
+  const bMax = Math.max(1, ...buckets.map(b => b.n));
+  const weeks = c.bounceWeeks || [];
+  const hotWeek = w => w.rate != null && w.sent >= 5 && w.rate >= 5;
+  const latest = weeks.filter(w => w.rate != null).slice(-1)[0] || null;
+  const srcMax = Math.max(1, ...(c.sources || []).map(s => s.conversations));
+
   if (!started) {
     return <p className="ins-caption">No conversations started on this campaign yet. The funnel appears with the first draft.</p>;
   }
   return (
     <>
+      {/* The four numbers that matter, before any chart. */}
+      <div className="ins-cards">
+        <div className="ins-card ins-card--rate">
+          <div className="ins-hero">{replyRate == null ? '\u2014' : `${replyRate}%`}</div>
+          <div className="eyebrow">Conversations replied</div>
+          <div className="ins-gauge" aria-hidden="true">
+            <div className="ins-gauge-rail" />
+            <div className="ins-gauge-teal" style={{ width: `${replyRate || 0}%` }} />
+            <div className="ins-gauge-tick" style={{ left: `${replyRate || 0}%` }} />
+          </div>
+          <div className="ins-scale"><span>0</span><span>100</span></div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{t.medianDays == null ? '\u2014' : t.medianDays}</div>
+          <div className="eyebrow">Median days to reply</div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{get('Live interest')}</div>
+          <div className="eyebrow">Live interest</div>
+        </div>
+        <div className="ins-card ins-card--stat">
+          <div className="ins-hero">{get('Meetings booked')}</div>
+          <div className="eyebrow">Meetings booked</div>
+        </div>
+      </div>
+
       <div className="ins-section">
         <Head>The funnel, campaign to date</Head>
         <div className="ins-bars">
-          {c.funnel.map((s, i) => (
-            <div className="ins-bar" key={i}>
+          {funnel.map((s, i) => (
+            <div className="ins-bar ins-bar--funnel" key={s.label}>
               <div className="ins-bar-label">{s.label}</div>
-              <div className="ins-bar-track"><span className="ins-bar-fill" style={{ width: `${Math.round((s.n / fMax) * 100)}%` }} /></div>
+              <div className="ins-bar-track ins-bar-track--tall">
+                <span className="ins-bar-fill" style={{
+                  width: `${Math.max(2, Math.round((s.n / fMax) * 100))}%`,
+                  background: mixHex('#B9D3EA', '#1F386B', funnel.length > 1 ? i / (funnel.length - 1) : 1),
+                }} />
+              </div>
               <div className="ins-bar-count">{s.n}{s.pct != null && <span className="ins-bar-pct"> {s.pct}%</span>}</div>
             </div>
           ))}
@@ -126,51 +182,97 @@ function AfterSend({ c }) {
 
       <div className="ins-section">
         <Head>Replies by sequence step</Head>
-        <div className="ins-campaign-figs">
-          {c.steps.length === 0 && <span>Nothing sent yet.</span>}
-          {c.steps.map(s => (
-            <span key={s.step}><b>Email {s.step}</b>: {s.sends} send{s.sends === 1 ? '' : 's'}, {s.replies} repl{s.replies === 1 ? 'y' : 'ies'}{s.rate != null ? `, ${s.rate}%` : ''}</span>
-          ))}
-        </div>
-        {t.count > 0 && (
-          <p className="ins-caption">
-            Replies arrive at a median of {t.medianDays} day{t.medianDays === 1 ? '' : 's'}: {t.sameDay} same day, {t.oneToTwo} in one to two days, {t.threeToSeven} in three to seven, {t.overSeven} later. Worth reading against the follow-up cadence.
-          </p>
+        {c.steps.length === 0 ? <p className="ins-caption">Nothing sent yet.</p> : (
+          <div className="ins-steps">
+            {c.steps.map(s => (
+              <div className="ins-step" key={s.step}>
+                <div className="ins-step-rate">{s.rate == null ? '\u2014' : `${s.rate}%`}</div>
+                <div className="eyebrow">Email {s.step}</div>
+                <div className="ins-step-meta">{s.sends} sent, {s.replies} replied</div>
+                <div className="ins-step-bar" aria-hidden="true"><span style={{ width: `${Math.min(100, s.rate || 0)}%` }} /></div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
       <div className="ins-section">
         <Head>What opened the conversations</Head>
-        <div className="ins-campaign-figs">
-          {c.sources.length === 0 && <span>Nothing sent yet.</span>}
-          {c.sources.map(s => (
-            <span key={s.source}><b>{s.source}</b>: {s.conversations} conversation{s.conversations === 1 ? '' : 's'}, {s.replied} replied</span>
-          ))}
-        </div>
-        <p className="ins-caption">Where the research that starts conversations pays. A post engagement or referral opener credits the person; otherwise the signal that opened it.</p>
+        {c.sources.length === 0 ? <p className="ins-caption">Nothing sent yet.</p> : (
+          <div className="ins-bars">
+            {c.sources.map(s => (
+              <div className="ins-bar ins-bar--src" key={s.source}>
+                <div className="ins-bar-label">{s.source}</div>
+                <div className="ins-bar-track ins-bar-track--tall">
+                  <span className="ins-bar-fill ins-bar-fill--pale" style={{ width: `${Math.round((s.conversations / srcMax) * 100)}%` }} />
+                  <span className="ins-bar-fill" style={{ width: `${Math.round((s.replied / srcMax) * 100)}%` }} />
+                </div>
+                <div className="ins-bar-count">{s.replied} of {s.conversations} replied</div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="ins-caption">The pale bar is conversations opened, the navy bar those that replied. A post engagement or referral opener credits the person; otherwise the signal that opened it.</p>
+      </div>
+
+      <div className="ins-section">
+        <Head>How long replies take</Head>
+        {t.count > 0 ? (
+          <>
+            <div className="ins-hist" role="img" aria-label="Reply timing">
+              {buckets.map(b => (
+                <div className="ins-hist-col" key={b.label}>
+                  <div className="ins-hist-n">{b.n}</div>
+                  <div className="ins-hist-stack"><span className="ins-hist-bar" style={{ height: `${Math.round((b.n / bMax) * 100)}%` }} /></div>
+                  <div className="ins-hist-label">{b.label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="ins-caption">Worth reading against the follow-up cadence.</p>
+          </>
+        ) : <p className="ins-caption">No replies timed yet.</p>}
       </div>
 
       <div className="ins-section">
         <Head>Delivery health</Head>
-        {(c.bounceWeeks || []).length === 0 ? (
-          <p className="ins-caption">No sends in the last eight weeks.</p>
-        ) : (
-          <p className="ins-caption">
-            Bounce rate by week: {c.bounceWeeks.map(w => (w.rate == null ? 'no sends' : `${w.rate}%`)).join(', ')}.
-            {bounceHot ? ' ' : ''}
-            {bounceHot && <span className="ins-warn">The latest week bounced {bounceLatest.rate} percent of {bounceLatest.sent} sends; worth a look at address quality before volume grows.</span>}
-          </p>
+        {weeks.length === 0 ? <p className="ins-caption">No sends in the last eight weeks.</p> : (
+          <>
+            <div className="ins-hist ins-hist--weeks" role="img" aria-label="Weekly bounce rate">
+              {weeks.map(w => (
+                <div className="ins-hist-col" key={w.week} title={`Week of ${w.week}: ${w.rate == null ? 'no sends' : `${w.bounced} of ${w.sent} bounced`}`}>
+                  <div className="ins-hist-n">{w.rate == null ? '' : `${w.rate}%`}</div>
+                  <div className="ins-hist-stack">
+                    <span className={`ins-hist-bar${hotWeek(w) ? ' ins-hist-bar--hot' : ''}`}
+                      style={{ height: `${w.rate == null ? 0 : Math.max(4, Math.min(100, w.rate * 5))}%` }} />
+                  </div>
+                  <div className="ins-hist-label">{String(w.week).slice(5)}</div>
+                </div>
+              ))}
+            </div>
+            <p className="ins-caption">
+              Bounce rate per week; the scale tops out at twenty percent.
+              {latest && hotWeek(latest) && <span className="ins-warn"> The latest week bounced {latest.rate} percent of {latest.sent} sends; worth a look at address quality before volume grows.</span>}
+            </p>
+          </>
         )}
       </div>
 
       <div className="ins-section">
         <Head>LinkedIn lane</Head>
-        <div className="ins-campaign-figs">
-          <span><b>{li.invited}</b> invite{li.invited === 1 ? '' : 's'} sent</span>
-          <span><b>{li.postsThirtyDays}</b> post{li.postsThirtyDays === 1 ? '' : 's'} this month</span>
-          <span><b>{li.engagersThirtyDays}</b> engager{li.engagersThirtyDays === 1 ? '' : 's'} gathered</span>
-          <span><b>{li.interestWaiting}</b> in the interest queue</span>
-          <span><b>{li.engagementContacts}</b> contact{li.engagementContacts === 1 ? '' : 's'} from engagement, <b>{li.engagementConversations}</b> in conversation</span>
+        <div className="ins-cards ins-cards--mini">
+          {[
+            { n: li.invited, l: 'Invites sent' },
+            { n: li.postsThirtyDays, l: 'Posts this month' },
+            { n: li.engagersThirtyDays, l: 'Engagers gathered' },
+            { n: li.interestWaiting, l: 'In the interest queue' },
+            { n: li.engagementContacts, l: 'Contacts from engagement' },
+            { n: li.engagementConversations, l: 'Now in conversation' },
+          ].map(x => (
+            <div className="ins-card ins-card--mini" key={x.l}>
+              <div className="ins-hero ins-hero--mini">{x.n}</div>
+              <div className="eyebrow">{x.l}</div>
+            </div>
+          ))}
         </div>
         <p className="ins-caption">Invite acceptance is not observable yet, so it is not shown rather than guessed.</p>
       </div>
@@ -199,9 +301,9 @@ function AfterSend({ c }) {
           <div className="ins-spark">
             <svg viewBox="0 0 320 56" className="ins-spark-svg" aria-hidden="true">
               <line x1="4" y1="50" x2="316" y2="50" stroke="var(--line)" strokeWidth="1" />
-              <polyline points={replySpark.points} fill="none" stroke="var(--navy)" strokeWidth="1.5"
+              <polyline points={replySpark.points} fill="none" stroke="var(--blue)" strokeWidth="1.5"
                 vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-              <circle cx={replySpark.cx} cy={replySpark.cy} r="3" fill="var(--blue)" />
+              <circle cx={replySpark.cx} cy={replySpark.cy} r="3" fill="var(--navy)" />
             </svg>
             <div className="ins-spark-dates"><span>{replySpark.left}</span><span>{replySpark.right}</span></div>
           </div>
