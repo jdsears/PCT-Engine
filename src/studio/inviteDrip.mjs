@@ -4,19 +4,26 @@ import { activeCampaignIds } from '../campaigns/registry.mjs';
 import { accountForCampaign, AccountUnhealthy, CapReached, unipileConfigured } from '../research/unipile.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteRefusal } from './liInvite.mjs';
 import { connectNote } from './liPosts.mjs';
+import { recipientMismatch } from '../outbound/draft.mjs';
 
 // The invite drip, John's decision of 24 August 2026: connection requests
-// join the autopilot, timed with the outreach engine. The sanction is the
-// approval, exactly the posting queue's doctrine: a person approves one named
-// contact in the connect queue, note frozen at that moment, and the drip
-// releases approved invites one at a time. Invitations are the touchiest
-// LinkedIn action of all, so the drip is deliberately boring: weekdays only,
-// working hours only, one release per lane per tick, a minimum gap per
-// account, a daily cap tighter than the hand cap, and the whole thing stands
-// itself down on any account-health error. Timing with the email sequence:
-// a contact who has been emailed is only invited a few days after the last
-// send, and never once a person has replied, because a reply makes it a
-// conversation and conversations are handled by humans.
+// join the autopilot, timed with the outreach engine. Two modes, both human
+// sanctions. In approvals mode a person approves one named contact and the
+// drip releases only what carries the stamp. In automatic mode, sanctioned
+// the same evening by John with James's and Andy's word for their own
+// accounts ("they want automatic invites"), the standing approval covers the
+// whole eligible queue: the drip picks the best accounts first, approved
+// people still jump the queue, every unapproved pick is screened with the
+// recipient-truth nets so a wrong-company note can never send, and a Skip on
+// any card vetoes a person out of LinkedIn contact entirely. Invitations are
+// the touchiest LinkedIn action of all, so the drip stays deliberately
+// boring either way: weekdays only, working hours only, one release per
+// lane per tick, a minimum gap per account, a daily cap tighter than the
+// hand cap, and the whole thing stands itself down on any account-health
+// error. Timing with the email sequence: a contact who has been emailed is
+// only invited a few days after the last send, and never once a person has
+// replied, because a reply makes it a conversation and conversations are
+// handled by humans.
 
 export const dripDailyCap = () => Math.max(1, parseInt(process.env.STUDIO_INVITE_DRIP_CAP || '5', 10) || 5);
 export const inviteAfterEmailDays = () => Math.max(0, parseInt(process.env.INVITE_AFTER_EMAIL_DAYS || '3', 10) || 3);
@@ -52,11 +59,11 @@ export function emailTimingClear({ lastEmailAt = null, replied = false, now = Da
   return now - t >= afterDays * 86_400_000;
 }
 
-// One pass: for each lane, release at most one approved invite whose timing
-// is clear, through the same send path the button uses, with the same
-// bookkeeping. Quiet outside the window and under the gap; an account-health
-// error is returned for the caller to stand the drip down.
-export async function dripInvitesOnce({ log = () => {} } = {}) {
+// One pass: for each lane, release at most one invite whose timing is
+// clear, approvals first, through the same send path the button uses, with
+// the same bookkeeping. Quiet outside the window and under the gap; an
+// account-health error is returned for the caller to stand the drip down.
+export async function dripInvitesOnce({ log = () => {}, auto = false } = {}) {
   const out = { sent: [], skipped: [] };
   if (!unipileConfigured()) return out;
   if (!(await hasColumn('contacts', 'li_invite_approved_at'))) {
@@ -65,11 +72,14 @@ export async function dripInvitesOnce({ log = () => {} } = {}) {
   if (!dripWindowOpen()) return out;
   const perAcct = await hasColumn('unipile_calls', 'account_id');
   const byCol = await hasColumn('contacts', 'li_invited_by');
-  // Approved, not yet invited, oldest approval first, each with its lane and
-  // its email-sequence facts. The lane derives through the membership rule
-  // the connect queue uses.
+  const skipCol = await hasColumn('contacts', 'li_invite_skipped_at');
+  // The candidates, each with its lane and its email-sequence facts; the
+  // lane derives through the membership rule the connect queue uses. In
+  // approvals mode only stamped contacts qualify; in automatic mode the
+  // whole eligible queue does, best accounts first, with approved people
+  // still jumping it. A skipped contact never appears in either mode.
   const { rows: approved } = await pool.query(
-    `SELECT ct.*, c.name AS company,
+    `SELECT ct.*, c.name AS company, c.domain AS company_domain,
             (CASE WHEN array_length(m.memberships, 1) = 1 THEN m.memberships[1] ELSE 'marwin_dc' END) AS lane,
             (SELECT max(s.created_at) FROM outbound_sends s JOIN outbound_drafts d ON d.id = s.draft_id
              WHERE d.contact_id = ct.id AND s.sent AND NOT s.test_mode) AS last_email_at,
@@ -81,9 +91,12 @@ export async function dripInvitesOnce({ log = () => {} } = {}) {
        SELECT (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc
                WHERE cc.company_id = c.id) AS memberships
      ) m
-     WHERE ct.li_invite_approved_at IS NOT NULL AND ct.li_invited_at IS NULL
+     WHERE (${auto ? 'ct.in_decision_orbit AND ct.linkedin_url IS NOT NULL' : 'ct.li_invite_approved_at IS NOT NULL'})
+       AND ct.li_invited_at IS NULL
        AND NOT ct.suppressed AND NOT ct.rehearsal
-     ORDER BY ct.li_invite_approved_at ASC`);
+       ${skipCol ? 'AND ct.li_invite_skipped_at IS NULL' : ''}
+     ORDER BY (ct.li_invite_approved_at IS NULL) ASC, ct.li_invite_approved_at ASC NULLS LAST,
+              c.icp_score DESC NULLS LAST`);
   for (const campaign of activeCampaignIds()) {
     const accountId = accountForCampaign(campaign);
     if (!accountId) continue;
@@ -95,16 +108,27 @@ export async function dripInvitesOnce({ log = () => {} } = {}) {
       perAcct ? [accountId] : []);
     if (!gapClear({ lastInviteAt: g[0]?.last })) continue;
     const pick = approved.filter(x => x.lane === campaign)
-      .find(x => canInvite(x).ok && emailTimingClear({ lastEmailAt: x.last_email_at, replied: x.replied }));
+      .find(x => canInvite(x).ok && emailTimingClear({ lastEmailAt: x.last_email_at, replied: x.replied })
+        // An unapproved automatic pick is screened with the recipient-truth
+        // nets: the note names their role and company, and a wrong-company
+        // note must never send. Anyone the nets dispute stays in the queue
+        // for a human; an approved pick was seen by one already.
+        && (x.li_invite_approved_at || recipientMismatch(
+              { name: x.full_name, role: x.role_title, email: x.email,
+                confirmed: !!(x.payload && x.payload.recipient_confirmed) },
+              { name: x.company, domain: x.company_domain }).length === 0));
     if (!pick) continue;
     try {
       const note = String(pick.li_invite_note || '').slice(0, 300)
         || connectNote({ full_name: pick.full_name, role_title: pick.role_title }, pick.company, campaign);
       const r = await sendConnectionInvite(pick, note, { accountId });
       if (r.sent) {
+        // Provenance says how the release happened: an automatic pick reads
+        // differently in the books than one a person stamped.
+        const by = auto && !pick.li_invite_approved_at ? 'invite drip (auto)' : 'invite drip';
         await pool.query(
-          `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2${byCol ? `, li_invited_by = COALESCE(li_invited_by, 'invite drip')` : ''}
-           WHERE id = $1`, [pick.id, note]);
+          `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2${byCol ? ', li_invited_by = COALESCE(li_invited_by, $3)' : ''}
+           WHERE id = $1`, byCol ? [pick.id, note, by] : [pick.id, note]);
         out.sent.push({ campaign, contact: pick.full_name });
         log(`dripped an invite to ${pick.full_name} (${campaign})`);
       } else {

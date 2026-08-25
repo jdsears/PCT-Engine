@@ -7,11 +7,13 @@ import { withCampaign } from './CampaignSwitcher.jsx';
 // person approves each one, and since 24 August 2026 the autopilot releases
 // approved posts at the standing Tuesday, Wednesday and Thursday morning
 // slots, one per lane per day, story link as the first comment. Post now
-// still publishes immediately on a click. Invites carry the same doctrine
-// since the drip: send one immediately on a click, or approve it with its
-// note frozen and the drip releases it in a weekday working-hours slot,
-// spaced, capped tighter than the hand cap, and timed around the emails.
-// Nothing unapproved ever posts or invites.
+// still publishes immediately on a click. Invites release through the drip
+// in weekday working hours, spaced and capped tighter than the hand cap,
+// timed around the emails: from the approved list, or, under the standing
+// sanction of 24 August 2026, selected automatically from the whole queue,
+// screened by the recipient nets, best accounts first, Skip as the veto.
+// Nothing unapproved ever posts, and every invite rests on a recorded
+// sanction.
 
 const TABS = [
   { id: 'draft', label: 'Post drafts' },
@@ -337,6 +339,10 @@ function ConnectCard({ person, inviteInfo, onChanged }) {
           <CopyButton text={note} label="Copy note" />
           <a className="ob-btn" href={person.linkedin} target="_blank" rel="noreferrer">Open profile</a>
           <span className="ob-spacer" />
+          <button className="ob-btn ghost" onClick={() => act('skip-invite')} disabled={busy}
+            title="Never invite this person on LinkedIn, in any mode. Email is untouched. Recorded, permanent, and the queue stops offering them.">
+            Not for LinkedIn
+          </button>
           <button className="ob-btn ghost" onClick={() => act('invited')} disabled={busy}>Mark done</button>
           <button className="ob-btn" onClick={() => act('approve-invite')} disabled={busy}
             title="Approves this person's invite with this exact note. The drip releases approved invites one at a time, weekdays, working hours, within tight caps, a few days after any email with no reply.">
@@ -372,7 +378,7 @@ export default function Studio({ campaign }) {
     const req = t === 'connects'
       ? apiFetch(withCampaign('/api/studio/connects', campaign)).then(r => r.json()).then(d => {
           setConnects(d.connects || []);
-          setInviteInfo({ ready: !!d.inviteReady, today: d.invitesToday ?? 0, cap: d.inviteCap ?? 0, dripOn: !!d.dripOn });
+          setInviteInfo({ ready: !!d.inviteReady, today: d.invitesToday ?? 0, cap: d.inviteCap ?? 0, dripOn: !!d.dripOn, dripAuto: !!d.dripAuto });
         })
       : apiFetch(withCampaign(`/api/studio/posts?status=${t}`, campaign)).then(r => r.json()).then(d => setPosts(d.posts || []));
     req.then(() => setState('ready')).catch(() => setState('error'));
@@ -393,7 +399,7 @@ export default function Studio({ campaign }) {
   return (
     <div className="content-pad outbound-queue">
       <div className="card ob-banner">
-        <p className="ob-banner-sub">The engine drafts the posts and queues the people; you approve each post you want published. Approved posts go out by themselves on Tuesday, Wednesday and Thursday mornings, one per campaign per day, hashtags in the post and the story link as its first comment, and Post now still publishes immediately. Nothing unapproved ever posts. Invites rest on the same approval: send one immediately with a click, or approve it into the drip, which releases a few per weekday through working hours, timed around the emails. Nothing unapproved ever invites.</p>
+        <p className="ob-banner-sub">The engine drafts the posts and queues the people; you approve each post you want published. Approved posts go out by themselves on Tuesday, Wednesday and Thursday mornings, one per campaign per day, hashtags in the post and the story link as its first comment, and Post now still publishes immediately. Nothing unapproved ever posts. Invites release through the drip, a few per weekday through working hours, timed around the emails: from the approved list, or from the whole queue when automatic selection is on, screened and best accounts first, with Skip as the veto. Nothing unapproved ever posts, and every invite rests on a recorded sanction.</p>
         <div className="ob-banner-controls">
           <button className="ob-btn primary" onClick={generate} disabled={genBusy}>{genBusy ? 'Drafting now' : 'Draft posts from this week'}</button>
         </div>
@@ -418,7 +424,7 @@ export default function Studio({ campaign }) {
       {state === 'ready' && tab === 'connects' && inviteInfo && (
         <p className="muted-note">
           {inviteInfo.ready
-            ? `Invites send through each campaign's own connected account, on your click or through the drip once approved${inviteInfo.dripOn ? ' (the drip is on)' : ' (the drip is off; the Health page turns it on)'}. ${inviteInfo.today} of ${inviteInfo.cap} used today.`
+            ? `Invites send through each campaign's own connected account${inviteInfo.dripOn ? (inviteInfo.dripAuto ? '. The drip selects automatically from this queue, best accounts first; Skip anyone you would rather not connect with' : '. The drip releases the people you approve') : '. The drip is off; the Health page turns it on'}. ${inviteInfo.today} of ${inviteInfo.cap} used today.`
             : 'Sending is off until Unipile is configured on the service; Copy note and Mark done record invites sent by hand.'}
         </p>
       )}
