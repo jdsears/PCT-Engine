@@ -3,10 +3,13 @@ import { unipile, ROUTES, unipileConfigured, accountForCampaign } from '../resea
 
 // The connection invite, the lane's touchiest write. Sent on one named
 // contact only, authorised by John with James's consent, and always resting
-// on a human decision: the Send invite click, or, since 24 August 2026 and
-// John's drip decision, an approval recorded ahead of time that the drip
-// releases within its own tighter caps (inviteDrip.mjs). Nothing unapproved
-// ever invites. Every send goes through the shared Unipile queue, so it is
+// on a human sanction: the Send invite click, an approval recorded ahead of
+// time that the drip releases within its own tighter caps (inviteDrip.mjs),
+// or, since the evening of 24 August 2026 with John's, James's and Andy's
+// word, the standing automatic-selection sanction, under which the drip
+// picks from the eligible queue itself with every unapproved pick screened
+// by the recipient-truth nets and a Skip veto on every card. Nothing ever
+// invites without one of those three sanctions behind it. Every send goes through the shared Unipile queue, so it is
 // sequential, paced, ledgered against the daily call cap, and an
 // account-health error stops everything with no retry. On top of that sits a
 // stricter invites-per-day cap, because invitations are the touchiest

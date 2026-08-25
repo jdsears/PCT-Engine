@@ -553,10 +553,17 @@ check('the drip times itself around the email sequence and parks on any reply', 
   assert(emailTimingClear({ now, lastEmailAt: 'garbage', replied: false }), 'a junk date never blocks and never throws');
 });
 
-check('nothing unapproved ever invites, and the wiring holds it (static)', () => {
+check('every invite rests on a recorded sanction, and the wiring holds it (static)', () => {
   const drip = freshRead('src/studio/inviteDrip.mjs');
-  assert(/li_invite_approved_at IS NOT NULL AND ct\.li_invited_at IS NULL/.test(drip),
-    'the drip may release only what carries the approval stamp, never twice');
+  assert(/auto \? 'ct\.in_decision_orbit AND ct\.linkedin_url IS NOT NULL' : 'ct\.li_invite_approved_at IS NOT NULL'/.test(drip),
+    'approvals mode releases only stamped contacts; automatic mode widens to the eligible queue and nothing else');
+  assert(/AND ct\.li_invited_at IS NULL/.test(drip), 'nobody is ever invited twice, in either mode');
+  assert(/li_invite_skipped_at IS NULL/.test(drip), 'a skipped contact never drips, in either mode');
+  assert(/x\.li_invite_approved_at \|\| recipientMismatch\(/.test(drip),
+    'an unapproved automatic pick is screened by the recipient nets; a wrong-company note can never send');
+  assert(/\(ct\.li_invite_approved_at IS NULL\) ASC/.test(drip) && /c\.icp_score DESC NULLS LAST/.test(drip),
+    'approved people jump the queue, then best accounts first');
+  assert(/'invite drip \(auto\)' : 'invite drip'/.test(drip), 'provenance says whether a person or the standing sanction picked');
   assert(/NOT ct\.suppressed AND NOT ct\.rehearsal/.test(drip), 'suppressed and rehearsal contacts never drip');
   assert(/canInvite\(x\)\.ok && emailTimingClear\(/.test(drip), 'eligibility and email timing gate every release');
   assert(/sendConnectionInvite\(pick, note, \{ accountId \}\)/.test(drip), 'the release goes through the same send path the button uses');
@@ -573,14 +580,24 @@ check('nothing unapproved ever invites, and the wiring holds it (static)', () =>
   assert(/li_invite_approved_at = NULL, li_invite_approved_by = NULL/.test(srv), 'unapproval backs out cleanly, nothing sends');
   const mig = freshRead('src/migrations/033_invite_drip.sql');
   assert(/li_invite_approved_at/.test(mig) && /li_invite_approved_by/.test(mig), 'the approval columns ship in migration 033');
+  const srv2 = freshRead('src/server.mjs');
+  assert(/kvGet\('invite_drip_auto'\)\) === 'on';/.test(srv2), 'the runner reads the selection mode from its own switch');
+  assert(/api\/studio\/connects\/:id\/skip-invite/.test(srv2) && /li_invite_skipped_at = now\(\), li_invite_skipped_by/.test(srv2),
+    'the Skip veto is an endpoint that records who vetoed and clears any approval');
+  assert(/li_invited_at IS NULL\$\{withSkip \? ' AND ct\.li_invite_skipped_at IS NULL' : ''\}/.test(srv2),
+    'skipped contacts leave the connect queue too');
+  const mig2 = freshRead('src/migrations/034_invite_skip.sql');
+  assert(/li_invite_skipped_at/.test(mig2) && /li_invite_skipped_by/.test(mig2), 'the veto columns ship in migration 034');
   const ui = freshRead('web/src/Studio.jsx');
   assert(/Approve for the drip/.test(ui) && /Unapprove/.test(ui), 'the approve and unapprove verbs are on the connect cards');
-  assert(/Nothing unapproved ever posts or invites/.test(ui), 'the banner states the widened sanction');
+  assert(/Not for LinkedIn/.test(ui), 'the veto is on every card');
+  assert(/every invite rests on a recorded sanction/.test(ui), 'the banner states the widened sanction');
   const health = freshRead('web/src/Health.jsx');
   assert(/invite-drip/.test(health) && /Invite drip: on/.test(health), 'the Health page carries the switch, separate from the autopilot');
+  assert(/Invite selection: automatic/.test(health) && /invite-drip-auto/.test(health), 'and the selection mode beside it');
   const inv = freshRead('src/studio/liInvite.mjs');
-  assert(/its own tighter caps \(inviteDrip\.mjs\)/.test(inv) && /Nothing unapproved/.test(inv),
-    'the invite doctrine names the drip and its sanction');
+  assert(/its own tighter caps \(inviteDrip\.mjs\)/.test(inv) && /standing automatic-selection sanction/.test(inv),
+    'the invite doctrine names all three sanctions');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);

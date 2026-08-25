@@ -1262,6 +1262,7 @@ async function engineStatus() {
     studioAutopilot: (await kvGet('studio_autopilot_enabled')) === 'on',
     studioLast: await kvGet('studio_autopilot_last'),
     inviteDrip: (await kvGet('invite_drip_enabled')) === 'on',
+    inviteDripAuto: (await kvGet('invite_drip_auto')) === 'on',
     inviteDripLast: await kvGet('invite_drip_last'),
     syncConfigured: syncRoots().length > 0,
     intervalHours: ENGINE_INTERVAL_MS / 3600_000,
@@ -1569,7 +1570,8 @@ async function inviteDripOnce(trigger) {
   inviteDripRunning = true;
   const startedAt = new Date().toISOString();
   try {
-    const r = await dripInvitesOnce({ log: m => console.log('[drip]', m) });
+    const auto = (await kvGet('invite_drip_auto')) === 'on';
+    const r = await dripInvitesOnce({ log: m => console.log('[drip]', m), auto });
     if (r.unhealthy) {
       await kvSet('invite_drip_enabled', 'off');
       await kvSet('invite_drip_last', { ok: false, at: startedAt, trigger, unhealthy: r.unhealthy });
@@ -1696,6 +1698,18 @@ app.post('/api/engine/studio-autopilot', async (req, res) => {
   try {
     const enabled = (req.body || {}).enabled === true;
     await kvSet('studio_autopilot_enabled', enabled ? 'on' : 'off');
+    res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// How the drip selects: approvals only, or the whole eligible queue. The
+// automatic mode is the standing sanction John, James and Andy gave on 24
+// August 2026; every automatic pick is still screened with the recipient
+// nets and Skip vetoes anyone permanently.
+app.post('/api/engine/invite-drip-auto', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('invite_drip_auto', enabled ? 'on' : 'off');
     res.json(await engineStatus());
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
@@ -2082,6 +2096,7 @@ app.get('/api/studio/connects', async (req, res) => {
     // Approval state rides along once the drip's columns exist (migration
     // 033); before then the queue reads exactly as it did.
     const withApproval = await hasColumn('contacts', 'li_invite_approved_at');
+    const withSkip = await hasColumn('contacts', 'li_invite_skipped_at');
     const { rows } = await pool.query(
       `SELECT ct.id, ct.full_name, ct.role_title, ct.linkedin_url, c.name AS company, round(c.icp_score)::int AS score,
               ${withApproval ? 'ct.li_invite_approved_at,' : ''} m.memberships
@@ -2091,13 +2106,14 @@ app.get('/api/studio/connects', async (req, res) => {
          SELECT (SELECT array_agg(cc.campaign ORDER BY cc.campaign) FROM company_campaigns cc
                  WHERE cc.company_id = c.id AND cc.campaign = ANY($1)) AS memberships
        ) m
-       WHERE ct.in_decision_orbit AND NOT ct.suppressed AND ct.linkedin_url IS NOT NULL AND ct.li_invited_at IS NULL${scope}
+       WHERE ct.in_decision_orbit AND NOT ct.suppressed AND ct.linkedin_url IS NOT NULL AND ct.li_invited_at IS NULL${withSkip ? ' AND ct.li_invite_skipped_at IS NULL' : ''}${scope}
        ORDER BY c.icp_score DESC NULLS LAST, ct.full_name LIMIT 50`, params);
     res.json({
       inviteReady: inviteReady(),
       invitesToday: inviteReady() ? await invitesUsedToday() : 0,
       inviteCap: inviteDailyCap(),
       dripOn: (await kvGet('invite_drip_enabled')) === 'on',
+      dripAuto: (await kvGet('invite_drip_auto')) === 'on',
       connects: rows.map(ct => {
         // Only registered campaigns count towards the derivation: a stray
         // membership value must never take the whole queue down, because the
@@ -2132,6 +2148,25 @@ app.post('/api/studio/connects/:id/approve-invite', async (req, res) => {
     await pool.query(
       `UPDATE contacts SET li_invite_approved_at = now(), li_invite_approved_by = $3, li_invite_note = $2
        WHERE id = $1`, [req.params.id, note, by || null]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The veto: skipped contacts never enter the connect queue or the drip
+// again, in either mode. Lighter than suppression, which stops email too,
+// and permanent for LinkedIn, which is the point of a veto. Clears any
+// approval in the same act.
+app.post('/api/studio/connects/:id/skip-invite', async (req, res) => {
+  try {
+    if (!(await hasColumn('contacts', 'li_invite_skipped_at'))) {
+      return res.status(503).json({ error: 'the skip columns are missing; run npm run migrate first' });
+    }
+    const by = actorEmail(req);
+    const { rowCount } = await pool.query(
+      `UPDATE contacts SET li_invite_skipped_at = now(), li_invite_skipped_by = $2,
+         li_invite_approved_at = NULL, li_invite_approved_by = NULL
+       WHERE id = $1 AND li_invited_at IS NULL`, [req.params.id, by || null]);
+    if (!rowCount) return res.status(409).json({ error: 'already invited; nothing to skip' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });

@@ -94,6 +94,19 @@ function EngineCard() {
     setBusy(false);
   };
 
+  const toggleDripAuto = async () => {
+    if (!engine || busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/invite-drip-auto', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !engine.inviteDripAuto }),
+      });
+      setEngine(await res.json());
+    } catch { setNote('The invite selection switch is not available right now.'); }
+    setBusy(false);
+  };
+
   const toggleStudio = async () => {
     if (!engine || busy) return;
     setBusy(true); setNote(null);
@@ -197,6 +210,10 @@ function EngineCard() {
         <button className="engine-btn" onClick={toggleStudio} disabled={busy}
           title="Publishes approved studio posts at the standing Tuesday, Wednesday and Thursday morning slots, tops up thin queues with fresh drafts, and sweeps engagement into the interest queue. Approval stays human, and any account-health error stands it down.">
           {engine.studioAutopilot ? 'Studio autopilot: on' : 'Studio autopilot: off'}
+        </button>
+        <button className="engine-btn" onClick={toggleDripAuto} disabled={busy}
+          title="Approvals only: the drip releases just the people someone approved. Automatic: it selects from the whole eligible queue itself, best accounts first, screened by the recipient nets, with Skip as the veto. The standing sanction of 24 August 2026.">
+          {engine.inviteDripAuto ? 'Invite selection: automatic' : 'Invite selection: approvals only'}
         </button>
         <button className="engine-btn" onClick={toggleDrip} disabled={busy}
           title="Releases approved connection invites one at a time through weekday working hours, spaced per account, within a cap tighter than the hand cap, a few days after any email with no reply. Approval stays human, and any account-health error stands it down. Worth James's and Andy's own yes before switching on.">
