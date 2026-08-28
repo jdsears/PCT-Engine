@@ -404,7 +404,14 @@ function ConnectCard({ person, inviteInfo, onChanged }) {
         </div>
       ) : (
         <div className="ob-actions">
-          <CopyButton text={note} label="Copy note" />
+          {/* With automatic selection on, this queue is a review surface, not
+              a to-do list: the drip works down it by itself, so the card
+              leads with the two verbs that change that outcome, veto and
+              send sooner, and never asks for an approval that is not
+              required. Clicking Approve on every card was the clunk. */}
+          {inviteInfo?.dripAuto
+            ? <span className="muted-small">The drip sends this one in a working-hours slot, best accounts first.</span>
+            : <CopyButton text={note} label="Copy note" />}
           <a className="ob-btn" href={person.linkedin} target="_blank" rel="noreferrer">Open profile</a>
           <span className="ob-spacer" />
           <button className="ob-btn ghost" onClick={() => act('skip-invite')} disabled={busy}
@@ -413,8 +420,10 @@ function ConnectCard({ person, inviteInfo, onChanged }) {
           </button>
           <button className="ob-btn ghost" onClick={() => act('invited')} disabled={busy}>Mark done</button>
           <button className="ob-btn" onClick={() => act('approve-invite')} disabled={busy}
-            title="Approves this person's invite with this exact note. The drip releases approved invites one at a time, weekdays, working hours, within tight caps, a few days after any email with no reply.">
-            Approve for the drip
+            title={inviteInfo?.dripAuto
+              ? 'Moves this person to the front of the drip queue. Not required: automatic selection is on, so they will be sent anyway.'
+              : "Approves this person's invite with this exact note. The drip releases approved invites one at a time, weekdays, working hours, within tight caps, a few days after any email with no reply."}>
+            {inviteInfo?.dripAuto ? 'Send sooner' : 'Approve for the drip'}
           </button>
           <button className="ob-btn primary" onClick={() => act('send-invite')} disabled={busy || !inviteInfo?.ready}
             title={!inviteInfo?.ready ? 'Unipile is not configured on this service' : undefined}>
@@ -436,6 +445,7 @@ export default function Studio({ campaign }) {
   const [state, setState] = useState('loading');
   const [note, setNote] = useState(null);
   const [genBusy, setGenBusy] = useState(false);
+  const [autoBusy, setAutoBusy] = useState(false);
 
   // The studio follows the app's campaign switcher like every other page,
   // John's ask of 18 August 2026, so James works the data centre posts and
@@ -496,6 +506,19 @@ export default function Studio({ campaign }) {
           : 'Nothing marked posted yet.'}</p>
       )}
       {state === 'ready' && !['connects', 'interest', 'messages'].includes(tab) && posts.map(p => <PostCard key={p.id} post={p} onChanged={refresh} />)}
+      {state === 'ready' && tab === 'connects' && inviteInfo?.ready && inviteInfo.dripOn && !inviteInfo.dripAuto && (
+        <div className="card ob-banner">
+          <p className="ob-banner-sub">Automatic selection is off, so the drip only sends the people you approve one by one. Turned on, it works down this queue by itself, best accounts first, screened, with Not for LinkedIn as the veto.</p>
+          <div className="ob-banner-controls">
+            <button className="ob-btn primary" disabled={autoBusy} onClick={async () => {
+              setAutoBusy(true);
+              try { await action('/api/engine/invite-drip-auto', jsonOpts('POST', { enabled: true })); refresh(); }
+              catch { /* the Health page carries the same switch */ }
+              setAutoBusy(false);
+            }}>Turn on automatic selection</button>
+          </div>
+        </div>
+      )}
       {state === 'ready' && tab === 'connects' && inviteInfo && (
         <p className="muted-note">
           {inviteInfo.ready
