@@ -225,7 +225,9 @@ export async function triageOne(r, { callModel = callClaude, log = () => {} } = 
       done.responseDrafted ? 'A grounded response is drafted and waiting in the review queue.' : (done.redirectDrafted ? null : 'No response has been drafted.'),
       'Open the app, Outbound, to act on it.',
     ].filter(l => l !== null);
-    done.notified = await sendTeamNote(subject, lines.join('\n'));
+    // The lane's own people are told about their lane; the shared list
+    // still gets everything, so nothing stops being recorded centrally.
+    done.notified = await sendTeamNote(subject, lines.join('\n'), { campaign: r.campaign });
   }
 
   await pool.query(

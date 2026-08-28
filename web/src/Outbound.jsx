@@ -420,15 +420,15 @@ export default function Outbound({ campaign }) {
       .catch(() => setState('error'));
   }, [campaign]);
   const loadReplies = useCallback(() => {
-    apiFetch('/api/outbound/replies').then(r => r.json())
+    apiFetch(withCampaign('/api/outbound/replies', campaign)).then(r => r.json())
       .then(d => { setReplies(d.replies || []); setState('ready'); })
       .catch(() => setState('error'));
-  }, []);
+  }, [campaign]);
   const loadConvos = useCallback(() => {
-    apiFetch('/api/outbound/conversations').then(r => r.json())
+    apiFetch(withCampaign('/api/outbound/conversations', campaign)).then(r => r.json())
       .then(d => { setConvos(d.conversations || []); setState('ready'); })
       .catch(() => setState('error'));
-  }, []);
+  }, [campaign]);
 
   useEffect(() => { loadStatus(); }, [loadStatus]);
   useEffect(() => {

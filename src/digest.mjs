@@ -84,6 +84,11 @@ export async function gatherDigestData() {
     for (const r of sl) byLane.set(r.campaign, { campaign: r.campaign, sent: r.sent, replies: 0 });
     for (const r of rl) byLane.set(r.campaign, { ...(byLane.get(r.campaign) || { campaign: r.campaign, sent: 0 }), replies: r.replies });
     convo.lanes = [...byLane.values()].sort((a, b) => a.campaign.localeCompare(b.campaign));
+    // Whether the engine is actually watching for replies. Without this a
+    // switched-off poller reads as a quiet week, which is exactly how the
+    // people search once hid for days.
+    const cap = (await pool.query(`SELECT value FROM kv WHERE key = 'replycapture_enabled'`)).rows[0]?.value;
+    convo.captureOn = cap === 'on';
   } catch { convo = null; }
   // The studio ships separately, so its table may not exist yet; the digest
   // simply says nothing about posts until it does. Since the autopilot the
@@ -227,7 +232,7 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
   ];
   if (convo) {
     const rate = convo.sent > 0 ? `, a reply rate of ${Math.round((convo.replies / convo.sent) * 100)} percent` : '';
-    lines.push(`Conversations: ${convo.sent} prospect send${convo.sent === 1 ? '' : 's'}${laneSplit(convo.lanes, 'sent')}, ${convo.replies} repl${convo.replies === 1 ? 'y' : 'ies'}${laneSplit(convo.lanes, 'replies')}${rate}, ${convo.live} live (interested or asking), ${convo.closed} clear no. Meetings booked: ${convo.meetings}. Handed off: ${convo.handoffs}.`);
+    lines.push(`Conversations: ${convo.sent} prospect send${convo.sent === 1 ? '' : 's'}${laneSplit(convo.lanes, 'sent')}, ${convo.replies} repl${convo.replies === 1 ? 'y' : 'ies'}${laneSplit(convo.lanes, 'replies')}${rate}, ${convo.live} live (interested or asking), ${convo.closed} clear no. Meetings booked: ${convo.meetings}. Handed off: ${convo.handoffs}.${convo.captureOn === false ? ' Reply capture is switched off, so no reply has been read this week whatever the count says; the Outbound page turns it back on.' : ''}`);
   }
   if (people) {
     lines.push(`Decision makers: ${people.searches} compan${people.searches === 1 ? 'y' : 'ies'} searched, ${people.found} ${people.found === 1 ? 'person' : 'people'} found${laneSplit(people.lanes, 'found')}, ${people.orbit} in orbit, ${people.emails} email${people.emails === 1 ? '' : 's'} resolved${laneSplit(people.lanes, 'emails')}.${people.autoOn ? '' : ' The automatic people search is switched off; the Health page turns it back on.'}`);
@@ -263,7 +268,8 @@ export function renderDigestHtml(data, { weekEnding = new Date().toISOString().s
     section('Signals', `${s.news} stor${s.news === 1 ? 'y' : 'ies'} kept${laneSplit(s.lanes, 'news')}, ${s.uk} UK project and ${s.watch} watchlist, with ${s.filings} filing${s.filings === 1 ? '' : 's'} tracked across the whole register.`),
     section('Leads', `${l.created} new${laneSplit(l.lanes, 'created')}, ${l.refreshed} refreshed${laneSplit(l.lanes, 'refreshed')}.`),
     section('Outbound', `${d.waiting} draft${d.waiting === 1 ? '' : 's'} awaiting review${laneSplit(d.lanes, 'waiting')}, ${d.approved} approved, ${d.drafted_this_week} drafted this week${laneSplit(d.lanes, 'drafted_this_week')}.`, 'Nothing sends without a person.'),
-    convo ? section('Conversations', `${convo.sent} prospect send${convo.sent === 1 ? '' : 's'}${laneSplit(convo.lanes, 'sent')}, ${convo.replies} repl${convo.replies === 1 ? 'y' : 'ies'}${laneSplit(convo.lanes, 'replies')}${rate}. ${convo.live} live, ${convo.closed} clear no. Meetings booked ${convo.meetings}, handed off ${convo.handoffs}.`) : '',
+    convo ? section('Conversations', `${convo.sent} prospect send${convo.sent === 1 ? '' : 's'}${laneSplit(convo.lanes, 'sent')}, ${convo.replies} repl${convo.replies === 1 ? 'y' : 'ies'}${laneSplit(convo.lanes, 'replies')}${rate}. ${convo.live} live, ${convo.closed} clear no. Meetings booked ${convo.meetings}, handed off ${convo.handoffs}.`,
+      convo.captureOn === false ? `<span style="color:#D97706;font-weight:600;">Reply capture is switched off, so no reply has been read this week whatever the count says; the Outbound page turns it back on.</span>` : '') : '',
     people ? section('Decision makers', `${people.searches} compan${people.searches === 1 ? 'y' : 'ies'} searched, ${people.found} ${people.found === 1 ? 'person' : 'people'} found${laneSplit(people.lanes, 'found')}, ${people.orbit} in orbit, ${people.emails} email${people.emails === 1 ? '' : 's'} resolved${laneSplit(people.lanes, 'emails')}.`,
       people.autoOn ? '' : `<span style="color:#D97706;font-weight:600;">The automatic people search is switched off; the Health page turns it back on.</span>`) : '',
     section('Co-pilot', `${q.questions} question${q.questions === 1 ? '' : 's'} (${q.teams} from Teams), ${q.declined} it could not answer, feedback ${q.fb_up} helpful and ${q.fb_down} not.`),

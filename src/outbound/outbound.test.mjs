@@ -1,7 +1,8 @@
 // Guards that matter most: a draft must never reach a prospect by accident. These
 // exercise only the refusal paths, which return before any network call, so the
 // gate runs offline. The actual delivery path is not tested here, by design.
-import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients, textToHtml, blockedByKillSwitch } from '../mail.mjs';
+import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients, textToHtml, blockedByKillSwitch,
+         notifyRecipients, campaignNotifyEmails, internalAllowlist } from '../mail.mjs';
 import { renderDigest, renderDigestHtml, humanDate, digestDue, laneSplit } from '../digest.mjs';
 import { openerSource, funnelSteps, replyBuckets, bounceWeeks, HUMAN_REPLIES } from './analytics.mjs';
 import { readFileSync } from 'node:fs';
@@ -176,6 +177,10 @@ await check('the digest email is a designed card, same numbers, same voice', () 
   assert(thin.includes('The approved queue is empty, so the next posting slot will pass silently.'), 'an empty queue is loud while the autopilot is on');
   const off = renderDigest({ ...data, posts: { waiting: 3, approved: 1, posted: 2, autoOn: false } }, { weekEnding: '2026-08-17' });
   assert(off.text.includes('The studio autopilot is switched off; posts publish only by hand.'), 'an off switch cannot hide for a week');
+  const blind = renderDigest({ ...data, convo: { ...data.convo, captureOn: false } }, { weekEnding: '2026-08-17' });
+  assert(blind.text.includes('Reply capture is switched off'), 'a blind poller says so rather than reading as a quiet week');
+  const watching = renderDigest({ ...data, convo: { ...data.convo, captureOn: true } }, { weekEnding: '2026-08-17' });
+  assert(!watching.text.includes('switched off'), 'no warning while it is watching');
   const withInterest = { ...data, interest: { gathered: 12, orbit: 4, waiting: 9 } };
   const ih = renderDigestHtml(withInterest, { weekEnding: '2026-08-17', appUrl: '' });
   assert(ih.includes('12 people engaged with the posts this week, 4 in the decision orbit, 9 waiting in the interest queue.'),
@@ -245,6 +250,59 @@ await check('the digest splits every lane by campaign, and pharma is never invis
   assert(/GROUP BY d\.campaign/.test(dg3), 'sends and replies split through their drafts');
   assert(/array_agg\(cc\.campaign ORDER BY cc\.campaign\)/.test(dg3), 'contacts derive their lane through the membership rule, never a guess');
   assert(/COALESCE\(lp\.grounding->>'campaign', s2\.campaign, 'marwin_dc'\)/.test(dg3), 'posts derive their lane exactly as the studio does');
+});
+
+console.log('\nReply visibility: each lane hears about its own replies:');
+
+await check('a lane is told about its lane, and the shared list still gets everything', () => {
+  const saved = { ...process.env };
+  try {
+    process.env.DIGEST_RECIPIENTS = 'john@example.com';
+    delete process.env.TEAM_EMAILS;
+    process.env.CAMPAIGN_NOTIFY_EMAILS = '{"marwin_dc":"james@example.com","pharma_steriflow":"andy@example.com, ops@example.com"}';
+    assert(JSON.stringify(campaignNotifyEmails('marwin_dc')) === JSON.stringify(['james@example.com']), 'the lane list parses');
+    assert(campaignNotifyEmails('pharma_steriflow').length === 2, 'a comma-separated lane list parses');
+    const dc = notifyRecipients('marwin_dc');
+    assert(dc.includes('james@example.com') && dc.includes('john@example.com'), 'the lane and the shared list are both told');
+    assert(!dc.includes('andy@example.com'), 'and the other lane is not; that was the whole complaint');
+    assert(JSON.stringify(notifyRecipients(null)) === JSON.stringify(['john@example.com']),
+      'no campaign is the shared list exactly as before, so every other notification is untouched');
+    // The allowlist has to know about lane addresses or the routing would be
+    // a silent no-op: sendInternal refuses anyone off it.
+    const alw = internalAllowlist();
+    assert(alw.includes('james@example.com') && alw.includes('andy@example.com') && alw.includes('john@example.com'),
+      'lane addresses are internal addresses; they come from service config, never from data');
+    process.env.CAMPAIGN_NOTIFY_EMAILS = 'not json';
+    assert(notifyRecipients('marwin_dc').length === 1 && internalAllowlist().length === 1,
+      'a malformed map falls back to the shared list rather than breaking notifications');
+    delete process.env.CAMPAIGN_NOTIFY_EMAILS;
+    assert(JSON.stringify(notifyRecipients('marwin_dc')) === JSON.stringify(['john@example.com']), 'no map behaves exactly as before');
+  } finally {
+    for (const k of ['DIGEST_RECIPIENTS', 'TEAM_EMAILS', 'CAMPAIGN_NOTIFY_EMAILS']) {
+      if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+    }
+  }
+});
+
+await check('the reply surfaces follow the switcher, and a blind poller cannot look quiet (static)', () => {
+  const ROOT5 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const read5 = rel => readFileSync(join(ROOT5, rel), 'utf8');
+  const tri = read5('src/outbound/triage.mjs');
+  assert(/sendTeamNote\(subject, lines\.join\('\\n'\), \{ campaign: r\.campaign \}\)/.test(tri),
+    'a reply notification carries the lane it belongs to');
+  const srv = read5('src/server.mjs');
+  const rep = srv.slice(srv.indexOf("app.get('/api/outbound/replies'"), srv.indexOf("app.get('/api/outbound/conversations'"));
+  assert(/campaignFilter\(req\)/.test(rep) && /\$1::text IS NULL OR d\.campaign = \$1/.test(rep),
+    "the replies view filters by the draft's own campaign");
+  const conv = srv.slice(srv.indexOf("app.get('/api/outbound/conversations'"));
+  assert(/campaignFilter\(req\)/.test(conv.slice(0, 2000)) && /\$1::text IS NULL OR l\.campaign = \$1/.test(conv.slice(0, 4000)),
+    'and so does the conversations view');
+  const ui = read5('web/src/Outbound.jsx');
+  assert(/withCampaign\('\/api\/outbound\/replies', campaign\)/.test(ui) && /withCampaign\('\/api\/outbound\/conversations', campaign\)/.test(ui),
+    'both fetches carry the switcher');
+  const dg = read5('src/digest.mjs');
+  assert(/replycapture_enabled/.test(dg) && /convo\.captureOn = cap === 'on'/.test(dg),
+    'the digest reads whether the engine is actually watching for replies');
 });
 
 console.log('\nAfter the send: analytics from outcomes, never from pixels:');
