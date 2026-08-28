@@ -594,6 +594,15 @@ check('every invite rests on a recorded sanction, and the wiring holds it (stati
   const ui = freshRead('web/src/Studio.jsx');
   assert(/Approve for the drip/.test(ui) && /Unapprove/.test(ui), 'the approve and unapprove verbs are on the connect cards');
   assert(/Not for LinkedIn/.test(ui), 'the veto is on every card');
+  // With automatic selection on the queue is a review surface, not a to-do
+  // list: clicking Approve on every card was the clunk John hit, so the card
+  // stops asking for an approval that is not required.
+  assert(/inviteInfo\?\.dripAuto\n\s*\? <span className="muted-small">The drip sends this one/.test(ui),
+    'in automatic mode the card says the drip will send it rather than asking for approval');
+  assert(/\{inviteInfo\?\.dripAuto \? 'Send sooner' : 'Approve for the drip'\}/.test(ui),
+    'and the approve verb becomes a priority nudge, plainly optional');
+  assert(/Turn on automatic selection/.test(ui) && /api\/engine\/invite-drip-auto/.test(ui),
+    'the mode is switchable from the queue itself, not only from another page');
   assert(/every invite and message rests on a recorded sanction/.test(ui), 'the banner states the widened sanction');
   const health = freshRead('web/src/Health.jsx');
   assert(/invite-drip/.test(health) && /Invite drip: on/.test(health), 'the Health page carries the switch, separate from the autopilot');
