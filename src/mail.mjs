@@ -195,24 +195,79 @@ export function digestRecipients() {
   return specific.length ? specific : teamEmails();
 }
 
-// Internal operational mail, the weekly digest. Its own allowlist and
-// deliberately independent of the outbound kill switch: this is the engine
-// reporting to its own team, never outreach, and an address off the digest
-// list is refused outright.
+// Who a campaign's own operational mail reaches, John's ask of 24 August
+// 2026: every reply notification went to one shared list, so James read
+// Andy's pharma replies and neither could tell which were theirs.
+// CAMPAIGN_NOTIFY_EMAILS is a JSON map of campaign id to a comma-separated
+// list, the UNIPILE_CAMPAIGN_ACCOUNTS shape:
+//
+//   {"marwin_dc":"james@pctflow.com","pharma_steriflow":"andy@pctflow.com"}
+//
+// The lane's people are added to the digest list, never substituted for it,
+// so the shared record stays complete and a campaign with no entry, an empty
+// map or a malformed value behaves exactly as before. Every address still
+// passes the digest allowlist at send time, so this can widen who is told
+// only among people already trusted with internal mail.
+let warnedBadNotifyMap = false;
+export function campaignNotifyEmails(campaign) {
+  const raw = String(process.env.CAMPAIGN_NOTIFY_EMAILS || '').trim();
+  if (!raw || !campaign) return [];
+  try {
+    const v = JSON.parse(raw)[String(campaign)];
+    return emailList(Array.isArray(v) ? v.join(',') : v);
+  } catch {
+    if (!warnedBadNotifyMap) {
+      console.warn('CAMPAIGN_NOTIFY_EMAILS is not valid JSON; notifications go to the digest list only.');
+      warnedBadNotifyMap = true;
+    }
+    return [];
+  }
+}
+
+// The recipients for one notification: the lane's own people first, then the
+// shared list, deduplicated. No campaign means the shared list exactly as
+// before, which is what every non-reply caller passes.
+export function notifyRecipients(campaign = null) {
+  return [...new Set([...campaignNotifyEmails(campaign), ...digestRecipients()])];
+}
+
+// Every address the engine may send internal mail to: the digest list plus
+// every campaign's notify list. Both come from configuration set on the
+// service, never from data, so the allowlist keeps the property that matters,
+// internal mail can never reach a prospect, while letting a lane's own people
+// be told about their lane.
+export function internalAllowlist() {
+  const raw = String(process.env.CAMPAIGN_NOTIFY_EMAILS || '').trim();
+  let laneAll = [];
+  if (raw) {
+    try {
+      laneAll = Object.values(JSON.parse(raw))
+        .flatMap(v => emailList(Array.isArray(v) ? v.join(',') : v));
+    } catch { laneAll = []; }
+  }
+  return [...new Set([...digestRecipients(), ...laneAll])];
+}
+
+// Internal operational mail, the weekly digest and every notification.
+// Deliberately independent of the outbound kill switch: this is the engine
+// reporting to its own team, never outreach, and an address off the internal
+// allowlist is refused outright.
 export async function sendInternal({ to, subject, html }) {
-  if (!digestRecipients().includes(String(to || '').trim().toLowerCase())) {
+  if (!internalAllowlist().includes(String(to || '').trim().toLowerCase())) {
     return { sent: false, reason: 'recipient not on the digest list' };
   }
   await deliver({ to, subject, html });
   return { sent: true };
 }
 
-// One plain-text note to the whole internal list, the shape every immediate
-// notification uses: a reply triaged, a meeting booked, a handoff pack. A
-// failure to one address never stops the others.
-export async function sendTeamNote(subject, text) {
+// One plain-text note, the shape every immediate notification uses: a reply
+// triaged, a meeting booked, a handoff pack. Given a campaign it reaches that
+// lane's own people as well as the shared list, so a reply on James's lane
+// reaches James without Andy's replies reaching him too. A failure to one
+// address never stops the others.
+export async function sendTeamNote(subject, text, { campaign = null } = {}) {
   let sent = 0;
-  for (const to of digestRecipients()) {
+  for (const to of notifyRecipients(campaign)) {
     try { const r = await sendInternal({ to, subject, html: textToHtml(text) }); if (r.sent) sent++; }
     catch { /* the app still shows the state; mail is a convenience */ }
   }

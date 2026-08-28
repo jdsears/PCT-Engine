@@ -2604,8 +2604,12 @@ app.post('/api/outbound/drafts/:id/send', async (req, res) => {
 });
 
 // Captured prospect replies, newest first, with their triage verdicts.
-app.get('/api/outbound/replies', async (_req, res) => {
+app.get('/api/outbound/replies', async (req, res) => {
   try {
+    // Scoped like every other surface, John's ask of 24 August 2026: the
+    // replies tab was the one page that ignored the switcher, so each lane
+    // read the other's conversations. The draft's own campaign decides.
+    const camp = campaignFilter(req);
     // The card says what the engine did with each reply, John's ask of
     // 20 August 2026: the triage record and the lead's live snooze ride
     // along, so an away reply reads "snoozed until the day after return,
@@ -2618,7 +2622,8 @@ app.get('/api/outbound/replies', async (_req, res) => {
        LEFT JOIN outbound_drafts d ON d.id = r.draft_id
        LEFT JOIN companies c ON c.id = d.company_id
        LEFT JOIN leads l ON l.id = d.lead_id
-       ORDER BY r.received_at DESC NULLS LAST LIMIT 200`);
+       WHERE ($1::text IS NULL OR d.campaign = $1)
+       ORDER BY r.received_at DESC NULLS LAST LIMIT 200`, [camp]);
     res.json({ replies: rows.map(r => ({
       id: r.id, from: r.from_email, subject: r.subject, snippet: r.snippet,
       receivedAt: r.received_at, draftId: r.draft_id, company: r.company,
@@ -2630,8 +2635,11 @@ app.get('/api/outbound/replies', async (_req, res) => {
 
 // The conversations: every lead with a sent thread, latest activity first,
 // with enough on the card to act without opening the detail.
-app.get('/api/outbound/conversations', async (_req, res) => {
+app.get('/api/outbound/conversations', async (req, res) => {
   try {
+    // Scoped the same way, and for the same reason: a lane's conversations
+    // are that lane's to work.
+    const camp = campaignFilter(req);
     // The design-in columns are migration 029; shown when the schema has them.
     const designCols = (await hasColumn('leads', 'design_in_at')) ? ' l.design_in_at, l.design_in_note,' : '';
     const { rows } = await pool.query(
@@ -2652,9 +2660,10 @@ app.get('/api/outbound/conversations', async (_req, res) => {
          ORDER BY sequence_step DESC, sent_at DESC LIMIT 1
        ) d ON true
        LEFT JOIN contacts ct ON ct.id = d.contact_id
+       WHERE ($1::text IS NULL OR l.campaign = $1)
        ORDER BY GREATEST(COALESCE((SELECT max(sent_at) FROM outbound_drafts x WHERE x.lead_id = l.id AND x.status = 'sent'), 'epoch'),
                          COALESCE((SELECT max(r.received_at) FROM outbound_replies r JOIN outbound_drafts x ON x.id = r.draft_id WHERE x.lead_id = l.id), 'epoch')) DESC
-       LIMIT 100`);
+       LIMIT 100`, [camp]);
     res.json({ conversations: rows.map(r => ({
       leadId: r.id, stage: r.stage, rehearsal: r.campaign === 'rehearsal', company: r.company, score: r.icp_score,
       contact: r.contact_name ? { name: r.contact_name, role: r.role_title, email: r.email, suppressed: r.suppressed, bounced: !!r.email_bounced_at, liInvited: !!r.li_invited_at } : null,
