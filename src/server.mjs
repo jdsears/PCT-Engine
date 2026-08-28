@@ -15,6 +15,7 @@ import { handleTeamsMessage } from './teams.mjs';
 import { sendMail, sendMailTest, sendMailReply, sendInternal, sendTeamNote, digestRecipients, isTestRecipient, textToHtml, testRecipientList, prospectHtml, signatureBlock } from './mail.mjs';
 import { gatherDigestData, renderDigest, renderDigestHtml, digestDue } from './digest.mjs';
 import { gatherOutboundAnalytics } from './outbound/analytics.mjs';
+import { removalConfirmation } from './outbound/provenance.mjs';
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
 import { reflagText } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
@@ -2820,6 +2821,60 @@ app.post('/api/outbound/replies/:id/snooze', async (req, res) => {
          stage = CASE WHEN stage = 'replied' THEN 'outbound' ELSE stage END
        WHERE id = $1`, [rows[0].lead_id, until.toISOString()]);
     res.json({ ok: true, snoozedUntil: until.toISOString() });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Remove and confirm: someone asked to be taken off, so take them off
+// everywhere in one act and draft the confirmation for a human to send. The
+// suppression is the real one the send gate reads, and the LinkedIn veto is
+// set in the same breath, because "you will not hear from us again" has to
+// cover both channels or it is not true.
+app.post('/api/outbound/replies/:id/remove-and-confirm', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT r.subject, d.lead_id, d.company_id, d.contact_id, d.campaign, d.id AS draft_id,
+              ct.full_name, c.region
+       FROM outbound_replies r
+       JOIN outbound_drafts d ON d.id = r.draft_id
+       LEFT JOIN contacts ct ON ct.id = d.contact_id
+       LEFT JOIN companies c ON c.id = d.company_id
+       WHERE r.id = $1`, [req.params.id]);
+    if (!rows.length || !rows[0].contact_id) return res.status(404).json({ error: 'no contact behind this reply' });
+    const r = rows[0];
+    const by = actorEmail(req);
+    const withSkip = await hasColumn('contacts', 'li_invite_skipped_at');
+    await pool.query(
+      `UPDATE contacts SET suppressed = true,
+         payload = COALESCE(payload, '{}'::jsonb) || $2::jsonb
+         ${withSkip ? `, li_invite_skipped_at = COALESCE(li_invite_skipped_at, now()), li_invite_skipped_by = $3` : ''}
+       WHERE id = $1`,
+      withSkip
+        ? [r.contact_id, JSON.stringify({ suppressed: { at: new Date().toISOString(), by: by || null, reason: 'asked to be removed' } }), by || 'removal request']
+        : [r.contact_id, JSON.stringify({ suppressed: { at: new Date().toISOString(), by: by || null, reason: 'asked to be removed' } })]);
+    // Open drafts to this person are rejected and the lead is closed: nothing
+    // further should be waiting to go to someone who asked to leave.
+    await pool.query(
+      `UPDATE outbound_drafts SET status = 'rejected', decided_by = $2
+       WHERE contact_id = $1 AND status IN ('draft', 'approved')`, [r.contact_id, by || 'removal request']);
+    if (r.lead_id) {
+      await pool.query(`UPDATE leads SET stage = 'closed', updated_at = now() WHERE id = $1`, [r.lead_id]);
+    }
+    // The confirmation itself still needs a human click to send, like every
+    // other outbound email.
+    const note = removalConfirmation({
+      firstName: String(r.full_name || '').trim().split(/\s+/)[0] || null,
+      sender: senderFor(r.region), subject: r.subject,
+    });
+    const ins = await pool.query(
+      `INSERT INTO outbound_drafts (lead_id, company_id, contact_id, campaign, email_type, sequence_step,
+                                    parent_draft_id, reply_id, subject, body, grounding, grounding_flags,
+                                    rationale, model, status)
+       VALUES ($1, $2, $3, $4, 'response', 1, $5, $6, $7, $8, '{}'::jsonb, '[]'::jsonb, $9::jsonb, 'template', 'draft')
+       RETURNING id`,
+      [r.lead_id, r.company_id, r.contact_id, r.campaign, r.draft_id, req.params.id,
+       note.subject, note.body,
+       JSON.stringify({ reason: 'asked to be removed; suppressed everywhere and the confirmation drafted' })]);
+    res.json({ ok: true, removed: true, confirmationDraftId: ins.rows[0]?.id || null });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
