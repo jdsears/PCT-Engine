@@ -5,6 +5,7 @@ import { sendMail, sendMailTest, sendInternal, isTestRecipient, digestRecipients
          notifyRecipients, campaignNotifyEmails, internalAllowlist } from '../mail.mjs';
 import { renderDigest, renderDigestHtml, humanDate, digestDue, laneSplit } from '../digest.mjs';
 import { openerSource, funnelSteps, replyBuckets, bounceWeeks, HUMAN_REPLIES } from './analytics.mjs';
+import { provenanceReply, removalConfirmation, sourceLine, SOURCE_LINES, SOURCE_UNKNOWN } from './provenance.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -250,6 +251,77 @@ await check('the digest splits every lane by campaign, and pharma is never invis
   assert(/GROUP BY d\.campaign/.test(dg3), 'sends and replies split through their drafts');
   assert(/array_agg\(cc\.campaign ORDER BY cc\.campaign\)/.test(dg3), 'contacts derive their lane through the membership rule, never a guess');
   assert(/COALESCE\(lp\.grounding->>'campaign', s2\.campaign, 'marwin_dc'\)/.test(dg3), 'posts derive their lane exactly as the studio does');
+});
+
+console.log('\n"Where did you get my email address from?" (the answer is a template):');
+
+await check('the answer describes their own record, and never claims a path we cannot evidence', () => {
+  // Chris Wheeler at Pharmaron, 28 August 2026. The classifier could only
+  // call it unclear, so it reached a human with no draft and no standard
+  // answer. This is that answer, and it is a template because it states how
+  // we handle someone's data to the person whose data it is.
+  assert(/public LinkedIn profile/.test(sourceLine('linkedin')) && /Findymail/.test(sourceLine('linkedin')),
+    'a LinkedIn-found contact is told exactly that');
+  assert(/Companies House/.test(sourceLine('ch_officers')), 'a filings-found contact is told that instead');
+  assert(/reacted to a post/.test(sourceLine('post_engagement')), 'an engager is told how they came to our attention');
+  assert(/colleague of yours passed your name/.test(sourceLine('referral')), 'a referral says so plainly');
+  assert(sourceLine(null) === SOURCE_UNKNOWN && sourceLine('something_new') === SOURCE_UNKNOWN,
+    'an unknown source says so rather than claiming a path we cannot evidence');
+  assert(/I can check the exact record/.test(SOURCE_UNKNOWN), 'and offers to go and look');
+  for (const line of [...Object.values(SOURCE_LINES), SOURCE_UNKNOWN]) {
+    assert(/Findymail/.test(line), 'every path names where the address itself came from');
+  }
+});
+
+await check('the reply answers, offers removal, and sells nothing', () => {
+  const r = provenanceReply({ firstName: 'Chris', source: 'linkedin', subject: 'Steriflow sanitary valves' });
+  assert(r.body.startsWith('Hi Chris,'), 'it greets them by name');
+  assert(/Fair question, and a straight answer\./.test(r.body), 'it does not get defensive');
+  assert(/We do not buy contact lists/.test(r.body), 'it states the thing people actually want to know');
+  assert(/take you off entirely/.test(r.body) && /No reason needed/.test(r.body),
+    'removal is offered in the same breath, without asking them to justify it');
+  assert(!/\b(meeting|call|demo|quote|pricing|catalogue|datasheet)\b/i.test(r.body),
+    'it asks for nothing: no meeting, no call, no next step attached to the answer');
+  assert((r.body.match(/valve/gi) || []).length === 1,
+    'valves are mentioned exactly once, to explain why they were on the list at all');
+  assert(r.subject.startsWith('Re: '), 'it stays on the thread');
+  assert(!/[—–!]/.test(r.body) && !/genuinely/i.test(r.body), 'house voice holds');
+  const anon = provenanceReply({ source: 'ch_officers' });
+  assert(anon.body.startsWith('Hello,'), 'no name on file greets plainly rather than guessing one');
+  // Two people asking the same thing get the same answer, which is the point
+  // of a template over a prompt.
+  assert(provenanceReply({ firstName: 'A', source: 'linkedin' }).body
+    === provenanceReply({ firstName: 'A', source: 'linkedin' }).body, 'the answer is identical every time');
+});
+
+await check('the removal confirmation promises only what the suppression does', () => {
+  const c = removalConfirmation({ firstName: 'Chris' });
+  assert(/you are off our list/.test(c.body), 'it confirms plainly');
+  assert(/by email or on LinkedIn/.test(c.body), 'and covers both channels, because the suppression does');
+  assert(!/[—–!]/.test(c.body), 'house voice holds');
+});
+
+await check('the category is classified, drafted from the template, and removable in one act (static)', () => {
+  const ROOT6 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const read6 = rel => readFileSync(join(ROOT6, rel), 'utf8');
+  const tri = read6('src/outbound/triage.mjs');
+  assert(/data_question \(they ask where we got their details/.test(tri), 'the classifier knows the category');
+  assert(/'wrong_person', 'data_question', 'unclear'/.test(tri), 'and it survives the parse rather than falling to unclear');
+  assert(/case 'data_question': return \{ notify: true, provenanceAnswer: true \};/.test(tri),
+    'it always notifies and always drafts, never branching on confidence');
+  assert(/provenanceReply\(\{/.test(tri) && /'template'/.test(tri), 'the draft is the template, never a model');
+  assert(!/suppress: true[^}]*data_question/.test(tri), 'asking where the data came from never suppresses anyone by itself');
+  const mig = read6('src/migrations/036_data_question.sql');
+  assert(/'data_question'/.test(mig) && /DROP CONSTRAINT/.test(mig), 'the category constraint makes room for it');
+  const srv = read6('src/server.mjs');
+  assert(/remove-and-confirm/.test(srv), 'the removal verb exists');
+  assert(/suppressed = true/.test(srv) && /li_invite_skipped_at = COALESCE/.test(srv),
+    'removal covers email and LinkedIn, because the confirmation says it does');
+  assert(/removalConfirmation\(\{/.test(srv) && /'draft'\)/.test(srv),
+    'the confirmation is drafted, not sent: every outbound email keeps its human click');
+  const ui = read6('web/src/Outbound.jsx');
+  assert(/Remove and confirm/.test(ui) && /Confirm removal/.test(ui), 'the verb is two clicks, arm then confirm');
+  assert(/data_question: 'asking where we got their details'/.test(ui), 'the card names the category plainly');
 });
 
 console.log('\nReply visibility: each lane hears about its own replies:');

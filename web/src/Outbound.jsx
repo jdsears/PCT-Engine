@@ -18,6 +18,7 @@ const STAGE_LABELS = {
 const CATEGORY_LABELS = {
   interested: 'interested', question: 'question', not_interested: 'not interested',
   out_of_office: 'out of office', wrong_person: 'wrong person', bounce: 'bounced', unclear: 'needs a read',
+  data_question: 'asking where we got their details',
 };
 
 async function action(path, opts) {
@@ -228,6 +229,19 @@ function ReplyCard({ reply, onChanged }) {
     } catch (e) { setMsg(String(e.message || e)); }
     setBusy(false);
   };
+  // Two clicks, arm then confirm, because suppression is reversible only by
+  // hand and this one closes the lead as well.
+  const [armRemove, setArmRemove] = useState(false);
+  const removeAndConfirm = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      await action(`/api/outbound/replies/${reply.id}/remove-and-confirm`, jsonOpts('POST'));
+      setMsg('Taken off entirely, email and LinkedIn, and the confirmation is drafted in To review for you to send.');
+      setArmRemove(false);
+      onChanged();
+    } catch (e) { setMsg(String(e.message || e)); }
+    setBusy(false);
+  };
   return (
     <div className="card ob-card">
       <div className="ob-head">
@@ -254,6 +268,15 @@ function ReplyCard({ reply, onChanged }) {
             </>
           )}
           <span className="ob-spacer" />
+          {armRemove
+            ? <button className="ob-btn danger" onClick={removeAndConfirm} disabled={busy}
+                title="Suppresses them for email and LinkedIn, rejects anything open, closes the lead, and drafts the confirmation.">
+                Confirm removal
+              </button>
+            : <button className="ob-btn ghost" onClick={() => setArmRemove(true)} disabled={busy}
+                title="For someone who has asked to be taken off. Removes them everywhere and drafts the confirmation for you to send.">
+                Remove and confirm
+              </button>}
           <button className="ob-btn" onClick={respond} disabled={busy}>Draft a response</button>
         </div>
       )}
