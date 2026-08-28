@@ -3,6 +3,23 @@
 Working notes for Claude Code on the PCT Engine repo: the knowledge co-pilot, the
 part-number configurator, the research funnel, and the outbound stage.
 
+## The team, and which lane is whose
+
+- John Sears, who runs the build. Addresses seen in use:
+  `john@moonbootscapital.io` and `js@moonbootsconsultancy.com`.
+- James Kybird, `jameskybird@pctflow.com`. MD. The data centre lane
+  (`marwin_dc`): his LinkedIn carries its posts, invites and messages, and its
+  invite note says MD.
+- Andy Mangell, `andymangell@pctflow.com`. Sales director. The pharma lane
+  (`pharma_steriflow`): his LinkedIn carries that lane, and its invite note
+  says sales director, his real title.
+
+Per-lane reply notifications route from this, set on Railway, never in the repo:
+
+```
+CAMPAIGN_NOTIFY_EMAILS={"marwin_dc":"jameskybird@pctflow.com","pharma_steriflow":"andymangell@pctflow.com"}
+```
+
 ## Voice (all generated text: replies, prose, UI strings, emails)
 
 - British English, calm and plain, closer to an engineer writing to a peer than
