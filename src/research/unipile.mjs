@@ -52,6 +52,14 @@ export const ROUTES = {
   // comment on OUR OWN just-created post, never anywhere else. rawSuffix
   // carries {post_id}/comments.
   commentPost: { method: 'POST', path: '/api/v1/posts' },      // {post_id}/comments, JSON body { account_id, text }
+  // The fourth write, added 24 August 2026 on John's design for the outreach
+  // sequence: one direct message to a person who accepted our invitation,
+  // sent from the account they connected with, after two emails went
+  // unanswered. It rests on the same sanction as the invite, a per-message
+  // approval or the standing automatic one, and it can only ever reach a
+  // first-degree connection, which the engine verifies before drafting.
+  // { account_id, attendees_ids: [provider_id], text }
+  sendMessage: { method: 'POST', path: '/api/v1/chats' },
   // Who reacted to a post: GET /api/v1/posts/{post_id}/reactions, a read on
   // our own published posts through the connected account, the same thing a
   // person sees under their post. rawSuffix carries the nested path.

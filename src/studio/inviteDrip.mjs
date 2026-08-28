@@ -2,9 +2,10 @@ import { pool, hasColumn } from '../db.mjs';
 import { londonClock } from './autopost.mjs';
 import { activeCampaignIds } from '../campaigns/registry.mjs';
 import { accountForCampaign, AccountUnhealthy, CapReached, unipileConfigured } from '../research/unipile.mjs';
-import { canInvite, sendConnectionInvite, invitesUsedToday, inviteRefusal } from './liInvite.mjs';
+import { canInvite, sendConnectionInvite, inviteRefusal } from './liInvite.mjs';
 import { connectNote } from './liPosts.mjs';
 import { recipientMismatch } from '../outbound/draft.mjs';
+import { sendDm } from './liDm.mjs';
 
 // The invite drip, John's decision of 24 August 2026: connection requests
 // join the autopilot, timed with the outreach engine. Two modes, both human
@@ -24,8 +25,29 @@ import { recipientMismatch } from '../outbound/draft.mjs';
 // only invited a few days after the last send, and never once a person has
 // replied, because a reply makes it a conversation and conversations are
 // handled by humans.
+//
+// Since the sequencing change of the same evening the drip carries the
+// message stage too: a person who accepted an invitation and still has not
+// replied gets one direct message, drafted and gated in liDm.mjs, released
+// here so invitations and messages share one pace, one gap and one daily cap
+// per account. A waiting message goes before a new invitation, because that
+// person is further down the sequence.
 
 export const dripDailyCap = () => Math.max(1, parseInt(process.env.STUDIO_INVITE_DRIP_CAP || '5', 10) || 5);
+
+// Every LinkedIn action the drip took today on one account, invitations and
+// messages together. They are different endpoints but the same profile, and
+// the profile is what LinkedIn watches, so one cap covers both rather than
+// two caps quietly doubling the day's activity.
+export async function dripActionsToday(accountId = null) {
+  const perAccount = accountId && await hasColumn('unipile_calls', 'account_id');
+  const { rows } = await pool.query(
+    `SELECT count(*)::int AS n FROM unipile_calls
+     WHERE endpoint IN ('POST /api/v1/users/invite', 'POST /api/v1/chats') AND outcome = 'ok'
+       AND (called_at AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date
+       ${perAccount ? 'AND account_id = $1' : ''}`, perAccount ? [accountId] : []);
+  return rows[0].n;
+}
 export const inviteAfterEmailDays = () => Math.max(0, parseInt(process.env.INVITE_AFTER_EMAIL_DAYS || '3', 10) || 3);
 export const DRIP_MIN_GAP_MINUTES = 45;
 
@@ -57,6 +79,41 @@ export function emailTimingClear({ lastEmailAt = null, replied = false, now = Da
   const t = new Date(lastEmailAt).getTime();
   if (Number.isNaN(t)) return true;
   return now - t >= afterDays * 86_400_000;
+}
+
+// Release one approved message for a lane, or nothing. Approvals mode sends
+// only what a person stamped; automatic mode may send an unflagged message
+// under the standing sanction, and a flagged one never sends in either mode,
+// because a flag is the engine saying it is not sure who this is.
+async function releaseMessage({ campaign, accountId, auto, log }) {
+  if (!(await hasColumn('contacts', 'li_connected_at'))) return 'none';
+  const { rows } = await pool.query(
+    `SELECT m.id, m.body, m.status, m.flags, ct.id AS contact_id, ct.full_name, ct.linkedin_url
+     FROM li_messages m JOIN contacts ct ON ct.id = m.contact_id
+     WHERE m.campaign = $1 AND m.status = ${auto ? "ANY(ARRAY['approved','draft'])" : "'approved'"}
+
+       AND COALESCE(jsonb_array_length(m.flags), 0) = 0
+       AND ct.li_connected_at IS NOT NULL AND NOT ct.suppressed
+       AND NOT EXISTS (SELECT 1 FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
+                       WHERE d.contact_id = ct.id
+                         AND (r.category IS NULL OR r.category NOT IN ('bounce', 'out_of_office')))
+     ORDER BY (m.status = 'approved') DESC, m.created_at ASC LIMIT 1`, [campaign]);
+  const m = rows[0];
+  if (!m) return 'none';
+  try {
+    const r = await sendDm(m, { linkedin_url: m.linkedin_url }, { accountId });
+    if (!r.sent) return 'none';
+    await pool.query(
+      `UPDATE li_messages SET status = 'sent', sent_at = now(), sent_by = $2, updated_at = now() WHERE id = $1`,
+      [m.id, m.status === 'approved' ? 'invite drip' : 'invite drip (auto)']);
+    log(`messaged ${m.full_name} (${campaign})`);
+    return 'sent';
+  } catch (e) {
+    if (e instanceof AccountUnhealthy) return 'unhealthy';
+    if (e instanceof CapReached) return 'none';
+    log(`message failed for ${m.full_name}: ${String(e.message).slice(0, 140)}`);
+    return 'none';
+  }
 }
 
 // One pass: for each lane, release at most one invite whose timing is
@@ -100,13 +157,18 @@ export async function dripInvitesOnce({ log = () => {}, auto = false } = {}) {
   for (const campaign of activeCampaignIds()) {
     const accountId = accountForCampaign(campaign);
     if (!accountId) continue;
-    const used = await invitesUsedToday(accountId);
+    const used = await dripActionsToday(accountId);
     if (used >= dripDailyCap()) continue;
     const { rows: g } = await pool.query(
       `SELECT max(called_at) AS last FROM unipile_calls
-       WHERE endpoint = 'POST /api/v1/users/invite' AND outcome = 'ok'${perAcct ? ' AND account_id = $1' : ''}`,
+       WHERE endpoint IN ('POST /api/v1/users/invite', 'POST /api/v1/chats') AND outcome = 'ok'${perAcct ? ' AND account_id = $1' : ''}`,
       perAcct ? [accountId] : []);
     if (!gapClear({ lastInviteAt: g[0]?.last })) continue;
+    // A message to someone who already accepted comes before a new
+    // invitation: they are further down the sequence and waiting on us.
+    const msg = await releaseMessage({ campaign, accountId, auto, log });
+    if (msg === 'sent') { out.sent.push({ campaign, kind: 'message' }); continue; }
+    if (msg === 'unhealthy') { out.unhealthy = 'LinkedIn reported an account health problem while sending a message'; break; }
     const pick = approved.filter(x => x.lane === campaign)
       .find(x => canInvite(x).ok && emailTimingClear({ lastEmailAt: x.last_email_at, replied: x.replied })
         // An unapproved automatic pick is screened with the recipient-truth
@@ -129,7 +191,7 @@ export async function dripInvitesOnce({ log = () => {}, auto = false } = {}) {
         await pool.query(
           `UPDATE contacts SET li_invited_at = now(), li_invite_note = $2${byCol ? ', li_invited_by = COALESCE(li_invited_by, $3)' : ''}
            WHERE id = $1`, byCol ? [pick.id, note, by] : [pick.id, note]);
-        out.sent.push({ campaign, contact: pick.full_name });
+        out.sent.push({ campaign, kind: 'invite', contact: pick.full_name });
         log(`dripped an invite to ${pick.full_name} (${campaign})`);
       } else {
         out.skipped.push({ campaign, reason: r.reason });

@@ -12,8 +12,10 @@ import { withCampaign } from './CampaignSwitcher.jsx';
 // timed around the emails: from the approved list, or, under the standing
 // sanction of 24 August 2026, selected automatically from the whole queue,
 // screened by the recipient nets, best accounts first, Skip as the veto.
-// Nothing unapproved ever posts, and every invite rests on a recorded
-// sanction.
+// After two unanswered emails, a person who accepted an invitation gets one
+// message from that same account, drafted here and released the same way.
+// Nothing unapproved ever posts, and every invite and message rests on a
+// recorded sanction.
 
 const TABS = [
   { id: 'draft', label: 'Post drafts' },
@@ -21,6 +23,7 @@ const TABS = [
   { id: 'posted', label: 'Posted' },
   { id: 'interest', label: 'Interest' },
   { id: 'connects', label: 'Connect queue' },
+  { id: 'messages', label: 'Messages' },
 ];
 
 async function action(path, opts) {
@@ -290,6 +293,71 @@ function InterestQueue({ campaign }) {
   );
 }
 
+// One message, to someone who accepted the invitation and has not replied to
+// two emails. Editable until approved, blocked while it carries a flag, and
+// released by the drip inside the same pace and caps as the invites.
+function MessageCard({ message, onChanged }) {
+  const [body, setBody] = useState(message.body);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const dirty = body !== message.body;
+  const open = message.status === 'draft';
+  const run = async (fn) => {
+    setBusy(true); setMsg(null);
+    try { await fn(); onChanged(); }
+    catch (e) { setMsg(String(e.message || e)); }
+    setBusy(false);
+  };
+  return (
+    <div className="card ob-card">
+      <div className="ob-head">
+        <div className="ob-co">{message.name}</div>
+        <div className="ob-pills">
+          <span className="pill">{companyLabel(message.company)}</span>
+          {message.status === 'approved' && <span className="pill">Approved for the drip</span>}
+        </div>
+      </div>
+      <div className="ob-to">{message.role || 'Role not recorded'}{message.linkedin
+        ? <> · <a href={message.linkedin} target="_blank" rel="noreferrer">profile</a></> : null}</div>
+      {message.flags.length > 0 && (
+        <div className="ob-flags">
+          <div className="eyebrow">Review before sending</div>
+          {message.flags.map((f, i) => <div className="ob-flag-line" key={i}>{f}</div>)}
+        </div>
+      )}
+      <textarea className="ob-body" rows={5} value={body} disabled={!open || busy}
+        onChange={e => setBody(e.target.value)} />
+      <div className="muted-small">
+        {message.status === 'sent'
+          ? `Sent ${message.sentAt ? new Date(message.sentAt).toLocaleDateString() : ''}${message.sentBy ? ` by ${message.sentBy}` : ''}.`
+          : 'Sends from this campaign\'s own LinkedIn account, in a weekday working-hours slot, within the same daily cap as the invites.'}
+      </div>
+      {open && (
+        <div className="ob-actions">
+          {dirty && <button className="ob-btn" onClick={() => run(() => action(`/api/studio/messages/${message.id}`, jsonOpts('PATCH', { body })))} disabled={busy}>Save changes</button>}
+          <span className="ob-spacer" />
+          <button className="ob-btn ghost" onClick={() => run(() => action(`/api/studio/messages/${message.id}/reject`, jsonOpts('POST')))} disabled={busy}>Reject</button>
+          <button className="ob-btn primary" onClick={() => run(() => action(`/api/studio/messages/${message.id}/approve`, jsonOpts('POST')))}
+            disabled={busy || dirty || message.flags.length > 0}
+            title={message.flags.length ? 'Clear the flags by editing first'
+              : dirty ? 'Save your edit first, so what sends is what you see'
+              : 'Approves this message. The drip sends it in the next working-hours slot.'}>
+            Approve
+          </button>
+        </div>
+      )}
+      {message.status === 'approved' && (
+        <div className="ob-actions">
+          <span className="muted-small">Waiting for the next slot.</span>
+          <span className="ob-spacer" />
+          <button className="ob-btn ghost" onClick={() => run(() => action(`/api/studio/messages/${message.id}/reject`, jsonOpts('POST')))} disabled={busy}>Reject</button>
+        </div>
+      )}
+      {msg && <div className="ob-msg">{msg}</div>}
+    </div>
+  );
+}
+
 function ConnectCard({ person, inviteInfo, onChanged }) {
   const [note, setNote] = useState(person.note);
   const [busy, setBusy] = useState(false);
@@ -363,6 +431,7 @@ export default function Studio({ campaign }) {
   const [tab, setTab] = useState('draft');
   const [posts, setPosts] = useState([]);
   const [connects, setConnects] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [state, setState] = useState('loading');
   const [note, setNote] = useState(null);
@@ -375,7 +444,9 @@ export default function Studio({ campaign }) {
     // The interest tab loads itself inside its component; the shell only has
     // to stand out of the way.
     if (t === 'interest') { setState('ready'); return; }
-    const req = t === 'connects'
+    const req = t === 'messages'
+      ? apiFetch(withCampaign('/api/studio/messages', campaign)).then(r => r.json()).then(d => setMessages(d.messages || []))
+      : t === 'connects'
       ? apiFetch(withCampaign('/api/studio/connects', campaign)).then(r => r.json()).then(d => {
           setConnects(d.connects || []);
           setInviteInfo({ ready: !!d.inviteReady, today: d.invitesToday ?? 0, cap: d.inviteCap ?? 0, dripOn: !!d.dripOn, dripAuto: !!d.dripAuto });
@@ -399,7 +470,7 @@ export default function Studio({ campaign }) {
   return (
     <div className="content-pad outbound-queue">
       <div className="card ob-banner">
-        <p className="ob-banner-sub">The engine drafts the posts and queues the people; you approve each post you want published. Approved posts go out by themselves on Tuesday, Wednesday and Thursday mornings, one per campaign per day, hashtags in the post and the story link as its first comment, and Post now still publishes immediately. Nothing unapproved ever posts. Invites release through the drip, a few per weekday through working hours, timed around the emails: from the approved list, or from the whole queue when automatic selection is on, screened and best accounts first, with Skip as the veto. Nothing unapproved ever posts, and every invite rests on a recorded sanction.</p>
+        <p className="ob-banner-sub">The engine drafts the posts and queues the people; you approve each post you want published. Approved posts go out by themselves on Tuesday, Wednesday and Thursday mornings, one per campaign per day, hashtags in the post and the story link as its first comment, and Post now still publishes immediately. Nothing unapproved ever posts. Invites release through the drip, a few per weekday through working hours, timed around the emails: from the approved list, or from the whole queue when automatic selection is on, screened and best accounts first, with Skip as the veto. After two unanswered emails, someone who accepted an invitation gets one message from this account, drafted here and released the same way. Nothing unapproved ever posts, and every invite and message rests on a recorded sanction.</p>
         <div className="ob-banner-controls">
           <button className="ob-btn primary" onClick={generate} disabled={genBusy}>{genBusy ? 'Drafting now' : 'Draft posts from this week'}</button>
         </div>
@@ -415,12 +486,16 @@ export default function Studio({ campaign }) {
       {state === 'loading' && <p className="muted-note">Loading the studio.</p>}
       {state === 'error' && <p className="muted-note">The studio is not available right now.</p>}
       {state === 'ready' && tab === 'interest' && <InterestQueue campaign={campaign} />}
-      {state === 'ready' && !['connects', 'interest'].includes(tab) && posts.length === 0 && (
+      {state === 'ready' && tab === 'messages' && messages.length === 0 && (
+        <p className="muted-note">No messages waiting. One is drafted for each person who accepts an invitation and has still not replied to the emails.</p>
+      )}
+      {state === 'ready' && tab === 'messages' && messages.map(m => <MessageCard key={m.id} message={m} onChanged={refresh} />)}
+      {state === 'ready' && !['connects', 'interest', 'messages'].includes(tab) && posts.length === 0 && (
         <p className="muted-note">{tab === 'draft' ? 'No post drafts yet. Draft posts from this week to get started.'
           : tab === 'approved' ? 'Nothing approved and waiting. Approve a draft and the next open slot posts it.'
           : 'Nothing marked posted yet.'}</p>
       )}
-      {state === 'ready' && !['connects', 'interest'].includes(tab) && posts.map(p => <PostCard key={p.id} post={p} onChanged={refresh} />)}
+      {state === 'ready' && !['connects', 'interest', 'messages'].includes(tab) && posts.map(p => <PostCard key={p.id} post={p} onChanged={refresh} />)}
       {state === 'ready' && tab === 'connects' && inviteInfo && (
         <p className="muted-note">
           {inviteInfo.ready
