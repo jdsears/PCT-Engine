@@ -7,6 +7,9 @@ import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDa
 import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers, sweepDue } from './postEngagers.mjs';
 import { londonClock, slotFor, slotDue, POST_DAYS, SLOT_WINDOW_MINUTES } from './autopost.mjs';
 import { dripWindowOpen, gapClear, emailTimingClear, dripDailyCap, DRIP_MIN_GAP_MINUTES } from './inviteDrip.mjs';
+import { networkDistance, isConnected, checkDue } from './liConnection.mjs';
+import { dmFlags, dmDue, dmSystem, DM_MAX_CHARS } from './liDm.mjs';
+import { breakupHeld } from '../outbound/followups.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -591,13 +594,118 @@ check('every invite rests on a recorded sanction, and the wiring holds it (stati
   const ui = freshRead('web/src/Studio.jsx');
   assert(/Approve for the drip/.test(ui) && /Unapprove/.test(ui), 'the approve and unapprove verbs are on the connect cards');
   assert(/Not for LinkedIn/.test(ui), 'the veto is on every card');
-  assert(/every invite rests on a recorded sanction/.test(ui), 'the banner states the widened sanction');
+  assert(/every invite and message rests on a recorded sanction/.test(ui), 'the banner states the widened sanction');
   const health = freshRead('web/src/Health.jsx');
   assert(/invite-drip/.test(health) && /Invite drip: on/.test(health), 'the Health page carries the switch, separate from the autopilot');
   assert(/Invite selection: automatic/.test(health) && /invite-drip-auto/.test(health), 'and the selection mode beside it');
   const inv = freshRead('src/studio/liInvite.mjs');
   assert(/its own tighter caps \(inviteDrip\.mjs\)/.test(inv) && /standing automatic-selection sanction/.test(inv),
     'the invite doctrine names all three sanctions');
+});
+
+
+console.log('\nThe LinkedIn stage: accept, message, then the break-up:');
+
+check('a degree is read defensively and never guessed into a false accept', () => {
+  for (const v of ['FIRST_DEGREE', 'DISTANCE_1', 'first', '1st', 1, '1']) {
+    assert(networkDistance({ network_distance: v }) === 1, `first degree from ${v}`);
+  }
+  assert(networkDistance({ distance: 'DISTANCE_2' }) === 2 && networkDistance({ relationship: 'THIRD' }) === 3, 'other degrees read too');
+  assert(networkDistance({}) === null && networkDistance(null) === null, 'an absent degree is unknown');
+  assert(networkDistance({ network_distance: 'MYSTERY' }) === null, 'an unrecognised value is unknown, never a guess');
+  assert(!isConnected({ network_distance: 'MYSTERY' }) && !isConnected({}) && !isConnected({ distance: 2 }),
+    'only a real first degree counts as connected; a false accept would message into the void');
+  assert(isConnected({ networkDistance: 'DISTANCE_1' }), 'the camel-case spelling is read too');
+});
+
+check('the connection sweep knocks politely and gives up honestly', () => {
+  const now = Date.parse('2026-08-24T10:00:00Z');
+  const ago = d => new Date(now - d * 86_400_000).toISOString();
+  assert(checkDue({ invitedAt: ago(1), now }), 'a fresh invitation is checked');
+  assert(!checkDue({ invitedAt: ago(1), connectedAt: ago(0.5), now }), 'a known connection is never re-checked');
+  assert(!checkDue({ invitedAt: ago(1), checkedAt: new Date(now - 3600_000).toISOString(), now }), 'not twice in an hour');
+  assert(checkDue({ invitedAt: ago(3), checkedAt: ago(1), now }), 'a day later it asks again');
+  assert(!checkDue({ invitedAt: ago(40), now, windowDays: 21 }), 'past the window silence is the answer and the asking stops');
+  assert(!checkDue({ invitedAt: 'garbage', now }), 'a junk date never sweeps and never throws');
+});
+
+check('one message, honest about the emails, and short enough to be a message', () => {
+  const s = dmSystem('marwin_dc', 'Craig Downs');
+  assert(/Craig Downs/.test(s) && /Never pretend the emails did not happen/.test(s),
+    'the message names the colleague who wrote and never pretends otherwise');
+  assert(/never complain/.test(s), 'an unanswered email is not a debt, and the message never treats it as one');
+  assert(/no links/.test(s) && /no emojis/.test(s) && /never the word genuinely/.test(s), 'the voice rules travel');
+  assert(!/data centre/i.test(dmSystem('pharma_steriflow')), 'a pharma message carries no data centre positioning');
+  const contact = { name: 'Priya Shah', role: 'Project Manager', email: 'priya@ark.example' };
+  const company = { name: 'ARK DATA CENTRES LIMITED', domain: 'ark.example' };
+  assert(dmFlags('Hi Priya, a short note about the Slough project.', { contact, company }).length === 0, 'a clean message passes');
+  assert(dmFlags('Hi there, a short note.', { contact, company })
+    .some(f => /never uses Priya/.test(f)), 'a message that never uses their name reads as a broadcast and blocks');
+  assert(dmFlags(`Hi Priya, ${'x'.repeat(DM_MAX_CHARS)}`, { contact, company })
+    .some(f => /characters/.test(f)), 'an email in the wrong place blocks');
+  assert(dmFlags('Hi Priya, see https://example.com for more.', { contact, company })
+    .some(f => /link/.test(f)), 'a first message with a link reads as a pitch and blocks');
+  assert(dmFlags('Hi Priya, a note.', { contact: { name: 'Priya Shah', role: 'Engineer at Somewhere Else' }, company })
+    .some(f => /stated employer differs/.test(f)), 'recipient truth applies to a message exactly as to an email');
+});
+
+check('the message is due only after acceptance, and never once they have replied', () => {
+  const now = Date.parse('2026-08-24T10:00:00Z');
+  const ago = d => new Date(now - d * 86_400_000).toISOString();
+  assert(dmDue({ connectedAt: ago(1), lastEmailAt: ago(5), now, afterDays: 3 }), 'connected, emailed, silent: the message is due');
+  assert(!dmDue({ connectedAt: null, lastEmailAt: ago(5), now }), 'no acceptance, no message; it could not arrive anyway');
+  assert(!dmDue({ connectedAt: ago(1), lastEmailAt: ago(1), now, afterDays: 3 }), 'the last email needs room to breathe first');
+  assert(!dmDue({ connectedAt: ago(1), lastEmailAt: ago(5), replied: true, now }), 'a reply ends the machine\'s initiative here too');
+  assert(!dmDue({ connectedAt: ago(1), lastEmailAt: ago(5), dmSentAt: ago(2), now }), 'one message, never a second');
+  assert(dmDue({ connectedAt: ago(1), lastEmailAt: null, now }), 'never emailed is clear immediately');
+});
+
+check('the break-up waits for the LinkedIn stage, but never forever', () => {
+  const now = Date.parse('2026-08-24T10:00:00Z');
+  const ago = d => new Date(now - d * 86_400_000).toISOString();
+  const due = new Date(now - 86_400_000).toISOString();
+  assert(!breakupHeld({ finalTouch: false, dueAt: due, now, connectedAt: ago(1) }),
+    'an ordinary follow-up is never held; only the final touch waits');
+  assert(breakupHeld({ finalTouch: true, dueAt: due, now, connectedAt: ago(1) }),
+    'connected and not yet messaged: the message is next, so the break-up waits');
+  assert(breakupHeld({ finalTouch: true, dueAt: due, now, invitedAt: ago(3) }),
+    'invited and undecided: they may still accept');
+  assert(!breakupHeld({ finalTouch: true, dueAt: due, now, invitedAt: ago(30), connectionWindowDays: 21 }),
+    'past the window silence is the answer and the sequence finishes');
+  assert(breakupHeld({ finalTouch: true, dueAt: due, now, connectedAt: ago(9), dmSentAt: ago(2), afterDmDays: 5 }),
+    'a message just sent gets room to be answered');
+  assert(!breakupHeld({ finalTouch: true, dueAt: due, now, connectedAt: ago(20), dmSentAt: ago(8), afterDmDays: 5 }),
+    'once the message has had its week the break-up goes');
+  assert(!breakupHeld({ finalTouch: true, dueAt: ago(40), now, connectedAt: ago(1), maxHoldDays: 12 }),
+    'nothing is held past the hold window; a lead stuck forever is worse than a late break-up');
+  assert(!breakupHeld({ finalTouch: true, dueAt: due, now }), 'never invited means LinkedIn has no turn to take');
+});
+
+check('the message stage is wired, sanctioned and capped with the invites (static)', () => {
+  const dm = freshRead('src/studio/liDm.mjs');
+  assert(/ct\.li_connected_at IS NOT NULL/.test(dm), 'only an accepted connection is ever drafted a message');
+  assert(/l\.stage NOT IN \('replied', 'handed_off', 'closed'\)/.test(dm), 'a live or finished conversation is left alone');
+  assert(/NOT EXISTS \(SELECT 1 FROM li_messages m WHERE m\.contact_id = ct\.id AND m\.status <> 'rejected'\)/.test(dm),
+    'one message per person, never a sequence');
+  assert(/attendees_ids: \[providerId\]/.test(dm) && /ROUTES\.sendMessage/.test(dm), 'the send resolves the profile and opens one chat');
+  const uni = freshRead('src/research/unipile.mjs');
+  assert(/sendMessage: \{ method: 'POST'/.test(uni) && /fourth write/.test(uni), 'the fourth write is declared with its sanction');
+  const drip = freshRead('src/studio/inviteDrip.mjs');
+  assert(/dripActionsToday/.test(drip) && /'POST \/api\/v1\/users\/invite', 'POST \/api\/v1\/chats'/.test(drip),
+    'invitations and messages share one daily cap, because they share one profile');
+  assert(/COALESCE\(jsonb_array_length\(m\.flags\), 0\) = 0/.test(drip), 'a flagged message never sends, in either mode');
+  assert(/const msg = await releaseMessage\(/.test(drip), 'the drip releases messages as well as invitations');
+  const fu = freshRead('src/outbound/followups.mjs');
+  assert(/breakupHeld\(\{/.test(fu) && /finalTouch: r\.sequence_step \+ 1 >= finalStep/.test(fu),
+    'the sweeper asks the gate before the final touch');
+  assert(/campaign === 'rehearsal'\) return true/.test(fu), 'the rehearsal lane never waits on a real acceptance');
+  const srv = freshRead('src/server.mjs');
+  assert(/sweepConnectionsOnce/.test(srv) && /generateDms/.test(srv), 'the tick learns acceptances and drafts what is due');
+  assert(/only a draft message can be approved/.test(srv) && /carries a blocking flag/.test(srv), 'approval refuses a flagged message');
+  const mig = freshRead('src/migrations/035_linkedin_stage.sql');
+  assert(/li_connected_at/.test(mig) && /CREATE TABLE IF NOT EXISTS li_messages/.test(mig), 'the stage ships in migration 035');
+  const ui = freshRead('web/src/Studio.jsx');
+  assert(/MessageCard/.test(ui) && /Messages/.test(ui), 'the studio carries the message queue');
 });
 
 console.log(`\n=== Studio gate: ${pass} passed, ${fail} failed ===`);

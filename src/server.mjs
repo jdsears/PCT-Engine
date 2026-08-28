@@ -46,6 +46,8 @@ import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady, inviteRefusal } from './studio/liInvite.mjs';
 import { dripInvitesOnce } from './studio/inviteDrip.mjs';
+import { sweepConnectionsOnce } from './studio/liConnection.mjs';
+import { generateDms, dmFlags } from './studio/liDm.mjs';
 import { CapReached, AccountUnhealthy, accountForCampaign } from './research/unipile.mjs';
 import { generateLiPosts, connectNote, postFlags, hashtagsFor, renderPostText, publishPost } from './studio/liPosts.mjs';
 
@@ -1571,7 +1573,16 @@ async function inviteDripOnce(trigger) {
   const startedAt = new Date().toISOString();
   try {
     const auto = (await kvGet('invite_drip_auto')) === 'on';
-    const r = await dripInvitesOnce({ log: m => console.log('[drip]', m), auto });
+    // Learn who accepted before deciding what to send: an acceptance is what
+    // turns a connection into a message, and the message stage is drafted
+    // here so the drip only ever has to release, never to write.
+    const conn = await sweepConnectionsOnce({ log: m => console.log('[drip]', m) });
+    if (!conn.unhealthy) {
+      try { await generateDms({ log: m => console.log('[dm]', m) }); }
+      catch (e) { console.error('[dm] drafting failed:', e.message); }
+    }
+    const r = conn.unhealthy ? { sent: [], skipped: [], unhealthy: conn.unhealthy }
+      : await dripInvitesOnce({ log: m => console.log('[drip]', m), auto });
     if (r.unhealthy) {
       await kvSet('invite_drip_enabled', 'off');
       await kvSet('invite_drip_last', { ok: false, at: startedAt, trigger, unhealthy: r.unhealthy });
@@ -2148,6 +2159,83 @@ app.post('/api/studio/connects/:id/approve-invite', async (req, res) => {
     await pool.query(
       `UPDATE contacts SET li_invite_approved_at = now(), li_invite_approved_by = $3, li_invite_note = $2
        WHERE id = $1`, [req.params.id, note, by || null]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// ----- The message queue -----
+// One message per connected contact, drafted by the engine after two
+// unanswered emails, sanctioned per message or by the standing automatic
+// sanction, released by the drip. A flagged message never sends in either
+// mode: a flag is the engine saying it is not sure who this is.
+app.get('/api/studio/messages', async (req, res) => {
+  try {
+    const reg = (await pool.query(`SELECT to_regclass('li_messages') AS t`)).rows[0]?.t;
+    if (!reg) return res.json({ messages: [], migrationPending: true });
+    const camp = campaignFilter(req);
+    const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : null;
+    const { rows } = await pool.query(
+      `SELECT m.id, m.body, m.flags, m.status, m.campaign, m.created_at, m.sent_at, m.approved_by, m.sent_by,
+              ct.full_name, ct.role_title, ct.linkedin_url, ct.li_connected_at, c.name AS company
+       FROM li_messages m JOIN contacts ct ON ct.id = m.contact_id
+       LEFT JOIN companies c ON c.id = m.company_id
+       WHERE ($1::text IS NULL OR m.campaign = $1)
+         AND m.status = COALESCE($2, 'draft')
+       ORDER BY (m.status = 'approved') DESC, m.created_at ASC LIMIT 100`, [camp, status]);
+    res.json({ messages: rows.map(r => ({
+      id: r.id, body: r.body, flags: r.flags || [], status: r.status, campaign: r.campaign,
+      name: r.full_name, role: r.role_title, linkedin: r.linkedin_url, company: r.company,
+      connectedAt: r.li_connected_at, createdAt: r.created_at, sentAt: r.sent_at,
+      approvedBy: r.approved_by, sentBy: r.sent_by,
+    })) });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Edit a message before it goes: the flags re-run on the saved text, so a
+// fixed message clears and an unfixed one keeps its block.
+app.patch('/api/studio/messages/:id', async (req, res) => {
+  try {
+    const body = String((req.body || {}).body || '').trim();
+    if (!body) return res.status(400).json({ error: 'a message body is required' });
+    const { rows } = await pool.query(
+      `SELECT m.grounding, ct.full_name, ct.role_title, ct.email,
+              ct.payload->'recipient_confirmed' IS NOT NULL AS confirmed, c.name AS company, c.domain
+       FROM li_messages m JOIN contacts ct ON ct.id = m.contact_id
+       LEFT JOIN companies c ON c.id = m.company_id
+       WHERE m.id = $1 AND m.status = 'draft'`, [req.params.id]);
+    if (!rows.length) return res.status(409).json({ error: 'only a draft message can be edited' });
+    const r = rows[0];
+    const flags = dmFlags(body, {
+      operator: r.grounding?.signal?.operator || null,
+      contact: { name: r.full_name, role: r.role_title, email: r.email, confirmed: !!r.confirmed },
+      company: { name: r.company, domain: r.domain },
+    });
+    await pool.query(
+      `UPDATE li_messages SET body = $2, flags = $3::jsonb, updated_at = now() WHERE id = $1`,
+      [req.params.id, body, JSON.stringify(flags)]);
+    res.json({ ok: true, flags });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.post('/api/studio/messages/:id/approve', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT status, flags FROM li_messages WHERE id = $1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'no such message' });
+    if (rows[0].status !== 'draft') return res.status(409).json({ error: 'only a draft message can be approved' });
+    if ((rows[0].flags || []).length) return res.status(409).json({ error: 'the message carries a blocking flag; edit it clean first' });
+    await pool.query(
+      `UPDATE li_messages SET status = 'approved', approved_at = now(), approved_by = $2, updated_at = now() WHERE id = $1`,
+      [req.params.id, actorEmail(req) || null]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.post('/api/studio/messages/:id/reject', async (req, res) => {
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE li_messages SET status = 'rejected', updated_at = now()
+       WHERE id = $1 AND status IN ('draft', 'approved')`, [req.params.id]);
+    if (!rowCount) return res.status(409).json({ error: 'only an open message can be rejected' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });

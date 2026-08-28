@@ -1,4 +1,4 @@
-import { pool } from '../db.mjs';
+import { pool, hasColumn } from '../db.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
 import { confidentialityRule } from '../campaigns/prompts.mjs';
 import { gatherGrounding } from './grounding.mjs';
@@ -147,13 +147,62 @@ export async function draftFollowup(grounding, prev, { step, callModel = callCla
 }
 
 // Threads whose next touch has fallen due: the latest sent draft per lead still
+// The break-up waits for the LinkedIn stage, John's sequencing of 24 August
+// 2026: emails one and two, then a message from James or Andy, then the
+// break-up from the rep. The email sweeper cannot see LinkedIn, so the final
+// touch asks here whether that stage still has a turn to take. Two bounds
+// keep it honest: it only ever holds the FINAL touch, never an ordinary
+// follow-up, and it never holds past the hold window, because a lead stuck
+// forever waiting for an acceptance nobody will give is worse than a
+// break-up sent a week late.
+export const breakupMaxHoldDays = () => Math.max(0, parseInt(process.env.BREAKUP_MAX_HOLD_DAYS || '12', 10) || 12);
+export const breakupAfterDmDays = () => Math.max(0, parseInt(process.env.BREAKUP_AFTER_DM_DAYS || '5', 10) || 5);
+
+export function breakupHeld({ finalTouch = false, dueAt = null, now = Date.now(),
+                              invitedAt = null, connectedAt = null, dmSentAt = null,
+                              connectionWindowDays = 21, maxHoldDays = breakupMaxHoldDays(),
+                              afterDmDays = breakupAfterDmDays() } = {}) {
+  if (!finalTouch) return false;
+  const due = new Date(dueAt).getTime();
+  if (!Number.isNaN(due) && now - due > maxHoldDays * 86_400_000) return false;
+
+  const age = iso => {
+    const t = new Date(iso).getTime();
+    return Number.isNaN(t) ? null : now - t;
+  };
+  if (dmSentAt) {
+    const since = age(dmSentAt);
+    // The message has been sent; give it room to be answered before the
+    // sequence says it is stopping.
+    return since != null && since < afterDmDays * 86_400_000;
+  }
+  // Connected and not yet messaged: the message is the next thing that
+  // happens to this person, so the break-up waits for it.
+  if (connectedAt) return true;
+  // Invited and undecided: they may still accept, inside the same window the
+  // connection sweep uses. Past it, silence is the answer and the sequence
+  // finishes.
+  if (invitedAt) {
+    const since = age(invitedAt);
+    return since != null && since < connectionWindowDays * 86_400_000;
+  }
+  // Never invited: LinkedIn has no turn to take here.
+  return false;
+}
+
 // at the outbound stage, with no reply anywhere on the lead, no open draft, a
 // live address, no snooze, and room left in the sequence. Delay arithmetic
 // happens here in followupDueAt, so the query stays simple.
 export async function dueFollowups({ now = new Date() } = {}) {
+  // The LinkedIn stage arrives with migration 035; before it, the sequence
+  // behaves exactly as it did and the break-up is never held.
+  const liCols = await hasColumn('contacts', 'li_connected_at');
   const { rows } = await pool.query(
     `SELECT l.id AS lead_id, d.id AS draft_id, d.subject, d.body, d.sent_at, d.sequence_step,
-            d.campaign, d.company_id, d.contact_id
+            d.campaign, d.company_id, d.contact_id,
+            ${liCols ? `ct.li_invited_at, ct.li_connected_at,
+            (SELECT max(m.sent_at) FROM li_messages m WHERE m.contact_id = ct.id AND m.status = 'sent') AS dm_sent_at`
+              : 'NULL::timestamptz AS li_invited_at, NULL::timestamptz AS li_connected_at, NULL::timestamptz AS dm_sent_at'}
      FROM leads l
      JOIN LATERAL (
        SELECT id, subject, body, sent_at, sequence_step, campaign, company_id, contact_id
@@ -179,10 +228,19 @@ export async function dueFollowups({ now = new Date() } = {}) {
                        WHERE od.lead_id = l.id
                          AND (r.category IS NULL OR r.category NOT IN ('bounce', 'out_of_office')))`);
   const delays = followupDelays();
+  const finalStep = maxSequenceSteps();
   return rows.filter(r => {
     const unit = r.campaign === 'rehearsal' ? 'minutes' : 'days';
     const due = followupDueAt(r.sent_at, r.sequence_step, delays, { unit });
-    return due && due.getTime() <= now.getTime();
+    if (!due || due.getTime() > now.getTime()) return false;
+    // The rehearsal lane walks the whole sequence in an afternoon and must
+    // never wait on a real LinkedIn acceptance.
+    if (r.campaign === 'rehearsal') return true;
+    return !breakupHeld({
+      finalTouch: r.sequence_step + 1 >= finalStep,
+      dueAt: due, now: now.getTime(),
+      invitedAt: r.li_invited_at, connectedAt: r.li_connected_at, dmSentAt: r.dm_sent_at,
+    });
   });
 }
 
