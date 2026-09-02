@@ -321,6 +321,18 @@ await check('the category is classified, drafted from the template, and removabl
     'the confirmation is drafted, not sent: every outbound email keeps its human click');
   const ui = read6('web/src/Outbound.jsx');
   assert(/Remove and confirm/.test(ui) && /Confirm removal/.test(ui), 'the verb is two clicks, arm then confirm');
+  // John, 31 August 2026: Chris asked to be removed and the verb existed
+  // only on the replies tab, while the draft card offered "Not a prospect",
+  // which refuses precisely when someone has replied.
+  assert(/They asked to be removed/.test(ui) && /Confirm: take them off/.test(ui),
+    'the opt-out is on the draft card too, where a person often is when they read the request');
+  assert(/drafts\/\$\{draft\.id\}\/remove-and-confirm/.test(ui), 'and it calls the same act');
+  const shared = srv.slice(srv.indexOf('async function removeAndConfirm('), srv.indexOf("app.post('/api/outbound/replies/:id/remove-and-confirm'"));
+  assert(!/stage IN \('replied'/.test(shared) && !/conversation is live/.test(shared),
+    'the opt-out never refuses on a live conversation; a reply asking to end one is when it is right');
+  assert(/api\/outbound\/drafts\/:id\/remove-and-confirm/.test(srv), 'both surfaces reach the same act');
+  assert(/use Remove and confirm on the draft or the reply instead/.test(srv),
+    'and the company-level refusal points at the verb that does fit');
   assert(/data_question: 'asking where we got their details'/.test(ui), 'the card names the category plainly');
 });
 
