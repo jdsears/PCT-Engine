@@ -650,7 +650,9 @@ async function removeFromCampaign(companyId, campaignId, by) {
             OR EXISTS (SELECT 1 FROM outbound_replies r JOIN outbound_drafts d ON d.id = r.draft_id
                        WHERE d.lead_id = l.id AND (r.category IS NULL OR r.category NOT IN ('bounce', 'out_of_office'))))
      LIMIT 1`, [companyId, campaignId]);
-  if (live.length) return { status: 409, error: 'a conversation is live on this campaign; hand it off or close it first' };
+  if (live.length) {
+    return { status: 409, error: 'a conversation is live on this campaign; hand it off or close it first. If they asked to be taken off, use Remove and confirm on the draft or the reply instead, which is the verb for that.' };
+  }
   const rej = await pool.query(
     `UPDATE outbound_drafts SET status = 'rejected', decided_by = $3
      WHERE company_id = $1 AND campaign = $2 AND status IN ('draft', 'approved')`,
@@ -2829,52 +2831,87 @@ app.post('/api/outbound/replies/:id/snooze', async (req, res) => {
 // suppression is the real one the send gate reads, and the LinkedIn veto is
 // set in the same breath, because "you will not hear from us again" has to
 // cover both channels or it is not true.
+// The opt-out act, shared by every surface a person can be looking at when
+// they read "please take me off": the reply that asked, or the draft that
+// would have gone to them. John, 31 August 2026: Chris Wheeler asked to be
+// removed and the verb existed only on the replies tab, while the draft card
+// offered "Not a prospect", which refuses precisely when someone has replied.
+// That refusal is right for its own job, deciding a company is wrong for a
+// campaign, and exactly backwards here: a live conversation asking to end is
+// the one case where removal is always correct.
+async function removeAndConfirm({ contactId, draftId = null, replyId = null, subject = null, actor = null }) {
+  const { rows } = await pool.query(
+    `SELECT ct.id, ct.full_name, c.region, c.id AS company_id,
+            l.id AS lead_id, l.campaign
+     FROM contacts ct
+     LEFT JOIN companies c ON c.id = ct.company_id
+     LEFT JOIN LATERAL (
+       SELECT id, campaign FROM leads WHERE company_id = ct.company_id AND stage <> 'closed'
+       ORDER BY updated_at DESC LIMIT 1
+     ) l ON true
+     WHERE ct.id = $1`, [contactId]);
+  if (!rows.length) return { status: 404, error: 'no such contact' };
+  const r = rows[0];
+  const withSkip = await hasColumn('contacts', 'li_invite_skipped_at');
+  const stamp = JSON.stringify({ suppressed: { at: new Date().toISOString(), by: actor || null, reason: 'asked to be removed' } });
+  await pool.query(
+    `UPDATE contacts SET suppressed = true, payload = COALESCE(payload, '{}'::jsonb) || $2::jsonb
+     ${withSkip ? `, li_invite_skipped_at = COALESCE(li_invite_skipped_at, now()), li_invite_skipped_by = $3` : ''}
+     WHERE id = $1`,
+    withSkip ? [r.id, stamp, actor || 'removal request'] : [r.id, stamp]);
+  // Nothing should still be queued to someone who asked to leave.
+  const rej = await pool.query(
+    `UPDATE outbound_drafts SET status = 'rejected', decided_by = $2
+     WHERE contact_id = $1 AND status IN ('draft', 'approved')`, [r.id, actor || 'removal request']);
+  if (r.lead_id) {
+    await pool.query(`UPDATE leads SET stage = 'closed', updated_at = now() WHERE id = $1`, [r.lead_id]);
+  }
+  // The confirmation still needs a human click to send, like every outbound
+  // email. It is drafted after the rejection sweep above, so it survives it.
+  const note = removalConfirmation({
+    firstName: String(r.full_name || '').trim().split(/\s+/)[0] || null,
+    sender: senderFor(r.region), subject,
+  });
+  const ins = await pool.query(
+    `INSERT INTO outbound_drafts (lead_id, company_id, contact_id, campaign, email_type, sequence_step,
+                                  parent_draft_id, reply_id, subject, body, grounding, grounding_flags,
+                                  rationale, model, status)
+     VALUES ($1, $2, $3, $4, 'response', 1, $5, $6, $7, $8, '{}'::jsonb, '[]'::jsonb, $9::jsonb, 'template', 'draft')
+     RETURNING id`,
+    [r.lead_id, r.company_id, r.id, r.campaign || 'marwin_dc', draftId, replyId,
+     note.subject, note.body,
+     JSON.stringify({ reason: 'asked to be removed; suppressed everywhere and the confirmation drafted' })]);
+  return { ok: true, removed: true, draftsRejected: rej.rowCount, confirmationDraftId: ins.rows[0]?.id || null };
+}
+
 app.post('/api/outbound/replies/:id/remove-and-confirm', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT r.subject, d.lead_id, d.company_id, d.contact_id, d.campaign, d.id AS draft_id,
-              ct.full_name, c.region
-       FROM outbound_replies r
-       JOIN outbound_drafts d ON d.id = r.draft_id
-       LEFT JOIN contacts ct ON ct.id = d.contact_id
-       LEFT JOIN companies c ON c.id = d.company_id
-       WHERE r.id = $1`, [req.params.id]);
+      `SELECT r.subject, d.contact_id, d.id AS draft_id FROM outbound_replies r
+       JOIN outbound_drafts d ON d.id = r.draft_id WHERE r.id = $1`, [req.params.id]);
     if (!rows.length || !rows[0].contact_id) return res.status(404).json({ error: 'no contact behind this reply' });
-    const r = rows[0];
-    const by = actorEmail(req);
-    const withSkip = await hasColumn('contacts', 'li_invite_skipped_at');
-    await pool.query(
-      `UPDATE contacts SET suppressed = true,
-         payload = COALESCE(payload, '{}'::jsonb) || $2::jsonb
-         ${withSkip ? `, li_invite_skipped_at = COALESCE(li_invite_skipped_at, now()), li_invite_skipped_by = $3` : ''}
-       WHERE id = $1`,
-      withSkip
-        ? [r.contact_id, JSON.stringify({ suppressed: { at: new Date().toISOString(), by: by || null, reason: 'asked to be removed' } }), by || 'removal request']
-        : [r.contact_id, JSON.stringify({ suppressed: { at: new Date().toISOString(), by: by || null, reason: 'asked to be removed' } })]);
-    // Open drafts to this person are rejected and the lead is closed: nothing
-    // further should be waiting to go to someone who asked to leave.
-    await pool.query(
-      `UPDATE outbound_drafts SET status = 'rejected', decided_by = $2
-       WHERE contact_id = $1 AND status IN ('draft', 'approved')`, [r.contact_id, by || 'removal request']);
-    if (r.lead_id) {
-      await pool.query(`UPDATE leads SET stage = 'closed', updated_at = now() WHERE id = $1`, [r.lead_id]);
-    }
-    // The confirmation itself still needs a human click to send, like every
-    // other outbound email.
-    const note = removalConfirmation({
-      firstName: String(r.full_name || '').trim().split(/\s+/)[0] || null,
-      sender: senderFor(r.region), subject: r.subject,
+    const out = await removeAndConfirm({
+      contactId: rows[0].contact_id, draftId: rows[0].draft_id, replyId: parseInt(req.params.id, 10),
+      subject: rows[0].subject, actor: actorEmail(req),
     });
-    const ins = await pool.query(
-      `INSERT INTO outbound_drafts (lead_id, company_id, contact_id, campaign, email_type, sequence_step,
-                                    parent_draft_id, reply_id, subject, body, grounding, grounding_flags,
-                                    rationale, model, status)
-       VALUES ($1, $2, $3, $4, 'response', 1, $5, $6, $7, $8, '{}'::jsonb, '[]'::jsonb, $9::jsonb, 'template', 'draft')
-       RETURNING id`,
-      [r.lead_id, r.company_id, r.contact_id, r.campaign, r.draft_id, req.params.id,
-       note.subject, note.body,
-       JSON.stringify({ reason: 'asked to be removed; suppressed everywhere and the confirmation drafted' })]);
-    res.json({ ok: true, removed: true, confirmationDraftId: ins.rows[0]?.id || null });
+    if (out.error) return res.status(out.status || 500).json({ error: out.error });
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The same act from the draft card, because that is where a person often is
+// when they read the request. Works on a live conversation by design.
+app.post('/api/outbound/drafts/:id/remove-and-confirm', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT contact_id, subject FROM outbound_drafts WHERE id = $1`, [req.params.id]);
+    if (!rows.length || !rows[0].contact_id) return res.status(404).json({ error: 'no contact on this draft' });
+    const out = await removeAndConfirm({
+      contactId: rows[0].contact_id, draftId: parseInt(req.params.id, 10),
+      subject: rows[0].subject, actor: actorEmail(req),
+    });
+    if (out.error) return res.status(out.status || 500).json({ error: out.error });
+    res.json(out);
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
