@@ -134,6 +134,25 @@ export async function gatherDigestData() {
          FROM post_engagers GROUP BY campaign ORDER BY campaign`)).rows;
     }
   } catch { interest = null; }
+  // The review queue, John's question of 31 August 2026 when a digest read
+  // "0 new leads" with no way to see why. A new lead can only come from a new
+  // company, a new company can only come from a confirmed proposal, so the
+  // number of proposals waiting for a decision is the missing half of that
+  // zero. Absent on an older database, like every other guarded block.
+  let reviews = null;
+  try {
+    const reg = (await pool.query(`SELECT to_regclass('party_reviews') AS t`)).rows[0]?.t;
+    if (reg) {
+      reviews = (await pool.query(
+        `SELECT count(*)::int AS open,
+                count(*) FILTER (WHERE created_at >= ${week})::int AS added,
+                count(*) FILTER (WHERE status <> 'open' AND decided_at >= ${week})::int AS decided
+         FROM party_reviews WHERE status = 'open' OR decided_at >= ${week}`)).rows[0];
+      reviews.lanes = (await pool.query(
+        `SELECT campaign, count(*)::int AS open FROM party_reviews
+         WHERE status = 'open' GROUP BY campaign ORDER BY campaign`)).rows;
+    }
+  } catch { reviews = null; }
   // The decision-maker lane keeps score in the weekly rhythm, John's ask of
   // 17 August 2026: how many accounts were searched, who was found, and
   // whether the automatic search is actually on, because a latched-off
@@ -172,7 +191,7 @@ export async function gatherDigestData() {
        GROUP BY 1 ORDER BY 1`)).rows
       .filter(r => r.found > 0 || r.emails > 0);
   } catch { people = null; }
-  return { questions: q, signals: s, leads: l, drafts: d, posts, interest, convo, people };
+  return { questions: q, signals: s, leads: l, drafts: d, posts, interest, reviews, convo, people };
 }
 
 // The campaign split, one bracket the same in both renderers: a lane's share
@@ -206,6 +225,23 @@ function studioLine(posts) {
   }
   return { line, warn };
 }
+// The review queue line, and the nudge that answers a zero. A week with no
+// new leads is normal when nothing is waiting: it means the stories were all
+// about companies already on the register. It is a bottleneck only when
+// proposals are sitting undecided, and then the digest says so plainly
+// rather than leaving the zero to be puzzled over.
+function reviewLine(r, newLeads = null) {
+  const line = `${r.open} compan${r.open === 1 ? 'y' : 'ies'} waiting for a decision${laneSplit(r.lanes, 'open')}`
+    + (r.added != null ? `, ${r.added} found this week` : '')
+    + (r.decided != null ? `, ${r.decided} decided` : '') + '.';
+  let warn = '';
+  if (newLeads === 0 && r.open > 0) {
+    warn = `No new leads this week while ${r.open} compan${r.open === 1 ? 'y is' : 'ies are'} waiting here. Confirming one in Accounts is what turns it into a lead.`;
+  } else if (newLeads === 0 && r.open === 0) {
+    warn = 'No new leads and nothing waiting, so the week\'s stories were about companies already on the register.';
+  }
+  return { line, warn };
+}
 function interestLine(i) {
   return `${i.gathered} ${i.gathered === 1 ? 'person' : 'people'} engaged with the posts this week${laneSplit(i.lanes, 'gathered')}, ${i.orbit} in the decision orbit, ${i.waiting} waiting in the interest queue${laneSplit(i.lanes, 'waiting')}.`;
 }
@@ -221,7 +257,7 @@ export function humanDate(iso) {
 // Plain text in the house voice. The subject carries the three numbers that
 // matter; the body stays short enough to read on a phone.
 export function renderDigest(data, { weekEnding = new Date().toISOString().slice(0, 10) } = {}) {
-  const { questions: q, signals: s, leads: l, drafts: d, posts, interest, convo, people } = data;
+  const { questions: q, signals: s, leads: l, drafts: d, posts, interest, reviews, convo, people } = data;
   const lines = [
     `The engine's week to ${humanDate(weekEnding)}.`,
     '',
@@ -236,6 +272,10 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
   }
   if (people) {
     lines.push(`Decision makers: ${people.searches} compan${people.searches === 1 ? 'y' : 'ies'} searched, ${people.found} ${people.found === 1 ? 'person' : 'people'} found${laneSplit(people.lanes, 'found')}, ${people.orbit} in orbit, ${people.emails} email${people.emails === 1 ? '' : 's'} resolved${laneSplit(people.lanes, 'emails')}.${people.autoOn ? '' : ' The automatic people search is switched off; the Health page turns it back on.'}`);
+  }
+  if (reviews) {
+    const rv = reviewLine(reviews, l.created);
+    lines.push(`Review queue: ${rv.line}${rv.warn ? ` ${rv.warn}` : ''}`);
   }
   if (posts) {
     const st = studioLine(posts);
@@ -258,7 +298,7 @@ export function renderDigest(data, { weekEnding = new Date().toISOString().slice
 // record and the two renderers share their arithmetic by construction.
 const PAL = { navy: '#1F386B', blue: '#009ADE', ink2: '#5B6B8C', line: '#E3E7EE', paper: '#F7F8FA' };
 export function renderDigestHtml(data, { weekEnding = new Date().toISOString().slice(0, 10), appUrl = process.env.APP_URL || '' } = {}) {
-  const { questions: q, signals: s, leads: l, drafts: d, posts, interest, convo, people } = data;
+  const { questions: q, signals: s, leads: l, drafts: d, posts, interest, reviews, convo, people } = data;
   const stat = (n, label) =>
     `<td align="center" style="padding:14px 6px;"><div style="font-size:30px;line-height:1;font-weight:700;color:${PAL.navy};">${n}</div><div style="font-size:12px;color:${PAL.ink2};margin-top:6px;">${label}</div></td>`;
   const section = (label, figures, note) =>
@@ -273,6 +313,8 @@ export function renderDigestHtml(data, { weekEnding = new Date().toISOString().s
     people ? section('Decision makers', `${people.searches} compan${people.searches === 1 ? 'y' : 'ies'} searched, ${people.found} ${people.found === 1 ? 'person' : 'people'} found${laneSplit(people.lanes, 'found')}, ${people.orbit} in orbit, ${people.emails} email${people.emails === 1 ? '' : 's'} resolved${laneSplit(people.lanes, 'emails')}.`,
       people.autoOn ? '' : `<span style="color:#D97706;font-weight:600;">The automatic people search is switched off; the Health page turns it back on.</span>`) : '',
     section('Co-pilot', `${q.questions} question${q.questions === 1 ? '' : 's'} (${q.teams} from Teams), ${q.declined} it could not answer, feedback ${q.fb_up} helpful and ${q.fb_down} not.`),
+    reviews ? section('Review queue', reviewLine(reviews, l.created).line,
+      reviewLine(reviews, l.created).warn ? `<span style="color:#D97706;font-weight:600;">${reviewLine(reviews, l.created).warn}</span>` : '') : '',
     posts ? section('Studio', studioLine(posts).line,
       studioLine(posts).warn ? `<span style="color:#D97706;font-weight:600;">${studioLine(posts).warn}</span>` : '') : '',
     interest ? section('Interest', interestLine(interest)) : '',

@@ -321,7 +321,70 @@ await check('the category is classified, drafted from the template, and removabl
     'the confirmation is drafted, not sent: every outbound email keeps its human click');
   const ui = read6('web/src/Outbound.jsx');
   assert(/Remove and confirm/.test(ui) && /Confirm removal/.test(ui), 'the verb is two clicks, arm then confirm');
+  // John, 31 August 2026: Chris asked to be removed and the verb existed
+  // only on the replies tab, while the draft card offered "Not a prospect",
+  // which refuses precisely when someone has replied.
+  assert(/They asked to be removed/.test(ui) && /Confirm: take them off/.test(ui),
+    'the opt-out is on the draft card too, where a person often is when they read the request');
+  assert(/drafts\/\$\{draft\.id\}\/remove-and-confirm/.test(ui), 'and it calls the same act');
+  const shared = srv.slice(srv.indexOf('async function removeAndConfirm('), srv.indexOf("app.post('/api/outbound/replies/:id/remove-and-confirm'"));
+  assert(!/stage IN \('replied'/.test(shared) && !/conversation is live/.test(shared),
+    'the opt-out never refuses on a live conversation; a reply asking to end one is when it is right');
+  assert(/api\/outbound\/drafts\/:id\/remove-and-confirm/.test(srv), 'both surfaces reach the same act');
+  assert(/use Remove and confirm on the draft or the reply instead/.test(srv),
+    'and the company-level refusal points at the verb that does fit');
   assert(/data_question: 'asking where we got their details'/.test(ui), 'the card names the category plainly');
+});
+
+console.log('\nThe review queue answers a zero-lead week:');
+
+await check('a zero says why: proposals waiting, or nothing to propose', () => {
+  // John, 31 August 2026: "why no new leads?" The digest reported the zero
+  // and had no way to explain it. A new lead needs a new company, a new
+  // company needs a confirmed proposal, so the queue is the missing half.
+  const base = {
+    questions: { questions: 0, declined: 0, fb_up: 0, fb_down: 0, teams: 0 },
+    signals: { news: 36, uk: 7, watch: 29, filings: 24 },
+    drafts: { waiting: 42, approved: 0, drafted_this_week: 83 },
+  };
+  const blocked = renderDigest({
+    ...base,
+    leads: { created: 0, refreshed: 263 },
+    reviews: { open: 12, added: 5, decided: 0, lanes: [
+      { campaign: 'marwin_dc', open: 8 }, { campaign: 'pharma_steriflow', open: 4 }] },
+  }, { weekEnding: '2026-08-31' });
+  assert(/12 companies waiting for a decision \(Data centres 8, Pharma 4\)/.test(blocked.text), 'the queue is counted and split');
+  assert(/5 found this week, 0 decided/.test(blocked.text), 'what arrived and what was decided both show');
+  assert(/No new leads this week while 12 companies are waiting here\. Confirming one in Accounts is what turns it into a lead\./.test(blocked.text),
+    'a zero next to a queue is named as the bottleneck it is');
+  // The same zero with an empty queue is a different fact, and says so.
+  const quiet = renderDigest({
+    ...base, leads: { created: 0, refreshed: 263 },
+    reviews: { open: 0, added: 0, decided: 3, lanes: [] },
+  }, { weekEnding: '2026-08-31' });
+  assert(/nothing waiting, so the week's stories were about companies already on the register/.test(quiet.text),
+    'no queue and no new leads is a quiet week, not a blockage');
+  // With new leads there is nothing to explain, so nothing is said.
+  const busy = renderDigest({
+    ...base, leads: { created: 4, refreshed: 263 },
+    reviews: { open: 12, added: 5, decided: 2, lanes: [] },
+  }, { weekEnding: '2026-08-31' });
+  assert(/12 companies waiting/.test(busy.text) && !/No new leads/.test(busy.text),
+    'the count still shows; the nudge only appears when it explains something');
+  const html = renderDigestHtml({
+    ...base, leads: { created: 0, refreshed: 263 },
+    reviews: { open: 12, added: 5, decided: 0, lanes: [] },
+  }, { weekEnding: '2026-08-31', appUrl: '' });
+  assert(/Review queue/.test(html) && /No new leads this week while 12 companies are waiting/.test(html),
+    'the designed card carries the same line and the same nudge');
+  assert(!/[—–!]/.test(blocked.text) && !/genuinely/i.test(blocked.text), 'house voice holds');
+  // Absent on an older database, and then the digest simply says nothing.
+  assert(!/Review queue/.test(renderDigest({ ...base, leads: { created: 0, refreshed: 1 } }, { weekEnding: '2026-08-31' }).text),
+    'no review data renders no section, like every other guarded block');
+  const ROOT7 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const dg = readFileSync(join(ROOT7, 'src/digest.mjs'), 'utf8');
+  assert(/to_regclass\('party_reviews'\)/.test(dg) && /status = 'open' GROUP BY campaign/.test(dg),
+    'the gather guards its table and splits the open queue by lane');
 });
 
 console.log('\nReply visibility: each lane hears about its own replies:');

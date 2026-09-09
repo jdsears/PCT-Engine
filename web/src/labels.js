@@ -13,13 +13,13 @@ export const TYPE_LABELS = {
   dc_developer: 'DC developer', me_contractor: 'M&E contractor',
   end_client: 'End client', oem: 'OEM', other: 'Other',
   pharma_manufacturer: 'Pharma manufacturer', biotech_manufacturer: 'Biotech manufacturer',
-  consultant: 'Design consultant',
+  consultant: 'Design consultant', fb_manufacturer: 'Food and drink manufacturer',
 };
 
 export const SIGNAL_TYPE_LABELS = {
   ch_filing: 'Filing', ch_incorporation: 'Incorporation',
   ch_director_change: 'Director change', news_dc_build: 'DC build news',
-  news_pharma_build: 'Pharma build news',
+  news_pharma_build: 'Pharma build news', news_fb_build: 'Food and drink build news',
   news_contract: 'Contract', planning: 'Planning',
 };
 

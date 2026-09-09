@@ -69,6 +69,21 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
     setArmRemove(false);
     run(async () => { await action(`/api/outbound/drafts/${draft.id}/remove-prospect`, jsonOpts('POST')); onChanged(); });
   };
+  // The opt-out, distinct from both of the above: this person asked to be
+  // taken off. Two clicks, and unlike "Not a prospect" it works on a live
+  // conversation, because a reply asking to end one is exactly when it is
+  // right. Suppresses for email and LinkedIn, closes the lead, and drafts
+  // the confirmation for sending.
+  const [armOptOut, setArmOptOut] = useState(false);
+  const removeAndConfirm = () => {
+    if (!armOptOut) { setArmOptOut(true); return; }
+    setArmOptOut(false);
+    run(async () => {
+      await action(`/api/outbound/drafts/${draft.id}/remove-and-confirm`, jsonOpts('POST'));
+      setMsg('Taken off entirely, email and LinkedIn, and the confirmation is drafted in To review.');
+      onChanged();
+    });
+  };
   const sendTest = () => run(async () => {
     const res = await action(`/api/outbound/drafts/${draft.id}/send-test`, jsonOpts('POST', { to }));
     setMsg(res.sent ? `Test sent to ${to}.` : `Not sent: ${res.reason}.`);
@@ -163,6 +178,12 @@ function DraftCard({ draft, recipients, testOn, onChanged, showChip, campaignLis
             )}
             {recipientBlock && draft.contact && (
               <button className="ob-btn danger" onClick={suppressContact} disabled={busy}>Not them, suppress contact</button>
+            )}
+            {draft.contact && !draft.rehearsal && (
+              <button className={`ob-btn ${armOptOut ? 'danger' : 'ghost'}`} onClick={removeAndConfirm} disabled={busy}
+                title="For someone who has asked to be taken off. Suppresses them for email and LinkedIn, closes the lead, and drafts the confirmation. Works even mid-conversation, because that is when it is asked for.">
+                {armOptOut ? 'Confirm: take them off' : 'They asked to be removed'}
+              </button>
             )}
             {draft.campaign && !draft.rehearsal && (
               <button className="ob-btn ghost" onClick={removeProspect} disabled={busy}>

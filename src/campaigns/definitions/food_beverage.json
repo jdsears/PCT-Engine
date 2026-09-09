@@ -1,0 +1,108 @@
+{
+  "id": "food_beverage",
+  "displayName": "Food and beverage",
+  "status": "manual",
+  "note": "The third campaign, added 9 September 2026 on John's instruction, run by Andy alongside pharma. Scope is food processing and manufacturing, beverages including breweries and distilleries, and cosmetics, with the food-industry equipment makers and engineering houses that build their lines. Status starts at manual, deliberately, on the pharma precedent: the scheduler only auto-sweeps active campaigns, and pharma's first sweep was held as a calibration event run by hand and reviewed line by line before the switch. This campaign gets the same treatment, and the gate below is a first cut biased to reject, because a missed lead is recoverable and a bad draft is not. Two decisions differ from pharma on purpose, both from James's brief. First, a research and development facility or laboratory PASSES the subject test here, where pharma rejects it: food and drink NPD sites run real process lines and pilot plants, and James named them as a signal to hunt. Second, a government grant award is a keepable event when it attaches to a facility, a process line or a capital project, because grant-funded plant upgrades are how a lot of this sector's capital projects begin. The named-account list comes from the HubSpot food, beverage and cosmetics export James curated, seeded by scripts/seed-food-beverage.mjs.",
+
+  "grounding": {
+    "lines": ["steriflow_fb", "steriflow", "bestobell_steam", "low_flow"],
+    "retrievalFocus": "Steriflow sanitary valve food beverage hygienic CIP clean in place Bestobell steam trap process"
+  },
+
+  "links": { "rangePage": "steriflow_page" },
+
+  "icp": {
+    "companyTypes": ["fb_manufacturer", "oem", "me_contractor", "consultant", "end_client"],
+    "signalTypes": ["news_fb_build", "news_contract", "planning"],
+    "partyTypes": { "operator": "fb_manufacturer", "contractor": "me_contractor" },
+    "noSignalReason": "no food, beverage or cosmetics facility build or contract signals",
+    "thresholds": { "minContractValueGBP": 100000, "ukOnly": true },
+    "buildStages": ["planning_granted", "construction", "fit_out"],
+    "weights": { "namedAccount": 25, "typeFit": 25, "signals": 30, "chHealth": 20 }
+  },
+
+  "signals": {
+    "sweepQueries": [
+      { "query": "UK food factory construction planning permission granted new facility", "type": "news_fb_build" },
+      { "query": "UK food manufacturer new production line investment installed", "type": "news_fb_build" },
+      { "query": "UK brewery distillery new facility construction investment", "type": "news_fb_build" },
+      { "query": "UK dairy bakery ready meals plant expansion announced", "type": "news_fb_build" },
+      { "query": "UK cosmetics personal care manufacturing facility built investment", "type": "news_fb_build" },
+      { "query": "UK food and drink manufacturer plant extension capacity expansion", "type": "news_fb_build" },
+      { "query": "UK food drink manufacturing site investment million announced", "type": "news_fb_build" },
+      { "query": "UK food beverage new product development facility pilot plant laboratory opened", "type": "news_fb_build" },
+      { "query": "UK food manufacturer government grant awarded plant process technology", "type": "news_fb_build" },
+      { "query": "UK food factory contract awarded main contractor process line fit out", "type": "news_contract" },
+      { "query": "UK beverage bottling canning line installation contract", "type": "news_contract" },
+      { "query": "UK food drink processing plant automation upgrade project", "type": "news_fb_build" }
+    ],
+    "gate": {
+      "sector": "food, beverage or cosmetics manufacturing",
+      "sellerDescription": "a UK flow-control supplier that sells sanitary process valves and steam equipment into food, beverage and cosmetics manufacturing, through the manufacturers, the equipment makers who build their lines and the contractors who build their facilities",
+      "subjectTest": "is the thing being built, financed or contracted a food, beverage or cosmetics manufacturing, processing or packing facility, a production or process line within one, or a research, development or pilot-plant facility serving one? That means a food factory or processing plant, a dairy, bakery, meat, produce or ready-meal plant, a brewery, distillery, cidery, winery, soft drinks or bottling and canning plant, a cosmetics or personal care manufacturing site, a named production, filling, packing or process line inside such a plant, and a new product development or pilot facility with real process equipment. A retail shop, restaurant, pub, cafe, bar, hotel, farm or growing operation with no processing, a pure office, a warehouse or distribution or logistics centre with no processing, a data centre, and any other non manufacturing construction all fail here and are rejected even when the headline is a real construction or contract win and even when a food or drink company is the client. A note on one deliberate difference from the pharmaceutical campaign: a research and development facility, laboratory or NPD centre serving food, drink or cosmetics manufacturing PASSES this subject test, because these sites run real process lines and pilot plants and are a wanted signal here. If the subject is not one of the above, dcRelevant is false. On a construction, contract or job headline the subject must be recognisably a manufacturing, processing or process-line facility to pass; if you cannot confirm that from the text, including an unfamiliar or abbreviated term, default to reject rather than pass on the strength of the event or the client's name. Geography is never a reason to fail this subject test: a real food, beverage or cosmetics manufacturing facility anywhere in the world passes the subject, and the geographic routing below, not this gate, then decides uk_project, expansion_watch or foreign_only. The gate judges what and whether, the routing judges where.",
+      "eventTest": "is this a real build event, the facility or the line being built, contracted, financed, invested in, extended or installed? KEEP a new factory or plant, a plant extension or capacity expansion, a new or replacement production, filling, bottling, canning, packing or process line, a processing or automation upgrade to an existing plant, an investment or funding announcement that attaches to a named facility, line or capital project, a new research, development or pilot facility, and a government or public grant award where the money attaches to a facility, a process line, plant equipment or a process or technology development project. That grant case is a deliberate keep for this campaign, because grant-funded plant upgrades are how many of this sector's capital projects begin; a grant for research alone with no facility, plant or process attached still fails. REJECT everything that is not a build or a line, however important it is to the company: a new product, recipe, flavour or packaging launch, a listing or supply agreement with a retailer, a rebrand, a merger, acquisition, divestment or partnership, company financial results, a funding round for the business in general rather than for a named facility or line, a food safety recall, an inspection or hygiene rating, a licensing or distribution deal, a leadership or staffing change, a plant closure or job losses, an award or industry prize, a survey, report, opinion or comment piece, and generic sector, market or policy commentary. Equipment or component supply news from a supplier's own point of view, for example a machinery maker announcing sales, is that supplier's commercial news rather than the facility being built, and is rejected; the same installation reported as the manufacturer installing a line at its plant is a keep. The test for the event is whether the money, the build or the installation attaches to an actual facility, line or capital project: if it does, keep; if it is corporate, commercial, product or regulatory news, reject.",
+      "subjectNoun": "a food, beverage or cosmetics manufacturing facility or process line",
+      "subjectNounPlural": "food, beverage and cosmetics manufacturing facilities and process lines",
+      "operatorNoun": "food, beverage or cosmetics manufacturer or the contractor named",
+      "clearTitlePasses": "a title that clearly states a food, drink or cosmetics factory, plant, brewery, distillery or production line being built, installed, financed for a build, or extended in capacity passes",
+      "confirmedSubject": "a real food, beverage or cosmetics manufacturer with a facility or process line build, installation, financing or expansion event"
+    }
+  },
+
+  "census": {
+    "queries": [
+      "list of UK food manufacturing companies with UK production sites",
+      "UK beverage manufacturers breweries distilleries production facilities",
+      "UK cosmetics and personal care manufacturers production sites",
+      "UK food processing equipment manufacturers and process engineering houses"
+    ]
+  },
+
+  "positioning": {
+    "campaignPhrase": "the food, beverage and cosmetics process campaign",
+    "profileFitLine": "lead with why Steriflow sanitary valves and Bestobell steam equipment are relevant to hygienic process and steam specification on food, drink or cosmetics production, and a light reason a person in the contact's role might care. Be specific to the work, do not say they fit a profile.",
+    "rangeLine": "PCT supplies the Steriflow sanitary valve range for hygienic process duty, with 316L barstock construction, FDA compliant materials, CIP and SIP capability and self-draining design, alongside Bestobell steam traps and steam equipment for the utilities side of a plant.",
+    "trustLine": "Steriflow valves and Bestobell steam equipment are widely used across food, beverage and personal care production.",
+    "trustLinePrefix": "Track record, state in general form and with confidence: ",
+    "confidentialityHardLimit": "Hard limit: never name or imply a specific food, drink or cosmetics manufacturer or end customer. \"Widely used across food, beverage and personal care production\" is the ceiling of specificity.",
+    "positioningRule": "Position the Steriflow sanitary valve range as built for hygienic process duty and Bestobell steam equipment as the steam side of the same plant.",
+    "trackRecordRule": "you may state, confidently and in general form, that Steriflow valves and Bestobell steam equipment are widely used across food, beverage and personal care production. CONFIDENTIALITY RULE, absolute: never name or imply any specific food, drink or cosmetics manufacturer or end customer. 'Widely used across food, beverage and personal care production' is the ceiling of specificity. No 'a major brewer', no 'a well-known dairy', no named manufacturer, nothing that points to a specific customer.",
+    "confidentialityRule": "CONFIDENTIALITY RULE, absolute: never name or imply any specific food, drink or cosmetics manufacturer or end customer. 'Widely used across food, beverage and personal care production' is the ceiling of specificity.",
+    "structurePositioning": "one line positioning the Steriflow sanitary valve range as built for hygienic process duty, with Bestobell steam equipment where the steam side is relevant, including the general track record across food, beverage and personal care production, with no named customer and no part-specific spec",
+    "ask": "a short call, or whether they are specifying process valves or steam equipment on the project"
+  },
+
+  "studio": {
+    "newsLine": "commenting on UK food, drink and cosmetics manufacturing news",
+    "angleLine": "what the story means for hygienic process control and plant steam",
+    "rangeLine": "the Steriflow sanitary valve range and Bestobell steam equipment his company supplies are widely used across food, beverage and personal care production",
+    "hashtags": ["#foodmanufacturing", "#processcontrol"],
+    "connectLine": "I'm the sales director at PCT, supplier of the Steriflow sanitary valve range and Bestobell steam equipment used across food and drink production",
+    "connectLineShort": "I'm the sales director at PCT, supplier of the Steriflow sanitary valve range"
+  },
+
+  "foreignRegister": ["data centre", "data center", "hyperscale", "hyperscaler", "colocation", "chilled-water", "chilled water"],
+  "orbitTitles": [
+    "engineering manager", "equipment engineer", "process engineer",
+    "sustainability officer", "sustainability manager", "sustainability",
+    "design engineer", "instrumentation engineer", "control and instrumentation",
+    "c&i engineer", "plant manager", "operations manager", "mro engineer",
+    "facilities engineer", "maintenance manager", "maintenance engineer",
+    "engineering director", "head of engineering", "technical manager",
+    "technical director", "project engineer", "project manager",
+    "capital projects", "capex", "utilities", "utilities engineer",
+    "process development", "npd", "production manager", "site engineering",
+    "automation", "controls", "commissioning engineer", "mechanical engineer"
+  ],
+
+  "signalLabels": {
+    "news_fb_build": "a food or drink facility build announcement",
+    "news_contract": "a contract signal"
+  },
+
+  "watchlistCopy": "Food, beverage and cosmetics manufacturers the engine has spotted building, extending or investing, where a UK facility or line move is plausible but not yet a named project. These are business-development targets to approach or watch, not leads in the pipeline.",
+
+  "geo": { "routing": "shared" },
+
+  "staleness": { "days": 120 }
+}
