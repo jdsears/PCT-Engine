@@ -31,10 +31,18 @@ const FOLDER_LINE = {
   '7. marwin': 'marwin', '8. equilibar': 'equilibar',
   'pct information': 'general', 'data centres': 'data_centre',
 };
+// Supplier folders added later carry the brand in the folder name however
+// it is numbered or punctuated, so the brand word is enough: Alicat arrived
+// on 9 September 2026, FMI is parked for Kieran and lands the same way when
+// it is picked up.
+const BRAND_LINES = [['alicat', 'alicat'], ['fluid metering', 'fmi'], ['fmi', 'fmi']];
 export function lineForPath(path) {
   for (const seg of String(path || '').split('/')) {
-    const hit = FOLDER_LINE[seg.trim().toLowerCase()];
+    const s = seg.trim().toLowerCase();
+    const hit = FOLDER_LINE[s];
     if (hit) return hit;
+    const brand = BRAND_LINES.find(([w]) => new RegExp(`(^|[^a-z])${w}([^a-z]|$)`).test(s));
+    if (brand) return brand[1];
   }
   return 'general';
 }

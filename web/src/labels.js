@@ -4,6 +4,7 @@ export const LINE_LABELS = {
   marwin: 'Marwin', steriflow: 'Steriflow', steriflow_fb: 'Steriflow F&B',
   jordan: 'Jordan', low_flow: 'Low flow', hexvalve: 'Hex Valve',
   bestobell_steam: 'Bestobell', equilibar: 'Equilibar', data_centre: 'Data centre',
+  alicat: 'Alicat', fmi: 'FMI',
   general: 'General',
 };
 export const lineLabel = k =>

@@ -52,6 +52,13 @@ console.log('\nThe document sync rules (pure):');
 await check('folders map to their canonical corpus lines', async () => {
   assert(lineForPath('Richards/7. Marwin/Technical Information/DM600.pdf') === 'marwin', 'Marwin folder is line marwin');
   assert(lineForPath('Richards/3. Steriflow Food and Beverage/x.pdf') === 'steriflow_fb', 'the F&B folder maps');
+  // Supplier folders added later carry the brand word however they are
+  // numbered: Alicat arrived on 9 September 2026 and must not file as general.
+  assert(lineForPath('Alicat/Specs/manual.pdf') === 'alicat' && lineForPath('9. Alicat/Brochures/a.pdf') === 'alicat',
+    'the Alicat folder maps to its own line whatever the numbering');
+  assert(lineForPath('FMI/Presentation and training/x.pdf') === 'fmi' && lineForPath('Fluid Metering/x.pdf') === 'fmi',
+    'FMI lands the same way when it is picked up');
+  assert(lineForPath('Sales/Alicatalogue.pdf') === 'general', 'a brand word inside another word never matches');
   assert(lineForPath('PCT Information/About.pdf') === 'general', 'PCT information files under general');
   assert(lineForPath('Richards/Something New/y.pdf') === 'general', 'an unknown folder files under general, never guesses a line');
 });
