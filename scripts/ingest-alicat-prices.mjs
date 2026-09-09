@@ -99,6 +99,7 @@ if (/\.pdf$/i.test(SOURCE)) {
   show('USD figures set aside', r.usd, 'the USD list is the supplier\'s');
   show('adders, not stored', r.adders, 'priced as an addition to a base unit, not a price of a part');
   show('parts mentioned inside a description, not stored as that part\'s price', r.mentions);
+  show('option table rows, not stored', r.options, 'the figure is an option\'s, with a cell between the code and it');
   show('figures with no currency, held', r.bareUnknown, 'say which with --currency GBP');
   show('prices with no part number beside them', r.priceNoPart, 'named products without a code are not stored');
   show('part numbers with no price beside them', r.partNoPrice);

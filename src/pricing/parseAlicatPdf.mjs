@@ -42,6 +42,11 @@ const HEADING = /\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-Series\b/g;
 // Words that make the text before a code a phrase about the code rather
 // than a specification of it.
 const PROSE = /\b(for|with|of|the|and|per|to|in|on|by|only|case|kit|cable|set|spare|option|options|extra|additional|replacement)\b/i;
+// A table cell between a code and a figure: the code is the row's label in
+// an options table ("FP-25 N/A £430" is an option for the FP-25 with the
+// first column not applicable), and the figure is the option's, never the
+// part's. John's third dry run, 9 September 2026.
+const OPTION_CELL = /\bN\/A\b|\bn\/c\b|\bby quote\b|\bincluded\b|\bstandard\b|\bstd\b/i;
 const SYMBOL = { '£': 'GBP', '$': 'USD', '€': 'EUR' };
 
 const tokens = (re, line) => {
@@ -80,7 +85,7 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
   const defaultCurrency = currency ? String(currency).toUpperCase() : detectCurrency(src);
   const report = {
     lines: 0, rows: 0, parts: 0, currency: { default: defaultCurrency, seen: { GBP: 0, EUR: 0, USD: 0 } },
-    excluded: [], usd: [], adders: [], mentions: [], priceNoPart: [], partNoPrice: [], bareUnknown: [], conflicts: [], resolved: [], head: [],
+    excluded: [], usd: [], adders: [], mentions: [], options: [], priceNoPart: [], partNoPrice: [], bareUnknown: [], conflicts: [], resolved: [], head: [],
   };
   const seen = new Map();
   const conflicts = new Map();
@@ -118,6 +123,7 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
       const first = inSegment[0];
       const lead = line.slice(segStart, first.at).replace(HEADING, ' ').trim();
       if (lead && PROSE.test(lead)) { sample(report.mentions, pair); continue; }
+      if (OPTION_CELL.test(line.slice(first.end, price.at))) { sample(report.options, pair); continue; }
       if (price.currency === 'USD') { sample(report.usd, pair); continue; }
       if (!price.currency) { sample(report.bareUnknown, pair); continue; }
       const description = text([lead, line.slice(first.end, price.at)].join(' ')) || null;
