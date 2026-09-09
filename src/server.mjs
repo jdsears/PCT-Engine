@@ -886,7 +886,7 @@ app.get('/api/accounts/:id', async (req, res) => {
 const SIGNAL_FILTERS = {
   filing: ['ch_filing', 'ch_incorporation'],
   director: ['ch_director_change'],
-  build: ['news_dc_build', 'news_pharma_build', 'planning'],
+  build: ['news_dc_build', 'news_pharma_build', 'news_fb_build', 'planning'],
   contract: ['news_contract'],
 };
 // The campaign registry, for the UI switcher. Reading from the registry means

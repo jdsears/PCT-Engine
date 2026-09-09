@@ -359,5 +359,34 @@ check('the hardcoded campaign constant is gone and the callers pass one through'
   assert(/runResearch\(\{ campaign: id/.test(server), 'and passes each one through');
 });
 
+check('the food and beverage campaign is a first cut, held at manual like pharma was', () => {
+  const f = requireCampaign('food_beverage');
+  assert(f.status === 'manual', 'it starts manual: the first sweep is a calibration event reviewed by hand, the pharma precedent');
+  assert(!activeCampaignIds().includes('food_beverage'), 'so the scheduler leaves it alone until John flips it');
+  assert(JSON.stringify(f.grounding.lines) === JSON.stringify(['steriflow_fb', 'steriflow', 'bestobell_steam', 'low_flow']),
+    'it grounds in the food and beverage sanitary material and the steam range, and nothing else');
+  assert(!f.grounding.lines.includes('marwin'), 'a food draft cannot ground in data centre material');
+  assert(f.icp.companyTypes.includes('fb_manufacturer') && f.icp.companyTypes.includes('oem'),
+    'the plants and the equipment makers who build their lines are both targets');
+  assert(f.icp.signalTypes.includes('news_fb_build'), 'it scores on its own build signal');
+  // James's brief, 9 September 2026: two deliberate differences from pharma.
+  assert(/PASSES this subject test/.test(f.signals.gate.subjectTest) && /NPD/.test(f.signals.gate.subjectTest),
+    'an R&D or NPD facility passes here, where pharma rejects it, because these sites run real process lines');
+  assert(/grant award where the money attaches to a facility/.test(f.signals.gate.eventTest),
+    'a grant that attaches to a facility, line or project is a keepable event');
+  assert(/grant for research alone with no facility, plant or process attached still fails/.test(f.signals.gate.eventTest),
+    'and a grant with no facility behind it still fails');
+  assert(/retail shop, restaurant, pub, cafe, bar, hotel/.test(f.signals.gate.subjectTest),
+    'the hospitality end of food and drink is refused; it is not a manufacturing subject');
+  // The roles are James's list, and the ones he named must all be there.
+  for (const role of ['engineering manager', 'equipment engineer', 'process engineer', 'sustainability officer',
+                      'design engineer', 'instrumentation engineer', 'control and instrumentation',
+                      'plant manager', 'operations manager', 'mro engineer', 'facilities engineer']) {
+    assert(f.orbitTitles.includes(role), `the orbit carries ${role}, from James's list`);
+  }
+  assert(f.studio.connectLine.includes('sales director'), 'it runs on Andy\'s profile, so the note carries his real title');
+  assert(f.foreignRegister.includes('data centre'), 'and it never speaks the data centre register');
+});
+
 console.log(`\n=== Campaign gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);
