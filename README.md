@@ -611,6 +611,70 @@ the published list rather than quoted: parse that line's list and compute the
 sell price at ingest, storing only the finished figure, verified against his
 numbers before it arms.
 
+### The Alicat customer list
+
+Alicat (9 September 2026) is the first line whose sell prices come from a
+customer price list of its own rather than the Mega sheet: the GBP list James
+placed in the customer pricing folder ("Alicat Q1 2026"). Its layout was not
+in front of anyone when the parser was written, so
+`src/pricing/parseAlicat.mjs` detects the header row under any title rows and
+classifies every column by name, and the dry run prints that classification
+for a human to confirm before anything is stored. The rule is unchanged: only
+a selling price enters the table. Alicat's own list is in USD and PCT's cost
+is that list less a discount, so a USD column with no sell marker is set
+aside, a column whose header says cost, discount, margin, supplier or a
+revision number is excluded outright and cannot be named back in, a lone
+"list" column with no sell marker is reported as a question rather than
+stored, and a part priced two ways is withdrawn and named. The gate proves
+each of these with poison values.
+
+- `scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>"` is the dry
+  run; `--sheet` picks a worksheet, `--gbp-column K` (a letter or a number,
+  likewise `--eur-column` and `--usd-column`) names a column when the header
+  left a currency ambiguous, `--list` and `--effective` label the rows, and
+  `--apply` replaces the `alicat` line wholesale. `--apply` refuses while any
+  currency is ambiguous, an override was refused, or a part conflicts.
+  `--file` is required: there is no fallback to `PRICE_WORKBOOK`, which is
+  the Mega sheet, a different document with different rules.
+- The co-pilot answers an Alicat part number by exact key, "cheapest Alicat"
+  with the lowest loaded row under the sell wording, never the guide caveat,
+  and a whole-line question with the loaded range. Before the list is
+  ingested the brand word routes to the enquiry note like the other lines.
+
+## Website trawl
+
+John's instruction of 9 September 2026: website trawl capabilities, which
+can assist research too. One reading layer (`src/web/`) serves two uses.
+
+The corpus use: a supplier's site is registered on the Health page's
+Websites card (address, corpus line, page cap, PDFs or not), read at once in
+the background, and refreshed on the engine cycle once it is older than
+`WEB_TRAWL_REFRESH_DAYS` (default 7) while the "Website refresh" switch is
+on, one site per cycle. Pages land in `kb_chunks` with the page address in
+their metadata, so a co-pilot citation links to the page itself and the
+model is told it is reading the supplier's own site. Migration 037 holds the
+sites and the pages; removing a site withdraws its chunks in the same
+transaction. `scripts/trawl-site.mjs --url <site> --line <key>` is the same
+trawl from a terminal, dry by default.
+
+The manners, proven in the gate against a local server rather than
+promised: one identifiable agent, robots.txt obeyed with our own group
+winning over the wildcard and the longest pattern deciding, one request at a
+time per host with a gap (the site's crawl delay when it states one), same
+host only, depth and page caps, the sitemap as a seed, localised sections and
+assets skipped, noindex and non-English pages not kept, identical pages
+folded, and the SharePoint sync's price rule applied to every page's path
+and title so a price list on a supplier's site is refused by name.
+
+The research use: when the funnel proposes a company for review and can
+resolve its domain, it reads the site lightly (front page and up to four
+profile pages such as about, locations and contact, never a crawl) and
+attaches what it found as evidence on the proposal: the site's own
+description, UK postcodes or a UK number, a Republic of Ireland showing,
+and the registered number when the footer states it. The review queue shows
+it in one plain line. Research evidence is not corpus; nothing from a
+prospect's site is embedded.
+
 ## Usage logging and insights
 
 Every co-pilot question is logged to `copilot_queries` (migration 005). Each row

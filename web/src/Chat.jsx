@@ -113,7 +113,13 @@ export default function Chat() {
                     <div className="asources">
                       <div className="asources-cap">Sources</div>
                       <div className="achips">
-                        {m.citations.map(c => (
+                        {m.citations.map(c => c.url ? (
+                          <a className="achip" key={c.n} href={c.url} target="_blank" rel="noreferrer"
+                            title={`[${c.n}] ${c.title}, a page on ${c.url}`}>
+                            <span className="achip-dot" />
+                            {c.title}
+                          </a>
+                        ) : (
                           <span className="achip" key={c.n}
                             title={`[${c.n}] ${c.title}${c.section ? ' | ' + c.section : ''}${c.page ? ' (p' + c.page + ')' : ''}`}>
                             <span className="achip-dot" />

@@ -42,6 +42,8 @@ import { buildRangeTree } from './pricing/marwinRanges.mjs';
 import { senderFor } from './outbound/senders.mjs';
 import { syncSharepointDocs, syncRoots } from './sharepointSync.mjs';
 import { resolveSite, resolveDrive, docWebUrl } from './sharepoint.mjs';
+import { webStatus, addSite, removeSite, getSite, trawlSite, refreshDueSites, trawlInFlight, tablesReady as webTablesReady } from './web/siteCorpus.mjs';
+import { profileSite, describeProfile } from './web/siteProfile.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople } from './research/peopleDiscovery.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
@@ -979,6 +981,9 @@ app.get('/api/reviews', async (req, res) => {
         domain: r.domain, createdAt: r.created_at,
         signal: r.signal_title ? { title: r.signal_title, url: r.signal_url, geoScope: r.geo_scope } : null,
         source: r.source || null, evidence: r.evidence || null,
+        // What their own website says, in one plain line, when the proposal
+        // carried a profile.
+        websiteLine: describeProfile(r.evidence?.website) || null,
       })),
       unmatched: unmatched.map(u => ({ name: u.printed, campaign: u.campaign, n: u.n, lastSeen: u.last_seen })),
     });
@@ -1264,6 +1269,8 @@ async function engineStatus() {
     autoDiscover: (await kvGet('autodiscover_enabled')) === 'on',
     autoPeople: (await kvGet('autopeople_enabled')) === 'on',
     autoSync: (await kvGet('sharepoint_sync_enabled')) === 'on',
+    webTrawl: (await kvGet('web_trawl_enabled')) === 'on',
+    webTrawlLast: await kvGet('web_trawl_last'),
     studioAutopilot: (await kvGet('studio_autopilot_enabled')) === 'on',
     studioLast: await kvGet('studio_autopilot_last'),
     inviteDrip: (await kvGet('invite_drip_enabled')) === 'on',
@@ -1343,6 +1350,21 @@ async function runEngineOnce(trigger) {
       spSync = await syncSharepointDocs({ log: m => console.log('[sharepoint]', m) })
         .catch(e => ({ errors: [String(e.message).slice(0, 200)] }));
       if (spSync?.errors?.length) console.log('[sharepoint] errors:', spSync.errors.join(' | '));
+    }
+    // With the website refresh on, the most overdue registered site is read
+    // again, one per cycle, so a supplier's pages drift into the corpus
+    // without a click. A trawl failure is recorded and never fails the cycle.
+    let webTrawl = null;
+    if ((await kvGet('web_trawl_enabled')) === 'on') {
+      webTrawl = await refreshDueSites({ log: m => console.log('[web]', m) })
+        .catch(e => ({ errors: [String(e.message).slice(0, 200)] }));
+      if (webTrawl?.report) {
+        await kvSet('web_trawl_last', {
+          at: new Date().toISOString(), site: webTrawl.site, pages: webTrawl.report.pages, updated: webTrawl.report.updated,
+          removed: webTrawl.report.removed, errors: webTrawl.report.errors?.length || 0, skipped: webTrawl.report.skipped || null,
+        });
+        if (webTrawl.report.errors?.length) console.log('[web] errors:', webTrawl.report.errors.join(' | '));
+      }
     }
     await kvSet('engine_last_run', {
       ok: true, at: startedAt, trigger,
@@ -1703,6 +1725,73 @@ app.post('/api/engine/autosync', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
+// ----- The website trawl -----
+// Registered websites are read into the corpus the way SharePoint folders
+// are synced: a site is added here, trawled at once in the background, and
+// refreshed on the engine cycle once it is older than the refresh window
+// while the switch below is on. Removing a site withdraws its pages from
+// the co-pilot in the same breath.
+app.get('/api/web/sites', async (_req, res) => {
+  try {
+    const status = await webStatus();
+    res.json({ ...status, enabled: (await kvGet('web_trawl_enabled')) === 'on', embeddingKey: !!process.env.VOYAGE_API_KEY });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Runs a trawl off the request, so the click returns at once and the card
+// shows the site as trawling until the report lands.
+function trawlInBackground(site) {
+  setImmediate(() => {
+    trawlSite(site, { log: m => console.log('[web]', m) })
+      .then(r => console.log(`[web] ${site.host}: ${r.skipped ? r.skipped : `${r.pages} page(s) read, ${r.updated} updated, ${r.removed} withdrawn, ${r.errors?.length || 0} error(s)`}`))
+      .catch(e => console.error(`[web] ${site.host} failed:`, e.message));
+  });
+}
+
+app.post('/api/web/sites', async (req, res) => {
+  try {
+    if (!(await webTablesReady())) return res.status(409).json({ error: 'the website tables are not created yet; run npm run migrate' });
+    const b = req.body || {};
+    const r = await addSite({ url: b.url, line: b.line, maxPages: b.maxPages, includePdfs: b.includePdfs === true }, { addedBy: actorEmail(req) || null });
+    if (r.error) return res.status(400).json({ error: r.error });
+    if (!process.env.VOYAGE_API_KEY) return res.json({ site: r.site, note: 'registered, but this service has no embedding key, so nothing is read until it has one' });
+    trawlInBackground(r.site);
+    res.json({ site: r.site, note: `registered; reading ${r.site.host} now, up to ${r.site.max_pages} pages` });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.post('/api/web/sites/:id/trawl', async (req, res) => {
+  try {
+    const site = await getSite(Number(req.params.id));
+    if (!site) return res.status(404).json({ error: 'no such site' });
+    if (trawlInFlight(site.id)) return res.status(409).json({ error: `${site.host} is being read right now` });
+    if (!process.env.VOYAGE_API_KEY) return res.status(409).json({ error: 'this service has no embedding key, so nothing can be read' });
+    trawlInBackground(site);
+    res.json({ ok: true, note: `reading ${site.host} again, up to ${site.max_pages} pages` });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+app.delete('/api/web/sites/:id', async (req, res) => {
+  try {
+    const site = await getSite(Number(req.params.id));
+    if (!site) return res.status(404).json({ error: 'no such site' });
+    if (trawlInFlight(site.id)) return res.status(409).json({ error: `${site.host} is being read right now; remove it once that finishes` });
+    const r = await removeSite(site.id);
+    if (r.error) return res.status(404).json({ error: r.error });
+    res.json({ ok: true, note: `${r.removed} removed: ${r.pages} page(s) and ${r.chunks} chunk(s) withdrawn from the co-pilot` });
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// The website refresh switch: when on, the engine cycle re-reads the most
+// overdue registered site, one per cycle.
+app.post('/api/engine/web-trawl', async (req, res) => {
+  try {
+    const enabled = (req.body || {}).enabled === true;
+    await kvSet('web_trawl_enabled', enabled ? 'on' : 'off');
+    res.json(await engineStatus());
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
 // The studio autopilot switch: when on, approved posts release themselves at
 // the standing Tuesday, Wednesday and Thursday morning slots, thin queues top
 // up from fresh signals, and published posts have their engagement swept and
@@ -1851,9 +1940,13 @@ async function proposeEngagerCompany({ companyName, campaign, evidence }) {
   }
   // Companies House candidates and a domain, so the reviewer decides over
   // evidence; either failing leaves the proposal standing without it.
-  let chCandidates = null, domain = null;
+  let chCandidates = null, domain = null, website = null;
   try { chCandidates = candidateRows(await searchCompanies(name)); } catch { /* stands without candidates */ }
   try { domain = await resolveDomain(name); } catch { /* optional */ }
+  // Their own site, read lightly, so the reviewer sees what the company says
+  // about itself and whether it shows a UK address. Unreachable is fine.
+  if (domain) website = await profileSite(domain, { delayMs: 500 }).catch(() => null);
+  if (website || evidence) evidence = { ...(evidence || {}), ...(website ? { website } : {}) };
   const withProvenance = await hasColumn('party_reviews', 'source');
   const { rowCount } = await pool.query(
     `INSERT INTO party_reviews (kind, printed_name, name_norm, party, campaign, ch_candidates, domain${withProvenance ? ', source, evidence' : ''})

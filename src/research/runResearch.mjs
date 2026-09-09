@@ -1,4 +1,5 @@
-import { pool } from '../db.mjs';
+import { pool, hasColumn } from '../db.mjs';
+import { profileSite } from '../web/siteProfile.mjs';
 import { pollCompaniesHouse } from './companiesHouse.mjs';
 import { dcSignalSweep } from './newsResearch.mjs';
 import { scoreCompany, CONTACTABILITY_DRAFT } from './icp.mjs';
@@ -107,14 +108,20 @@ export async function runResearch({ campaign, log = () => {} } = {}) {
       } else if (a.act === 'propose') {
         // Read-only enrichment, so the human decides over evidence: Companies
         // House candidates and a domain. No Findymail, no LinkedIn, no spend.
-        let chCandidates = null, domain = null;
+        let chCandidates = null, domain = null, website = null;
         try { chCandidates = candidateRows(await searchCompanies(a.name)); }
         catch { /* the proposal stands without candidates */ }
         try { domain = await resolveDomain(a.name); } catch { /* optional */ }
+        // Their own site, read lightly (front page and a few profile pages,
+        // robots obeyed), so the reviewer sees what the company says about
+        // itself and whether it shows a UK address. Unreachable is fine.
+        if (domain) website = await profileSite(domain, { delayMs: 500 }).catch(() => null);
+        const withEvidence = website && await hasColumn('party_reviews', 'evidence');
         await pool.query(
-          `INSERT INTO party_reviews (kind, printed_name, name_norm, party, campaign, signal_id, ch_candidates, domain)
-           VALUES ('proposal', $1, $2, $3, $4, $5, $6::jsonb, $7) ON CONFLICT (name_norm, campaign) DO NOTHING`,
-          [a.name, a.norm, a.party, s.campaign, s.id, chCandidates ? JSON.stringify(chCandidates) : null, domain]);
+          `INSERT INTO party_reviews (kind, printed_name, name_norm, party, campaign, signal_id, ch_candidates, domain${withEvidence ? ', evidence' : ''})
+           VALUES ('proposal', $1, $2, $3, $4, $5, $6::jsonb, $7${withEvidence ? ', $8::jsonb' : ''}) ON CONFLICT (name_norm, campaign) DO NOTHING`,
+          [a.name, a.norm, a.party, s.campaign, s.id, chCandidates ? JSON.stringify(chCandidates) : null, domain,
+           ...(withEvidence ? [JSON.stringify({ website })] : [])]);
         counts.proposals++;
       } else if (a.act === 'over_cap') {
         counts.overCap++;

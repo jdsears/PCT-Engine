@@ -588,6 +588,13 @@ button, input { font: inherit; }
 .sync-err-list { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
 .sync-err-list li { font-size: 12px; word-break: break-word; }
 .sp-line { color: var(--ink2); }
+.web-site { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-top: 1px solid var(--line); }
+.web-site:first-child { border-top: none; padding-top: 0; }
+.web-site-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.web-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.web-add input[type="url"] { flex: 1 1 180px; min-width: 0; }
+.web-add input[type="number"] { width: 84px; }
+.web-pdfs { display: inline-flex; align-items: center; gap: 4px; }
 
 .camp-table { display: flex; flex-direction: column; }
 .camp-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 10px 0; border-top: 1px solid var(--line); }

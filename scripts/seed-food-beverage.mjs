@@ -2,8 +2,12 @@
 // Seed the food, beverage and cosmetics campaign's named-account list from
 // James's curated HubSpot export, 9 September 2026.
 //
-//   node --env-file=.env scripts/seed-food-beverage.mjs --file "/path/Food_Beverage_and_Cosmetics_List.csv"
+//   node --env-file=.env scripts/seed-food-beverage.mjs --file "/path/Food, Beverage and Cosmetics List.csv"
 //   node --env-file=.env scripts/seed-food-beverage.mjs --file "..." --apply
+//
+// Run scripts/fix-food-beverage-export.mjs over the export first: it writes a
+// corrected copy with the CRM artefacts the first dry run surfaced put right,
+// so nobody edits the spreadsheet by hand.
 //
 // Dry by default: it prints what it would create, what it would join to the
 // campaign, and, more importantly, everything it refuses to decide on its own.
@@ -27,6 +31,7 @@ import { readFile } from 'node:fs/promises';
 import { pool } from '../src/db.mjs';
 import { normName } from '../src/research/partyActions.mjs';
 import { salesAreaToRegion } from '../src/research/customerImport.mjs';
+import { parseCsv, placeOf, holdReason } from '../src/research/hubspotExport.mjs';
 
 const args = process.argv.slice(2);
 const flag = (n) => { const i = args.indexOf(n); return i === -1 ? null : (args[i + 1] || null); };
@@ -39,51 +44,9 @@ if (!FILE) {
   process.exit(1);
 }
 
-// A CSV reader good enough for a HubSpot export: quoted fields with commas,
-// doubled quotes inside them. No dependency, and the shapes it cannot read it
-// reports rather than mangles.
-export function parseCsv(text) {
-  const rows = [];
-  let row = [], field = '', quoted = false;
-  const src = String(text).replace(/\r\n/g, '\n');
-  for (let i = 0; i < src.length; i++) {
-    const c = src[i];
-    if (quoted) {
-      if (c === '"') {
-        if (src[i + 1] === '"') { field += '"'; i++; } else quoted = false;
-      } else field += c;
-    } else if (c === '"') quoted = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else field += c;
-  }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
-  const header = (rows.shift() || []).map(h => h.trim());
-  return rows
-    .filter(r => r.some(v => String(v).trim()))
-    .map(r => Object.fromEntries(header.map((h, i) => [h, String(r[i] ?? '').trim()])));
-}
-
-// Northern Ireland reads as in scope however the CRM filed it: the sales area
-// column puts Craigavon under Ireland, and the prospecting rule is about the
-// Republic, not the island.
-const NI_CITIES = ['belfast', 'craigavon', 'lisburn', 'newry', 'derry', 'londonderry',
-  'ballymena', 'coleraine', 'armagh', 'omagh', 'enniskillen', 'antrim', 'bangor', 'dungannon'];
-// Cities that are plainly not in these islands. A CRM row can say United
-// Kingdom and carry a head-office city abroad; that is a question for a human,
-// not a silent include or a silent drop.
-const FOREIGN_CITIES = ['duesseldorf', 'dusseldorf', 'des plaines', 'kalamazoo', 'grand rapids',
-  'miami', 'boulder', 'laverton north'];
-
-export function placeOf(row) {
-  const city = String(row['City'] || '').trim().toLowerCase();
-  const country = String(row['Country/Region'] || '').trim().toLowerCase();
-  if (NI_CITIES.includes(city)) return 'northern_ireland';
-  if (country === 'ireland') return 'republic_of_ireland';
-  if (city && FOREIGN_CITIES.includes(city)) return 'foreign_city';
-  if (country && country !== 'united kingdom') return 'foreign_country';
-  return 'uk';
-}
+// The CSV reader, the place rules and the hold reasons live in
+// src/research/hubspotExport.mjs, shared with the script that corrects an
+// export before seeding, so the two can never disagree about a row.
 
 // The type guess. Equipment makers and process engineering houses are a
 // different target from the plants they build for, and research institutes are
@@ -122,11 +85,8 @@ for (const r of rows) {
   const region = salesAreaToRegion(r['Sales Area']) || null;
   const entry = { name, type, region, city, owner, industry: r['Industry'] || '', place };
   if (place === 'republic_of_ireland') { serveOnly.push(entry); continue; }
-  if (place === 'foreign_city' || place === 'foreign_country') {
-    held.push({ ...entry, why: `city ${city || 'unknown'} is outside the UK while the export says ${r['Country/Region'] || 'no country'}` });
-    continue;
-  }
-  if (!owner && !city) { held.push({ ...entry, why: 'no owner and no city; a stub row rather than a company' }); continue; }
+  const why = holdReason(r);
+  if (why) { held.push({ ...entry, why }); continue; }
   seed.push(entry);
 }
 

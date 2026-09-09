@@ -101,7 +101,7 @@ async function cheapestValve(question) {
     params = [q.line.toLowerCase()];
   }
   const { rows } = await pool.query(
-    `SELECT part_number, description, sell_price FROM prices
+    `SELECT part_number, description, sell_price, price_basis, list_name FROM prices
      WHERE ${where} AND currency = 'GBP'
      ORDER BY sell_price ASC, norm_key LIMIT 1`, params);
   const c = cheapestOf(allConfigs(), rows);
