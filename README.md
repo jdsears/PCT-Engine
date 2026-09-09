@@ -641,6 +641,40 @@ each of these with poison values.
   and a whole-line question with the loaded range. Before the list is
   ingested the brand word routes to the enquiry note like the other lines.
 
+## Website trawl
+
+John's instruction of 9 September 2026: website trawl capabilities, which
+can assist research too. One reading layer (`src/web/`) serves two uses.
+
+The corpus use: a supplier's site is registered on the Health page's
+Websites card (address, corpus line, page cap, PDFs or not), read at once in
+the background, and refreshed on the engine cycle once it is older than
+`WEB_TRAWL_REFRESH_DAYS` (default 7) while the "Website refresh" switch is
+on, one site per cycle. Pages land in `kb_chunks` with the page address in
+their metadata, so a co-pilot citation links to the page itself and the
+model is told it is reading the supplier's own site. Migration 037 holds the
+sites and the pages; removing a site withdraws its chunks in the same
+transaction. `scripts/trawl-site.mjs --url <site> --line <key>` is the same
+trawl from a terminal, dry by default.
+
+The manners, proven in the gate against a local server rather than
+promised: one identifiable agent, robots.txt obeyed with our own group
+winning over the wildcard and the longest pattern deciding, one request at a
+time per host with a gap (the site's crawl delay when it states one), same
+host only, depth and page caps, the sitemap as a seed, localised sections and
+assets skipped, noindex and non-English pages not kept, identical pages
+folded, and the SharePoint sync's price rule applied to every page's path
+and title so a price list on a supplier's site is refused by name.
+
+The research use: when the funnel proposes a company for review and can
+resolve its domain, it reads the site lightly (front page and up to four
+profile pages such as about, locations and contact, never a crawl) and
+attaches what it found as evidence on the proposal: the site's own
+description, UK postcodes or a UK number, a Republic of Ireland showing,
+and the registered number when the footer states it. The review queue shows
+it in one plain line. Research evidence is not corpus; nothing from a
+prospect's site is embedded.
+
 ## Usage logging and insights
 
 Every co-pilot question is logged to `copilot_queries` (migration 005). Each row

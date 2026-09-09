@@ -75,6 +75,8 @@ export async function search(query, { filters = {}, k = 8 } = {}) {
     id: row.id, score: Number(score.toFixed(4)),
     title: row.metadata.title, page: row.metadata.page, section: row.metadata.section,
     line: row.metadata.line, sourceType: row.sourceType, sourceId: row.metadata.source_id,
+    // A trawled web page carries its address, so a citation can link to it.
+    url: row.metadata.url || null,
     nameable: row.metadata.nameable, manufacturer: row.metadata.manufacturer,
     snippet: (row.content || '').slice(0, 240),
     content: row.content,

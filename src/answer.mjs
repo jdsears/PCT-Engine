@@ -16,6 +16,7 @@ const LINE_TERMS = [
   [/\bhex\s*valve\b/i, { line: 'hexvalve' }],
   [/\bbestobell\b/i, { line: 'bestobell_steam' }],
   [/\bequilibar\b/i, { line: 'equilibar' }],
+  [/\balicat\b/i, { line: 'alicat' }],
   [/\bdata\s*cent(re|er)\b/i, { application: 'data_centre' }],
 ];
 export function detectFilters(question) {
@@ -43,9 +44,12 @@ export function voiceGate(text) {
     .trim();
 }
 
+// A trawled web page is labelled with its host, so the model knows it is
+// reading the supplier's own site rather than a document James filed.
+const hostLabel = url => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; } };
 function buildContext(results) {
   return results.map((r, i) =>
-    `[${i + 1}] ${r.title}${r.section ? ' | ' + r.section : ''}${r.page ? ' (p' + r.page + ')' : ''}\n${r.content || r.snippet}`
+    `[${i + 1}] ${r.title}${r.section ? ' | ' + r.section : ''}${r.page ? ' (p' + r.page + ')' : ''}${r.url && hostLabel(r.url) ? ` (web page on ${hostLabel(r.url)})` : ''}\n${r.content || r.snippet}`
   ).join('\n\n');
 }
 
@@ -155,7 +159,7 @@ export async function ask(question, { history = [], k = 10, configState = null, 
     for (const num of m[1].split(/\D+/)) if (num) cited.add(Number(num));
   }
   const citations = results
-    .map((r, i) => ({ n: i + 1, title: r.title, section: r.section, page: r.page, line: r.line, sourceId: r.sourceId }))
+    .map((r, i) => ({ n: i + 1, title: r.title, section: r.section, page: r.page, line: r.line, sourceId: r.sourceId, url: r.url || null }))
     .filter(c => cited.has(c.n));
 
   // declined is an honest, cheap proxy: a grounded answer cites a source, a

@@ -81,6 +81,19 @@ function EngineCard() {
     setBusy(false);
   };
 
+  const toggleWeb = async () => {
+    if (!engine || busy) return;
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch('/api/engine/web-trawl', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: !engine.webTrawl }),
+      });
+      setEngine(await res.json());
+    } catch { setNote('The website refresh switch is not available right now.'); }
+    setBusy(false);
+  };
+
   const toggleDrip = async () => {
     if (!engine || busy) return;
     setBusy(true); setNote(null);
@@ -206,6 +219,10 @@ function EngineCard() {
             ? 'Refreshes the document corpus from the configured Sales Engine folders each cycle. Documents only; price files are refused by the sync itself.'
             : 'Set SHAREPOINT_SYNC_FOLDERS on the service to name the folders first; nothing syncs without it.'}>
           {engine.autoSync ? 'SharePoint sync: on' : 'SharePoint sync: off'}
+        </button>
+        <button className="engine-btn" onClick={toggleWeb} disabled={busy}
+          title="Re-reads the most overdue registered website each cycle, one site per cycle, so a supplier's pages stay current in the corpus. Sites are registered on the Websites card; price pages are refused by the trawl itself.">
+          {engine.webTrawl ? 'Website refresh: on' : 'Website refresh: off'}
         </button>
         <button className="engine-btn" onClick={toggleStudio} disabled={busy}
           title="Publishes approved studio posts at the standing Tuesday, Wednesday and Thursday morning slots, tops up thin queues with fresh drafts, and sweeps engagement into the interest queue. Approval stays human, and any account-health error stands it down.">
@@ -512,6 +529,105 @@ function SharePointDocsCard() {
   );
 }
 
+// Websites the engine reads into the corpus: a supplier's site (Alicat first)
+// registered here by address and line, read at once and refreshed on the
+// cycle while the switch on the engine card is on. Each site shows what it
+// holds and what its last read refused, and Remove withdraws its pages from
+// the co-pilot in the same breath, because a wrong site should be gone as
+// fast as it was added.
+const WEB_LINES = ['alicat', 'jordan', 'steriflow', 'steriflow_fb', 'low_flow', 'hexvalve', 'bestobell_steam', 'marwin', 'equilibar', 'general'];
+function WebsitesCard() {
+  const [d, setD] = useState(null);
+  const [url, setUrl] = useState('');
+  const [line, setLine] = useState('alicat');
+  const [maxPages, setMaxPages] = useState('150');
+  const [pdfs, setPdfs] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(null);
+  const [arming, setArming] = useState(null);
+  const load = useCallback(() => {
+    apiFetch('/api/web/sites').then(r => (r.ok ? r.json() : null)).then(setD).catch(() => setD(null));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  // A site being read reports when it is done; poll gently while any is.
+  useEffect(() => {
+    if (!d?.sites?.some(s => s.trawling)) return undefined;
+    const t = setInterval(load, 8000);
+    return () => clearInterval(t);
+  }, [d, load]);
+  if (!d || d.migrationPending) return null;
+
+  const call = async (path, opts, after) => {
+    setBusy(true); setNote(null);
+    try {
+      const res = await apiFetch(path, opts);
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) setNote(j.error || 'That did not work.');
+      else { setNote(j.note || null); if (after) after(); }
+      load();
+    } catch { setNote('The websites card is not available right now.'); }
+    setBusy(false);
+  };
+  const add = () => call('/api/web/sites', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ url: url.trim(), line, maxPages: Number(maxPages) || 150, includePdfs: pdfs }),
+  }, () => setUrl(''));
+  const trawl = id => call(`/api/web/sites/${id}/trawl`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+  const remove = id => call(`/api/web/sites/${id}`, { method: 'DELETE' }, () => setArming(null));
+
+  return (
+    <div className="card health-card gap-10">
+      <div className="eyebrow">Websites</div>
+      {d.sites.length > 0 ? (
+        <>
+          <div className="health-hero">{d.totals.pages.toLocaleString('en-GB')}</div>
+          <div className="health-sub">
+            pages held from {d.sites.length} site{d.sites.length === 1 ? '' : 's'}, {d.totals.chunks.toLocaleString('en-GB')} chunks, last read {d.totals.lastTrawl ? fmtClockDay(d.totals.lastTrawl) : 'not yet'}.
+            {d.enabled ? ` Refreshed every ${d.refreshDays} days on the cycle.` : ' The refresh switch is off; sites are read only when asked.'}
+          </div>
+          <div className="muted-small">
+            {d.sites.map(s => (
+              <div key={s.id} className="web-site">
+                <div>
+                  <a href={s.url} target="_blank" rel="noreferrer">{s.host}</a>
+                  <span className="sp-line"> ({lineLabel(s.line)}, {s.pages} page{s.pages === 1 ? '' : 's'}{s.trawling ? ', reading now' : s.lastTrawlAt ? `, read ${fmtClockDay(s.lastTrawlAt)}` : ', not read yet'})</span>
+                </div>
+                {s.report && !s.trawling && (
+                  <div className="sp-line">
+                    Last read: {s.report.pages ?? 0} page(s), {s.report.updated ?? 0} updated, {s.report.removed ?? 0} withdrawn{s.report.truncated ? ', capped' : ''}.
+                    {s.report.priceRule?.length ? ` ${s.report.priceRule.length} page(s) refused by the price rule.` : ''}
+                    {s.report.errors?.length ? ` ${s.report.errors.length} error(s).` : ''}
+                    {s.report.skipped ? ` ${s.report.skipped}` : ''}
+                  </div>
+                )}
+                <div className="web-site-actions">
+                  <button className="ob-btn ghost" onClick={() => trawl(s.id)} disabled={busy || s.trawling || !d.embeddingKey}>Read again</button>
+                  {arming === s.id
+                    ? <button className="ob-btn danger" onClick={() => remove(s.id)} disabled={busy || s.trawling}>Confirm: remove {s.host} and its pages</button>
+                    : <button className="ob-btn ghost" onClick={() => setArming(s.id)} disabled={busy || s.trawling}>Remove</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="muted-small">No websites registered yet. Add a supplier's site below and the engine reads it into the corpus, price pages refused.</div>
+      )}
+      <div className="web-add">
+        <input className="rq-select" type="url" placeholder="https://www.alicat.com" value={url} onChange={e => setUrl(e.target.value)} aria-label="Website address" />
+        <select className="rq-select" value={line} onChange={e => setLine(e.target.value)} aria-label="Corpus line">
+          {WEB_LINES.map(l => <option key={l} value={l}>{lineLabel(l)}</option>)}
+        </select>
+        <input className="rq-select" type="number" min="10" max="1000" value={maxPages} onChange={e => setMaxPages(e.target.value)} aria-label="Page cap" title="The most pages one read takes from the site" />
+        <label className="muted-small web-pdfs"><input type="checkbox" checked={pdfs} onChange={e => setPdfs(e.target.checked)} /> include PDFs</label>
+        <button className="ob-btn primary" onClick={add} disabled={busy || !url.trim()}>Add and read</button>
+      </div>
+      {!d.embeddingKey && <div className="muted-small">This service has no embedding key, so a site can be registered but not read.</div>}
+      {note && <div className="muted-small">{note}</div>}
+    </div>
+  );
+}
+
 export default function Health() {
   const [data, setData] = useState(null);
   const [state, setState] = useState('loading');
@@ -544,6 +660,7 @@ export default function Health() {
         <PriceCard />
         <RangeBuilder />
         <SharePointDocsCard />
+        <WebsitesCard />
 
         <div className="card health-card">
           <div className="eyebrow">Corpus</div>
