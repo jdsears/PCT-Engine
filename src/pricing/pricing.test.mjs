@@ -716,6 +716,9 @@ const PDF_FIXTURE = [
   'M-0.5SCCM-D        £1,526 MS-0.5SCCM-D        £1,923                          MW-0.5SCCM-D        £1,849',
   'M-5SCCM-D          £1,071 MS-5SCCM-D          £1,468 MQ-5SCCM-D        £1,175 MW-5SCCM-D          £1,394',
   'MCR-500SLPM-D      Mass flow controller, 500 slpm      £2,159',
+  'MCP-Series MCRS-Series MCQ-50SLPM-D £1,812',
+  '10/32 5μ Brass/Buna ILFE20 £8',
+  'PC-EXTSEN-D-ISC £964',
   'FP-25              £2,689',
   'Carrying case for FP-25                                 £430',
   'MCD £579 + MC MCDS £579 + MC MCDQ £579 + MC MCDW £579 + MC',
@@ -739,8 +742,11 @@ await check('four series columns to a line: each price belongs to the part just 
   assert(get('MCR-500SLPM-D')?.sellPrice === 2159 && get('MCR-500SLPM-D').description === 'Mass flow controller, 500 slpm', 'a description between the part and its price travels');
   assert(rows.filter(r => r.normKey === 'MCR-500SLPM-D').length === 1, 'the identical repeat is one row');
   assert(rows.every(r => r.currency === 'GBP' && r.sourceTab === 'pdf' && r.productLine === 'alicat'), 'rows carry the currency, the line and the source');
-  assert(report.currency.default === 'GBP' && report.parts === 10 && report.rows === 10, `counts: ${JSON.stringify([report.currency.default, report.parts, report.rows])}`);
+  assert(report.currency.default === 'GBP' && report.parts === 13 && report.rows === 13, `counts: ${JSON.stringify([report.currency.default, report.parts, report.rows])}`);
   assert(report.head.length >= 10 && /Alicat Scientific/.test(report.head[1]), 'the top of the document travels for a human');
+  assert(get('MCQ-50SLPM-D')?.sellPrice === 1812 && get('MCQ-50SLPM-D').description === null, 'a series heading sharing the line with the first pair is ignored, not a mention');
+  assert(get('ILFE20')?.sellPrice === 8 && get('ILFE20').description === '10/32 5μ Brass/Buna', 'a specification before the code is its description');
+  assert(get('PC-EXTSEN-D-ISC')?.sellPrice === 964, 'a code with no digit but several segments is a part');
 });
 
 await check('a mention is not a row, an adder is not a price, a heading is not a part', async () => {
@@ -748,12 +754,23 @@ await check('a mention is not a row, an adder is not a price, a heading is not a
   const get = k => rows.find(r => r.normKey === k);
   assert(get('FP-25')?.sellPrice === 2689 && !report.conflicts.some(c => c.partNumber === 'FP-25'), 'FP-25 keeps its own price and the case is not a second price for it');
   assert(report.mentions.length === 1 && /Carrying case for FP-25 £430/.test(report.mentions[0]), `the mention is named: ${JSON.stringify(report.mentions)}`);
-  assert(report.adders.some(l => /^MCD £579 \+ MC/.test(l)) && !rows.some(r => /^MCD/.test(r.partNumber)), 'adders are named and never stored');
+  assert(report.adders.includes('MCD £579 + MC') && report.adders.includes('MCDS £579 + MC') && !rows.some(r => /^MCD/.test(r.partNumber)), `adders are named by their code and never stored: ${JSON.stringify(report.adders)}`);
   assert(!rows.some(r => /^MCE|^USB|^DB15|^RJ45/.test(r.partNumber)), 'series headings and connector names are not parts');
   assert(!report.partNoPrice.some(l => /MCE-SFF-Series/.test(l)) && report.partNoPrice.some(l => /M-20SLPM-D/.test(l)), 'a heading line is not listed as a code without a price; a real code without a price is');
   assert(get('BB3')?.sellPrice === 145, 'an accessory code without a hyphen is a part when a price follows it');
   assert(report.priceNoPart.some(l => /USB £83/.test(l)) && report.priceNoPart.some(l => /£248/.test(l)), 'a price with nothing coded before it is named');
   assert(!get('PC-15PSIG-D') && report.conflicts[0]?.partNumber === 'PC-15PSIG-D' && report.conflicts[0].prices.join(',') === '845,860', 'a part priced two ways is withdrawn and named');
+  assert(report.conflicts[0].lines.length === 2 && /Pressure controller, repeat £860/.test(report.conflicts[0].lines[1]), `the conflicting lines travel for a human: ${JSON.stringify(report.conflicts[0].lines)}`);
+});
+
+await check('a conflict settled on the command line keeps the stated figure, only when the document shows it', async () => {
+  const settled = parseAlicatPdfText(PDF_FIXTURE, { resolve: { 'pc-15psig-d': '860' } });
+  assert(settled.rows.find(r => r.normKey === 'PC-15PSIG-D')?.sellPrice === 860 && settled.report.conflicts.length === 0, 'the stated figure stands and the conflict is gone');
+  assert(settled.report.resolved.length === 1 && /PC-15PSIG-D GBP 860, stated on the command line; the document also shows 845/.test(settled.report.resolved[0]), settled.report.resolved[0]);
+  assert(pdfApplyBlockers(settled.report).length === 0, 'nothing blocks once the conflict is settled');
+  const wrong = parseAlicatPdfText(PDF_FIXTURE, { resolve: { 'PC-15PSIG-D': '900' } });
+  assert(!wrong.rows.some(r => r.normKey === 'PC-15PSIG-D') && wrong.report.conflicts[0]?.statedNotSeen === 900, 'a figure the document does not show settles nothing');
+  assert(pdfApplyBlockers(wrong.report).some(b => /stated 900, which the document does not show/.test(b) && /--price "PC-15PSIG-D=/.test(b)), 'the blocker says so and how to settle it');
 });
 
 await check('no cost, discount or USD list figure survives, and the lines are named once', async () => {
@@ -777,6 +794,7 @@ await check('bare figures with no currency named are a question, and the blocker
   const parts = s => (s.match(PART_TOKEN) || []);
   assert(parts('see MC-500SCCM-D/5P here')[0] === 'MC-500SCCM-D/5P' && parts('M-0.5SCCM-D £1')[0] === 'M-0.5SCCM-D' && parts('P-10TORRA-D-SAE4')[0] === 'P-10TORRA-D-SAE4', 'the part grammar keeps decimals and long tails');
   assert(parts('BB9-232 cable')[0] === 'BB9-232' && parts('BB3 £145')[0] === 'BB3', 'accessories with and without a hyphen');
+  assert(parts('PC-EXTSEN-D-ISC £964')[0] === 'PC-EXTSEN-D-ISC' && parts('PCD-EXTSEN-D-ISC')[0] === 'PCD-EXTSEN-D-ISC', 'three segments make a part without a digit');
   assert(parts('MCE-SFF-Series MCV-Series USB-C M12 no code here').length === 0, 'headings, connector names and prose are not parts');
 });
 

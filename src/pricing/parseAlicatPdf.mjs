@@ -8,31 +8,40 @@ import { normKey, priceNumber } from './parseMega.mjs';
 // guessed, and nothing that reads as cost, discount, margin or the
 // supplier's USD list is ever stored.
 //
-// The layout, learned from John's first dry run of the real document: up to
-// four part-and-price pairs sit side by side on one line (M-Series,
-// MS-Series, MQ-Series, MW-Series columns), so each price belongs to the
-// part immediately before it, never to the first part on the line. Adders
-// are priced as an addition to a base unit ("MCD £579 + MC") and are not
-// prices of a part. A series heading (MCE-SFF-Series) is not a part, a part
-// named inside a description ("Carrying case for FP-25 £430") is a mention
-// and not a row, and part numbers carry a digit, which keeps connector names
-// in table headings (USB-C) out. Ranges with a decimal (M-0.5SCCM-D) are
-// one code.
+// The layout, learned from John's dry runs of the real document: up to four
+// part-and-price pairs sit side by side on one line (M-Series, MS-Series,
+// MQ-Series, MW-Series columns), so each price belongs to the part
+// immediately before it, never to the first part on the line. Adders are
+// priced as an addition to a base unit ("MCD £579 + MC") and are not prices
+// of a part. A series heading (MCE-SFF-Series) is not a part, and one that
+// shares a line with the first pair is ignored rather than making that pair
+// a mention. A specification before a code ("10/32 5μ Brass/Buna ILFE20
+// £8") is its description; a phrase before a code that reads as prose
+// ("Carrying case for FP-25 £430") names something for the code and is a
+// mention, not the code's price. Part numbers carry a digit or at least
+// three segments (PC-EXTSEN-D-ISC), which keeps connector names in table
+// headings (USB-C) out. Ranges with a decimal (M-0.5SCCM-D) are one code.
 
 const text = x => String(x ?? '').replace(/\s+/g, ' ').trim();
 
 // Alicat's part grammar: a series of letters with optional digits, then
 // hyphen-joined segments that may carry a decimal, then optional slash
 // options; or a short accessory code with digits and no hyphen (BB3, MD8).
-// A code must carry a digit somewhere, and must not run on into a word
-// with lower-case letters, which is how "MCE-SFF-Series" is a heading.
-export const PART_TOKEN = /\b(?=[A-Z0-9.\/-]*\d)([A-Z]{1,5}\d{0,3}(?:-[A-Z0-9]+(?:\.[A-Z0-9]+)*)+(?:\/[A-Z0-9]+)*|[A-Z]{2,5}\d{1,4}[A-Z]{0,2})\b(?!-[A-Za-z]*[a-z])/g;
+// A code must carry a digit or at least three segments, and must not run on
+// into a word with lower-case letters, which is how "MCE-SFF-Series" is a
+// heading.
+export const PART_TOKEN = /\b(?=[A-Z0-9.\/-]*\d|[A-Z0-9.\/]+-[A-Z0-9.\/]+-)([A-Z]{1,5}\d{0,3}(?:-[A-Z0-9]+(?:\.[A-Z0-9]+)*)+(?:\/[A-Z0-9]+)*|[A-Z]{2,5}\d{1,4}[A-Z]{0,2})\b(?!-[A-Za-z]*[a-z])/g;
 // A price carries a currency symbol, a thousands separator or two decimals.
 // A bare integer is never a price, because 500 in 500SCCM is a flow rate.
 const PRICE_TOKEN = /([£$€])\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)|(?<![\w.-])(\d{1,3}(?:,\d{3})+(?:\.\d{2})?|\d+\.\d{2})(?![\w.-])/g;
 // A line that says any of these is never a selling row, whatever else it
 // carries: the cost, the discount, the supplier's own list.
 const EXCLUDE_LINE = /\b(cost|costs|discount|disc\.?|margin|markup|mark-up|net buy|buying|purchase|supplier|rev\.? ?\d+|list price usd|usd list)\b/i;
+// A column heading for a series, which can share a line with the first pair.
+const HEADING = /\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-Series\b/g;
+// Words that make the text before a code a phrase about the code rather
+// than a specification of it.
+const PROSE = /\b(for|with|of|the|and|per|to|in|on|by|only|case|kit|cable|set|spare|option|options|extra|additional|replacement)\b/i;
 const SYMBOL = { '£': 'GBP', '$': 'USD', '€': 'EUR' };
 
 const tokens = (re, line) => {
@@ -64,12 +73,14 @@ export function detectCurrency(src) {
 }
 
 // Text to rows. currency overrides the detected default for bare figures.
-export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat' } = {}) {
+// resolve is { partNumber: figure } for conflicts a human has settled on the
+// command line; the figure must be one the document shows for that part.
+export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat', resolve = {} } = {}) {
   const lines = String(src || '').replace(/\f/g, '\n').split(/\r?\n/);
   const defaultCurrency = currency ? String(currency).toUpperCase() : detectCurrency(src);
   const report = {
     lines: 0, rows: 0, parts: 0, currency: { default: defaultCurrency, seen: { GBP: 0, EUR: 0, USD: 0 } },
-    excluded: [], usd: [], adders: [], mentions: [], priceNoPart: [], partNoPrice: [], bareUnknown: [], conflicts: [], head: [],
+    excluded: [], usd: [], adders: [], mentions: [], priceNoPart: [], partNoPrice: [], bareUnknown: [], conflicts: [], resolved: [], head: [],
   };
   const seen = new Map();
   const conflicts = new Map();
@@ -91,34 +102,60 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
       const segment = line.slice(segStart, price.at);
       const inSegment = parts.filter(p => p.at >= segStart && p.end <= price.at);
       const tail = line.slice(price.end, price.end + 24).trim();
-      const pair = text(segment + ' ' + line.slice(price.at, price.end));
+      const figure = line.slice(price.at, price.end);
+      const pair = text(segment + ' ' + figure);
       prev = price.end;
-      if (/^\+/.test(tail)) { sample(report.adders, text(pair + ' ' + (tail.match(/^\+\s*\S+(\s+\S+)?/) || ['+'])[0])); continue; }
+      if (/^\+/.test(tail)) {
+        // "+ MC", "+ Meter", "+ 3 Meters": the addition phrase is a plus, an
+        // optional count and a word. The code is the last word before the
+        // figure once the previous pair's phrase is stripped.
+        const phrase = /^\+\s*(?:\d+\s+)?[A-Za-z]+/;
+        const code = segment.replace(new RegExp(`^\\s*${phrase.source.slice(1)}\\s*`), '').trim().split(/\s+/).pop() || '';
+        sample(report.adders, text(`${code} ${figure} ${(tail.match(phrase) || ['+'])[0]}`));
+        continue;
+      }
       if (!inSegment.length) { sample(report.priceNoPart, segment.trim() ? pair : text(line)); continue; }
       const first = inSegment[0];
-      if (line.slice(segStart, first.at).trim()) { sample(report.mentions, pair); continue; }
+      const lead = line.slice(segStart, first.at).replace(HEADING, ' ').trim();
+      if (lead && PROSE.test(lead)) { sample(report.mentions, pair); continue; }
       if (price.currency === 'USD') { sample(report.usd, pair); continue; }
       if (!price.currency) { sample(report.bareUnknown, pair); continue; }
-      const description = text(line.slice(first.end, price.at)) || null;
+      const description = text([lead, line.slice(first.end, price.at)].join(' ')) || null;
       const key = `${normKey(first.part)}|${price.currency}`;
+      const row = { productLine, partNumber: first.part, normKey: normKey(first.part), description, currency: price.currency, sellPrice: price.price, sourceTab: 'pdf', line: pair };
       const prior = seen.get(key);
       if (prior && prior.sellPrice !== price.price) {
-        const c = conflicts.get(key) || { partNumber: prior.partNumber, currency: price.currency, prices: [prior.sellPrice] };
-        c.prices.push(price.price);
+        const c = conflicts.get(key) || { partNumber: prior.partNumber, currency: price.currency, occurrences: [prior] };
+        c.occurrences.push(row);
         conflicts.set(key, c);
         continue;
       }
-      if (!prior) seen.set(key, { productLine, partNumber: first.part, normKey: normKey(first.part), description, currency: price.currency, sellPrice: price.price, sourceTab: 'pdf' });
+      if (!prior) seen.set(key, row);
     }
     const after = parts.filter(p => p.at >= prev);
     if (after.length && !prices.length) sample(report.partNoPrice, text(line));
     else if (after.length) sample(report.partNoPrice, text(line.slice(prev)));
   }
-  for (const key of conflicts.keys()) seen.delete(key);
-  const rows = [...seen.values()];
+  // A conflict a human settled on the command line keeps the stated figure,
+  // provided the document shows it; every other conflict is withdrawn and
+  // named with its lines, so the next decision is made on evidence.
+  const stated = Object.fromEntries(Object.entries(resolve || {}).map(([k, v]) => [normKey(k), priceNumber(v)]));
+  for (const [key, c] of conflicts) {
+    const want = stated[key.split('|')[0]];
+    const hit = want != null ? c.occurrences.find(o => o.sellPrice === want) : null;
+    const prices = c.occurrences.map(o => o.sellPrice);
+    if (hit) {
+      seen.set(key, hit);
+      report.resolved.push(`${c.partNumber} ${c.currency} ${want}, stated on the command line; the document also shows ${prices.filter(p => p !== want).join(', ')}`);
+      continue;
+    }
+    seen.delete(key);
+    report.conflicts.push({ partNumber: c.partNumber, currency: c.currency, prices, lines: c.occurrences.map(o => o.line),
+      ...(want != null ? { statedNotSeen: want } : {}) });
+  }
+  const rows = [...seen.values()].map(({ line, ...r }) => r);
   report.rows = rows.length;
   report.parts = new Set(rows.map(r => r.normKey)).size;
-  report.conflicts = [...conflicts.values()];
   return { rows, report };
 }
 
@@ -129,7 +166,11 @@ export function pdfApplyBlockers(report) {
   const out = [];
   if (!report.lines) out.push('no text came out of the PDF; if it is a scan, the list needs to come as a workbook or a text PDF');
   if (report.bareUnknown?.length) out.push(`${report.bareUnknown.length} row(s) carry a figure with no currency and the document names none; say which with --currency GBP`);
-  for (const c of report.conflicts || []) out.push(`${c.partNumber} is priced ${c.prices.length} ways in ${c.currency} (${c.prices.join(', ')}); fix the list, nothing is stored for it`);
+  for (const c of report.conflicts || []) {
+    out.push(`${c.partNumber} is priced ${c.prices.length} ways in ${c.currency} (${c.prices.join(', ')}); the lines: ${(c.lines || []).map(l => `"${l}"`).join(' | ')}.` +
+      (c.statedNotSeen != null ? ` --price stated ${c.statedNotSeen}, which the document does not show for it.` : '') +
+      ` Settle it with --price "${c.partNumber}=<one of those figures>" or fix the list; nothing is stored for it until then`);
+  }
   if (report.lines && !report.rows && !out.length) {
     out.push(report.currency.seen.USD && !report.currency.seen.GBP && !report.currency.seen.EUR
       ? 'every price is in USD, which reads as the supplier list, never ingested'

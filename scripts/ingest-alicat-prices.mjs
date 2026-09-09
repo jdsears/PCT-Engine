@@ -39,7 +39,7 @@ const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 const LINE = 'alicat';
 
 if (!SOURCE) {
-  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--apply]');
+  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--apply]');
   process.exit(1);
 }
 if (!/^\d{4}-\d{2}-\d{2}$/.test(EFFECTIVE)) {
@@ -48,6 +48,15 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(EFFECTIVE)) {
 }
 const CURRENCY = flag('--currency');
 if (CURRENCY && !['GBP', 'EUR'].includes(CURRENCY.toUpperCase())) { console.error('--currency wants GBP or EUR; USD is the supplier list and is never stored'); process.exit(1); }
+// --price "PART=figure", repeatable: a conflict a human has settled, kept
+// only when the document shows that figure for the part.
+const resolve = {};
+for (let i = 0; i < args.length; i++) {
+  if (args[i] !== '--price') continue;
+  const m = /^(.+?)=\s*£?([\d,]+(?:\.\d+)?)$/.exec(args[i + 1] || '');
+  if (!m) { console.error(`--price wants "PART=figure", got ${args[i + 1] || 'nothing'}`); process.exit(1); }
+  resolve[m[1].trim()] = m[2];
+}
 const overrides = {};
 for (const cur of ['gbp', 'eur', 'usd']) {
   const v = flag(`--${cur}-column`);
@@ -77,7 +86,7 @@ if (/\.pdf$/i.test(SOURCE)) {
     const { parseOfficeAsync } = await import('officeparser');
     pdfText = String(await parseOfficeAsync(await readFile(FILE)) || '');
   }
-  const parsed = parseAlicatPdfText(pdfText, { currency: CURRENCY });
+  const parsed = parseAlicatPdfText(pdfText, { currency: CURRENCY, resolve });
   rows = parsed.rows;
   const r = parsed.report;
   console.log(`  read as a PDF: ${r.lines} line(s) of text, currency for bare figures ${r.currency.default || 'unknown'}` +
@@ -85,6 +94,7 @@ if (/\.pdf$/i.test(SOURCE)) {
   console.log(`\n  ${r.parts} part(s), ${r.rows} price row(s).`);
   for (const s of rows.slice(0, 8)) console.log(`    sample: ${s.partNumber}  ${s.currency} ${s.sellPrice}${s.description ? '  ' + s.description.slice(0, 50) : ''}`);
   const show = (label, list, why) => { if (list.length) { console.log(`  ${label}${why ? `, ${why}` : ''}:`); for (const l of list) console.log(`    ${l}`); } };
+  show('conflicts settled on the command line', r.resolved);
   show('excluded lines, never ingested', r.excluded, 'cost, discount, margin or the supplier list by name');
   show('USD figures set aside', r.usd, 'the USD list is the supplier\'s');
   show('adders, not stored', r.adders, 'priced as an addition to a base unit, not a price of a part');
