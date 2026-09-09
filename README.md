@@ -642,13 +642,17 @@ each of these with poison values.
   dry run of the real document: up to four part-and-price pairs side by
   side on a line, so each price belongs to the part just before it; adders
   priced as an addition to a base unit ("£579 + MC") are not prices of a
-  part; a series heading is not a part; a part named inside a description
-  is a mention, not a row; and part numbers carry a digit. A line that
-  names cost, discount, margin or the supplier is never a row, a USD figure
-  is set aside, and a bare figure with no currency named anywhere in the
-  document is held until `--currency GBP` says so. The dry run prints the
-  top of the document verbatim, so a layout the parser did not expect is
-  corrected on evidence rather than guessed at.
+  part; a series heading is not a part, even when it shares a line with the
+  first pair; a specification before a code is its description while a
+  phrase that reads as prose ("Carrying case for FP-25 £430") is a mention,
+  not the code's price; and part numbers carry a digit or at least three
+  segments. A line that names cost, discount, margin or the supplier is
+  never a row, a USD figure is set aside, a bare figure with no currency
+  named anywhere in the document is held until `--currency GBP` says so,
+  and a part priced two ways is withdrawn and named with its lines until
+  `--price "PART=figure"` settles it with a figure the document shows. The
+  dry run prints the top of the document verbatim, so a layout the parser
+  did not expect is corrected on evidence rather than guessed at.
 - The co-pilot answers an Alicat part number by exact key, "cheapest Alicat"
   with the lowest loaded row under the sell wording, never the guide caveat,
   and a whole-line question with the loaded range. Before the list is
