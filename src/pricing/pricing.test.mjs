@@ -702,50 +702,65 @@ await check('sheet choice and column letters are plain and provable', async () =
 console.log('\nThe Alicat customer list as a PDF (synthetic layout text, poison-value proof):');
 
 // The same poisons as the workbook: cost, the USD list, and a discount, none
-// of which may surface as a sell. The layout mimics pdftotext -layout output.
+// of which may surface as a sell. The layout is the real document's, as
+// John's first dry run printed it: four series columns to a line, adders
+// priced as an addition, series headings, a part mentioned in a
+// description, and accessories with and without a hyphen.
 const P_COST = 444.44, P_USD = 555.55;
 const PDF_FIXTURE = [
-  'Alicat customer price list Q1 2026                         Prices in GBP',
-  'Model                 Description                              Price',
-  'MASS FLOW CONTROLLERS',
-  'MC-500SCCM-D          Mass flow controller, 500 sccm           £1,234.00',
-  'MC-500SCCM-D/5M       With 5 m cable                            1,300.00',
-  'PC-15PSIG-D           Pressure controller                       845.00',
-  'Calibration certificate                                        £45.00',
-  'MCR-5SLPM-D           Mass flow controller, 5 slpm             £1,900.00    £2,100.00',
-  `Cost basis for MC-500SCCM-D                                    £${P_COST}`,
-  `MC-1SLPM-D            Mass flow controller, 1 slpm             $${P_USD}`,
-  'MC-500SCCM-D          Mass flow controller, 500 sccm           £1,234.00',
-  'PC-15PSIG-D           Pressure controller, repeat               860.00',
-  'M-20SLPM-D            Mass flow meter, 20 slpm',
-  'Discount 35% applies to OEM units                              £999.00',
+  'Effective January 2026                                              DOC-PRICE Rev 101',
+  '                     Alicat Scientific, Inc. Price List',
+  'Power Supplies and Communication Cables NOT INCLUDED (except portable meters and FP-25)',
+  'Gas Flow',
+  '           M-Series                 MS-Series                 MQ-Series                 MW-Series',
+  'M-0.5SCCM-D        £1,526 MS-0.5SCCM-D        £1,923                          MW-0.5SCCM-D        £1,849',
+  'M-5SCCM-D          £1,071 MS-5SCCM-D          £1,468 MQ-5SCCM-D        £1,175 MW-5SCCM-D          £1,394',
+  'MCR-500SLPM-D      Mass flow controller, 500 slpm      £2,159',
+  'FP-25              £2,689',
+  'Carrying case for FP-25                                 £430',
+  'MCD £579 + MC MCDS £579 + MC MCDQ £579 + MC MCDW £579 + MC',
+  'MCE-SFF-Series MCES-SFF-Series MCV-Series MCVS-Series',
+  'Communication DB15 + USB-C M12 dual RJ45 + USB-C Notes',
+  'BB3 £145 £248 USB £83 Any mainline connector, 232/485 (Ex: USB-MD8-232)',
+  'Partner Price / Discount determined by accuracy level above          £999.00',
+  `Cost basis for MC-500SCCM-D                                          £${P_COST}`,
+  `MC-1SLPM-D         Mass flow controller, 1 slpm                     $${P_USD}`,
+  'MCR-500SLPM-D      Mass flow controller, 500 slpm      £2,159',
+  'PC-15PSIG-D        Pressure controller                  £845',
+  'PC-15PSIG-D        Pressure controller, repeat          £860',
+  'M-20SLPM-D         Mass flow meter, 20 slpm',
 ].join('\n');
 
-await check('a part beside one price is a row; identical repeats fold; a conflict is withdrawn and named', async () => {
+await check('four series columns to a line: each price belongs to the part just before it', async () => {
   const { rows, report } = parseAlicatPdfText(PDF_FIXTURE);
   const get = k => rows.find(r => r.normKey === k);
-  assert(get('MC-500SCCM-D')?.sellPrice === 1234 && get('MC-500SCCM-D').currency === 'GBP' && get('MC-500SCCM-D').description === 'Mass flow controller, 500 sccm', `the first row reads: ${JSON.stringify(get('MC-500SCCM-D'))}`);
-  assert(get('MC-500SCCM-D/5M')?.sellPrice === 1300 && get('MC-500SCCM-D/5M').currency === 'GBP', 'a bare figure takes the document currency');
-  assert(rows.filter(r => r.normKey === 'MC-500SCCM-D').length === 1, 'the identical repeat is one row');
-  assert(!get('PC-15PSIG-D') && report.conflicts[0]?.partNumber === 'PC-15PSIG-D' && report.conflicts[0].prices.join(',') === '845,860', 'the conflict is withdrawn and named');
-  assert(report.currency.default === 'GBP' && report.parts === 2 && report.rows === 2, `counts: ${JSON.stringify([report.currency.default, report.parts, report.rows])}`);
-  assert(report.head.length >= 10 && report.head[0].startsWith('Alicat customer price list'), 'the top of the document travels for a human');
-  assert(report.priceNoPart.some(l => /Calibration certificate/.test(l)) && report.partNoPrice.some(l => /M-20SLPM-D/.test(l)), 'a priced product without a code and a code without a price are both named');
-  assert(rows.every(r => r.sourceTab === 'pdf' && r.productLine === 'alicat'), 'rows carry the line and the source');
+  assert(get('M-0.5SCCM-D')?.sellPrice === 1526 && get('MS-0.5SCCM-D')?.sellPrice === 1923 && get('MW-0.5SCCM-D')?.sellPrice === 1849, `a three-pair line reads as three rows: ${JSON.stringify(rows.map(r => r.partNumber + '=' + r.sellPrice))}`);
+  assert(get('M-5SCCM-D')?.sellPrice === 1071 && get('MQ-5SCCM-D')?.sellPrice === 1175 && get('MW-5SCCM-D')?.sellPrice === 1394, 'a four-pair line reads as four rows');
+  assert(get('MCR-500SLPM-D')?.sellPrice === 2159 && get('MCR-500SLPM-D').description === 'Mass flow controller, 500 slpm', 'a description between the part and its price travels');
+  assert(rows.filter(r => r.normKey === 'MCR-500SLPM-D').length === 1, 'the identical repeat is one row');
+  assert(rows.every(r => r.currency === 'GBP' && r.sourceTab === 'pdf' && r.productLine === 'alicat'), 'rows carry the currency, the line and the source');
+  assert(report.currency.default === 'GBP' && report.parts === 10 && report.rows === 10, `counts: ${JSON.stringify([report.currency.default, report.parts, report.rows])}`);
+  assert(report.head.length >= 10 && /Alicat Scientific/.test(report.head[1]), 'the top of the document travels for a human');
 });
 
-await check('no cost, discount or USD list figure survives, and the lines are named', async () => {
+await check('a mention is not a row, an adder is not a price, a heading is not a part', async () => {
+  const { rows, report } = parseAlicatPdfText(PDF_FIXTURE);
+  const get = k => rows.find(r => r.normKey === k);
+  assert(get('FP-25')?.sellPrice === 2689 && !report.conflicts.some(c => c.partNumber === 'FP-25'), 'FP-25 keeps its own price and the case is not a second price for it');
+  assert(report.mentions.length === 1 && /Carrying case for FP-25 £430/.test(report.mentions[0]), `the mention is named: ${JSON.stringify(report.mentions)}`);
+  assert(report.adders.some(l => /^MCD £579 \+ MC/.test(l)) && !rows.some(r => /^MCD/.test(r.partNumber)), 'adders are named and never stored');
+  assert(!rows.some(r => /^MCE|^USB|^DB15|^RJ45/.test(r.partNumber)), 'series headings and connector names are not parts');
+  assert(!report.partNoPrice.some(l => /MCE-SFF-Series/.test(l)) && report.partNoPrice.some(l => /M-20SLPM-D/.test(l)), 'a heading line is not listed as a code without a price; a real code without a price is');
+  assert(get('BB3')?.sellPrice === 145, 'an accessory code without a hyphen is a part when a price follows it');
+  assert(report.priceNoPart.some(l => /USB £83/.test(l)) && report.priceNoPart.some(l => /£248/.test(l)), 'a price with nothing coded before it is named');
+  assert(!get('PC-15PSIG-D') && report.conflicts[0]?.partNumber === 'PC-15PSIG-D' && report.conflicts[0].prices.join(',') === '845,860', 'a part priced two ways is withdrawn and named');
+});
+
+await check('no cost, discount or USD list figure survives, and the lines are named once', async () => {
   const { rows, report } = parseAlicatPdfText(PDF_FIXTURE);
   for (const poison of [P_COST, P_USD, 999]) assert(!rows.some(r => r.sellPrice === poison), `poison ${poison} leaked`);
-  assert(report.excluded.length === 2 && report.excluded.every(l => /Cost basis|Discount/.test(l)), `cost and discount lines are excluded by name: ${JSON.stringify(report.excluded)}`);
+  assert(report.excluded.length === 3 && report.excluded.every(l => /Rev 101|Discount|Cost basis/.test(l)), `the footer, the discount line and the cost line are excluded by name: ${JSON.stringify(report.excluded)}`);
   assert(report.usd.length === 1 && /MC-1SLPM-D/.test(report.usd[0]) && !rows.some(r => r.currency === 'USD'), 'the USD figure is set aside and never a row');
-});
-
-await check('several prices on a line are held until --take says which', async () => {
-  const held = parseAlicatPdfText(PDF_FIXTURE);
-  assert(held.report.multi.length === 1 && /MCR-5SLPM-D/.test(held.report.multi[0]) && !held.rows.some(r => r.normKey === 'MCR-5SLPM-D'), 'held and named');
-  assert(parseAlicatPdfText(PDF_FIXTURE, { take: 'first' }).rows.find(r => r.normKey === 'MCR-5SLPM-D')?.sellPrice === 1900, '--take first');
-  assert(parseAlicatPdfText(PDF_FIXTURE, { take: 'last' }).rows.find(r => r.normKey === 'MCR-5SLPM-D')?.sellPrice === 2100, '--take last');
 });
 
 await check('bare figures with no currency named are a question, and the blockers are honest', async () => {
@@ -753,13 +768,16 @@ await check('bare figures with no currency named are a question, and the blocker
   assert(bare.rows.length === 0 && bare.report.bareUnknown.length === 1 && bare.report.currency.default === null, 'no currency anywhere means nothing is assumed');
   assert(pdfApplyBlockers(bare.report).some(b => /--currency GBP/.test(b)), 'the blocker says how to settle it');
   assert(parseAlicatPdfText('Model  Price\nMC-500SCCM-D  Mass flow controller  1,234.00\n', { currency: 'gbp' }).rows[0]?.currency === 'GBP', '--currency settles it');
-  assert(pdfApplyBlockers(parseAlicatPdfText(PDF_FIXTURE).report).some(b => /PC-15PSIG-D is priced 2 ways/.test(b)), 'a conflict blocks');
+  const blockers = pdfApplyBlockers(parseAlicatPdfText(PDF_FIXTURE).report);
+  assert(blockers.length === 1 && /PC-15PSIG-D is priced 2 ways/.test(blockers[0]), `only the conflict blocks the fixture: ${JSON.stringify(blockers)}`);
   const usdOnly = parseAlicatPdfText('Price List USD Rev 101\nMC-500SCCM-D  Mass flow controller  $1,234.00\n');
   assert(usdOnly.rows.length === 0 && pdfApplyBlockers(usdOnly.report).some(b => /USD, which reads as the supplier list/.test(b)), 'the supplier list is recognised as such');
-  assert(pdfApplyBlockers({ lines: 0, rows: 0, bareUnknown: [], conflicts: [], multi: [], currency: { seen: {} } }).some(b => /no text came out/.test(b)), 'a scan is named as one');
-  assert(pdfApplyBlockers(parseAlicatPdfText(PDF_FIXTURE, { take: 'first' }).report).filter(b => !/priced 2 ways/.test(b)).length === 0, 'with the conflict aside nothing else blocks the fixture');
+  assert(pdfApplyBlockers({ lines: 0, rows: 0, bareUnknown: [], conflicts: [], currency: { seen: {} } }).some(b => /no text came out/.test(b)), 'a scan is named as one');
   assert(detectCurrency('prices in EUR') === 'EUR' && detectCurrency('nothing here') === null && detectCurrency('$ only') === null, 'currency detection never defaults to USD');
-  assert(PART_TOKEN.exec('see MC-500SCCM-D/5P here')?.[1] === 'MC-500SCCM-D/5P' && PART_TOKEN.exec('BB9-232 cable')?.[1] === 'BB9-232' && !PART_TOKEN.test('no code here'), 'the part grammar');
+  const parts = s => (s.match(PART_TOKEN) || []);
+  assert(parts('see MC-500SCCM-D/5P here')[0] === 'MC-500SCCM-D/5P' && parts('M-0.5SCCM-D £1')[0] === 'M-0.5SCCM-D' && parts('P-10TORRA-D-SAE4')[0] === 'P-10TORRA-D-SAE4', 'the part grammar keeps decimals and long tails');
+  assert(parts('BB9-232 cable')[0] === 'BB9-232' && parts('BB3 £145')[0] === 'BB3', 'accessories with and without a hyphen');
+  assert(parts('MCE-SFF-Series MCV-Series USB-C M12 no code here').length === 0, 'headings, connector names and prose are not parts');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);

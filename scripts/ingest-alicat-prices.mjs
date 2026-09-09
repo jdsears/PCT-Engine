@@ -14,10 +14,10 @@
 // column or line that says cost, discount, margin or supplier is excluded
 // outright. A workbook is read by its header row (name a column with
 // --gbp-column, --eur-column, --usd-column when the header leaves a currency
-// ambiguous); a PDF is read line by line through pdftotext, a part number
-// beside one price (--take first|last when lines carry several, --currency
-// GBP when the document names no currency for bare figures). --apply refuses
-// while anything is unsettled.
+// ambiguous); a PDF is read line by line through pdftotext, each price
+// belonging to the part number just before it, up to four pairs to a line
+// (--currency GBP when the document names no currency for bare figures).
+// --apply refuses while anything is unsettled.
 //
 // --file is required and there is no fallback to PRICE_WORKBOOK, because that
 // is the Mega Price List, a different document with different rules.
@@ -39,15 +39,13 @@ const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 const LINE = 'alicat';
 
 if (!SOURCE) {
-  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--take first|last] [--currency GBP] [--apply]');
+  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--apply]');
   process.exit(1);
 }
 if (!/^\d{4}-\d{2}-\d{2}$/.test(EFFECTIVE)) {
   console.error(`--effective must be YYYY-MM-DD, got ${EFFECTIVE}`);
   process.exit(1);
 }
-const TAKE = flag('--take');
-if (TAKE && !['first', 'last'].includes(TAKE)) { console.error('--take wants first or last'); process.exit(1); }
 const CURRENCY = flag('--currency');
 if (CURRENCY && !['GBP', 'EUR'].includes(CURRENCY.toUpperCase())) { console.error('--currency wants GBP or EUR; USD is the supplier list and is never stored'); process.exit(1); }
 const overrides = {};
@@ -79,18 +77,19 @@ if (/\.pdf$/i.test(SOURCE)) {
     const { parseOfficeAsync } = await import('officeparser');
     pdfText = String(await parseOfficeAsync(await readFile(FILE)) || '');
   }
-  const parsed = parseAlicatPdfText(pdfText, { take: TAKE, currency: CURRENCY });
+  const parsed = parseAlicatPdfText(pdfText, { currency: CURRENCY });
   rows = parsed.rows;
   const r = parsed.report;
   console.log(`  read as a PDF: ${r.lines} line(s) of text, currency for bare figures ${r.currency.default || 'unknown'}` +
     ` (symbols seen: £ ${r.currency.seen.GBP}, € ${r.currency.seen.EUR}, $ ${r.currency.seen.USD})`);
   console.log(`\n  ${r.parts} part(s), ${r.rows} price row(s).`);
-  for (const s of rows.slice(0, 6)) console.log(`    sample: ${s.partNumber}  ${s.currency} ${s.sellPrice}${s.description ? '  ' + s.description.slice(0, 50) : ''}`);
+  for (const s of rows.slice(0, 8)) console.log(`    sample: ${s.partNumber}  ${s.currency} ${s.sellPrice}${s.description ? '  ' + s.description.slice(0, 50) : ''}`);
   const show = (label, list, why) => { if (list.length) { console.log(`  ${label}${why ? `, ${why}` : ''}:`); for (const l of list) console.log(`    ${l}`); } };
   show('excluded lines, never ingested', r.excluded, 'cost, discount, margin or the supplier list by name');
   show('USD figures set aside', r.usd, 'the USD list is the supplier\'s');
-  show('lines with more than one price, held', r.multi, 'say which with --take first or --take last');
-  show('lines with a figure and no currency, held', r.bareUnknown, 'say which with --currency GBP');
+  show('adders, not stored', r.adders, 'priced as an addition to a base unit, not a price of a part');
+  show('parts mentioned inside a description, not stored as that part\'s price', r.mentions);
+  show('figures with no currency, held', r.bareUnknown, 'say which with --currency GBP');
   show('prices with no part number beside them', r.priceNoPart, 'named products without a code are not stored');
   show('part numbers with no price beside them', r.partNoPrice);
   if (!rows.length || !APPLY) {

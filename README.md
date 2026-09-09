@@ -638,13 +638,17 @@ each of these with poison values.
   the Mega sheet, a different document with different rules.
 - The list James placed is a PDF (`Pricing/Customer Pricing/Alicat Q1
   2026.pdf`), so the same script reads a PDF through `pdftotext -layout`
-  (`src/pricing/parseAlicatPdf.mjs`): a row is a part number beside one
-  price, a line that names cost, discount, margin or the supplier is never a
-  row, a USD figure is set aside, a line with several prices is held until
-  `--take first` or `--take last` says which, and a bare figure with no
-  currency named anywhere in the document is held until `--currency GBP`
-  says so. The dry run prints the top of the document verbatim, so a layout
-  the parser did not expect is corrected on evidence rather than guessed at.
+  (`src/pricing/parseAlicatPdf.mjs`). The layout, learned from the first
+  dry run of the real document: up to four part-and-price pairs side by
+  side on a line, so each price belongs to the part just before it; adders
+  priced as an addition to a base unit ("£579 + MC") are not prices of a
+  part; a series heading is not a part; a part named inside a description
+  is a mention, not a row; and part numbers carry a digit. A line that
+  names cost, discount, margin or the supplier is never a row, a USD figure
+  is set aside, and a bare figure with no currency named anywhere in the
+  document is held until `--currency GBP` says so. The dry run prints the
+  top of the document verbatim, so a layout the parser did not expect is
+  corrected on evidence rather than guessed at.
 - The co-pilot answers an Alicat part number by exact key, "cheapest Alicat"
   with the lowest loaded row under the sell wording, never the guide caveat,
   and a whole-line question with the loaded range. Before the list is
