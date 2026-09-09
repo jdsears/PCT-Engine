@@ -611,6 +611,36 @@ the published list rather than quoted: parse that line's list and compute the
 sell price at ingest, storing only the finished figure, verified against his
 numbers before it arms.
 
+### The Alicat customer list
+
+Alicat (9 September 2026) is the first line whose sell prices come from a
+customer price list of its own rather than the Mega sheet: the GBP list James
+placed in the customer pricing folder ("Alicat Q1 2026"). Its layout was not
+in front of anyone when the parser was written, so
+`src/pricing/parseAlicat.mjs` detects the header row under any title rows and
+classifies every column by name, and the dry run prints that classification
+for a human to confirm before anything is stored. The rule is unchanged: only
+a selling price enters the table. Alicat's own list is in USD and PCT's cost
+is that list less a discount, so a USD column with no sell marker is set
+aside, a column whose header says cost, discount, margin, supplier or a
+revision number is excluded outright and cannot be named back in, a lone
+"list" column with no sell marker is reported as a question rather than
+stored, and a part priced two ways is withdrawn and named. The gate proves
+each of these with poison values.
+
+- `scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>"` is the dry
+  run; `--sheet` picks a worksheet, `--gbp-column K` (a letter or a number,
+  likewise `--eur-column` and `--usd-column`) names a column when the header
+  left a currency ambiguous, `--list` and `--effective` label the rows, and
+  `--apply` replaces the `alicat` line wholesale. `--apply` refuses while any
+  currency is ambiguous, an override was refused, or a part conflicts.
+  `--file` is required: there is no fallback to `PRICE_WORKBOOK`, which is
+  the Mega sheet, a different document with different rules.
+- The co-pilot answers an Alicat part number by exact key, "cheapest Alicat"
+  with the lowest loaded row under the sell wording, never the guide caveat,
+  and a whole-line question with the loaded range. Before the list is
+  ingested the brand word routes to the enquiry note like the other lines.
+
 ## Usage logging and insights
 
 Every co-pilot question is logged to `copilot_queries` (migration 005). Each row

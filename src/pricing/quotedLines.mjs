@@ -32,6 +32,12 @@ const LINES = [
   { line: 'Jordan', note: ENQUIRY_NOTE, prefixes: [], words: ['JORDAN'] },
   { line: 'Equilibar', note: ENQUIRY_NOTE, prefixes: [], words: ['EQUILIBAR'] },
   { line: 'Richards Industrials', note: ENQUIRY_NOTE, prefixes: [/^MK\d{2,}/, /^MARK\d{2,}/, /^601/], words: ['RICHARDS'] },
+  // Alicat, 9 September 2026: the brand word routes a whole-line question to
+  // the stored GBP customer list once it is ingested, and to the enquiry note
+  // before then. No model prefixes, because Alicat's short codes (M, MC, P,
+  // PC) are too generic to claim on their own; a stored part still answers
+  // first by exact key.
+  { line: 'Alicat', note: ENQUIRY_NOTE, prefixes: [], words: ['ALICAT'] },
 ];
 
 // Which quoted line a price query concerns, or null. Pure, so the routing is

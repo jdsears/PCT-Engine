@@ -39,9 +39,13 @@ const GBP = n => `£${Number(n).toLocaleString('en-GB')}`;
 
 // scope reads like "Marwin valve" or "Marwin 4700 series valve"; the caller
 // sets it from what the question named.
+// A row from a sell list (price_basis 'sell', the Alicat customer list for
+// one) closes with the sell wording, never the guide caveat: the figure is
+// the loaded list's own, not a margin computed at ingest.
 export function renderCheapestValve({ scope, row, build }) {
+  const sell = row.price_basis === 'sell';
   const lines = [
-    `The lowest priced ${scope} in the loaded book is **${row.part_number}**` +
+    `The lowest priced ${scope} in the loaded ${sell ? 'list' : 'book'} is **${row.part_number}**` +
     `${row.description ? `, ${row.description}` : ''}: ${GBP(row.sell_price)}.`,
   ];
   if (build) {
@@ -52,7 +56,8 @@ export function renderCheapestValve({ scope, row, build }) {
     lines.push('',
       'This series has no ordering matrix in the engine, so the spec is the book\'s own description for the code rather than a slot by slot read-back.');
   }
-  lines.push('',
-    "This is a guide price at the standard margin the master price sheet sets, the single source for margin. Combinations beyond the loaded book are priced per enquiry.");
+  lines.push('', sell
+    ? `This is the sell price as loaded from the ${row.list_name || 'price list'}, never estimated. Parts beyond the loaded list are priced per enquiry.`
+    : "This is a guide price at the standard margin the master price sheet sets, the single source for margin. Combinations beyond the loaded book are priced per enquiry.");
   return lines.join('\n');
 }

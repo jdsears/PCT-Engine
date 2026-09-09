@@ -15,6 +15,7 @@ import { parseMarwinMd } from './parseMarwinMd.mjs';
 import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
 import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
+import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 let pass = 0, fail = 0;
@@ -121,6 +122,8 @@ await check('the configurator models route to their lines', async () => {
   assert(quotedLine('mark 96')?.line === 'Steriflow', 'Mark 96 is Steriflow');
   assert(quotedLine('MK96AA')?.line === 'Steriflow', 'MK96AA is Steriflow');
   assert(quotedLine('equilibar bpr')?.line === 'Equilibar', 'Equilibar routes to its own note');
+  assert(quotedLine('cheapest alicat mass flow controller')?.line === 'Alicat', 'the Alicat brand word routes to its line');
+  assert(quotedLine('price of an MC-500SCCM-D') === null, 'an Alicat model code alone claims nothing; the stored key answers it');
 });
 
 await check('the notes point inward only: no supplier contacts, no team-notepad detail', async () => {
@@ -571,6 +574,128 @@ await check('matrix cautions ride along on the read-back', async () => {
 await check('no rows means no answer, so the turn falls through', async () => {
   assert(cheapestOf(allConfigs(), []) === null, 'empty rows');
   assert(decodeAcross(allConfigs(), 'NOT-A-CODE') === null, 'garbage decodes nowhere');
+});
+
+await check('a sell-list row closes with the sell wording, never the guide caveat', async () => {
+  const c = cheapestOf(allConfigs(), [{ part_number: 'MC-500SCCM-D', description: '500 sccm mass flow controller', sell_price: 1234, price_basis: 'sell', list_name: 'Alicat Q1 2026' }]);
+  const text = renderCheapestValve({ scope: 'Alicat part', ...c });
+  assert(text.includes('in the loaded list is **MC-500SCCM-D**') && text.includes('£1,234'), 'the list row is named and priced');
+  assert(text.includes('sell price as loaded from the Alicat Q1 2026') && text.includes('never estimated'), 'the sell basis is stated');
+  assert(!/guide price|standard margin/.test(text), 'no margin caveat is claimed for a sell list');
+  assert(text.includes('per enquiry'), 'the beyond-the-list edge holds');
+  assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
+});
+
+console.log('\nThe Alicat customer list parser (synthetic sheet, header detected, poison-value proof):');
+
+// Poison values: the supplier's USD list, PCT's cost and the discount that
+// links them. None may ever surface as a sell price.
+const A_LIST_USD = 555.55, A_COST = 444.44, A_DISCOUNT = 35;
+
+function buildAlicatWorkbook(headers = null) {
+  const wb = new ExcelJS.Workbook();
+  wb.addWorksheet('Notes').addRow(['Read me first']);
+  const ws = wb.addWorksheet('Alicat Q1 2026');
+  ws.addRow(['Alicat customer price list']);
+  ws.addRow(['Q1 2026, prices in GBP']);
+  ws.addRow(headers || ['Part Number', 'Description', 'List Price USD', 'Discount %', 'Cost GBP', 'Sales Price GBP', 'Sales Price EUR', 'Lead time']);
+  ws.addRow(['MASS FLOW CONTROLLERS']);
+  ws.addRow(['MC-500SCCM-D', '500 sccm mass flow controller', A_LIST_USD, A_DISCOUNT, A_COST, 1234.5, 1420, '2 weeks']);
+  ws.addRow(['MC-500SCCM-D/5M ', 'with 5m cable', A_LIST_USD, A_DISCOUNT, A_COST, '£1,300.00', null, '2 weeks']);
+  ws.addRow(['PC-15PSIG-D', 'no sell on this row', A_LIST_USD, A_DISCOUNT, A_COST, null, null, null]);
+  return wb;
+}
+
+await check('the header is found under the title rows and every column is classified', async () => {
+  const { report } = parseAlicatWorkbook(buildAlicatWorkbook());
+  assert(report.sheet === 'Alicat Q1 2026' && report.header === 3, `sheet and header: ${report.sheet} row ${report.header}`);
+  assert(report.columns.part.col === 1 && report.columns.description.col === 2, 'part and description columns');
+  assert(report.columns.sells.GBP?.col === 6 && report.columns.sells.EUR?.col === 7, `sells: ${JSON.stringify(report.columns.sells)}`);
+  assert(!('USD' in report.columns.sells), 'the USD list column is not a sell');
+  const excluded = report.excluded.map(e => e.col).sort().join(',');
+  assert(excluded === '3,4,5', `excluded columns are the list, the discount and the cost: got ${excluded}`);
+  assert(report.excluded.find(e => e.col === 3)?.hard === false && report.excluded.find(e => e.col === 5)?.hard === true,
+    'the USD list is set aside softly, the cost and discount columns hard');
+  assert(report.ignored.length === 1 && report.ignored[0].col === 8, 'lead time is ignored, not a price');
+  assert(applyBlockers(report).length === 0, `a clean sheet has no blockers: ${JSON.stringify(applyBlockers(report))}`);
+});
+
+await check('only sells extract, as printed, keyed by the normalised part', async () => {
+  const { rows, report } = parseAlicatWorkbook(buildAlicatWorkbook());
+  assert(report.parts === 2 && report.rows === 3 && report.skippedNoPrice === 2, `counts: ${JSON.stringify([report.parts, report.rows, report.skippedNoPrice])}`);
+  const mc = rows.filter(r => r.normKey === 'MC-500SCCM-D');
+  assert(mc.find(r => r.currency === 'GBP')?.sellPrice === 1234.5 && mc.find(r => r.currency === 'EUR')?.sellPrice === 1420, 'GBP and EUR as printed');
+  const cable = rows.find(r => r.normKey === 'MC-500SCCM-D/5M');
+  assert(cable?.currency === 'GBP' && cable.sellPrice === 1300, 'a sterling-formatted cell parses and a trailing space keys away');
+  assert(rows.every(r => r.productLine === 'alicat' && r.sourceTab === 'Alicat Q1 2026' && r.description), 'line, tab and description travel');
+});
+
+await check('no supplier list, cost or discount value survives into the rows', async () => {
+  const { rows } = parseAlicatWorkbook(buildAlicatWorkbook());
+  for (const poison of [A_LIST_USD, A_COST, A_DISCOUNT]) {
+    assert(!rows.some(r => r.sellPrice === poison), `poison ${poison} leaked into the extracted rows`);
+  }
+  assert(!rows.some(r => r.currency === 'USD'), 'no USD row exists when the only USD column is the supplier list');
+});
+
+await check('a USD column stores only with a sell marker, and a named override can bring it back but never a cost', async () => {
+  assert(!('USD' in classifyHeader(['Part', 'Price USD']).sells), 'unmarked USD is set aside');
+  assert(classifyHeader(['Part', 'PCT sell USD']).sells.USD === 2, 'marked USD is a sell');
+  const brought = parseAlicatWorkbook(buildAlicatWorkbook(), { overrides: { USD: 'C' } });
+  assert(brought.report.columns.sells.USD?.col === 3 && brought.report.columns.sells.USD.named, 'a named USD column is accepted by letter');
+  assert(brought.rows.some(r => r.currency === 'USD' && r.sellPrice === A_LIST_USD), 'the named column then stores, on the human\'s say so');
+  const cost = parseAlicatWorkbook(buildAlicatWorkbook(), { overrides: { GBP: 5 } });
+  assert(cost.report.overrides.refused.length === 1 && /never ingested/.test(cost.report.overrides.refused[0].why), 'naming the cost column is refused');
+  assert(!cost.rows.some(r => r.sellPrice === A_COST), 'the refused override stores nothing from the cost column');
+  assert(applyBlockers(cost.report).some(b => /refused/.test(b)), 'a refused override blocks --apply');
+  const part = parseAlicatWorkbook(buildAlicatWorkbook(), { overrides: { EUR: 1 } });
+  assert(part.report.overrides.refused[0]?.why.includes('part or description'), 'naming the part column is refused');
+});
+
+await check('two unmarked GBP columns are ambiguous until one is named, and a lone list column asks too', async () => {
+  const two = classifyHeader(['Model', 'Description', 'GBP', 'GBP 2025']);
+  assert(!('GBP' in two.sells) && two.ambiguous[0]?.currency === 'GBP' && two.ambiguous[0].candidates.length === 2, 'two unmarked GBP columns are ambiguous');
+  const wb = buildAlicatWorkbook(['Part Number', 'Description', 'List Price USD', 'Discount %', 'Cost GBP', 'GBP', 'GBP 2025', 'Lead time']);
+  const open = parseAlicatWorkbook(wb);
+  assert(open.rows.length === 0 && applyBlockers(open.report).some(b => /GBP is ambiguous/.test(b)), 'ambiguity stores nothing and blocks --apply');
+  const named = parseAlicatWorkbook(wb, { overrides: { GBP: 6 } });
+  assert(named.report.ambiguous.length === 0 && named.rows.find(r => r.normKey === 'MC-500SCCM-D')?.sellPrice === 1234.5, 'naming the column resolves it');
+  const list = classifyHeader(['Part No', 'List Price GBP']);
+  assert(list.ambiguous[0]?.why === LIST_WHY, "'list' with no sell marker is a question, not a sell");
+  assert(classifyHeader(['Part No', 'GBP sales list price']).sells.GBP === 2, "James's own phrase, sales list price, is a sell");
+  assert(classifyHeader(['Part No', 'Price']).sells.GBP === 2 && classifyHeader(['Part No', 'Price']).assumed[2] === 'GBP', 'an unlabelled price is read as GBP and marked assumed');
+});
+
+await check('a part priced two ways is withdrawn and named; the same price twice is one row', async () => {
+  const wb = buildAlicatWorkbook();
+  const ws = wb.getWorksheet('Alicat Q1 2026');
+  ws.addRow(['MC-500SCCM-D', 'again, same price', A_LIST_USD, A_DISCOUNT, A_COST, 1234.5, 1420, null]);
+  ws.addRow(['mc-500sccm-d/5m', 'again, different price', A_LIST_USD, A_DISCOUNT, A_COST, 1350, null, null]);
+  const { rows, report } = parseAlicatWorkbook(wb);
+  assert(rows.filter(r => r.normKey === 'MC-500SCCM-D').length === 2, 'the identical repeat collapses to one row per currency');
+  assert(!rows.some(r => r.normKey === 'MC-500SCCM-D/5M'), 'the conflicting part is withdrawn entirely');
+  assert(report.conflicts.length === 1 && report.conflicts[0].prices.join(',') === '1300,1350', `the conflict is named with both prices: ${JSON.stringify(report.conflicts)}`);
+  assert(applyBlockers(report).some(b => /priced 2 ways/.test(b)), 'a conflict blocks --apply');
+});
+
+await check('no header means nothing stored and the top rows reported for a human', async () => {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Sheet1');
+  ws.addRow(['Alicat', 'prices', 'somewhere']);
+  ws.addRow(['MC-500SCCM-D', 1234.5]);
+  const { rows, report } = parseAlicatWorkbook(wb);
+  assert(rows.length === 0 && report.header === null, 'nothing is guessed from a sheet with no header');
+  assert(report.firstRows.length === 2 && report.firstRows[0][0] === 'Alicat', 'the top rows travel verbatim');
+  assert(applyBlockers(report).some(b => /no header row/.test(b)), 'no header blocks --apply');
+});
+
+await check('sheet choice and column letters are plain and provable', async () => {
+  const wb = buildAlicatWorkbook();
+  assert(pickSheet(wb).name === 'Alicat Q1 2026', 'the price-like sheet is preferred over the first');
+  assert(pickSheet(wb, 'notes').name === 'Notes' && pickSheet(wb, 'nope') === null, 'a named sheet wins, a missing name is null');
+  assert(columnIndex('K') === 11 && columnIndex('AA') === 27 && columnIndex('6') === 6 && columnIndex('k') === 11, 'letters and numbers both read');
+  assert(columnIndex('') === null && columnIndex('0') === null && columnIndex('1A') === null, 'junk is null');
+  assert(colLetter(1) === 'A' && colLetter(26) === 'Z' && colLetter(27) === 'AA' && colLetter(0) === '', 'letters render');
 });
 
 console.log(`\n=== Pricing gate: ${pass} passed, ${fail} failed ===`);
