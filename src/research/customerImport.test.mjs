@@ -9,6 +9,7 @@ import {
 } from './customerImport.mjs';
 import { cellValue } from '../pricing/parseMega.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
+import { parseCsv, writeCsv, holdReason, placeOf } from './hubspotExport.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -247,6 +248,26 @@ await check('migration 026 adds columns idempotently and carries no data', async
 await check('grounding tolerates the column not existing yet', async () => {
   const src = read('src/outbound/grounding.mjs');
   assert(/hasColumn\('companies', 'customer_status'\)/.test(src), 'asks the schema before selecting');
+});
+
+console.log('\nThe HubSpot export reader and writer, and the seed\'s hold rules (shared by the correction script):');
+
+await check('a HubSpot export round-trips: quotes, commas, CRLF and a byte-order mark', async () => {
+  const src = '﻿Record ID,Company name,City,Country/Region,Company owner\r\n1,"Smith, Jones ""and"" Co",Reading,United Kingdom,Ann\r\n2,Plain,,United Kingdom,\r\n';
+  const rows = parseCsv(src);
+  assert(rows.length === 2 && rows[0]['Company name'] === 'Smith, Jones "and" Co' && rows[0]['Record ID'] === '1', `quoted fields read: ${JSON.stringify(rows[0])}`);
+  assert(Object.keys(rows[0]).join('|') === 'Record ID|Company name|City|Country/Region|Company owner', 'the byte-order mark never reaches the first header');
+  const out = writeCsv(rows, Object.keys(rows[0]));
+  assert(out.startsWith('Record ID,Company name,City,Country/Region,Company owner\r\n1,"Smith, Jones ""and"" Co",Reading,United Kingdom,Ann\r\n'), `written back as it came: ${JSON.stringify(out)}`);
+  assert(JSON.stringify(parseCsv(out)) === JSON.stringify(rows), 'reading the written file gives the same rows');
+});
+
+await check('hold reasons: a foreign head-office city, a stub, a Northern Ireland row, and a corrected row', async () => {
+  assert(/Duesseldorf is outside the UK/.test(holdReason({ 'Company name': 'GEA Group', City: 'Duesseldorf', 'Country/Region': 'United Kingdom', 'Company owner': 'Peter' })), 'a foreign city is held with its reason');
+  assert(/stub row/.test(holdReason({ 'Company name': 'Quadram Institute', City: '', 'Country/Region': 'United Kingdom', 'Company owner': '' })), 'no owner and no city is a stub');
+  assert(holdReason({ 'Company name': 'Quadram Institute', City: 'Norwich', 'Country/Region': 'United Kingdom', 'Company owner': '' }) === null, 'a city settles a stub');
+  assert(holdReason({ 'Company name': 'Tayto', City: 'Craigavon', 'Country/Region': 'Ireland', 'Company owner': 'Andy' }) === null && placeOf({ City: 'Craigavon', 'Country/Region': 'Ireland' }) === 'northern_ireland', 'Craigavon is Northern Ireland whatever the country column says');
+  assert(holdReason({ 'Company name': 'Flahavan\'s', City: 'Kilmacthomas', 'Country/Region': 'Ireland', 'Company owner': 'Guy' }) === null && placeOf({ City: 'Kilmacthomas', 'Country/Region': 'Ireland' }) === 'republic_of_ireland', 'the Republic is not held; it is seeded and never joined, which is the seed script\'s own rule');
 });
 
 console.log(`\n=== Customer import gate: ${pass} passed, ${fail} failed ===`);
