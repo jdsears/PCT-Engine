@@ -5,7 +5,7 @@ import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtags
 import { accountForCampaign } from '../research/unipile.mjs';
 import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
 import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers, sweepDue } from './postEngagers.mjs';
-import { londonClock, slotFor, slotDue, POST_DAYS, SLOT_WINDOW_MINUTES } from './autopost.mjs';
+import { londonClock, slotFor, slotDue, POST_DAYS, SLOT_WINDOW_MINUTES, rotationOrder } from './autopost.mjs';
 import { dripWindowOpen, gapClear, emailTimingClear, dripDailyCap, DRIP_MIN_GAP_MINUTES } from './inviteDrip.mjs';
 import { networkDistance, isConnected, checkDue } from './liConnection.mjs';
 import { dmFlags, dmDue, dmSystem, DM_MAX_CHARS } from './liDm.mjs';
@@ -525,6 +525,37 @@ check('the propose-company verb reviews, never registers (static)', () => {
   assert(/hasColumn\('party_reviews', 'source'\)/.test(fn), 'the insert asks the schema first, so deploy order cannot break it');
   const rq = freshRead('web/src/ReviewQueue.jsx');
   assert(/From post engagement/.test(rq), 'the reviewer sees who engaged before deciding');
+});
+
+console.log('\nTwo lanes on one account take turns:');
+
+check('lanes sharing an account rotate, never posted first, then least recent', () => {
+  // John, 9 September 2026: food and beverage joins pharma on Andy's
+  // profile, and the content rotates between them rather than Andy posting
+  // twice before ten.
+  assert(slotFor('food_beverage') === 9 * 60 + 10 && slotFor('food_beverage') === slotFor('pharma_steriflow'),
+    'the two lanes share one slot, because they share one account');
+  const order = rotationOrder([
+    { campaign: 'pharma_steriflow', lastPostedAt: '2026-09-08T08:10:00Z' },
+    { campaign: 'food_beverage', lastPostedAt: null },
+  ]);
+  assert(order[0].campaign === 'food_beverage', 'a lane that has never posted goes first');
+  const later = rotationOrder([
+    { campaign: 'pharma_steriflow', lastPostedAt: '2026-09-08T08:10:00Z' },
+    { campaign: 'food_beverage', lastPostedAt: '2026-09-09T08:10:00Z' },
+  ]);
+  assert(later[0].campaign === 'pharma_steriflow', 'then the least recently posted lane, so they alternate day by day');
+  assert(rotationOrder([{ campaign: 'b', lastPostedAt: null }, { campaign: 'a', lastPostedAt: null }])[0].campaign === 'a',
+    'a tie breaks by name, deterministically');
+  assert(rotationOrder([{ campaign: 'x', lastPostedAt: 'garbage' }, { campaign: 'y', lastPostedAt: '2026-09-01T00:00:00Z' }])[0].campaign === 'x',
+    'a junk timestamp reads as never posted rather than throwing');
+  const ap = freshRead('src/studio/autopost.mjs');
+  assert(/byAccount\.get\(accountId\)/.test(ap) && /group\.postedToday \|\| postedToday/.test(ap),
+    'lanes are grouped by the account that carries them, and an account that posted today is done for the day');
+  assert(/if \(group\.postedToday \|\| !group\.lanes\.length\) continue;/.test(ap), 'one post per account per morning, whatever the lane count');
+  assert(/for \(const lane of rotationOrder\(group\.lanes\)\)/.test(ap) && /published = true;\s*break;/.test(ap),
+    'the first lane in turn order with an approved post takes the morning and the rest wait');
+  assert(/no approved post is waiting' \}\);\s*continue;/.test(ap), 'a lane with nothing approved yields the morning to the other rather than wasting it');
 });
 
 console.log('\nThe invite drip: approval ahead, released like a person (pure):');

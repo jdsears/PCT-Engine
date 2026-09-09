@@ -1,7 +1,7 @@
 import { pool } from '../db.mjs';
 import { publishPost, generateLiPosts } from './liPosts.mjs';
 import { activeCampaignIds } from '../campaigns/registry.mjs';
-import { AccountUnhealthy, CapReached } from '../research/unipile.mjs';
+import { AccountUnhealthy, CapReached, accountForCampaign } from '../research/unipile.mjs';
 
 // The studio autopilot's posting half, John's decision of 24 August 2026:
 // James and Andy post on Tuesday, Wednesday and Thursday mornings without a
@@ -32,7 +32,11 @@ export const POST_DAYS = ['Tue', 'Wed', 'Thu'];
 // same minute. STUDIO_POST_SLOTS overrides as JSON, {"campaign":"HH:MM"}; a
 // campaign with no slot anywhere simply never auto-posts, the safe default
 // for any future lane.
-const SLOT_DEFAULTS = { marwin_dc: '08:40', pharma_steriflow: '09:10' };
+// Two lanes on one account share one slot and take turns, never two posts
+// in a morning: pharma and food and beverage both publish through Andy's
+// profile, 9 September 2026, and John's instruction was that the content
+// rotates between them.
+const SLOT_DEFAULTS = { marwin_dc: '08:40', pharma_steriflow: '09:10', food_beverage: '09:10' };
 // A slot stays open for three hours, so a service restart cannot silently eat
 // a morning; after that the day's post is a human decision, not a late surprise.
 export const SLOT_WINDOW_MINUTES = 180;
@@ -68,6 +72,25 @@ export function slotDue({ campaign, now = new Date(), postedToday = false }) {
 // Has anything published for this lane today, London's today? The campaign is
 // derived exactly as everywhere else: the draft's grounding, its signal, the
 // data centre default.
+// When a lane last published, any status, so lanes sharing an account can
+// take turns: the one that posted least recently goes next.
+async function lastPostedAt(campaign) {
+  const { rows } = await pool.query(
+    `SELECT max(lp.posted_at) AS last FROM li_posts lp LEFT JOIN signals s ON s.id = lp.signal_id
+     WHERE lp.status = 'posted'
+       AND COALESCE(lp.grounding->>'campaign', s.campaign, 'marwin_dc') = $1`, [campaign]);
+  return rows[0]?.last || null;
+}
+
+// The turn order for lanes that share one LinkedIn account: never posted
+// first, then least recently posted, so two lanes alternate day by day and
+// a lane with nothing approved simply yields the morning to the other. Pure,
+// so the rotation is provable without a database.
+export function rotationOrder(lanes) {
+  const t = v => { const n = v ? new Date(v).getTime() : NaN; return Number.isNaN(n) ? -Infinity : n; };
+  return [...(lanes || [])].sort((a, b) => t(a.lastPostedAt) - t(b.lastPostedAt) || String(a.campaign).localeCompare(String(b.campaign)));
+}
+
 async function postedTodayLondon(campaign) {
   const { rows } = await pool.query(
     `SELECT 1 FROM li_posts lp LEFT JOIN signals s ON s.id = lp.signal_id
@@ -98,28 +121,48 @@ async function nextApproved(campaign) {
 // caller can stand the autopilot down; a cap refusal skips the lane cleanly.
 export async function autopostOnce({ log = () => {} } = {}) {
   const out = { posted: [], skipped: [] };
+  // Lanes whose slot is open, grouped by the LinkedIn account that carries
+  // them. One account posts once a morning whatever the lane count: a person
+  // who publishes twice before ten reads as a feed, not a practitioner.
+  const byAccount = new Map();
   for (const campaign of activeCampaignIds()) {
     if (slotFor(campaign) == null) continue;
+    const accountId = accountForCampaign(campaign);
+    if (!accountId) continue;
     const postedToday = await postedTodayLondon(campaign);
     const slot = slotDue({ campaign, postedToday });
-    if (!slot.due) continue;
-    const id = await nextApproved(campaign);
-    if (!id) {
-      out.skipped.push({ campaign, reason: 'the slot is open but no approved post is waiting' });
-      continue;
-    }
-    try {
-      const r = await publishPost(id, { auto: true });
-      if (r.posted) {
-        log(`published post ${id} for ${campaign}${r.commented ? ', story link as first comment' : ''}`);
-        out.posted.push({ campaign, id, commented: r.commented });
-      } else {
-        out.skipped.push({ campaign, reason: r.reason });
+    const group = byAccount.get(accountId) || { accountId, lanes: [], postedToday: false };
+    group.postedToday = group.postedToday || postedToday;
+    if (slot.due) group.lanes.push({ campaign, lastPostedAt: await lastPostedAt(campaign) });
+    byAccount.set(accountId, group);
+  }
+  for (const group of byAccount.values()) {
+    if (group.postedToday || !group.lanes.length) continue;
+    let published = false;
+    for (const lane of rotationOrder(group.lanes)) {
+      const { campaign } = lane;
+      const id = await nextApproved(campaign);
+      if (!id) {
+        out.skipped.push({ campaign, reason: 'the slot is open but no approved post is waiting' });
+        continue;
       }
-    } catch (e) {
-      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); break; }
-      if (e instanceof CapReached) { out.skipped.push({ campaign, reason: 'daily call cap reached' }); continue; }
-      out.skipped.push({ campaign, reason: String(e.message).slice(0, 200) });
+      try {
+        const r = await publishPost(id, { auto: true });
+        if (r.posted) {
+          log(`published post ${id} for ${campaign}${r.commented ? ', story link as first comment' : ''}`);
+          out.posted.push({ campaign, id, commented: r.commented });
+          published = true;
+          break;
+        }
+        out.skipped.push({ campaign, reason: r.reason });
+      } catch (e) {
+        if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); return out; }
+        if (e instanceof CapReached) { out.skipped.push({ campaign, reason: 'daily call cap reached' }); break; }
+        out.skipped.push({ campaign, reason: String(e.message).slice(0, 200) });
+      }
+    }
+    if (!published && group.lanes.length > 1) {
+      log(`no lane on this account had an approved post this morning (${group.lanes.map(l => l.campaign).join(', ')})`);
     }
   }
   return out;
