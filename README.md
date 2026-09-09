@@ -645,8 +645,9 @@ each of these with poison values.
   part; a series heading is not a part, even when it shares a line with the
   first pair; a specification before a code is its description while a
   phrase that reads as prose ("Carrying case for FP-25 £430") is a mention,
-  not the code's price; and part numbers carry a digit or at least three
-  segments. A line that names cost, discount, margin or the supplier is
+  not the code's price; a table cell between a code and a figure ("FP-25
+  N/A £430") makes it an options row, not the part's price; and part
+  numbers carry a digit or at least three segments. A line that names cost, discount, margin or the supplier is
   never a row, a USD figure is set aside, a bare figure with no currency
   named anywhere in the document is held until `--currency GBP` says so,
   and a part priced two ways is withdrawn and named with its lines until

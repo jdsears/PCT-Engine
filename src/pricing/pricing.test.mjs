@@ -721,6 +721,7 @@ const PDF_FIXTURE = [
   'PC-EXTSEN-D-ISC £964',
   'FP-25              £2,689',
   'Carrying case for FP-25                                 £430',
+  'FP-25              N/A                                  £430',
   'MCD £579 + MC MCDS £579 + MC MCDQ £579 + MC MCDW £579 + MC',
   'MCE-SFF-Series MCES-SFF-Series MCV-Series MCVS-Series',
   'Communication DB15 + USB-C M12 dual RJ45 + USB-C Notes',
@@ -754,6 +755,7 @@ await check('a mention is not a row, an adder is not a price, a heading is not a
   const get = k => rows.find(r => r.normKey === k);
   assert(get('FP-25')?.sellPrice === 2689 && !report.conflicts.some(c => c.partNumber === 'FP-25'), 'FP-25 keeps its own price and the case is not a second price for it');
   assert(report.mentions.length === 1 && /Carrying case for FP-25 £430/.test(report.mentions[0]), `the mention is named: ${JSON.stringify(report.mentions)}`);
+  assert(report.options.length === 1 && report.options[0] === 'FP-25 N/A £430', `an options table row is named and not the part's price: ${JSON.stringify(report.options)}`);
   assert(report.adders.includes('MCD £579 + MC') && report.adders.includes('MCDS £579 + MC') && !rows.some(r => /^MCD/.test(r.partNumber)), `adders are named by their code and never stored: ${JSON.stringify(report.adders)}`);
   assert(!rows.some(r => /^MCE|^USB|^DB15|^RJ45/.test(r.partNumber)), 'series headings and connector names are not parts');
   assert(!report.partNoPrice.some(l => /MCE-SFF-Series/.test(l)) && report.partNoPrice.some(l => /M-20SLPM-D/.test(l)), 'a heading line is not listed as a code without a price; a real code without a price is');
