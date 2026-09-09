@@ -636,6 +636,15 @@ each of these with poison values.
   currency is ambiguous, an override was refused, or a part conflicts.
   `--file` is required: there is no fallback to `PRICE_WORKBOOK`, which is
   the Mega sheet, a different document with different rules.
+- The list James placed is a PDF (`Pricing/Customer Pricing/Alicat Q1
+  2026.pdf`), so the same script reads a PDF through `pdftotext -layout`
+  (`src/pricing/parseAlicatPdf.mjs`): a row is a part number beside one
+  price, a line that names cost, discount, margin or the supplier is never a
+  row, a USD figure is set aside, a line with several prices is held until
+  `--take first` or `--take last` says which, and a bare figure with no
+  currency named anywhere in the document is held until `--currency GBP`
+  says so. The dry run prints the top of the document verbatim, so a layout
+  the parser did not expect is corrected on evidence rather than guessed at.
 - The co-pilot answers an Alicat part number by exact key, "cheapest Alicat"
   with the lowest loaded row under the sell wording, never the guide caveat,
   and a whole-line question with the loaded range. Before the list is
