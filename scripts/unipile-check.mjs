@@ -21,6 +21,29 @@ if (!unipileConfigured()) {
 }
 pass(`configuration present, DSN ${ (process.env.UNIPILE_DSN || '').replace(/^https?:\/\//, '').split(':')[0] }`);
 
+// --chats <account_id>: read the account's three most recent chats and the
+// last three messages of the first one, printed raw, so the field names the
+// reply sweep relies on (is_sender, sender_id, timestamp, text,
+// attendee_provider_id) are confirmed against the live shape rather than
+// assumed. Two reads, both ledgered, nothing written.
+if (process.argv.includes('--chats')) {
+  const accountId = process.argv[process.argv.indexOf('--chats') + 1];
+  if (!accountId || accountId.startsWith('--')) { fail('--chats wants the Unipile account id to read'); process.exit(1); }
+  const chats = await unipile(ROUTES.listChats, { query: { account_id: accountId, limit: 3 }, target: 'check: chats' });
+  console.log('\nGET /api/v1/chats, three most recent:\n');
+  console.log(JSON.stringify(chats, null, 2).slice(0, 4000));
+  const first = (Array.isArray(chats?.items) ? chats.items : Array.isArray(chats) ? chats : [])[0];
+  if (first?.id) {
+    const msgs = await unipile(ROUTES.chatMessages, { pathSuffix: `${encodeURIComponent(first.id)}/messages`, rawSuffix: true, query: { limit: 3 }, target: 'check: messages' });
+    console.log(`\nGET /api/v1/chats/${first.id}/messages, last three:\n`);
+    console.log(JSON.stringify(msgs, null, 2).slice(0, 4000));
+  } else {
+    console.log('\nNo chat id in the listing to read messages from.');
+  }
+  await pool.end();
+  process.exit(0);
+}
+
 // --post-schema: fetch the create-post contract by sending a deliberately
 // empty body. A 400 cannot publish, no account is named, and Unipile's own
 // error carries the endpoint's expected schema, printed here in full. This is

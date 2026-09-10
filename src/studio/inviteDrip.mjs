@@ -5,7 +5,7 @@ import { accountForCampaign, AccountUnhealthy, CapReached, unipileConfigured } f
 import { canInvite, sendConnectionInvite, inviteRefusal } from './liInvite.mjs';
 import { connectNote } from './liPosts.mjs';
 import { recipientMismatch } from '../outbound/draft.mjs';
-import { sendDm } from './liDm.mjs';
+import { sendDm, recheckMessage } from './liDm.mjs';
 
 // The invite drip, John's decision of 24 August 2026: connection requests
 // join the autopilot, timed with the outreach engine. Two modes, both human
@@ -100,12 +100,25 @@ async function releaseMessage({ campaign, accountId, auto, log }) {
      ORDER BY (m.status = 'approved') DESC, m.created_at ASC LIMIT 1`, [campaign]);
   const m = rows[0];
   if (!m) return 'none';
+  // The flags are recomputed at the moment of release, identity rule
+  // included, so a draft made before a rule existed cannot slip past it on
+  // the flags it was stored with. A message that now flags is held, with the
+  // flags written back so a person sees why.
+  const check = await recheckMessage(m.id);
+  if (check?.flags?.length) {
+    log(`held message for ${m.full_name} (${campaign}): ${check.flags[0]}`);
+    return 'none';
+  }
   try {
     const r = await sendDm(m, { linkedin_url: m.linkedin_url }, { accountId });
     if (!r.sent) return 'none';
+    const remembersChat = await hasColumn('li_messages', 'chat_id');
     await pool.query(
-      `UPDATE li_messages SET status = 'sent', sent_at = now(), sent_by = $2, updated_at = now() WHERE id = $1`,
-      [m.id, m.status === 'approved' ? 'invite drip' : 'invite drip (auto)']);
+      `UPDATE li_messages SET status = 'sent', sent_at = now(), sent_by = $2, updated_at = now()
+       ${remembersChat ? ', chat_id = $3, attendee_id = $4' : ''} WHERE id = $1`,
+      remembersChat
+        ? [m.id, m.status === 'approved' ? 'invite drip' : 'invite drip (auto)', r.chatId || null, r.attendeeId || null]
+        : [m.id, m.status === 'approved' ? 'invite drip' : 'invite drip (auto)']);
     log(`messaged ${m.full_name} (${campaign})`);
     return 'sent';
   } catch (e) {
