@@ -50,6 +50,7 @@ import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/in
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady, inviteRefusal } from './studio/liInvite.mjs';
 import { dripInvitesOnce } from './studio/inviteDrip.mjs';
 import { sweepConnectionsOnce } from './studio/liConnection.mjs';
+import { sweepDmRepliesOnce } from './studio/liReplies.mjs';
 import { generateDms, dmFlags, dmSender, recheckMessage } from './studio/liDm.mjs';
 import { CapReached, AccountUnhealthy, accountForCampaign } from './research/unipile.mjs';
 import { generateLiPosts, connectNote, postFlags, hashtagsFor, renderPostText, publishPost } from './studio/liPosts.mjs';
@@ -1625,6 +1626,23 @@ async function inviteDripOnce(trigger) {
   return true;
 }
 
+// LinkedIn replies to sent messages are read back on every tick whatever the
+// drip switch says, because a reply must stop the break-up even while the
+// drip is off. One check a day per message keeps it to a call or two.
+let dmRepliesRunning = false;
+async function dmRepliesOnce(trigger) {
+  if (dmRepliesRunning) return false;
+  dmRepliesRunning = true;
+  try {
+    const r = await sweepDmRepliesOnce({ log: m => console.log('[li-reply]', m) });
+    if (r.unhealthy) console.error('[li-reply] account health:', r.unhealthy);
+    if (r.replied) await kvSet('li_replies_last', { at: new Date().toISOString(), trigger, replied: r.replied, checked: r.checked });
+  } catch (e) {
+    console.error('[li-reply] failed:', e.message);
+  } finally { dmRepliesRunning = false; }
+  return true;
+}
+
 // The tick is cheap: read the switch and the last run, decide, maybe run. Any
 // error is logged and the next tick tries again.
 setInterval(async () => {
@@ -1636,6 +1654,7 @@ setInterval(async () => {
     }
     if (intelSenders().length) await pollIntelOnce('schedule');
     if ((await kvGet('replycapture_enabled')) === 'on') await pollAndTriageOnce('schedule');
+    await dmRepliesOnce('schedule');
     if ((await kvGet('followups_enabled')) === 'on') await sweepFollowupsOnce('schedule');
     if ((await kvGet('studio_autopilot_enabled')) === 'on') await studioAutopilotOnce('schedule');
     if ((await kvGet('invite_drip_enabled')) === 'on') await inviteDripOnce('schedule');
@@ -2270,8 +2289,10 @@ app.get('/api/studio/messages', async (req, res) => {
     if (!reg) return res.json({ messages: [], migrationPending: true });
     const camp = campaignFilter(req);
     const status = /^[a-z]+$/.test(String(req.query.status || '')) ? req.query.status : null;
+    const withReplies = await hasColumn('li_messages', 'replied_at');
     const { rows } = await pool.query(
       `SELECT m.id, m.body, m.flags, m.status, m.campaign, m.created_at, m.sent_at, m.approved_by, m.sent_by,
+              ${withReplies ? 'm.replied_at, m.reply_text,' : 'NULL::timestamptz AS replied_at, NULL::text AS reply_text,'}
               ct.full_name, ct.role_title, ct.linkedin_url, ct.li_connected_at, c.name AS company
        FROM li_messages m JOIN contacts ct ON ct.id = m.contact_id
        LEFT JOIN companies c ON c.id = m.company_id
@@ -2283,6 +2304,7 @@ app.get('/api/studio/messages', async (req, res) => {
       name: r.full_name, role: r.role_title, linkedin: r.linkedin_url, company: r.company,
       connectedAt: r.li_connected_at, createdAt: r.created_at, sentAt: r.sent_at,
       approvedBy: r.approved_by, sentBy: r.sent_by,
+      repliedAt: r.replied_at, replyText: r.reply_text,
     })) });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });

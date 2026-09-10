@@ -315,8 +315,16 @@ function MessageCard({ message, onChanged }) {
         <div className="ob-pills">
           <span className="pill">{companyLabel(message.company)}</span>
           {message.status === 'approved' && <span className="pill">Approved for the drip</span>}
+          {message.repliedAt && <span className="pill">Replied on LinkedIn</span>}
         </div>
       </div>
+      {message.replyText && (
+        <div className="ob-flags">
+          <div className="eyebrow">Their reply, {message.repliedAt ? new Date(message.repliedAt).toLocaleDateString() : ''}</div>
+          <div className="ob-flag-line">{message.replyText}</div>
+          <div className="muted-small">The sequence has stopped for this thread; no break-up email follows. Reply from LinkedIn as usual.</div>
+        </div>
+      )}
       <div className="ob-to">{message.role || 'Role not recorded'}{message.linkedin
         ? <> · <a href={message.linkedin} target="_blank" rel="noreferrer">profile</a></> : null}</div>
       {message.flags.length > 0 && (

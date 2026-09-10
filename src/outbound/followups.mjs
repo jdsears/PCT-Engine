@@ -197,6 +197,9 @@ export async function dueFollowups({ now = new Date() } = {}) {
   // The LinkedIn stage arrives with migration 035; before it, the sequence
   // behaves exactly as it did and the break-up is never held.
   const liCols = await hasColumn('contacts', 'li_connected_at');
+  // A reply on LinkedIn (migration 038) ends the machine's initiative exactly
+  // as an email reply does; the break-up never follows an answer.
+  const liReply = liCols && await hasColumn('li_messages', 'replied_at');
   const { rows } = await pool.query(
     `SELECT l.id AS lead_id, d.id AS draft_id, d.subject, d.body, d.sent_at, d.sequence_step,
             d.campaign, d.company_id, d.contact_id,
@@ -226,7 +229,8 @@ export async function dueFollowups({ now = new Date() } = {}) {
        -- until triage has read it.
        AND NOT EXISTS (SELECT 1 FROM outbound_replies r JOIN outbound_drafts od ON od.id = r.draft_id
                        WHERE od.lead_id = l.id
-                         AND (r.category IS NULL OR r.category NOT IN ('bounce', 'out_of_office')))`);
+                         AND (r.category IS NULL OR r.category NOT IN ('bounce', 'out_of_office')))
+       ${liReply ? `AND NOT EXISTS (SELECT 1 FROM li_messages lm WHERE lm.contact_id = ct.id AND lm.replied_at IS NOT NULL)` : ''}`);
   const delays = followupDelays();
   const finalStep = maxSequenceSteps();
   return rows.filter(r => {

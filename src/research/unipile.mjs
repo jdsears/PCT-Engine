@@ -64,6 +64,13 @@ export const ROUTES = {
   // our own published posts through the connected account, the same thing a
   // person sees under their post. rawSuffix carries the nested path.
   listPostReactions: { method: 'GET', path: '/api/v1/posts' },
+  // Reading a conversation back, 10 September 2026, after a reply to the
+  // message stage arrived on LinkedIn where only email replies were watched:
+  // the chats an account holds, and the messages in one of them. Reads only,
+  // through the account that sent the message. rawSuffix carries
+  // {chat_id}/messages.
+  listChats: { method: 'GET', path: '/api/v1/chats' },            // ?account_id=&limit=
+  chatMessages: { method: 'GET', path: '/api/v1/chats' },         // {chat_id}/messages?limit=
 };
 
 export const unipileConfigured = () => Boolean(DSN && KEY);

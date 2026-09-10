@@ -9,6 +9,7 @@ import { londonClock, slotFor, slotDue, POST_DAYS, SLOT_WINDOW_MINUTES, rotation
 import { dripWindowOpen, gapClear, emailTimingClear, dripDailyCap, DRIP_MIN_GAP_MINUTES } from './inviteDrip.mjs';
 import { networkDistance, isConnected, checkDue } from './liConnection.mjs';
 import { dmFlags, dmDue, dmSystem, dmSender, identityFlags, DM_MAX_CHARS } from './liDm.mjs';
+import { replyCheckDue, replyFrom, chatFor, chatItems, REPLY_RECHECK_HOURS } from './liReplies.mjs';
 import { breakupHeld } from '../outbound/followups.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -718,6 +719,44 @@ check('the writer is named, and a message that introduces anyone else blocks', (
   assert(dmFlags(nathan, { contact, company }).every(f => !/introduces the writer/.test(f)),
     'the old call shape, with no sender said, checks nothing, so the edit path must pass the sender');
   assert(!/[—–!]/.test(bad.join(' ')) && !/\bgenuinely\b/i.test(bad.join(' ')), 'voice rules hold in the flag text');
+});
+
+check('a reply on LinkedIn is read back, recorded once, and stops the break-up', () => {
+  const now = Date.parse('2026-09-10T15:00:00Z');
+  const ago = h => new Date(now - h * 3600_000).toISOString();
+  assert(replyCheckDue({ sentAt: ago(48), now }), 'a sent message is checked');
+  assert(!replyCheckDue({ sentAt: ago(48), repliedAt: ago(2), now }), 'an answered one is never checked again');
+  assert(!replyCheckDue({ sentAt: ago(48), checkedAt: ago(3), now }), 'not twice in a day');
+  assert(replyCheckDue({ sentAt: ago(48), checkedAt: ago(REPLY_RECHECK_HOURS + 1), now }), 'a day later it asks again');
+  assert(!replyCheckDue({ sentAt: ago(24 * 40), now, watchDays: 30 }), 'past the watch window the asking stops');
+  assert(!replyCheckDue({ sentAt: 'garbage', now }), 'a junk date never sweeps and never throws');
+  // Laurence Davis's thread, in the provider's shape as far as it is known:
+  // our message, then his answer.
+  const sentAt = '2026-09-09T10:25:00Z';
+  const thread = { items: [
+    { id: 'm1', text: 'Laurence, thanks for connecting.', timestamp: '2026-09-09T10:25:04Z', is_sender: 1, sender_id: 'james' },
+    { id: 'm2', text: 'Hi James, we currently have no live UK Projects with requirements. In the event we do I will reach out to you.', timestamp: '2026-09-10T13:43:00Z', is_sender: 0, sender_id: 'laurence' },
+  ] };
+  const reply = replyFrom(thread, { sentAt, attendeeId: 'laurence' });
+  assert(reply?.text.startsWith('Hi James, we currently have no live UK Projects') && reply.at === '2026-09-10T13:43:00.000Z' && reply.id === 'm2',
+    `the first inbound message after ours is the reply: ${JSON.stringify(reply)}`);
+  assert(replyFrom({ items: thread.items.slice(0, 1) }, { sentAt }) === null, 'our own message is never a reply');
+  assert(replyFrom({ items: [{ text: 'older', timestamp: '2026-09-01T09:00:00Z', is_sender: false }] }, { sentAt }) === null, 'a message before ours is not a reply to it');
+  assert(replyFrom({ messages: [{ body: 'via body', created_at: '2026-09-10T09:00:00Z', is_sender: false }] }, { sentAt })?.text === 'via body', 'body and created_at are read too');
+  assert(replyFrom([{ text: 'someone else', timestamp: '2026-09-10T09:00:00Z', is_sender: false, sender_id: 'other' }], { sentAt, attendeeId: 'laurence' }) === null, 'another sender in the chat is not their reply');
+  assert(replyFrom({ items: [{ text: '   ', timestamp: '2026-09-10T09:00:00Z', is_sender: false }] }, { sentAt }) === null, 'an empty message is not a reply');
+  assert(replyFrom(null, { sentAt }) === null && chatItems(undefined).length === 0, 'nothing is nothing');
+  const chats = { items: [{ id: 'c1', attendee_provider_id: 'x' }, { id: 'c2', attendees: [{ provider_id: 'laurence' }] }] };
+  assert(chatFor(chats, 'laurence')?.id === 'c2' && chatFor(chats, 'x')?.id === 'c1' && chatFor(chats, 'nobody') === null, 'the chat is found by the person on it');
+  const srv = freshRead('src/server.mjs');
+  assert(/await dmRepliesOnce\('schedule'\);/.test(srv) && !/invite_drip_enabled'\)\) === 'on'\) await dmRepliesOnce/.test(srv),
+    'the tick reads replies back whatever the drip switch says');
+  const fu = freshRead('src/outbound/followups.mjs');
+  assert(/lm\.replied_at IS NOT NULL/.test(fu) && /hasColumn\('li_messages', 'replied_at'\)/.test(fu),
+    'a LinkedIn reply ends the follow-up sequence, guarded for deploy order');
+  const drip = freshRead('src/studio/inviteDrip.mjs');
+  assert(/chat_id = \$3, attendee_id = \$4/.test(drip), 'a sent message remembers its chat and the person');
+  assert(freshRead('src/migrations/038_li_replies.sql').includes('replied_at'), 'migration 038 carries the reply columns');
 });
 
 check('the message is due only after acceptance, and never once they have replied', () => {

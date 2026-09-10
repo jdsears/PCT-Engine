@@ -269,9 +269,11 @@ export async function sendDm(message, contact, { accountId }) {
   const profile = await unipile(ROUTES.profile, { pathSuffix: slug, query: { account_id: accountId }, target: `dm ${slug}` });
   const providerId = profile?.provider_id || profile?.member_id || profile?.id || null;
   if (!providerId) return { sent: false, reason: 'could not resolve the LinkedIn profile to an id' };
-  await unipile(ROUTES.sendMessage, {
+  const started = await unipile(ROUTES.sendMessage, {
     body: { account_id: accountId, attendees_ids: [providerId], text: String(message.body).slice(0, DM_MAX_CHARS) },
     target: `dm ${slug}`,
   });
-  return { sent: true };
+  // The chat the message opened and the person's id, remembered so the reply
+  // sweep can read the conversation back without searching for it.
+  return { sent: true, chatId: started?.chat_id || started?.id || null, attendeeId: providerId };
 }

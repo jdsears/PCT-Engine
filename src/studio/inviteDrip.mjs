@@ -112,9 +112,13 @@ async function releaseMessage({ campaign, accountId, auto, log }) {
   try {
     const r = await sendDm(m, { linkedin_url: m.linkedin_url }, { accountId });
     if (!r.sent) return 'none';
+    const remembersChat = await hasColumn('li_messages', 'chat_id');
     await pool.query(
-      `UPDATE li_messages SET status = 'sent', sent_at = now(), sent_by = $2, updated_at = now() WHERE id = $1`,
-      [m.id, m.status === 'approved' ? 'invite drip' : 'invite drip (auto)']);
+      `UPDATE li_messages SET status = 'sent', sent_at = now(), sent_by = $2, updated_at = now()
+       ${remembersChat ? ', chat_id = $3, attendee_id = $4' : ''} WHERE id = $1`,
+      remembersChat
+        ? [m.id, m.status === 'approved' ? 'invite drip' : 'invite drip (auto)', r.chatId || null, r.attendeeId || null]
+        : [m.id, m.status === 'approved' ? 'invite drip' : 'invite drip (auto)']);
     log(`messaged ${m.full_name} (${campaign})`);
     return 'sent';
   } catch (e) {
