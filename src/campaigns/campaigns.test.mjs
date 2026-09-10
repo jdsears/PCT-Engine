@@ -359,10 +359,13 @@ check('the hardcoded campaign constant is gone and the callers pass one through'
   assert(/runResearch\(\{ campaign: id/.test(server), 'and passes each one through');
 });
 
-check('the food and beverage campaign is a first cut, held at manual like pharma was', () => {
+check('the food and beverage campaign is a first cut, live on John\'s instruction', () => {
   const f = requireCampaign('food_beverage');
-  assert(f.status === 'manual', 'it starts manual: the first sweep is a calibration event reviewed by hand, the pharma precedent');
-  assert(!activeCampaignIds().includes('food_beverage'), 'so the scheduler leaves it alone until John flips it');
+  // Held at manual on the pharma precedent, then set active on 9 September
+  // 2026 once the accounts were seeded and the lane's routing was in place;
+  // the first sweep is read from the engine's own first cycle.
+  assert(f.status === 'active', 'it is live: the scheduler sweeps it with the other two');
+  assert(activeCampaignIds().includes('food_beverage'), 'and the scheduler includes it');
   assert(JSON.stringify(f.grounding.lines) === JSON.stringify(['steriflow_fb', 'steriflow', 'bestobell_steam', 'low_flow']),
     'it grounds in the food and beverage sanitary material and the steam range, and nothing else');
   assert(!f.grounding.lines.includes('marwin'), 'a food draft cannot ground in data centre material');

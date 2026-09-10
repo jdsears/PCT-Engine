@@ -177,12 +177,14 @@ await check('the crawl reads the site with its manners on and reports every refu
   assert(r.pages.every(p => p.hash === contentHash(p.text) && p.words > 40), 'every page carries its hash and its size');
   assert(!r.truncated, 'the whole site fit under the cap');
   // A redirect is followed inside one request, so the hop it lands on is the
-  // one gap that is not the crawler's to keep.
-  const gaps = seen.slice(1).map((x, i) => ({ gap: x.at - seen[i].at, after: seen[i].path }));
-  // The threshold sits under the 40ms gap because the first connection's
-  // setup lands the first arrival late; unpaced requests arrive a few
-  // milliseconds apart, so the line still separates the two clearly.
-  assert(gaps.every(x => x.gap >= 25 || x.after === '/redirect'), `requests were paced at least the gap apart, robots included: ${gaps.map(x => `${x.after} ${x.gap}`).join(', ')}`);
+  // one gap that is not the crawler's to keep. The very first request,
+  // robots.txt, arrives late by however long the first connection takes to
+  // set up, so the gap after it is measured from a moving start and is
+  // left out. Unpaced requests arrive a few milliseconds apart, so the
+  // threshold under the 40ms gap still separates the two clearly.
+  const gaps = seen.slice(2).map((x, i) => ({ gap: x.at - seen[i + 1].at, after: seen[i + 1].path }));
+  assert(gaps.length >= 15, `enough requests to judge the pacing: ${gaps.length}`);
+  assert(gaps.every(x => x.gap >= 25 || x.after === '/redirect'), `requests were paced at least the gap apart: ${gaps.map(x => `${x.after} ${x.gap}`).join(', ')}`);
   assert(/refused by the price rule/.test(describeSkips(s)) && /1 refused by robots/.test(describeSkips(s)), describeSkips(s));
   assert(Date.now() - t0 < 20_000, 'the miniature crawl is quick');
 });
