@@ -73,6 +73,7 @@
   },
 
   "studio": {
+    "sender": { "name": "Andy Mangell", "title": "sales director" },
     "newsLine": "commenting on UK food, drink and cosmetics manufacturing news",
     "angleLine": "what the story means for hygienic process control and plant steam",
     "rangeLine": "the Steriflow sanitary valve range and Bestobell steam equipment his company supplies are widely used across food, beverage and personal care production",

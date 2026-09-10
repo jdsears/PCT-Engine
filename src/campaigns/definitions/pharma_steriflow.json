@@ -71,6 +71,7 @@
   },
 
   "studio": {
+    "sender": { "name": "Andy Mangell", "title": "sales director" },
     "newsLine": "commenting on UK pharmaceutical and biotech manufacturing news",
     "angleLine": "what the story means for sterile and hygienic process control",
     "rangeLine": "the Steriflow sanitary valve range his company supplies is widely used across pharmaceutical and biotech production",

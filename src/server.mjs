@@ -50,7 +50,7 @@ import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/in
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady, inviteRefusal } from './studio/liInvite.mjs';
 import { dripInvitesOnce } from './studio/inviteDrip.mjs';
 import { sweepConnectionsOnce } from './studio/liConnection.mjs';
-import { generateDms, dmFlags } from './studio/liDm.mjs';
+import { generateDms, dmFlags, dmSender, recheckMessage } from './studio/liDm.mjs';
 import { CapReached, AccountUnhealthy, accountForCampaign } from './research/unipile.mjs';
 import { generateLiPosts, connectNote, postFlags, hashtagsFor, renderPostText, publishPost } from './studio/liPosts.mjs';
 
@@ -2294,8 +2294,8 @@ app.patch('/api/studio/messages/:id', async (req, res) => {
     const body = String((req.body || {}).body || '').trim();
     if (!body) return res.status(400).json({ error: 'a message body is required' });
     const { rows } = await pool.query(
-      `SELECT m.grounding, ct.full_name, ct.role_title, ct.email,
-              ct.payload->'recipient_confirmed' IS NOT NULL AS confirmed, c.name AS company, c.domain
+      `SELECT m.grounding, m.campaign, ct.full_name, ct.role_title, ct.email,
+              ct.payload->'recipient_confirmed' IS NOT NULL AS confirmed, c.name AS company, c.domain, c.region
        FROM li_messages m JOIN contacts ct ON ct.id = m.contact_id
        LEFT JOIN companies c ON c.id = m.company_id
        WHERE m.id = $1 AND m.status = 'draft'`, [req.params.id]);
@@ -2305,6 +2305,8 @@ app.patch('/api/studio/messages/:id', async (req, res) => {
       operator: r.grounding?.signal?.operator || null,
       contact: { name: r.full_name, role: r.role_title, email: r.email, confirmed: !!r.confirmed },
       company: { name: r.company, domain: r.domain },
+      sender: dmSender(r.campaign),
+      repName: senderFor(r.region)?.name || null,
     });
     await pool.query(
       `UPDATE li_messages SET body = $2, flags = $3::jsonb, updated_at = now() WHERE id = $1`,
@@ -2318,7 +2320,10 @@ app.post('/api/studio/messages/:id/approve', async (req, res) => {
     const { rows } = await pool.query(`SELECT status, flags FROM li_messages WHERE id = $1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'no such message' });
     if (rows[0].status !== 'draft') return res.status(409).json({ error: 'only a draft message can be approved' });
-    if ((rows[0].flags || []).length) return res.status(409).json({ error: 'the message carries a blocking flag; edit it clean first' });
+    // The flags are recomputed here, identity rule included, so an approval
+    // never rests on flags stored before a rule existed.
+    const check = await recheckMessage(req.params.id);
+    if ((check?.flags || []).length) return res.status(409).json({ error: `the message carries a blocking flag; edit it clean first: ${check.flags[0]}` });
     await pool.query(
       `UPDATE li_messages SET status = 'approved', approved_at = now(), approved_by = $2, updated_at = now() WHERE id = $1`,
       [req.params.id, actorEmail(req) || null]);

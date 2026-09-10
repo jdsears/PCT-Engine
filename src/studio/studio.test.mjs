@@ -8,7 +8,7 @@ import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers, 
 import { londonClock, slotFor, slotDue, POST_DAYS, SLOT_WINDOW_MINUTES, rotationOrder } from './autopost.mjs';
 import { dripWindowOpen, gapClear, emailTimingClear, dripDailyCap, DRIP_MIN_GAP_MINUTES } from './inviteDrip.mjs';
 import { networkDistance, isConnected, checkDue } from './liConnection.mjs';
-import { dmFlags, dmDue, dmSystem, DM_MAX_CHARS } from './liDm.mjs';
+import { dmFlags, dmDue, dmSystem, dmSender, identityFlags, DM_MAX_CHARS } from './liDm.mjs';
 import { breakupHeld } from '../outbound/followups.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -687,6 +687,37 @@ check('one message, honest about the emails, and short enough to be a message', 
     .some(f => /link/.test(f)), 'a first message with a link reads as a pitch and blocks');
   assert(dmFlags('Hi Priya, a note.', { contact: { name: 'Priya Shah', role: 'Engineer at Somewhere Else' }, company })
     .some(f => /stated employer differs/.test(f)), 'recipient truth applies to a message exactly as to an email');
+});
+
+check('the writer is named, and a message that introduces anyone else blocks', () => {
+  // The Nathan Willmott message, 10 September 2026, from James's profile.
+  const nathan = 'Nathan, I\'m Patrick, MD at PCT, we supply the Marwin and Steriflow valve ranges into data centre mechanical packages. A colleague of mine, Patrick Mangell, dropped you a couple of notes recently, so I wanted to say hello directly.';
+  assert(dmSender('marwin_dc')?.name === 'James Kybird' && dmSender('marwin_dc').title === 'MD', 'the data centre lane is James, the MD');
+  assert(dmSender('pharma_steriflow')?.name === 'Andy Mangell' && dmSender('food_beverage')?.name === 'Andy Mangell'
+    && dmSender('pharma_steriflow').title === 'sales director', 'pharma and food and beverage are Andy, the sales director');
+  const s = dmSystem('marwin_dc', 'Patrick Mangell');
+  assert(/as James Kybird, MD at PCT/.test(s) && /IDENTITY RULE, absolute: you are James Kybird/.test(s), 'the prompt names the writer as an absolute rule');
+  assert(/Patrick Mangell is a colleague and is spoken of only in the third person, never as the writer/.test(s), 'and the rep is a colleague, never the writer');
+  assert(/as Andy Mangell, sales director at PCT/.test(dmSystem('pharma_steriflow')), 'a pharma message writes as Andy');
+  const james = dmSender('marwin_dc');
+  const bad = identityFlags(nathan, james, 'Patrick Mangell');
+  assert(bad.length === 1 && /introduces the writer as Patrick, who is the colleague who emailed, not the writer; it goes out from James Kybird's profile/.test(bad[0]),
+    `the real message blocks with the reason: ${JSON.stringify(bad)}`);
+  assert(identityFlags('Nathan, I\'m James, MD at PCT. Patrick Mangell dropped you a couple of notes recently.', james, 'Patrick Mangell').length === 0,
+    'the same message under the right name passes');
+  assert(identityFlags('Nathan, I\'m keen to hear how the Slough scheme is going. I\'m writing because Patrick Mangell emailed.', james, 'Patrick Mangell').length === 0,
+    'keen and writing are not names');
+  assert(identityFlags('Nathan, I\'m the sales director at PCT.', james).some(f => /calls the writer the sales director; James Kybird is the MD/.test(f)),
+    'the wrong title blocks too');
+  assert(identityFlags('Nathan, this is Andy from PCT.', james).some(f => /introduces the writer as Andy/.test(f)), 'this is Andy, from James\'s profile, blocks');
+  assert(identityFlags('Nathan, a short note.', null).some(f => /no sender is named/.test(f)), 'a campaign that names nobody blocks everything');
+  const contact = { name: 'Nathan Willmott', role: 'Senior Project Manager', email: 'nathan@ngbailey.example' };
+  const company = { name: 'NG BAILEY LIMITED', domain: 'ngbailey.example' };
+  assert(dmFlags(nathan, { contact, company, sender: james, repName: 'Patrick Mangell' }).some(f => /introduces the writer as Patrick/.test(f)),
+    'the identity rule rides in the message flags');
+  assert(dmFlags(nathan, { contact, company }).every(f => !/introduces the writer/.test(f)),
+    'the old call shape, with no sender said, checks nothing, so the edit path must pass the sender');
+  assert(!/[—–!]/.test(bad.join(' ')) && !/\bgenuinely\b/i.test(bad.join(' ')), 'voice rules hold in the flag text');
 });
 
 check('the message is due only after acceptance, and never once they have replied', () => {
