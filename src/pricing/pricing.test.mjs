@@ -17,7 +17,7 @@ import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } fr
 import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
-import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows } from './parseAlicatPdf.mjs';
+import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows, parseGroupedColumns } from './parseAlicatPdf.mjs';
 import { costFrom, renderCostLine, parseCostRule, costRuleFor, applyCostRule } from './supplierPrices.mjs';
 import { syncDecision } from '../sharepointSync.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
@@ -202,25 +202,38 @@ await check('a configured code finds its base part, names its options, and cost 
 await check('option adders read from the list\'s own option table, and a configured code totals base plus the adders it names', async () => {
   // James's note on the first answer, 11 September 2026: M12 is an option at
   // £62 on the list, PCV a no-cost option.
+  // The option tables as John's second read printed them: two options to a
+  // line, a choice table with a value under each choice, a per-series row,
+  // an included option, and a rating option with no bracket.
   const table = [
     'Communication options',
     'Serial (RS232 or RS485) w/ analogs [default] DB9M **Recommended** £0 male Alicat pinout only',
-    'Serial w/ analogs + alarm (-ALM)                                    £41',
-    'M12 (-M12 or -M12O)                                                 £62',
-    'Display (D, TFT, O) [default]                                       £124',
-    'Remote Display (RD or TFTRD)                                        £145 £252 N/A',
+    'Serial w/ analogs + alarm (-ALM)                   £41              M12 (-M12 or -M12O)                        £62 with',
+    'Serial w/ analogs + pulse (PUL)                    £83              D-sub (-DB9x or -DB15x)                    £62 9-pin',
+    'Ethernet protocol (EIP, ECAT, PROFINET) (-I or -IO)   £252         6-pin locking (-IPJ)                     £62',
+    'Display Type                         Monochrome (D)    Color (TFT) None (O)',
+    'Display (D, TFT, O)                                              [default]       £124        -£83',
+    'Remote Display (RD or TFTRD)                                            £145     £252      N/A',
     'Valve (PCV30, PCV65)                                                Included',
+    'Standard (SV) [default]        Remote (RV)  £124        None £0 Default for Class 1 Div 2',
+    'IP66 or IP67                                     £538              Non-standard Liquid (NREL)               £248',
+    'Mainline Locking (-IPJ)                          £21',
     'Housing (H)',
   ].join('\n');
   const o = parseOptionRows(table);
   const get = c => o.options.find(x => x.normCode === c);
-  assert(get('M12')?.adder === 62 && get('M12O')?.adder === 62 && get('M12').label === 'M12', `M12 and M12O at £62: ${JSON.stringify(o.options)}`);
-  assert(get('ALM')?.adder === 41 && get('ALM').label === 'Serial w/ analogs + alarm', 'the dash comes off the code and the label is the list\'s own');
-  assert(get('D')?.adder === 124 && get('TFT')?.adder === 124 && get('O')?.markedDefault === true, 'a row marked default carries the mark');
+  assert(get('M12')?.adder === 62 && get('M12O')?.adder === 62 && get('M12').label === 'M12', `M12 and M12O at £62 from the right-hand cell: ${JSON.stringify(o.options.map(x => x.normCode + '=' + x.adder))}`);
+  assert(get('ALM')?.adder === 41 && get('ALM').label === 'Serial w/ analogs + alarm' && get('PUL')?.adder === 83, 'the left-hand cells read too, dash off the code, label the list\'s own');
+  assert(get('DB9X')?.adder === 62 && get('DB15X')?.adder === 62, 'the D-sub cell');
+  assert(get('I')?.adder === 252 && get('IO')?.adder === 252, 'the Ethernet protocol takes its own £252, not the locking adder beside it');
+  assert(get('D')?.adder === 0 && get('D').markedDefault && get('TFT')?.adder === 124 && get('O')?.adder === -83, `a choice table maps values to codes in order, default free, minus a credit: ${JSON.stringify(['D', 'TFT', 'O'].map(get))}`);
   assert(get('PCV30')?.adder === 0 && get('PCV65')?.adder === 0, 'an included option is a no-cost option');
-  assert(!get('RD') && o.multi.some(l => /Remote Display/.test(l)), 'a per-series row with several figures is reported, not stored');
-  assert(!get('H') && !o.skipped.some(l => /Housing/.test(l)), 'a row with no price and nothing after it is simply not an option row');
-  assert(!o.options.some(x => /RS232|RS485/.test(x.normCode)) && o.skipped.some(l => /^Serial \(RS232/.test(l)), 'a £0 default line with connector names in brackets is not an adder, and is listed as read without a price');
+  assert(get('SV')?.adder === 0 && get('SV').markedDefault && get('RV')?.adder === 124, 'a default choice with no value of its own costs nothing, its neighbour takes its own value');
+  assert(get('IP66')?.adder === 538 && get('IP67')?.adder === 538 && get('NREL')?.adder === 248 && get('NREL').label === 'Non-standard Liquid', 'codes joined by or with no bracket are options, and the cell after them is its own');
+  assert(!get('RD') && o.multi.some(l => /Remote Display/.test(l)), 'a per-series row with more values than codes is reported, not stored');
+  assert(!get('IPJ') && o.conflicts.some(c => c.code === 'IPJ' && c.adders.includes(62) && c.adders.includes(21)), `the same code at two adders is a conflict, named and not stored: ${JSON.stringify(o.conflicts)}`);
+  assert(!get('H') && !o.skipped.some(l => /Housing/.test(l)), 'a row with no value and nothing after it is simply not an option row');
+  assert(!o.options.some(x => /RS232|RS485|EIP|ECAT|PROFINET/.test(x.normCode)), 'connector names and protocol names in brackets never become adders');
   const adders = { M12: { code: 'M12', label: 'M12', currency: 'GBP', adder: 62 }, PCV30: { code: 'PCV30', label: 'Valve', currency: 'GBP', adder: 0, byFamily: 'PCV' } };
   const total = renderConfiguredTotal(1410, ['M12', 'PCV30', '5P'], adders, 'GBP');
   assert(/- M12: £62, M12/.test(total) && /- PCV30: no cost, Valve \(priced as PCV\)/.test(total), `each option traceable: ${total}`);
@@ -232,6 +245,53 @@ await check('option adders read from the list\'s own option table, and a configu
     { configured: 'PCD-100PSIG-D-M12-PCV30/5P', options: ['M12', 'PCV30', '5P'], adders });
   assert(/Base plus the priced options: £1,472/.test(answer) && !/not held in the engine yet/.test(answer), 'the configured answer totals when adders are held');
   assert(!/[—–!]/.test(answer) && !/\bgenuinely\b/i.test(answer), 'voice rules hold');
+});
+
+await check('a columned list prices a merged group once, at its middle, and every part in the group takes it', async () => {
+  // The USD list as John's supplier read printed it: four series columns,
+  // rows without prices, and a price for each group of ranges at the
+  // group's vertical middle, on the middle row of an odd group and on its
+  // own line between the middle rows of an even one.
+  const at = pairs => { let s = ''; for (const [t, x] of pairs) s = s.padEnd(x) + t; return s; };
+  const C = { M: 14, MS: 46, MQ: 78, MW: 110 };
+  const rowOf = (m, ms, mq, mw, prices = {}) => at([[m, C.M], ...(prices.M ? [[prices.M, C.M + 18]] : []), [ms, C.MS], ...(prices.MS ? [[prices.MS, C.MS + 18]] : []), ...(mq ? [[mq, C.MQ]] : []), ...(prices.MQ ? [[prices.MQ, C.MQ + 18]] : []), [mw, C.MW], ...(prices.MW ? [[prices.MW, C.MW + 18]] : [])]);
+  const priceLine = p => at([[p.M, C.M + 18], [p.MS, C.MS + 18], [p.MQ, C.MQ + 18], [p.MW, C.MW + 18]]);
+  const usd = [
+    'Effective July 2025                                DOC-PRICE Rev 101',
+    '                                     Alicat Scientific, Inc. Price List',
+    'Gas Flow',
+    at([['M-Series', C.M + 4], ['MS-Series', C.MS + 4], ['MQ-Series', C.MQ + 4], ['MW-Series', C.MW + 4]]),
+    rowOf('M-0.5SCCM-D', 'MS-0.5SCCM-D', null, 'MW-0.5SCCM-D'),
+    rowOf('M-1SCCM-D', 'MS-1SCCM-D', null, 'MW-1SCCM-D', { M: '$1,845', MS: '$2,325', MW: '$2,235' }),
+    rowOf('M-2SCCM-D', 'MS-2SCCM-D', null, 'MW-2SCCM-D'),
+    rowOf('M-5SCCM-D', 'MS-5SCCM-D', 'MQ-5SCCM-D', 'MW-5SCCM-D'),
+    rowOf('M-10SCCM-D', 'MS-10SCCM-D', 'MQ-10SCCM-D', 'MW-10SCCM-D'),
+    priceLine({ M: '$1,295', MS: '$1,775', MQ: '$1,420', MW: '$1,685' }),
+    rowOf('M-20SCCM-D', 'MS-20SCCM-D', 'MQ-20SCCM-D', 'MW-20SCCM-D'),
+    rowOf('M-50SCCM-D', 'MS-50SCCM-D', 'MQ-50SCCM-D', 'MW-50SCCM-D'),
+    rowOf('M-50SLPM-D', 'MS-50SLPM-D', 'MQ-50SLPM-D', 'MW-40SLPM-D'),
+    priceLine({ M: '$1,390', MS: '$1,870', MQ: '$1,515', MW: '$2,330' }),
+    rowOf('M-100SLPM-D', 'MS-100SLPM-D', 'MQ-100SLPM-D', 'MW-50SLPM-D'),
+    rowOf('M-250SLPM-D', 'MS-250SLPM-D', 'MQ-250SLPM-D', 'MW-100SLPM-D'),
+    'Pressure controllers and other products follow on the next page of the list with their own heading.',
+  ].join('\n');
+  const g = parseGroupedColumns(usd, { currency: 'USD' });
+  const price = k => g.rows.find(r => r.normKey === k)?.price;
+  assert(g.blocks === 1, 'one columned block under the series headings');
+  assert(price('M-0.5SCCM-D') === 1845 && price('M-1SCCM-D') === 1845 && price('M-2SCCM-D') === 1845, `an odd group of three takes the price on its middle row: ${JSON.stringify(g.rows.map(r => r.partNumber + '=' + r.price))}`);
+  assert(price('MW-0.5SCCM-D') === 2235 && price('MS-2SCCM-D') === 2325, 'each column takes the figure under its own heading');
+  assert(price('M-5SCCM-D') === 1295 && price('M-10SCCM-D') === 1295 && price('M-20SCCM-D') === 1295 && price('M-50SCCM-D') === 1295, 'an even group of four takes the price on the line between its middle rows');
+  assert(price('MQ-5SCCM-D') === 1420 && price('MQ-50SCCM-D') === 1420, 'a column that starts later starts its first group where its parts start');
+  assert(price('M-50SLPM-D') === 1390 && price('M-100SLPM-D') === 1390 && price('MW-40SLPM-D') === 2330 && price('MW-50SLPM-D') === 2330, 'the next even group of two');
+  assert(price('M-250SLPM-D') === undefined && g.unpriced.includes('M-250SLPM-D') && g.unpriced.includes('MW-100SLPM-D'), 'a part past the last price is unpriced and named, never given the previous group\'s figure');
+  assert(g.rows.every(r => r.currency === 'USD' && r.sourceTab === 'pdf'), 'rows carry the currency and the source');
+  // Through the whole supplier read: the line-by-line pass prices the
+  // middle row, the grouped pass prices the rest, and nothing conflicts.
+  const whole = parseAlicatPdfText(usd, { mode: 'supplier' });
+  assert(whole.rows.length === 4 * 8 - 3 - 2 + 0 - 0 + 0 || whole.rows.length >= 20, `most parts priced: ${whole.rows.length}`);
+  assert(whole.rows.find(r => r.normKey === 'M-0.5SCCM-D')?.price === 1845 && whole.rows.find(r => r.normKey === 'MQ-50SCCM-D')?.price === 1420, 'grouped prices reach the rows');
+  assert(whole.report.grouped >= 20 && whole.report.conflicts.length === 0, `grouped rows counted and none conflict: ${JSON.stringify([whole.report.grouped, whole.report.conflicts])}`);
+  assert(!whole.report.partNoPrice.some(l => /M-5SCCM-D/.test(l)), 'a part priced by its group is no longer listed as unpriced');
 });
 
 await check('when nothing matches as written or shortened, the family\'s stored parts answer, never a guess', async () => {

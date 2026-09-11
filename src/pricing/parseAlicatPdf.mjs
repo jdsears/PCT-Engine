@@ -186,6 +186,25 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
     if (after.length && !prices.length) sample(report.partNoPrice, text(line));
     else if (after.length) sample(report.partNoPrice, text(line.slice(prev)));
   }
+  // Merged groups, the supplier list's layout: a part the line-by-line read
+  // left without a price takes its group's price from the columned layout.
+  // A part that had its own price keeps it; a group price that disagrees
+  // with it is counted as a disagreement for the dry run to show, since it
+  // means the columns were misread, not that the list prices it twice.
+  report.grouped = 0;
+  report.groupedDisagreements = 0;
+  if (supplier) {
+    const grouped = parseGroupedColumns(src, { currency: 'USD', productLine });
+    for (const g of grouped.rows) {
+      const key = `${g.normKey}|${g.currency}`;
+      const prior = seen.get(key);
+      if (prior) { if (prior.sellPrice !== g.sellPrice) report.groupedDisagreements++; continue; }
+      if (conflicts.has(key)) continue;
+      seen.set(key, g);
+      report.grouped++;
+    }
+    if (report.grouped) report.partNoPrice = report.partNoPrice.filter(l => !grouped.rows.some(g => l.includes(g.partNumber)));
+  }
   // A conflict a human settled on the command line keeps the stated figure,
   // provided the document shows it; every other conflict is withdrawn and
   // named with its lines, so the next decision is made on evidence.
@@ -209,40 +228,171 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
   return { rows, report };
 }
 
-// Option rows, James's note of 11 September 2026: the list prints an option
-// as its label, the codes in brackets and a price, "M12 (-M12 or -M12O)
-// £62", "Serial w/ analogs + alarm (-ALM) £41", "Display (D, TFT, O)
-// [default] £124". A row with one price is an adder for every code in the
-// brackets; a cell that says included or no charge is a no-cost option; a
-// row with several figures is a per-series table the parser does not read
-// yet, reported and not stored. Pure, so the shapes are provable.
-const NO_COST = /^\s*(?:included|incl\.?|no charge|n\/c|free|standard|std)\s*$/i;
+// Option rows, James's note of 11 September 2026, and the shapes John's
+// second read showed. The list prints an option as its label, the codes
+// in brackets and a value, two options to a line ("Serial w/ analogs +
+// alarm (-ALM) £41   M12 (-M12 or -M12O) £62"), so each value belongs to the
+// bracket group just before it. A choice table prints the choices in one
+// bracket and a value under each ("Display (D, TFT, O) [default] £124
+// -£83"): the values map to the codes in order, default is no cost and a
+// minus is a credit. "Included" is a no-cost option, N/A is no option, and
+// codes joined by "or" with no bracket ("IP66 or IP67 £538") are options
+// too. A row whose values outnumber its codes is a per-series table, still
+// reported and not stored. The same code at two adders is a conflict,
+// named and not stored. Pure, so every shape is provable.
+const VALUE_TOKEN = /(-)?\s?([£$€])\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)|\bN\/A\b|\[default\]|\b(?:included|incl\.|no charge|n\/c|free)\b/gi;
+// Names that sit in brackets on an option row without being option codes:
+// serial and connector standards and protocol names.
+const NOT_OPTION = /^(RS\d{3}|RJ\d{2}|USB[A-Z0-9-]*|EIP|ECAT|PROFINET|MODBUS|NEMA\d+)$/i;
+const CODE_OK = /^[A-Z0-9][A-Z0-9-]{0,14}$/i;
+const codesIn = s => String(s || '').split(/\s*(?:,|\bor\b|\/)\s*/i).map(c => c.trim().replace(/^-+/, '')).filter(c => CODE_OK.test(c) && !/#/.test(c) && !/^etc$/i.test(c));
+const valueOf = (m, currency) => {
+  if (m[3] != null) return { kind: 'price', adder: (m[1] ? -1 : 1) * (priceNumber(m[3]) ?? 0), currency: SYMBOL[m[2]] || currency };
+  const t = m[0].toLowerCase();
+  if (t === 'n/a') return { kind: 'na' };
+  if (t === '[default]') return { kind: 'default', adder: 0, currency };
+  return { kind: 'free', adder: 0, currency };
+};
 export function parseOptionRows(src, { currency = 'GBP' } = {}) {
-  const out = { options: [], multi: [], skipped: [] };
+  const out = { options: [], multi: [], skipped: [], conflicts: [] };
+  const seen = new Map();
+  const add = (code, label, value, line, markedDefault = false) => {
+    if (!value || value.kind === 'na' || value.currency !== currency) return;
+    const normCode = code.toUpperCase().replace(/\s+/g, '');
+    const prior = seen.get(normCode);
+    if (prior && (prior.conflicted || prior.adder !== value.adder)) {
+      // The same code at two adders: named, and neither stored.
+      const c = out.conflicts.find(x => x.code === normCode);
+      if (c) { c.adders.push(value.adder); c.lines.push(line.slice(0, 120)); }
+      else out.conflicts.push({ code: normCode, adders: [prior.adder, value.adder], lines: [prior.line, line.slice(0, 120)] });
+      out.options = out.options.filter(o => o.normCode !== normCode);
+      seen.set(normCode, { ...prior, conflicted: true });
+      return;
+    }
+    if (prior) return;
+    const row = { code, normCode, label: text(label.replace(/\[default\]/ig, '')) || null, currency, adder: value.adder, markedDefault: markedDefault || value.kind === 'default', line: line.slice(0, 120) };
+    seen.set(normCode, row);
+    out.options.push(row);
+  };
   for (const raw of String(src || '').replace(/\f/g, '\n').split(/\r?\n/)) {
     const line = raw.trim();
-    const m = /^(.*?)\(([^()]{1,80})\)\s*(\[default\])?\s*(.*)$/i.exec(line);
-    if (!m) continue;
-    const label = text(m[1]);
-    const codes = m[2].split(/\s*(?:,|\bor\b|\/)\s*/i).map(c => c.trim().replace(/^-+/, '')).filter(c => /^[A-Z0-9][A-Z0-9-]{0,14}$/i.test(c));
-    if (!label || !codes.length) continue;
-    const tail = m[4] || '';
-    const prices = [];
-    PRICE_TOKEN.lastIndex = 0;
-    let p;
-    while ((p = PRICE_TOKEN.exec(tail)) !== null) {
-      const v = priceNumber(p[2] ?? p[3]);
-      if (v != null) prices.push({ price: v, currency: p[1] ? SYMBOL[p[1]] : currency });
+    if (!line || EXCLUDE_LINE.test(line)) continue;
+    const brackets = [...line.matchAll(/\(([^()]{1,80})\)/g)]
+      .map(m => ({ at: m.index, end: m.index + m[0].length, codes: codesIn(m[1]).filter(c => !NOT_OPTION.test(c)) }))
+      .filter(b => b.codes.length);
+    const values = [...line.matchAll(VALUE_TOKEN)].map(m => ({ at: m.index, end: m.index + m[0].length, ...valueOf(m, currency) }));
+    if (!values.length) continue;
+    // Every value has an owner: the last bracket in the text since the
+    // previous value, or codes joined by "or" standing there with no
+    // bracket, or the previous value's owner when nothing but space lies
+    // between (a choice table's row of values), or nobody when the text is
+    // a label without codes ("None £0").
+    const owners = [];
+    let prev = 0, current = null;
+    for (const v of values) {
+      const segment = line.slice(prev, v.at);
+      const inSeg = brackets.filter(b => b.at >= prev && b.end <= v.at);
+      const bare = text(segment);
+      if (inSeg.length) {
+        const b = inSeg[inSeg.length - 1];
+        current = { codes: b.codes, label: text(line.slice(prev, b.at).replace(/\[default\]/ig, '')) || text(segment.replace(/\([^()]*\)/g, '')) || b.codes.join(', '), values: [] };
+        owners.push(current);
+      } else if (/^[A-Z]{1,5}\d{1,4}[A-Z]?(?:\s+or\s+[A-Z]{1,5}\d{1,4}[A-Z]?)+$/i.test(bare)) {
+        current = { codes: bare.split(/\s+or\s+/i), label: bare, values: [] };
+        owners.push(current);
+      } else if (/[A-Za-z]/.test(bare)) {
+        current = null;
+      }
+      if (current) current.values.push(v);
+      prev = v.end;
     }
-    const noCost = NO_COST.test(tail) || /\b(?:included|no charge|n\/c)\b/i.test(tail) && !prices.length;
-    if (!prices.length && !noCost) { if (tail.trim()) out.skipped.push(line.slice(0, 120)); continue; }
-    if (prices.length > 1) { out.multi.push(line.slice(0, 120)); continue; }
-    const price = noCost ? { price: 0, currency } : prices[0];
-    if (price.currency !== currency) { out.skipped.push(line.slice(0, 120)); continue; }
-    for (const code of codes) {
-      out.options.push({ code, normCode: code.toUpperCase().replace(/\s+/g, ''), label, currency, adder: price.price, markedDefault: !!m[3], line: line.slice(0, 120) });
+    // Values with nobody to own them: a line read, with figures on it,
+    // that priced no option, listed so a person can see what it was.
+    if (!owners.length) { out.skipped.push(line.slice(0, 120)); continue; }
+    for (const o of owners) {
+      const vals = o.values;
+      if (vals.length === 1) { for (const code of o.codes) add(code, o.label, vals[0], line); continue; }
+      if (vals.length === o.codes.length) { o.codes.forEach((code, i) => add(code, o.label, vals[i], line)); continue; }
+      out.multi.push(line.slice(0, 120));
     }
   }
+  return out;
+}
+
+// Merged groups in a columned list, John's supplier read of 11 September
+// 2026: the USD list prints the parts of a series in rows and a price once
+// per group of ranges, at the group's vertical middle. On an odd-sized
+// group the price sits on the middle row; on an even-sized one it sits on
+// its own line between the two middle rows. Groups tile the column from
+// the top, so each group runs from the row after the previous group to the
+// same distance past its price as the price is from its start. Columns are
+// the series headings ("M-Series MS-Series ..."), and a figure belongs to
+// the column whose heading is nearest above it. Pure over the layout text.
+export function parseGroupedColumns(src, { currency = 'USD', productLine = 'alicat' } = {}) {
+  const lines = String(src || '').replace(/\f/g, '\n').split(/\r?\n/);
+  const out = { rows: [], blocks: 0, unpriced: [] };
+  let block = null;
+  const nearest = (cols, x) => {
+    let best = null;
+    for (const [i, c] of cols.entries()) { const d = Math.abs(c.x - x); if (best == null || d < best.d) best = { i, d }; }
+    return best && best.d <= 22 ? best.i : null;
+  };
+  const flush = () => {
+    if (!block) return;
+    out.blocks++;
+    for (const [i, col] of block.columns.entries()) {
+      const parts = col.parts.sort((a, b) => a.row - b.row);
+      const anchors = col.anchors.sort((a, b) => a.row - b.row);
+      let start = null, ai = 0;
+      for (let pi = 0; pi < parts.length;) {
+        start = parts[pi].row;
+        while (ai < anchors.length && anchors[ai].row < start) ai++;
+        if (ai >= anchors.length) { for (const p of parts.slice(pi)) out.unpriced.push(p.part); break; }
+        const anchor = anchors[ai++];
+        const end = start + 2 * (anchor.row - start);
+        let taken = 0;
+        while (pi < parts.length && parts[pi].row <= end) {
+          const p = parts[pi++];
+          out.rows.push({ productLine, partNumber: p.part, normKey: normKey(p.part), description: null, currency: anchor.currency, sellPrice: anchor.price, price: anchor.price, partnerPrice: null, sourceTab: 'pdf', column: block.cols[i].name, line: `${p.part} ${SYMBOL[anchor.currency] || ''}${anchor.price} (group price)` });
+          taken++;
+        }
+        if (!taken) break;
+      }
+    }
+    block = null;
+  };
+  let row = 0;
+  for (const raw of lines) {
+    const line = raw.replace(/\s+$/, '');
+    const heads = [...line.matchAll(/\b([A-Z]{1,5}\d{0,3})-Series\b/g)];
+    if (heads.length >= 2) {
+      flush();
+      block = { cols: heads.map(h => ({ name: h[1], x: h.index + h[0].length / 2 })), columns: heads.map(() => ({ parts: [], anchors: [] })) };
+      row = 0;
+      continue;
+    }
+    if (!block) continue;
+    if (!line.trim() || EXCLUDE_LINE.test(line)) continue;
+    const parts = tokens(PART_TOKEN, line).map(t => ({ part: t.m[1], x: t.at + t.m[1].length / 2 })).filter(p => !NOT_PART.test(p.part));
+    const prices = pricesOn(line, currency).filter(p => p.currency === currency).map(p => ({ ...p, x: p.at + (p.end - p.at) / 2 }));
+    // A line of prose inside a block ends it: the next table has its own
+    // heading. A price-only line is a group's price only when it is nothing
+    // but figures; "$700 + controller" is an adder, never an anchor.
+    if (!parts.length && !prices.length) {
+      if ((line.match(/[a-z]{3,}/g) || []).length >= 5) flush();
+      continue;
+    }
+    if (!parts.length && !/^[\s$£€\d,.]+$/.test(line)) continue;
+    if (parts.length) {
+      row++;
+      for (const p of parts) { const c = nearest(block.cols, p.x); if (c != null) block.columns[c].parts.push({ part: p.part, row }); }
+    }
+    for (const p of prices) {
+      const c = nearest(block.cols, p.x);
+      if (c != null) block.columns[c].anchors.push({ row: parts.length ? row : row + 0.5, price: p.price, currency: p.currency });
+    }
+  }
+  flush();
   return out;
 }
 
