@@ -18,7 +18,8 @@ import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
 import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows } from './parseAlicatPdf.mjs';
-import { costFrom, renderCostLine, surchargePct, SURCHARGE_SERIES, parseCostRule, costRuleFor, applyCostRule } from './supplierPrices.mjs';
+import { costFrom, renderCostLine, parseCostRule, costRuleFor, applyCostRule } from './supplierPrices.mjs';
+import { syncDecision } from '../sharepointSync.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 let pass = 0, fail = 0;
@@ -266,13 +267,10 @@ await check('the purchase price is held apart, worked out from the list, and giv
   assert(/Never a figure to quote; the sell price is the one for customers/.test(line), 'the line says what the figure is for');
   assert(/a stated net buying price/.test(renderCostLine({ ...cost, netPrice: 700, cost: 700 })), 'a net price says so');
   assert(renderCostLine(null) === 'Purchase price: not held for this part.', 'nothing held is said plainly');
-  // Alicat's rev 101 notice: the low-volume surcharge on BASIS and EP/C/D
-  // units, (51 minus quantity) times 2%, stated only for those series.
-  assert(surchargePct(10) === 82 && surchargePct(1) === 100 && surchargePct(51) === 0 && surchargePct(60) === 0, 'the notice\'s own example, ten units at 82%');
-  assert(SURCHARGE_SERIES.test('EPC-100PSI') && SURCHARGE_SERIES.test('EPD-500SCCM-D') && SURCHARGE_SERIES.test('EP-1SLPM') && SURCHARGE_SERIES.test('BASIS-2-100SCCM'), 'the series the notice names');
-  assert(!SURCHARGE_SERIES.test('PCD-100PSIG-D') && !SURCHARGE_SERIES.test('MC-500SCCM-D') && !SURCHARGE_SERIES.test('EPIC-1'), 'mainline units carry no surcharge');
-  assert(/Low-volume surcharge applies to BASIS and EP\/C\/D units, per Alicat's rev 101 notice/.test(renderCostLine({ ...cost, partNumber: 'EPC-100PSI' })) && /82% at ten units and 100% for a single unit/.test(renderCostLine({ ...cost, partNumber: 'EPC-100PSI' })), 'an EPC costing carries the surcharge');
-  assert(!/surcharge/i.test(line), 'a mainline costing does not');
+  // James's ruling of 11 September 2026: the rev 101 announcement email in
+  // the Alicat folder is ignored, so no costing carries anything from it.
+  assert(!/surcharge|rev 101 notice/i.test(renderCostLine({ ...cost, partNumber: 'EPC-100PSI' })) && !/surcharge/i.test(line), 'nothing from the announcement email reaches a costing');
+  assert(syncDecision('08-Price-List-101-and-adjustment-OEM-units.pdf').sync === false, 'and the corpus sync refuses the email file by name');
   const m = { partNumber: 'PCD-100PSIG-D', description: 'Pressure controller', prices: { GBP: 1328 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null };
   const asked = renderPriceAnswer(m, { askedCost: true, cost });
   assert(/£1,328/.test(asked) && /Purchase price, given because you asked for it: \$1,234\.56/.test(asked), 'asked: the sell price first, then the purchase price');

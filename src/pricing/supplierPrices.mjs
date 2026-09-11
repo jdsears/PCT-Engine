@@ -36,20 +36,11 @@ export function costFrom({ listPrice = null, discountPct = null, netPrice = null
   return round2(list * (1 - pct / 100));
 }
 
-// Alicat's low-volume surcharge, from Niels Kraus's rev 101 notice of 1
-// August 2025 (Alicat/08-Price-List-101-and-adjustment-OEM-units.pdf):
-// BASIS and EP/C/D units ordered per 1 September 2025 carry a surcharge of
-// (51 minus quantity) times 2% on both the reseller price and the list, so
-// ten units carry 82% and a single unit 100%. Stated with the purchase
-// price for those series, because a costing that ignores it is wrong.
-export const SURCHARGE_SERIES = /^(BASIS|EPC?D?)(?=[-\d])/i;
-export function surchargePct(quantity) {
-  const q = Math.max(1, Math.floor(Number(quantity) || 1));
-  return Math.max(0, (51 - q) * 2);
-}
-export const surchargeNote = part => (SURCHARGE_SERIES.test(String(part || '').trim())
-  ? ` Low-volume surcharge applies to BASIS and EP/C/D units, per Alicat's rev 101 notice: (51 minus quantity) times 2% on top of the purchase price, so ${surchargePct(10)}% at ten units and ${surchargePct(1)}% for a single unit.`
-  : '');
+// The Alicat folder holds Niels Kraus's rev 101 announcement email printed
+// to PDF (08-Price-List-101-and-adjustment-OEM-units.pdf). James's ruling
+// of 11 September 2026: ignore it. It is not a price list, the corpus sync
+// refuses it by name, and nothing here is read from it; the surcharge rule
+// briefly taken from it was removed on that ruling.
 
 // James's rules for Alicat, 11 September 2026, as cost rules a part
 // matches by its code: an exact key, or a prefix with a star. The value is
@@ -96,8 +87,7 @@ export function renderCostLine(c) {
       ? `the supplier's stated price ${money(c.currency, c.listPrice)} with no discount`
       : `the supplier's list ${money(c.currency, c.listPrice)} less ${Number(c.discountPct)}%`;
   return `Purchase price, given because you asked for it: ${money(c.currency, c.cost)}, ${how}, from the ${c.listName}` +
-    `${c.effectiveDate ? `, effective ${isoDay(c.effectiveDate)}` : ''}. Never a figure to quote; the sell price is the one for customers.` +
-    surchargeNote(c.partNumber);
+    `${c.effectiveDate ? `, effective ${isoDay(c.effectiveDate)}` : ''}. Never a figure to quote; the sell price is the one for customers.`;
 }
 
 // The supplier row for a part, by exact key, any line. Null when the table
