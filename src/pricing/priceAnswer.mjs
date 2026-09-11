@@ -3,6 +3,7 @@ import { lookupPrice } from './lookup.mjs';
 import { quotedLine } from './quotedLines.mjs';
 import { marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
 import { superlativeIntent, cheapestOf, renderCheapestValve } from './cheapest.mjs';
+import { lookupCost, renderCostLine } from './supplierPrices.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 // Price questions in the co-pilot answer deterministically, never through the
@@ -53,11 +54,13 @@ export function baseKeys(token) {
 export const optionsAfter = (token, base) =>
   String(token || '').toUpperCase().replace(/\s+/g, '').slice(String(base || '').length).split(/[/-]/).filter(Boolean);
 
-// The one question the lookup must answer with a refusal: cost. The engine
-// holds sell prices only, and says so when asked for the other side.
-export const asksCost = q => /\b(cost|costs|supplier|suppliers|buy|buying|purchase|margin)\b/i.test(String(q || ''));
+// An explicit ask for the other side of the price. John's rule, 11
+// September 2026: the purchase price is given only when someone asks for
+// it in so many words; every other price question answers with the sell
+// price and never mentions cost.
+export const asksCost = q => /\b(cost|costs|costing|costings|supplier|suppliers|buy|buying|purchase|purchasing|margin)\b/i.test(String(q || ''));
 
-export function renderPriceAnswer(m, { configured = null, options = [], askedCost = false } = {}) {
+export function renderPriceAnswer(m, { configured = null, options = [], askedCost = false, cost = null } = {}) {
   const prices = ['GBP', 'EUR', 'USD'].filter(c => m.prices[c] != null)
     .map(c => `${SYM[c]}${Number(m.prices[c]).toLocaleString('en-GB')}`).join(', ');
   const basis = m.basis === 'guide'
@@ -75,7 +78,9 @@ export function renderPriceAnswer(m, { configured = null, options = [], askedCos
   if (configured && options.length) {
     lines.push('', 'The list prices the base unit. The options are priced as additions and are not held in the engine yet, so the configured price is the base plus the option adders, per enquiry until the option pricing is loaded.');
   }
-  if (askedCost) lines.push('', 'The engine holds sell prices only; cost and supplier prices are never stored here.');
+  // The purchase price appears only on an explicit ask, and only from the
+  // supplier table; a sell answer never carries it.
+  if (askedCost) lines.push('', renderCostLine(cost));
   return lines.join('\n');
 }
 
@@ -167,15 +172,19 @@ export async function priceTurn(question) {
   if (!priceIntent(question)) return null;
   if (!(await priceEnabled())) return null;
   const askedCost = asksCost(question);
+  // The supplier table is read only on an explicit ask, never otherwise.
+  const costFor = async key => (askedCost ? lookupCost(key).catch(() => null) : null);
   for (const tok of partTokens(question)) {
     const r = await lookupPrice(tok);
-    if (r.exact && r.matches.length) return { answer: renderPriceAnswer(r.matches[0], { askedCost }), kind: 'price' };
+    if (r.exact && r.matches.length) {
+      return { answer: renderPriceAnswer(r.matches[0], { askedCost, cost: await costFor(tok) }), kind: 'price' };
+    }
     // A configured code: the base part with options after it. The first
     // stored base answers, and the options are named as additions.
     for (const base of baseKeys(tok)) {
       const b = await lookupPrice(base);
       if (b.exact && b.matches.length) {
-        return { answer: renderPriceAnswer(b.matches[0], { configured: tok, options: optionsAfter(tok, base), askedCost }), kind: 'price' };
+        return { answer: renderPriceAnswer(b.matches[0], { configured: tok, options: optionsAfter(tok, base), askedCost, cost: await costFor(base) }), kind: 'price' };
       }
     }
   }

@@ -370,7 +370,9 @@ function PriceCard() {
         {status.migrationPending
           ? 'The prices table is not created yet; run npm run migrate.'
           : status.parts > 0
-            ? `${status.parts} part numbers loaded (${lines}), sell prices only, cost columns never ingested.`
+            ? `${status.parts} part numbers loaded (${lines}), sell prices.${status.supplier?.parts
+                ? ` Supplier list prices are held apart for ${status.supplier.parts} of them and given only when someone asks for the purchase price.`
+                : ' No supplier prices loaded; the purchase price is not given.'}`
             : 'No prices loaded yet. Load them with scripts/ingest-prices.mjs from a machine with .env.'}
       </div>
       <div>

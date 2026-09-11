@@ -80,12 +80,17 @@ export function detectCurrency(src) {
 // Text to rows. currency overrides the detected default for bare figures.
 // resolve is { partNumber: figure } for conflicts a human has settled on the
 // command line; the figure must be one the document shows for that part.
-export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat', resolve = {} } = {}) {
+// mode is 'sell' for the customer list, where a USD figure is the
+// supplier's and is set aside, or 'supplier' for the supplier's own list,
+// 11 September 2026, where USD is the price and a GBP figure is the one
+// set aside; the two never mix in one read.
+export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat', resolve = {}, mode = 'sell' } = {}) {
   const lines = String(src || '').replace(/\f/g, '\n').split(/\r?\n/);
-  const defaultCurrency = currency ? String(currency).toUpperCase() : detectCurrency(src);
+  const supplier = mode === 'supplier';
+  const defaultCurrency = currency ? String(currency).toUpperCase() : supplier ? 'USD' : detectCurrency(src);
   const report = {
-    lines: 0, rows: 0, parts: 0, currency: { default: defaultCurrency, seen: { GBP: 0, EUR: 0, USD: 0 } },
-    excluded: [], usd: [], adders: [], mentions: [], options: [], priceNoPart: [], partNoPrice: [], bareUnknown: [], conflicts: [], resolved: [], head: [],
+    mode, lines: 0, rows: 0, parts: 0, currency: { default: defaultCurrency, seen: { GBP: 0, EUR: 0, USD: 0 } },
+    excluded: [], usd: [], otherCurrency: [], adders: [], mentions: [], options: [], priceNoPart: [], partNoPrice: [], bareUnknown: [], conflicts: [], resolved: [], head: [],
   };
   const seen = new Map();
   const conflicts = new Map();
@@ -124,11 +129,14 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
       const lead = line.slice(segStart, first.at).replace(HEADING, ' ').trim();
       if (lead && PROSE.test(lead)) { sample(report.mentions, pair); continue; }
       if (OPTION_CELL.test(line.slice(first.end, price.at))) { sample(report.options, pair); continue; }
-      if (price.currency === 'USD') { sample(report.usd, pair); continue; }
+      if (!supplier && price.currency === 'USD') { sample(report.usd, pair); continue; }
+      if (supplier && price.currency && price.currency !== 'USD') { sample(report.otherCurrency, pair); continue; }
       if (!price.currency) { sample(report.bareUnknown, pair); continue; }
       const description = text([lead, line.slice(first.end, price.at)].join(' ')) || null;
       const key = `${normKey(first.part)}|${price.currency}`;
-      const row = { productLine, partNumber: first.part, normKey: normKey(first.part), description, currency: price.currency, sellPrice: price.price, sourceTab: 'pdf', line: pair };
+      // sellPrice is the row's figure in either mode; the supplier ingest
+      // stores it as the list price, never as a sell.
+      const row = { productLine, partNumber: first.part, normKey: normKey(first.part), description, currency: price.currency, sellPrice: price.price, price: price.price, sourceTab: 'pdf', line: pair };
       const prior = seen.get(key);
       if (prior && prior.sellPrice !== price.price) {
         const c = conflicts.get(key) || { partNumber: prior.partNumber, currency: price.currency, occurrences: [prior] };
@@ -178,9 +186,16 @@ export function pdfApplyBlockers(report) {
       ` Settle it with --price "${c.partNumber}=<one of those figures>" or fix the list; nothing is stored for it until then`);
   }
   if (report.lines && !report.rows && !out.length) {
-    out.push(report.currency.seen.USD && !report.currency.seen.GBP && !report.currency.seen.EUR
-      ? 'every price is in USD, which reads as the supplier list, never ingested'
-      : 'no part number sits beside a price on any line; the top of the document is printed above so the parser can learn the layout');
+    const seen = report.currency.seen;
+    if (report.mode === 'supplier') {
+      out.push(!seen.USD && (seen.GBP || seen.EUR)
+        ? 'every price is in sterling or euros, which reads as the customer list, not the supplier\'s; the supplier list is in USD'
+        : 'no part number sits beside a price on any line; the top of the document is printed above so the parser can learn the layout');
+    } else {
+      out.push(seen.USD && !seen.GBP && !seen.EUR
+        ? 'every price is in USD, which reads as the supplier list, never a sell'
+        : 'no part number sits beside a price on any line; the top of the document is printed above so the parser can learn the layout');
+    }
   }
   return out;
 }

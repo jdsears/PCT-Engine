@@ -48,7 +48,10 @@ export async function priceStatus() {
     const lines = rows.reduce((a, r) => { a[r.product_line] = r.parts; return a; }, {});
     const parts = rows.reduce((a, r) => a + r.parts, 0);
     const last = rows.reduce((a, r) => (a && a > r.last ? a : r.last), null);
-    return { parts, lines, lastIngest: last };
+    // The supplier side, held apart and reported apart (migration 040).
+    const { supplierStatus } = await import('./supplierPrices.mjs');
+    const supplier = await supplierStatus().catch(() => ({ parts: 0, lines: {} }));
+    return { parts, lines, lastIngest: last, supplier: { parts: supplier.parts, lines: supplier.lines } };
   } catch (e) {
     if (/relation "prices" does not exist/i.test(String(e))) return { parts: 0, lines: {}, lastIngest: null, migrationPending: true };
     throw e;
