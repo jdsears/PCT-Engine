@@ -33,17 +33,50 @@ async function priceEnabled() {
 }
 
 const SYM = { GBP: '£', EUR: '€', USD: '$' };
-export function renderPriceAnswer(m) {
+
+// A configured code carries its options after the base part:
+// PCD-100PSIG-D-M12-PCV30/5P is the PCD-100PSIG-D base with M12, PCV30 and
+// 5P bolted on. The list prices the base; the options are additions. The
+// candidates are the code with its last segment removed, again and again,
+// down to the series and range, so the first stored one is the base.
+export function baseKeys(token) {
+  const out = [];
+  let t = String(token || '').toUpperCase().replace(/\s+/g, '');
+  for (;;) {
+    const m = /^(.+?)[/-][A-Z0-9.]+$/.exec(t);
+    if (!m || !m[1].includes('-')) break;
+    t = m[1];
+    out.push(t);
+  }
+  return out;
+}
+export const optionsAfter = (token, base) =>
+  String(token || '').toUpperCase().replace(/\s+/g, '').slice(String(base || '').length).split(/[/-]/).filter(Boolean);
+
+// The one question the lookup must answer with a refusal: cost. The engine
+// holds sell prices only, and says so when asked for the other side.
+export const asksCost = q => /\b(cost|costs|supplier|suppliers|buy|buying|purchase|margin)\b/i.test(String(q || ''));
+
+export function renderPriceAnswer(m, { configured = null, options = [], askedCost = false } = {}) {
   const prices = ['GBP', 'EUR', 'USD'].filter(c => m.prices[c] != null)
     .map(c => `${SYM[c]}${Number(m.prices[c]).toLocaleString('en-GB')}`).join(', ');
   const basis = m.basis === 'guide'
     ? `Guide price at the standard margin, computed from the ${m.listName}` +
       `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
       'The margin is the standard one the master price sheet sets, the single source for margin.'
-    : `Sell price from the ${m.sourceTab} tab of the ${m.listName}` +
+    : `Sell price from the ${m.sourceTab === 'pdf' ? `${m.listName} list` : `${m.sourceTab} tab of the ${m.listName}`}` +
       `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
       'Prices come from the loaded lists and are never estimated.';
-  return `**${m.partNumber}**${m.description ? `, ${m.description}` : ''}: ${prices}.\n\n${basis}`;
+  const lines = [];
+  if (configured && options.length) {
+    lines.push(`**${configured}** reads as the base part ${m.partNumber} with the option${options.length === 1 ? '' : 's'} ${options.join(', ')}.`, '');
+  }
+  lines.push(`**${m.partNumber}**${m.description ? `, ${m.description}` : ''}: ${prices}.`, '', basis);
+  if (configured && options.length) {
+    lines.push('', 'The list prices the base unit. The options are priced as additions and are not held in the engine yet, so the configured price is the base plus the option adders, per enquiry until the option pricing is loaded.');
+  }
+  if (askedCost) lines.push('', 'The engine holds sell prices only; cost and supplier prices are never stored here.');
+  return lines.join('\n');
 }
 
 // A whole-line question ("lowest cost of a Marwin valve") answered from what
@@ -133,9 +166,18 @@ async function lineSummary(lineLabel) {
 export async function priceTurn(question) {
   if (!priceIntent(question)) return null;
   if (!(await priceEnabled())) return null;
+  const askedCost = asksCost(question);
   for (const tok of partTokens(question)) {
     const r = await lookupPrice(tok);
-    if (r.exact && r.matches.length) return { answer: renderPriceAnswer(r.matches[0]), kind: 'price' };
+    if (r.exact && r.matches.length) return { answer: renderPriceAnswer(r.matches[0], { askedCost }), kind: 'price' };
+    // A configured code: the base part with options after it. The first
+    // stored base answers, and the options are named as additions.
+    for (const base of baseKeys(tok)) {
+      const b = await lookupPrice(base);
+      if (b.exact && b.matches.length) {
+        return { answer: renderPriceAnswer(b.matches[0], { configured: tok, options: optionsAfter(tok, base), askedCost }), kind: 'price' };
+      }
+    }
   }
   if (superlativeIntent(question)) {
     const c = await cheapestValve(question).catch(() => null);

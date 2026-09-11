@@ -6,7 +6,8 @@
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
 import { quotedLine } from './quotedLines.mjs';
-import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary } from './priceAnswer.mjs';
+import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost } from './priceAnswer.mjs';
+import { readFileSync } from 'node:fs';
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
 import { parseRichardsBook, parseSizeColumns } from './parseRichardsPdf.mjs';
@@ -165,6 +166,32 @@ await check('part tokens extract with digits, most specific first', async () => 
   const t = partTokens('can you price SEM203/P against the 7100 series');
   assert(t[0] === 'SEM203/P' && t.includes('7100'), `got ${JSON.stringify(t)}`);
   assert(partTokens('price of a marwin valve').length === 0, 'plain words are not part tokens');
+});
+
+await check('a configured code finds its base part, names its options, and cost is refused plainly', async () => {
+  // James's test, 11 September 2026: a fully configured Alicat code.
+  const q = 'Alicat part number PCD-100PSIG-D-M12-PCV30/5P, RIN, 5IN, GAS: AIR, P1: 6-8 BARG, P2: 3-4 BARG, VOL: ~50CC, HC. What is our sales price and the suppliers cost price?';
+  assert(priceIntent(q) && asksCost(q), 'money words on both sides');
+  assert(partTokens(q)[0] === 'PCD-100PSIG-D-M12-PCV30/5P', `the configured code is the first token: ${JSON.stringify(partTokens(q))}`);
+  const keys = baseKeys('PCD-100PSIG-D-M12-PCV30/5P');
+  assert(JSON.stringify(keys) === JSON.stringify(['PCD-100PSIG-D-M12-PCV30', 'PCD-100PSIG-D-M12', 'PCD-100PSIG-D', 'PCD-100PSIG']),
+    `the code shortens one segment at a time down to the range: ${JSON.stringify(keys)}`);
+  assert(JSON.stringify(optionsAfter('PCD-100PSIG-D-M12-PCV30/5P', 'PCD-100PSIG-D')) === JSON.stringify(['M12', 'PCV30', '5P']), 'the options are what came off');
+  assert(baseKeys('SEM203/P').length === 0 && baseKeys('7100').length === 0, 'a code without a hyphen has no base to fall back to');
+  const text = renderPriceAnswer(
+    { partNumber: 'PCD-100PSIG-D', description: 'Pressure controller, 100 psig', prices: { GBP: 1328 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: '2026-09-10' },
+    { configured: 'PCD-100PSIG-D-M12-PCV30/5P', options: ['M12', 'PCV30', '5P'], askedCost: true });
+  assert(/reads as the base part PCD-100PSIG-D with the options M12, PCV30, 5P/.test(text), 'the read-back names the base and the options');
+  assert(/\*\*PCD-100PSIG-D\*\*, Pressure controller, 100 psig: £1,328\./.test(text), 'the base price renders');
+  assert(/Sell price from the Alicat Q1 2026 list, effective 2026-09-10/.test(text) && !/pdf tab/.test(text), 'a PDF source reads as the list, not a tab');
+  assert(/options are priced as additions and are not held in the engine yet/.test(text), 'the options are named as additions, honestly');
+  assert(/holds sell prices only; cost and supplier prices are never stored here/.test(text), 'cost is refused in a sentence');
+  assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
+  const plain = renderPriceAnswer({ partNumber: 'MC-500SCCM-D', description: null, prices: { GBP: 1071 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null });
+  assert(!/reads as the base part|additions|cost and supplier/.test(plain), 'a plain part carries none of the configured or cost lines');
+  const ans = readFileSync(new URL('../answer.mjs', import.meta.url), 'utf8');
+  assert(/priceIntent\(question\) && !\(configState && configState\.active\)\s*\?\s*\{ handled: false/.test(ans),
+    'a price question with no build in progress never goes to the configurator');
 });
 
 await check('a stored price renders with its source and never as an estimate', async () => {
