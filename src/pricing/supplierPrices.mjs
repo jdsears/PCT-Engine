@@ -1,4 +1,4 @@
-import { pool } from '../db.mjs';
+import { pool, hasColumn } from '../db.mjs';
 import { normKey } from './parseMega.mjs';
 
 // The supplier side of a price, 11 September 2026, under John's rule agreed
@@ -13,6 +13,15 @@ import { normKey } from './parseMega.mjs';
 const SYM = { GBP: '£', EUR: '€', USD: '$' };
 const money = (cur, n) => `${SYM[cur] || ''}${Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const round2 = n => Math.round(Number(n) * 100) / 100;
+
+// A date as YYYY-MM-DD whatever shape it arrives in: a Date from the
+// database, an ISO string, or a plain day. James's answer of 11 September
+// 2026 read "effective Fri Sep 11" because a Date was sliced as text.
+export function isoDay(d) {
+  if (!d) return null;
+  const t = d instanceof Date ? d : new Date(d);
+  return Number.isNaN(t.getTime()) ? String(d).slice(0, 10) : t.toISOString().slice(0, 10);
+}
 
 // The cost: the net buying price when one is stated, else the list price
 // less the discount. Null when neither can be worked out; a cost is never
@@ -42,15 +51,52 @@ export const surchargeNote = part => (SURCHARGE_SERIES.test(String(part || '').t
   ? ` Low-volume surcharge applies to BASIS and EP/C/D units, per Alicat's rev 101 notice: (51 minus quantity) times 2% on top of the purchase price, so ${surchargePct(10)}% at ten units and ${surchargePct(1)}% for a single unit.`
   : '');
 
+// James's rules for Alicat, 11 September 2026, as cost rules a part
+// matches by its code: an exact key, or a prefix with a star. The value is
+// a discount off list, "partner" (cost is the partner price the list
+// prints), or "list" (cost is the stated price, no discount). The first
+// matching rule wins, so the specific goes before the general.
+export function parseCostRule(s) {
+  const m = /^(.+?)=\s*(partner|list|\d+(?:\.\d+)?)\s*$/i.exec(String(s || '').trim());
+  if (!m) return null;
+  const pattern = m[1].trim().toUpperCase().replace(/\s+/g, '');
+  const v = m[2].toLowerCase();
+  return { pattern, value: v === 'partner' ? 'partner' : v === 'list' ? 'list' : parseFloat(v) };
+}
+export function costRuleFor(key, rules = []) {
+  const k = String(key || '').toUpperCase();
+  for (const r of rules) {
+    if (!r) continue;
+    const hit = r.pattern.endsWith('*') ? k.startsWith(r.pattern.slice(0, -1)) : k === r.pattern;
+    if (hit) return r;
+  }
+  return null;
+}
+// What a supplier row stores under a rule: the discount, the net price, and
+// the rule's name for the answer. A partner rule with no partner price on
+// the row stores no cost, which the dry run names rather than hides.
+export function applyCostRule(row, rule, standingDiscount = 35) {
+  if (!rule) return { discountPct: standingDiscount, netPrice: null, costRule: `list less ${standingDiscount}%` };
+  if (rule.value === 'partner') {
+    return row.partnerPrice != null
+      ? { discountPct: null, netPrice: row.partnerPrice, costRule: 'partner price' }
+      : { discountPct: null, netPrice: null, costRule: 'partner price, none printed for this part' };
+  }
+  if (rule.value === 'list') return { discountPct: 0, netPrice: null, costRule: 'list price, no discount' };
+  return { discountPct: rule.value, netPrice: null, costRule: `list less ${rule.value}%` };
+}
+
 // The one line the purchase price is ever given in, and only because it
 // was asked for: the figure, how it was arrived at, and where it came from.
 export function renderCostLine(c) {
   if (!c || c.cost == null) return 'Purchase price: not held for this part.';
   const how = c.netPrice != null
-    ? `a stated net buying price`
-    : `the supplier's list ${money(c.currency, c.listPrice)} less ${Number(c.discountPct)}%`;
+    ? (c.costRule === 'partner price' ? "the supplier's partner price as printed" : 'a stated net buying price')
+    : Number(c.discountPct) === 0
+      ? `the supplier's stated price ${money(c.currency, c.listPrice)} with no discount`
+      : `the supplier's list ${money(c.currency, c.listPrice)} less ${Number(c.discountPct)}%`;
   return `Purchase price, given because you asked for it: ${money(c.currency, c.cost)}, ${how}, from the ${c.listName}` +
-    `${c.effectiveDate ? `, effective ${String(c.effectiveDate).slice(0, 10)}` : ''}. Never a figure to quote; the sell price is the one for customers.` +
+    `${c.effectiveDate ? `, effective ${isoDay(c.effectiveDate)}` : ''}. Never a figure to quote; the sell price is the one for customers.` +
     surchargeNote(c.partNumber);
 }
 
@@ -60,8 +106,10 @@ export async function lookupCost(query) {
   const key = normKey(query);
   if (!key) return null;
   try {
+    const withRule = await hasColumn('supplier_prices', 'cost_rule');
     const { rows } = await pool.query(
       `SELECT product_line, part_number, description, currency, list_price, discount_pct, net_price, list_name, effective_date
+              ${withRule ? ', partner_price, cost_rule' : ', NULL::numeric AS partner_price, NULL::text AS cost_rule'}
        FROM supplier_prices WHERE norm_key = $1 LIMIT 1`, [key]);
     const r = rows[0];
     if (!r) return null;
@@ -69,6 +117,7 @@ export async function lookupCost(query) {
       productLine: r.product_line, partNumber: r.part_number, description: r.description, currency: r.currency,
       listPrice: Number(r.list_price), discountPct: r.discount_pct == null ? null : Number(r.discount_pct),
       netPrice: r.net_price == null ? null : Number(r.net_price),
+      partnerPrice: r.partner_price == null ? null : Number(r.partner_price), costRule: r.cost_rule || null,
       cost: costFrom({ listPrice: r.list_price, discountPct: r.discount_pct, netPrice: r.net_price }),
       listName: r.list_name, effectiveDate: r.effective_date,
     };

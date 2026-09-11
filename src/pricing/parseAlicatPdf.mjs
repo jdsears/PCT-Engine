@@ -109,6 +109,9 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
     for (const p of prices) if (p.currency) report.currency.seen[p.currency]++;
     const parts = tokens(PART_TOKEN, line).map(t => ({ part: t.m[1], at: t.at, end: t.end })).filter(p => !NOT_PART.test(p.part));
     let prev = 0;
+    // In the supplier read a second figure straight after a part's first,
+    // with nothing between them, is the partner price beside the list price.
+    let lastRows = [];
     for (const price of prices) {
       // Each price belongs to the part that starts its own stretch of the
       // line, the text since the previous price.
@@ -128,7 +131,17 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
         sample(report.adders, text(`${code} ${figure} ${(tail.match(phrase) || ['+'])[0]}`));
         continue;
       }
-      if (!inSegment.length) { sample(report.priceNoPart, segment.trim() ? pair : text(line)); continue; }
+      if (!inSegment.length) {
+        if (supplier && !segment.trim() && lastRows.length && price.currency === 'USD') {
+          for (const r of lastRows) if (r.partnerPrice == null) r.partnerPrice = price.price;
+          report.partnerPrices = (report.partnerPrices || 0) + 1;
+          continue;
+        }
+        lastRows = [];
+        sample(report.priceNoPart, segment.trim() ? pair : text(line));
+        continue;
+      }
+      lastRows = [];
       const first = inSegment[0];
       const lead = line.slice(segStart, first.at).replace(HEADING, ' ').trim();
       if (lead && PROSE.test(lead)) { sample(report.mentions, pair); continue; }
@@ -158,7 +171,7 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
       ];
       for (const { part, description: desc } of rowsHere) {
         const key = `${normKey(part)}|${price.currency}`;
-        const row = { productLine, partNumber: part, normKey: normKey(part), description: desc, currency: price.currency, sellPrice: price.price, price: price.price, sourceTab: 'pdf', line: pair };
+        const row = { productLine, partNumber: part, normKey: normKey(part), description: desc, currency: price.currency, sellPrice: price.price, price: price.price, partnerPrice: null, sourceTab: 'pdf', line: pair };
         const prior = seen.get(key);
         if (prior && prior.sellPrice !== price.price) {
           const c = conflicts.get(key) || { partNumber: prior.partNumber, currency: price.currency, occurrences: [prior] };
@@ -166,7 +179,7 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
           conflicts.set(key, c);
           continue;
         }
-        if (!prior) seen.set(key, row);
+        if (!prior) { seen.set(key, row); lastRows.push(row); }
       }
     }
     const after = parts.filter(p => p.at >= prev);

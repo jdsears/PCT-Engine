@@ -3,7 +3,7 @@ import { lookupPrice } from './lookup.mjs';
 import { quotedLine } from './quotedLines.mjs';
 import { marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
 import { superlativeIntent, cheapestOf, renderCheapestValve } from './cheapest.mjs';
-import { lookupCost, renderCostLine } from './supplierPrices.mjs';
+import { lookupCost, renderCostLine, isoDay } from './supplierPrices.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 // Price questions in the co-pilot answer deterministically, never through the
@@ -89,10 +89,10 @@ export function renderPriceAnswer(m, { configured = null, options = [], askedCos
     .map(c => `${SYM[c]}${Number(m.prices[c]).toLocaleString('en-GB')}`).join(', ');
   const basis = m.basis === 'guide'
     ? `Guide price at the standard margin, computed from the ${m.listName}` +
-      `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
+      `${m.effectiveDate ? `, effective ${isoDay(m.effectiveDate)}` : ''}. ` +
       'The margin is the standard one the master price sheet sets, the single source for margin.'
     : `Sell price from the ${m.sourceTab === 'pdf' ? `${m.listName} list` : `${m.sourceTab} tab of the ${m.listName}`}` +
-      `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
+      `${m.effectiveDate ? `, effective ${isoDay(m.effectiveDate)}` : ''}. ` +
       'Prices come from the loaded lists and are never estimated.';
   const lines = [];
   if (configured && options.length) {
