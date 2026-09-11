@@ -31,6 +31,10 @@ const text = x => String(x ?? '').replace(/\s+/g, ' ').trim();
 // into a word with lower-case letters, which is how "MCE-SFF-Series" is a
 // heading.
 export const PART_TOKEN = /\b(?=[A-Z0-9.\/-]*\d|[A-Z0-9.\/]+-[A-Z0-9.\/]+-)([A-Z]{1,5}\d{0,3}(?:-[A-Z0-9]+(?:\.[A-Z0-9]+)*)+(?:\/[A-Z0-9]+)*|[A-Z]{2,5}\d{1,4}[A-Z]{0,2})\b(?!-[A-Za-z]*[a-z])/g;
+// Codes that look like accessory part numbers and are not: ingress ratings,
+// serial and connector standards, approvals. "IP66 or IP67 £538" is an
+// option row, John's re-read of 11 September 2026, never two parts.
+const NOT_PART = /^(IP\d{2}|RS\d{3}|DB\d{1,2}[A-Z]?|RJ\d{2}|NEMA\d+|ISO\d+|EN\d+|UL\d+|ATEX\d*|M\d{2})$/i;
 // A price carries a currency symbol, a thousands separator or two decimals.
 // A bare integer is never a price, because 500 in 500SCCM is a flow rate.
 const PRICE_TOKEN = /([£$€])\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)|(?<![\w.-])(\d{1,3}(?:,\d{3})+(?:\.\d{2})?|\d+\.\d{2})(?![\w.-])/g;
@@ -103,7 +107,7 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
     if (EXCLUDE_LINE.test(line)) { sample(report.excluded, text(line)); continue; }
     const prices = pricesOn(line, defaultCurrency);
     for (const p of prices) if (p.currency) report.currency.seen[p.currency]++;
-    const parts = tokens(PART_TOKEN, line).map(t => ({ part: t.m[1], at: t.at, end: t.end }));
+    const parts = tokens(PART_TOKEN, line).map(t => ({ part: t.m[1], at: t.at, end: t.end })).filter(p => !NOT_PART.test(p.part));
     let prev = 0;
     for (const price of prices) {
       // Each price belongs to the part that starts its own stretch of the
