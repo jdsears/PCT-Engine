@@ -27,6 +27,21 @@ export function costFrom({ listPrice = null, discountPct = null, netPrice = null
   return round2(list * (1 - pct / 100));
 }
 
+// Alicat's low-volume surcharge, from Niels Kraus's rev 101 notice of 1
+// August 2025 (Alicat/08-Price-List-101-and-adjustment-OEM-units.pdf):
+// BASIS and EP/C/D units ordered per 1 September 2025 carry a surcharge of
+// (51 minus quantity) times 2% on both the reseller price and the list, so
+// ten units carry 82% and a single unit 100%. Stated with the purchase
+// price for those series, because a costing that ignores it is wrong.
+export const SURCHARGE_SERIES = /^(BASIS|EPC?D?)(?=[-\d])/i;
+export function surchargePct(quantity) {
+  const q = Math.max(1, Math.floor(Number(quantity) || 1));
+  return Math.max(0, (51 - q) * 2);
+}
+export const surchargeNote = part => (SURCHARGE_SERIES.test(String(part || '').trim())
+  ? ` Low-volume surcharge applies to BASIS and EP/C/D units, per Alicat's rev 101 notice: (51 minus quantity) times 2% on top of the purchase price, so ${surchargePct(10)}% at ten units and ${surchargePct(1)}% for a single unit.`
+  : '');
+
 // The one line the purchase price is ever given in, and only because it
 // was asked for: the figure, how it was arrived at, and where it came from.
 export function renderCostLine(c) {
@@ -35,7 +50,8 @@ export function renderCostLine(c) {
     ? `a stated net buying price`
     : `the supplier's list ${money(c.currency, c.listPrice)} less ${Number(c.discountPct)}%`;
   return `Purchase price, given because you asked for it: ${money(c.currency, c.cost)}, ${how}, from the ${c.listName}` +
-    `${c.effectiveDate ? `, effective ${String(c.effectiveDate).slice(0, 10)}` : ''}. Never a figure to quote; the sell price is the one for customers.`;
+    `${c.effectiveDate ? `, effective ${String(c.effectiveDate).slice(0, 10)}` : ''}. Never a figure to quote; the sell price is the one for customers.` +
+    surchargeNote(c.partNumber);
 }
 
 // The supplier row for a part, by exact key, any line. Null when the table
