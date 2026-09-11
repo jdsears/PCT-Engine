@@ -1,6 +1,6 @@
 import { search } from './retrieve.mjs';
 import { route } from './configurator/converse.mjs';
-import { priceTurn } from './pricing/priceAnswer.mjs';
+import { priceTurn, priceIntent } from './pricing/priceAnswer.mjs';
 import { quoteTurn } from './pricing/quote.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
@@ -75,7 +75,16 @@ export async function ask(question, { history = [], k = 10, configState = null, 
   // a message looks like a build. When it handles the turn the normal answer path
   // is skipped; otherwise it returns { handled: false } and we carry on, clearing
   // any stale offer so a declined or unrelated message drops it.
-  const routed = await route(question, configState);
+  //
+  // A price question never goes to the configurator, James's test of 11
+  // September 2026: "Alicat part number PCD-100PSIG-D-M12-PCV30/5P, what is
+  // our sales price" was answered with the list of models the builder knows,
+  // because "part number" reads as build intent. With no build in progress,
+  // money words send the turn to the price lookup first, and a build already
+  // under way keeps its turn.
+  const routed = priceIntent(question) && !(configState && configState.active)
+    ? { handled: false, configState: null }
+    : await route(question, configState);
   if (routed.handled) {
     return {
       answer: routed.reply,
