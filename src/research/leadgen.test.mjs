@@ -649,9 +649,9 @@ await check('discovery batches doubled and each campaign searches from its own a
   const saved = process.env.ENGINE_PEOPLE_SEARCH_LIMIT;
   try {
     delete process.env.ENGINE_PEOPLE_SEARCH_LIMIT;
-    assert(peopleSearchLimit() === 4, 'the default doubles to four accounts a cycle');
+    assert(peopleSearchLimit() === 6, 'the default is six accounts a cycle, raised on 11 September 2026 when the people step starved');
     process.env.ENGINE_PEOPLE_SEARCH_LIMIT = '25';
-    assert(peopleSearchLimit() === 10, 'the ceiling is ten, not unlimited');
+    assert(peopleSearchLimit() === 12, 'the ceiling is twelve, not unlimited');
     process.env.ENGINE_PEOPLE_SEARCH_LIMIT = '1';
     assert(peopleSearchLimit() === 1, 'the floor is one');
   } finally {

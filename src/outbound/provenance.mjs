@@ -24,6 +24,7 @@ export const SOURCE_LINES = {
   ch_officers: 'Your name and role came from your company\'s public filings at Companies House, and the address itself came from Findymail, a business contact lookup service, matched from your name and your company domain.',
   post_engagement: 'You came to our attention when you reacted to a post on LinkedIn, your name and role came from your public profile there, and the address itself came from Findymail, a business contact lookup service, matched from your name and your company domain.',
   referral: 'A colleague of yours passed your name on to us as the right person for this, and the address itself came from Findymail, a business contact lookup service, matched from your name and your company domain.',
+  website: 'Your name and role came from the team page on your company\'s own website, and the address itself came from Findymail, a business contact lookup service, matched from your name and your company domain.',
 };
 export const SOURCE_UNKNOWN =
   'Your name and role came from public professional sources, most likely your LinkedIn profile or your company\'s Companies House filings, and the address itself came from Findymail, a business contact lookup service, matched from your name and your company domain. I can check the exact record if it would help.';

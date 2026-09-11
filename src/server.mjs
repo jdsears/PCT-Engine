@@ -45,7 +45,8 @@ import { resolveSite, resolveDrive, docWebUrl } from './sharepoint.mjs';
 import { webStatus, addSite, removeSite, getSite, trawlSite, refreshDueSites, trawlInFlight, tablesReady as webTablesReady } from './web/siteCorpus.mjs';
 import { profileSite, describeProfile } from './web/siteProfile.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
-import { discoverPeople } from './research/peopleDiscovery.mjs';
+import { discoverPeople, peopleCoolingUntil, orbitWindows, peopleRetryDays } from './research/peopleDiscovery.mjs';
+import { discoverSitePeople } from './research/sitePeople.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady, inviteRefusal } from './studio/liInvite.mjs';
 import { dripInvitesOnce } from './studio/inviteDrip.mjs';
@@ -834,9 +835,16 @@ app.get('/api/accounts/:id', async (req, res) => {
          WHERE target = 'findContacts: ' || $1`, [c.name]);
       const attempts = led.rows[0]?.attempts || 0;
       const lastAt = led.rows[0]?.last_at || null;
-      const cooling = lastAt && (Date.now() - new Date(lastAt).getTime()) < 30 * 86_400_000;
+      // The cooldown is the search's own rule: served accounts rest thirty
+      // days, an account with nobody in orbit comes back after the retry
+      // days for the next window of roles.
+      const orbitFound = (await pool.query(
+        `SELECT 1 FROM contacts WHERE company_id = $1 AND in_decision_orbit AND NOT suppressed AND NOT rehearsal LIMIT 1`, [id])).rows.length > 0;
+      const memberships = (c.memberships || []).filter(m => getCampaign(m));
+      const titles = getCampaign(memberships.length === 1 ? memberships[0] : 'marwin_dc')?.orbitTitles || [];
+      const coolingUntil = peopleCoolingUntil({ lastAt, priorSearches: attempts, orbitFound, windows: orbitWindows(titles) });
       let queuePosition = null;
-      if (!cooling) {
+      if (!coolingUntil) {
         const pos = await pool.query(`
           WITH eligible AS (
             SELECT id, name, icp_score, EXISTS (
@@ -850,20 +858,28 @@ app.get('/api/accounts/:id', async (req, res) => {
             WHERE named_account AND NOT EXISTS (
               SELECT 1 FROM unipile_calls u
               WHERE u.target = 'findContacts: ' || companies.name
-                AND u.called_at > now() - interval '30 days'))
+                AND u.called_at > now() - (CASE WHEN EXISTS (
+                      SELECT 1 FROM contacts ct2 WHERE ct2.company_id = companies.id
+                        AND ct2.in_decision_orbit AND NOT ct2.suppressed AND NOT ct2.rehearsal)
+                    THEN interval '30 days' ELSE ($2 || ' days')::interval END)))
           SELECT count(*)::int AS ahead FROM eligible,
             (SELECT blocked AS b, icp_score AS s, name AS n FROM eligible WHERE id = $1) me
           WHERE eligible.id <> $1 AND (
             (eligible.blocked AND NOT me.b)
             OR (eligible.blocked = me.b AND coalesce(eligible.icp_score, -1) > coalesce(me.s, -1))
-            OR (eligible.blocked = me.b AND coalesce(eligible.icp_score, -1) = coalesce(me.s, -1) AND eligible.name < me.n))`, [id]);
+            OR (eligible.blocked = me.b AND coalesce(eligible.icp_score, -1) = coalesce(me.s, -1) AND eligible.name < me.n))`,
+          [id, String(peopleRetryDays())]);
         if (pos.rows.length) queuePosition = (pos.rows[0].ahead ?? 0) + 1;
       }
+      let site = null;
+      if (await hasColumn('companies', 'site_people_checked_at')) {
+        const s = (await pool.query(`SELECT site_people_checked_at, site_people_found FROM companies WHERE id = $1`, [id])).rows[0];
+        site = s?.site_people_checked_at ? { checkedAt: s.site_people_checked_at, found: s.site_people_found ?? 0 } : null;
+      }
       peopleSearch = {
-        attempts, lastAt,
-        coolingUntil: cooling ? new Date(new Date(lastAt).getTime() + 30 * 86_400_000).toISOString() : null,
-        queuePosition,
+        attempts, lastAt, coolingUntil, queuePosition,
         autoSearch: (await kvGet('autopeople_enabled')) === 'on',
+        site, hasDomain: !!c.domain,
       };
     } catch { peopleSearch = null; }
     const bd = c.icp_breakdown || {};
@@ -1335,6 +1351,15 @@ async function runEngineOnce(trigger) {
           `Unipile reported an account health problem during the engine's people search, so the automatic search has switched itself off and nothing will retry.\n\n${people.unhealthy}\n\nCheck the LinkedIn account (a login prompt or checkpoint usually explains it), then turn the switch back on from the Health page.`);
       }
     }
+    // The second route to people needs no LinkedIn at all: a company's own
+    // team, leadership and contact pages, read for names with roles in the
+    // campaign's orbit. Runs every cycle for the accounts still without an
+    // emailable decision maker, most valuable first, a fortnight between
+    // reads of the same site. John's instruction of 11 September 2026, when
+    // the data centre lane starved at the people step.
+    let sitePeople = null;
+    try { sitePeople = await discoverSitePeople({ log: m => console.log('[site-people]', m) }); }
+    catch (e) { console.error('[site-people] failed:', e.message); }
     // With auto email discovery on, decision makers found this cycle (and any
     // backlog) get their emails resolved before drafting, capped per cycle so
     // the Findymail spend stays bounded. A verified email is never re-bought.
@@ -1384,6 +1409,8 @@ async function runEngineOnce(trigger) {
       peopleFound: people ? people.created : undefined,
       peopleOrbit: people ? people.orbit : undefined,
       peopleStopped: people?.unhealthy ? 'account health' : people?.capStopped ? 'daily cap' : undefined,
+      sitesRead: sitePeople && !sitePeople.skipped ? sitePeople.companies : undefined,
+      sitePeopleFound: sitePeople && !sitePeople.skipped ? sitePeople.created : undefined,
       emailsResolved: discovery ? discovery.resolved : undefined,
       emailCredits: discovery ? discovery.credits : undefined,
       docsChecked: spSync && !spSync.skipped ? spSync.files : undefined,

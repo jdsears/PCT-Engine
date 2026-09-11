@@ -210,14 +210,19 @@ function AddPerson({ id, onSaved }) {
 const shortDate = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 function peopleSearchCopy(ps) {
   if (!ps) return 'None found for this account yet. The LinkedIn lane fills these in small, capped batches.';
+  // The website route runs beside the LinkedIn search: the company's own
+  // team and leadership pages, read for people in the orbit, no LinkedIn call.
+  const site = ps.site
+    ? ` Their website was read on ${shortDate(ps.site.checkedAt)}${ps.site.found ? `, ${ps.site.found} in orbit found there` : ', nobody in orbit named on it'}; it is read again a fortnight later.`
+    : ps.hasDomain ? ' Their website is queued to be read for people too.' : ' No domain on file, so their website cannot be read for people.';
   if (!ps.attempts) {
-    if (!ps.autoSearch) return 'Never searched, and the automatic people search is switched off. Turn it on from the Health page, or run the enrich script, and this account joins the queue.';
-    if (ps.queuePosition != null) return `Never searched yet. Position ${ps.queuePosition} in the automatic search queue, which works blocked accounts first.`;
-    return 'Never searched yet. It joins the automatic queue on the next cycle.';
+    if (!ps.autoSearch) return `Never searched on LinkedIn, and the automatic people search is switched off. Turn it on from the Health page, or run the enrich script, and this account joins the queue.${site}`;
+    if (ps.queuePosition != null) return `Never searched on LinkedIn yet. Position ${ps.queuePosition} in the automatic search queue, which works blocked accounts first.${site}`;
+    return `Never searched on LinkedIn yet. It joins the automatic queue on the next cycle.${site}`;
   }
   const last = ps.lastAt ? ` The last pass was ${shortDate(ps.lastAt)}.` : '';
-  if (ps.coolingUntil) return `Searched ${ps.attempts} time${ps.attempts === 1 ? '' : 's'} and nobody has qualified yet.${last} It stands down until ${shortDate(ps.coolingUntil)}, and the next pass asks a fresh set of roles.`;
-  return `Searched ${ps.attempts} time${ps.attempts === 1 ? '' : 's'}, nobody qualified yet, and it is eligible again${ps.queuePosition != null ? `, position ${ps.queuePosition} in the queue` : ''}.${last}`;
+  if (ps.coolingUntil) return `Searched LinkedIn ${ps.attempts} time${ps.attempts === 1 ? '' : 's'} and nobody has qualified yet.${last} It asks again from ${shortDate(ps.coolingUntil)} with the next set of roles.${site}`;
+  return `Searched LinkedIn ${ps.attempts} time${ps.attempts === 1 ? '' : 's'}, nobody qualified yet, and it is eligible again${ps.queuePosition != null ? `, position ${ps.queuePosition} in the queue` : ''}.${last}${site}`;
 }
 
 // The panel's campaign row with the one verb it lacked: remove from this
