@@ -391,5 +391,26 @@ check('the food and beverage campaign is a first cut, live on John\'s instructio
   assert(f.foreignRegister.includes('data centre'), 'and it never speaks the data centre register');
 });
 
+console.log('\nEvery campaign, present and future, gets the same people machinery:');
+
+check('each definition names its orbit and its sender, so both people routes and the message stage speak its language', () => {
+  // John, 11 September 2026: make sure this applies to all other and future
+  // campaigns too. The people routes take everything campaign-specific from
+  // the definition, so a definition that lacks these fails the gate before
+  // it can quietly search in the wrong vocabulary or message under no name.
+  for (const c of allCampaigns()) {
+    assert(Array.isArray(c.orbitTitles) && c.orbitTitles.length >= 8, `${c.id} names at least eight orbit titles`);
+    if (c.status === 'active') assert(c.studio?.sender?.name && c.studio?.sender?.title, `${c.id} names who its messages write as`);
+  }
+  const people = read('src/research/peopleDiscovery.mjs');
+  const site = read('src/research/sitePeople.mjs');
+  for (const [name, src] of [['the LinkedIn search', people], ['the website read', site]]) {
+    assert(/known\.length === 1 \? known\[0\] : 'marwin_dc'/.test(src) && /getCampaign\(campaign\)\?\.orbitTitles/.test(src),
+      `${name} takes the campaign from the account's membership and the vocabulary from its definition`);
+  }
+  assert(/peopleSearchDue\(/.test(people) && !/interval '30 days'/.test(people), 'the LinkedIn cadence is the outcome rule, not a fixed month, for every campaign');
+  assert(/WHERE named_account AND domain IS NOT NULL/.test(site), 'the website read covers every named account with a domain, whatever its campaign');
+});
+
 console.log(`\n=== Campaign gate: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);

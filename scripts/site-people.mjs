@@ -25,12 +25,19 @@ const COMPANY = flag('--company');
 const BATCH = flag('--batch');
 const CAMPAIGN = flag('--campaign') || 'marwin_dc';
 
+const LINKS = args.includes('--links');
 function printRead(name, r) {
   if (!r || r.unreachable) { console.log(`${name}: the site could not be read.`); return; }
   console.log(`${name}: ${r.pages.length} page(s) read, ${r.found} name(s) with a role, ${r.people.length} in the ${CAMPAIGN} orbit.`);
   for (const p of r.pages) console.log(`  page: ${p.title}  ${p.url}`);
   for (const p of r.people) console.log(`  in orbit: ${p.name}, ${p.role}  (${p.url})`);
   for (const p of r.unqualified) console.log(`  not in orbit: ${p.name}${p.role ? `, ${p.role}` : ''}`);
+  // --links, or a read that found nobody: the front page's own links, so the
+  // picker can be taught the words this site uses.
+  if (LINKS || !r.found) {
+    console.log(`  the front page links to ${r.links.length} address(es)${r.found ? '' : ', none of which the picker read as a people page'}:`);
+    for (const l of r.links) console.log(`    ${l.text || '(no text)'}  ${l.url}`);
+  }
 }
 
 if (DOMAIN) {
