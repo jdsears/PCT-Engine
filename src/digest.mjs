@@ -164,8 +164,8 @@ export async function gatherDigestData() {
       `SELECT count(*)::int AS searches FROM unipile_calls
        WHERE target LIKE 'findContacts: %' AND called_at >= ${week}`)).rows[0];
     const found = (await pool.query(
-      `SELECT count(*) FILTER (WHERE created_at >= ${week} AND source = 'linkedin')::int AS found,
-              count(*) FILTER (WHERE created_at >= ${week} AND source = 'linkedin' AND in_decision_orbit)::int AS orbit,
+      `SELECT count(*) FILTER (WHERE created_at >= ${week} AND source IN ('linkedin', 'website'))::int AS found,
+              count(*) FILTER (WHERE created_at >= ${week} AND source IN ('linkedin', 'website') AND in_decision_orbit)::int AS orbit,
               count(*) FILTER (WHERE email_verified_at >= ${week})::int AS emails
        FROM contacts WHERE NOT rehearsal`)).rows[0];
     const sw = (await pool.query(`SELECT value FROM kv WHERE key = 'autopeople_enabled'`)).rows[0]?.value;
@@ -179,7 +179,7 @@ export async function gatherDigestData() {
     // queue splits, which report standing state and keep their zeroes.
     people.lanes = (await pool.query(
       `SELECT (CASE WHEN array_length(m.memberships, 1) = 1 THEN m.memberships[1] ELSE 'marwin_dc' END) AS campaign,
-              count(*) FILTER (WHERE ct.created_at >= ${week} AND ct.source = 'linkedin')::int AS found,
+              count(*) FILTER (WHERE ct.created_at >= ${week} AND ct.source IN ('linkedin', 'website'))::int AS found,
               count(*) FILTER (WHERE ct.email_verified_at >= ${week})::int AS emails
        FROM contacts ct
        JOIN companies c ON c.id = ct.company_id

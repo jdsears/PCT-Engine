@@ -693,6 +693,37 @@ and the registered number when the footer states it. The review queue shows
 it in one plain line. Research evidence is not corpus; nothing from a
 prospect's site is embedded.
 
+### People from a company's own website
+
+John's instruction of 11 September 2026, when the data centre lane starved
+at the people step: the accounts that scored highest carried no decision
+makers, and the LinkedIn search had stood down for a month after one empty
+pass. Two changes.
+
+The LinkedIn cadence (`src/research/peopleDiscovery.mjs`) now depends on the
+outcome. An account with someone in orbit rests thirty days; one with nobody
+comes back after `ENGINE_PEOPLE_RETRY_DAYS` (default 5) and is asked the next
+window of roles, until every window has been asked, when it rests the thirty
+days like the rest. The default batch is six accounts a cycle
+(`ENGINE_PEOPLE_SEARCH_LIMIT`, ceiling twelve), still per connected account
+and under the daily call cap. The Accounts panel says when the next pass is.
+
+The second route needs no LinkedIn at all (`src/research/sitePeople.mjs`).
+Every engine cycle, for the named accounts with a domain and no emailable
+decision maker, most valuable first, the engine reads the company's front
+page and up to four of its team, leadership, board and contact pages, robots
+obeyed and paced, and takes the names that stand beside a role, stacked or
+on one line, or marked up as schema.org Person. A role in the campaign's
+orbit makes a contact with source `website` and the page that named them;
+email discovery resolves the address from the name and the domain in the
+same cycle. Nobody outside the orbit is stored. A site is read again after
+`SITE_PEOPLE_RETRY_DAYS` (default 14), `ENGINE_SITE_PEOPLE_LIMIT` sites a
+cycle (default 10), and migration 039 remembers when and what was found.
+`scripts/site-people.mjs --domain <host>` shows what a site yields;
+`--company "<name>" --apply` creates the people for one account;
+`--batch N --apply` runs the cycle's pass by hand. A person found this way
+who asks where their address came from is told so, straight.
+
 ## Usage logging and insights
 
 Every co-pilot question is logged to `copilot_queries` (migration 005). Each row
