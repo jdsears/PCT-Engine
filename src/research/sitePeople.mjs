@@ -138,19 +138,40 @@ export async function findPeopleOnSite(domain, { titles = [], fetchImpl = polite
       break;
     }
   }
-  if (!home) return { domain: d, unreachable: true, pages: [], people: [], found: 0 };
+  if (!home) return { domain: d, unreachable: true, pages: [], people: [], found: 0, links: [] };
   await pacer.wait(hostOf(home.url));
   const robots = await getRobots(new URL(home.url).origin, { fetchImpl });
   const pages = [{ url: home.url, title: home.title, text: home.text, html: homeHtml }];
-  for (const u of peoplePageLinks(home.links, home.url, { max: Math.max(0, maxPages - 1) })) {
-    if (!robotsAllows(robots, new URL(u).pathname).allowed) continue;
+  const read = async (u) => {
+    if (!robotsAllows(robots, new URL(u).pathname).allowed) return null;
     await pacer.wait(hostOf(u));
     const r = await fetchImpl(u, { timeoutMs });
-    if (!r.ok || !r.body || !/html/.test(r.contentType)) continue;
+    if (!r.ok || !r.body || !/html/.test(r.contentType)) return null;
     const html = r.body.toString('utf8');
     const p = extractPage(html, u);
-    if (p.noindex) continue;
-    pages.push({ url: u, title: p.title, text: p.text, html });
+    return p.noindex ? null : { url: u, title: p.title, text: p.text, html, links: p.links };
+  };
+  // The people pages the front page names. When it names fewer than two,
+  // the team usually sits one level down behind an About page (KSP and
+  // Greystoke, 11 September 2026), so up to two About pages are read and
+  // their links searched too, within the same page budget.
+  let targets = peoplePageLinks(home.links, home.url, { max: Math.max(0, maxPages - 1) });
+  if (targets.length < 2) {
+    for (const u of aboutPageLinks(home.links, home.url, { max: 2 })) {
+      if (pages.length >= maxPages) break;
+      const p = await read(u);
+      if (!p) continue;
+      pages.push(p);
+      for (const t of peoplePageLinks(p.links, home.url, { max: Math.max(0, maxPages - 1) })) {
+        if (!targets.includes(t) && t !== u) targets.push(t);
+      }
+    }
+  }
+  for (const u of targets) {
+    if (pages.length >= maxPages) break;
+    if (pages.some(p => p.url === u)) continue;
+    const p = await read(u);
+    if (p) pages.push(p);
   }
   const all = [];
   const seen = new Set();
@@ -167,7 +188,27 @@ export async function findPeopleOnSite(domain, { titles = [], fetchImpl = polite
     domain: d, url: home.url, pages: pages.map(p => ({ url: p.url, title: p.title })),
     found: all.length, people,
     unqualified: all.filter(p => !people.includes(p)).slice(0, 8).map(p => ({ name: p.name, role: p.role })),
+    // The front page's own links, so a site whose words the picker does not
+    // know can be seen and the picker taught.
+    links: (home.links || []).slice(0, 80).map(l => ({ text: l.text, url: l.url })),
   };
+}
+
+// Links to an About page, where the team link often lives.
+const ABOUT_WORDS = /\b(about|about us|who we are|our story|our company|the company|our business|company)\b/i;
+const ABOUT_PATH = /\b(about|who-we-are|our-story|company)\b/i;
+export function aboutPageLinks(links, home, { max = 2 } = {}) {
+  const out = [];
+  for (const l of links || []) {
+    if (!l?.url || !sameHost(l.url, home) || l.url === home || isAssetUrl(l.url) || isDocUrl(l.url)) continue;
+    let path;
+    try { path = new URL(l.url).pathname; } catch { continue; }
+    if (path.split('/').filter(Boolean).length > 2) continue;
+    if (!(ABOUT_WORDS.test(l.text || '') || ABOUT_PATH.test(path))) continue;
+    if (!out.includes(l.url)) out.push(l.url);
+    if (out.length >= max) break;
+  }
+  return out;
 }
 
 // One pass over the register: named accounts with a domain and no emailable

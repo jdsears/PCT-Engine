@@ -115,6 +115,37 @@ await check('the front page, the team page and the contact page yield the specif
 
 server.close();
 
+// A site that names its team only behind an About page, the KSP and
+// Greystoke shape: the front page links to About, About links to the team.
+const deepRoutes = {
+  '/robots.txt': ['text/plain', ''],
+  '/': ['text/html', '<html lang="en"><head><title>Deep Co</title></head><body><nav><a href="/">Home</a> <a href="/about-us">About us</a> <a href="/services">Services</a></nav><main><p>We make infrastructure happen for data centre operators across the UK.</p></main></body></html>'],
+  '/about-us': ['text/html', '<html lang="en"><head><title>About</title></head><body><main><h1>About us</h1><p>Founded in 2010, we deliver mechanical and electrical packages.</p><a href="/about-us/our-team">Meet the team</a></main></body></html>'],
+  '/about-us/our-team': ['text/html', '<html lang="en"><head><title>Our team</title></head><body><main><h1>Our team</h1><h3>Dan Cole</h3><p>Mechanical Design Engineer</p><h3>Eve Kaur</h3><p>Marketing Manager</p></main></body></html>'],
+  '/services': ['text/html', '<html lang="en"><head><title>Services</title></head><body><main><p>Services.</p></main></body></html>'],
+};
+const deepSeen = [];
+const deep = createServer((req, res) => {
+  const url = new URL(req.url, 'http://x');
+  deepSeen.push(url.pathname);
+  const r = deepRoutes[url.pathname];
+  if (!r) { res.writeHead(404, { 'content-type': 'text/html' }); return res.end('<p>gone</p>'); }
+  res.writeHead(200, { 'content-type': r[0] });
+  res.end(r[1]);
+});
+await new Promise(r => deep.listen(0, '127.0.0.1', r));
+const deepBase = `127.0.0.1:${deep.address().port}`;
+
+await check('a team page behind an About page is still found, and a site is never read past its budget', async () => {
+  const r = await findPeopleOnSite(deepBase, { titles: DC, fetchImpl: local, delayMs: 5 });
+  assert(r.people.length === 1 && r.people[0].name === 'Dan Cole' && r.people[0].url.endsWith('/about-us/our-team'), `the engineer behind About is found: ${JSON.stringify(r.people)}`);
+  assert(r.unqualified.some(p => p.name === 'Eve Kaur'), 'marketing is left out and listed');
+  assert(!deepSeen.includes('/services'), 'a services page is never read for people');
+  assert(r.links.some(l => l.url.endsWith('/about-us') && /About us/.test(l.text)), 'the front page links travel back for teaching the picker');
+  assert(deepSeen.filter(p => p !== '/robots.txt').length <= 5, `within budget: ${deepSeen.join(', ')}`);
+});
+deep.close();
+
 console.log('\nThe LinkedIn cadence (pure):');
 
 await check('an account with nobody in orbit comes back in days, a served one rests a month, and the windows run out', async () => {
