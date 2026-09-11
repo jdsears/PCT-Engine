@@ -25,7 +25,7 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import ExcelJS from 'exceljs';
 import { parseAlicatWorkbook, applyBlockers, colLetter } from '../src/pricing/parseAlicat.mjs';
-import { parseAlicatPdfText, pdfApplyBlockers } from '../src/pricing/parseAlicatPdf.mjs';
+import { parseAlicatPdfText, pdfApplyBlockers, parseOptionRows } from '../src/pricing/parseAlicatPdf.mjs';
 import { costFrom, parseCostRule, costRuleFor, applyCostRule } from '../src/pricing/supplierPrices.mjs';
 import { pool } from '../src/db.mjs';
 import { materialiseSource, isSharepointRef } from '../src/sharepoint.mjs';
@@ -113,7 +113,7 @@ console.log(SUPPLIER
   ? `\nAlicat supplier list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line, held apart from the sell prices and given only on an explicit ask.`
   : `\nAlicat price list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line.`);
 
-let rows, blockers, sourceNote;
+let rows, blockers, sourceNote, optionRows = null;
 if (/\.pdf$/i.test(SOURCE)) {
   // The PDF path: pdftotext keeps the columns; the plain extractor is the
   // fallback and keeps the words in order but not the layout.
@@ -154,6 +154,16 @@ if (/\.pdf$/i.test(SOURCE)) {
     if (noCost.length) console.log(`  parts that would store no cost: ${noCost.slice(0, 10).map(s => `${s.partNumber} (${storedFor(s).costRule})`).join(', ')}${noCost.length > 10 ? `, and ${noCost.length - 10} more` : ''}`);
     const missing = Object.keys(nets).filter(k => !rows.some(s => s.normKey === k));
     if (missing.length) console.log(`  net prices named for parts the list does not show: ${missing.join(', ')}`);
+  }
+  if (!SUPPLIER) {
+    // The option tables, James's note of 11 September 2026: adders by code,
+    // stored with the sell prices so a configured code totals up.
+    optionRows = parseOptionRows(pdfText, { currency: r.currency.default || 'GBP' });
+    console.log(`\n  option adders read from the list's option tables: ${optionRows.options.length} code(s)`);
+    for (const o of optionRows.options.slice(0, 20)) console.log(`    ${o.code}: ${o.adder === 0 ? 'no cost' : `${o.currency} ${o.adder}`}  ${o.label}${o.markedDefault ? '  [default]' : ''}`);
+    if (optionRows.options.length > 20) console.log(`    and ${optionRows.options.length - 20} more`);
+    show('option rows with several figures, per-series tables not read yet, not stored', optionRows.multi);
+    show('option rows with no price beside them, not stored', optionRows.skipped);
   }
   show('conflicts settled on the command line', r.resolved);
   show('excluded lines, never ingested', r.excluded, SUPPLIER ? 'discount, margin or revision lines; read them for exceptions to state with --net or --discount-for' : 'cost, discount, margin or the supplier list by name');
@@ -248,8 +258,27 @@ try {
              source_tab = EXCLUDED.source_tab, effective_date = EXCLUDED.effective_date, ingested_at = now()`,
       [r.productLine, r.partNumber, r.normKey, r.description, r.currency, r.sellPrice, LIST_NAME, r.sourceTab || sourceNote, EFFECTIVE]);
   }
+  // The option adders ride with the sell prices, replaced wholesale with
+  // them, when the list came as a PDF with option tables and the table
+  // exists (migration 042).
+  let optionsStored = 0;
+  if (optionRows?.options?.length) {
+    const ready = (await client.query(`SELECT to_regclass('price_options') AS t`)).rows[0]?.t;
+    if (ready) {
+      await client.query(`DELETE FROM price_options WHERE product_line = $1`, [LINE]);
+      for (const o of optionRows.options) {
+        const ins = await client.query(
+          `INSERT INTO price_options (product_line, code, norm_code, label, currency, adder, marked_default, list_name, effective_date)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (product_line, norm_code) DO NOTHING`,
+          [LINE, o.code, o.normCode, o.label, o.currency, o.adder, o.markedDefault, LIST_NAME, EFFECTIVE]);
+        optionsStored += ins.rowCount;
+      }
+    } else {
+      console.log('\n  The option table is not created yet (migration 042); the adders were read but not stored. Run npm run migrate and apply again.');
+    }
+  }
   await client.query('COMMIT');
-  console.log(`\nStored. ${rows.length} Alicat price rows are live. The co-pilot answers Alicat part numbers from them once the price lookup switch on the Health page is on.`);
+  console.log(`\nStored. ${rows.length} Alicat price rows are live${optionsStored ? `, with ${optionsStored} option adder(s) by code` : ''}. The co-pilot answers Alicat part numbers from them once the price lookup switch on the Health page is on.`);
 } catch (e) {
   await client.query('ROLLBACK');
   console.error(`\nFailed, nothing changed: ${e.message}`);

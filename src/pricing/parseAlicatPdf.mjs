@@ -209,6 +209,43 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
   return { rows, report };
 }
 
+// Option rows, James's note of 11 September 2026: the list prints an option
+// as its label, the codes in brackets and a price, "M12 (-M12 or -M12O)
+// £62", "Serial w/ analogs + alarm (-ALM) £41", "Display (D, TFT, O)
+// [default] £124". A row with one price is an adder for every code in the
+// brackets; a cell that says included or no charge is a no-cost option; a
+// row with several figures is a per-series table the parser does not read
+// yet, reported and not stored. Pure, so the shapes are provable.
+const NO_COST = /^\s*(?:included|incl\.?|no charge|n\/c|free|standard|std)\s*$/i;
+export function parseOptionRows(src, { currency = 'GBP' } = {}) {
+  const out = { options: [], multi: [], skipped: [] };
+  for (const raw of String(src || '').replace(/\f/g, '\n').split(/\r?\n/)) {
+    const line = raw.trim();
+    const m = /^(.*?)\(([^()]{1,80})\)\s*(\[default\])?\s*(.*)$/i.exec(line);
+    if (!m) continue;
+    const label = text(m[1]);
+    const codes = m[2].split(/\s*(?:,|\bor\b|\/)\s*/i).map(c => c.trim().replace(/^-+/, '')).filter(c => /^[A-Z0-9][A-Z0-9-]{0,14}$/i.test(c));
+    if (!label || !codes.length) continue;
+    const tail = m[4] || '';
+    const prices = [];
+    PRICE_TOKEN.lastIndex = 0;
+    let p;
+    while ((p = PRICE_TOKEN.exec(tail)) !== null) {
+      const v = priceNumber(p[2] ?? p[3]);
+      if (v != null) prices.push({ price: v, currency: p[1] ? SYMBOL[p[1]] : currency });
+    }
+    const noCost = NO_COST.test(tail) || /\b(?:included|no charge|n\/c)\b/i.test(tail) && !prices.length;
+    if (!prices.length && !noCost) { if (tail.trim()) out.skipped.push(line.slice(0, 120)); continue; }
+    if (prices.length > 1) { out.multi.push(line.slice(0, 120)); continue; }
+    const price = noCost ? { price: 0, currency } : prices[0];
+    if (price.currency !== currency) { out.skipped.push(line.slice(0, 120)); continue; }
+    for (const code of codes) {
+      out.options.push({ code, normCode: code.toUpperCase().replace(/\s+/g, ''), label, currency, adder: price.price, markedDefault: !!m[3], line: line.slice(0, 120) });
+    }
+  }
+  return out;
+}
+
 // What stops --apply on a PDF read, pure over the report: nothing parsed,
 // figures with no currency anyone named, a part priced two ways, or a
 // document that reads as the USD list rather than the GBP one.

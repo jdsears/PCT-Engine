@@ -6,7 +6,7 @@
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
 import { quotedLine } from './quotedLines.mjs';
-import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost, familyKey, renderFamilyAnswer } from './priceAnswer.mjs';
+import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost, familyKey, renderFamilyAnswer, renderConfiguredTotal } from './priceAnswer.mjs';
 import { readFileSync } from 'node:fs';
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
@@ -17,7 +17,7 @@ import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } fr
 import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
-import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN } from './parseAlicatPdf.mjs';
+import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows } from './parseAlicatPdf.mjs';
 import { costFrom, renderCostLine, surchargePct, SURCHARGE_SERIES, parseCostRule, costRuleFor, applyCostRule } from './supplierPrices.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
@@ -196,6 +196,41 @@ await check('a configured code finds its base part, names its options, and cost 
   const ans = readFileSync(new URL('../answer.mjs', import.meta.url), 'utf8');
   assert(/priceIntent\(question\) && !\(configState && configState\.active\)\s*\?\s*\{ handled: false/.test(ans),
     'a price question with no build in progress never goes to the configurator');
+});
+
+await check('option adders read from the list\'s own option table, and a configured code totals base plus the adders it names', async () => {
+  // James's note on the first answer, 11 September 2026: M12 is an option at
+  // £62 on the list, PCV a no-cost option.
+  const table = [
+    'Communication options',
+    'Serial (RS232 or RS485) w/ analogs [default] DB9M **Recommended** £0 male Alicat pinout only',
+    'Serial w/ analogs + alarm (-ALM)                                    £41',
+    'M12 (-M12 or -M12O)                                                 £62',
+    'Display (D, TFT, O) [default]                                       £124',
+    'Remote Display (RD or TFTRD)                                        £145 £252 N/A',
+    'Valve (PCV30, PCV65)                                                Included',
+    'Housing (H)',
+  ].join('\n');
+  const o = parseOptionRows(table);
+  const get = c => o.options.find(x => x.normCode === c);
+  assert(get('M12')?.adder === 62 && get('M12O')?.adder === 62 && get('M12').label === 'M12', `M12 and M12O at £62: ${JSON.stringify(o.options)}`);
+  assert(get('ALM')?.adder === 41 && get('ALM').label === 'Serial w/ analogs + alarm', 'the dash comes off the code and the label is the list\'s own');
+  assert(get('D')?.adder === 124 && get('TFT')?.adder === 124 && get('O')?.markedDefault === true, 'a row marked default carries the mark');
+  assert(get('PCV30')?.adder === 0 && get('PCV65')?.adder === 0, 'an included option is a no-cost option');
+  assert(!get('RD') && o.multi.some(l => /Remote Display/.test(l)), 'a per-series row with several figures is reported, not stored');
+  assert(!get('H') && !o.skipped.some(l => /Housing/.test(l)), 'a row with no price and nothing after it is simply not an option row');
+  assert(!o.options.some(x => /RS232|RS485/.test(x.normCode)) && o.skipped.some(l => /^Serial \(RS232/.test(l)), 'a £0 default line with connector names in brackets is not an adder, and is listed as read without a price');
+  const adders = { M12: { code: 'M12', label: 'M12', currency: 'GBP', adder: 62 }, PCV30: { code: 'PCV30', label: 'Valve', currency: 'GBP', adder: 0, byFamily: 'PCV' } };
+  const total = renderConfiguredTotal(1410, ['M12', 'PCV30', '5P'], adders, 'GBP');
+  assert(/- M12: £62, M12/.test(total) && /- PCV30: no cost, Valve \(priced as PCV\)/.test(total), `each option traceable: ${total}`);
+  assert(/Base plus the priced options: £1,472\. 5P is not priced on the loaded list/.test(total), 'the partial total is stated and the unpriced option named');
+  const full = renderConfiguredTotal(1410, ['M12', 'PCV30'], adders, 'GBP');
+  assert(/Configured price: £1,472, the base £1,410 plus £62 of options\./.test(full), 'all options priced: one configured figure');
+  assert(/not priced on the loaded list/.test(renderConfiguredTotal(1410, ['XYZ'], {}, 'GBP')) && !/£/.test(renderConfiguredTotal(1410, ['XYZ'], {}, 'GBP').split('\n')[0].replace('£1,410', '')), 'nothing priced: no total is invented');
+  const answer = renderPriceAnswer({ partNumber: 'PCD-100PSIG-D', description: null, prices: { GBP: 1410 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null },
+    { configured: 'PCD-100PSIG-D-M12-PCV30/5P', options: ['M12', 'PCV30', '5P'], adders });
+  assert(/Base plus the priced options: £1,472/.test(answer) && !/not held in the engine yet/.test(answer), 'the configured answer totals when adders are held');
+  assert(!/[—–!]/.test(answer) && !/\bgenuinely\b/i.test(answer), 'voice rules hold');
 });
 
 await check('when nothing matches as written or shortened, the family\'s stored parts answer, never a guess', async () => {
