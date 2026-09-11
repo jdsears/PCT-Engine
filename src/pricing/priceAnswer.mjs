@@ -54,6 +54,30 @@ export function baseKeys(token) {
 export const optionsAfter = (token, base) =>
   String(token || '').toUpperCase().replace(/\s+/g, '').slice(String(base || '').length).split(/[/-]/).filter(Boolean);
 
+// The family a code belongs to: its series and range, the first two
+// segments (PCD-100PSIG). When neither the code nor any shortening of it is
+// stored, the family's stored parts are the honest answer: what the list
+// holds nearest to what was asked, never a guess at which one was meant.
+export function familyKey(token) {
+  const m = /^([A-Z]{1,5}\d{0,3}-[A-Z0-9.]+)(?=[/-]|$)/.exec(String(token || '').toUpperCase().replace(/\s+/g, ''));
+  return m ? m[1] : null;
+}
+
+export function renderFamilyAnswer(token, family, matches, { askedCost = false, costs = {} } = {}) {
+  const lines = [`**${token}** is not in the loaded list as written. The list holds these ${family} parts:`, ''];
+  for (const m of matches.slice(0, 8)) {
+    const prices = ['GBP', 'EUR', 'USD'].filter(c => m.prices[c] != null).map(c => `${SYM[c]}${Number(m.prices[c]).toLocaleString('en-GB')}`).join(', ');
+    const cost = askedCost && costs[m.partNumber]?.cost != null ? `; purchase ${SYM[costs[m.partNumber].currency] || ''}${Number(costs[m.partNumber].cost).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
+    lines.push(`- ${m.partNumber}${m.description ? `, ${m.description}` : ''}: ${prices}${cost}`);
+  }
+  if (matches.length > 8) lines.push(`- and ${matches.length - 8} more`);
+  const opts = optionsAfter(token, family);
+  lines.push('', `Sell prices from the ${matches[0].listName}, never estimated.` +
+    (opts.length ? ` The part after ${family} in what was asked, ${opts.join(', ')}, reads as options or a variant; options are priced as additions and are not held in the engine yet.` : ''));
+  if (askedCost && !matches.some(m => costs[m.partNumber]?.cost != null)) lines.push('', 'Purchase price: not held for these parts.');
+  return lines.join('\n');
+}
+
 // An explicit ask for the other side of the price. John's rule, 11
 // September 2026: the purchase price is given only when someone asks for
 // it in so many words; every other price question answers with the sell
@@ -185,6 +209,18 @@ export async function priceTurn(question) {
       const b = await lookupPrice(base);
       if (b.exact && b.matches.length) {
         return { answer: renderPriceAnswer(b.matches[0], { configured: tok, options: optionsAfter(tok, base), askedCost, cost: await costFor(base) }), kind: 'price' };
+      }
+    }
+    // Nothing stored as written or shortened: the family's stored parts,
+    // James's PCD-100PSIG-D-M12-PCV30/5P of 11 September 2026, where the
+    // list spells the pressure controllers another way.
+    const family = familyKey(tok);
+    if (family && family !== tok.toUpperCase()) {
+      const f = await lookupPrice(family, { limit: 8 });
+      if (f.matches.length) {
+        const costs = {};
+        if (askedCost) for (const m of f.matches.slice(0, 8)) { const c = await costFor(m.partNumber); if (c) costs[m.partNumber] = c; }
+        return { answer: renderFamilyAnswer(tok, family, f.matches, { askedCost, costs }), kind: 'family' };
       }
     }
   }

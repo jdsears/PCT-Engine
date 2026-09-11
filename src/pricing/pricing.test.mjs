@@ -6,7 +6,7 @@
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
 import { quotedLine } from './quotedLines.mjs';
-import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost } from './priceAnswer.mjs';
+import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost, familyKey, renderFamilyAnswer } from './priceAnswer.mjs';
 import { readFileSync } from 'node:fs';
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
@@ -18,7 +18,7 @@ import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
 import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN } from './parseAlicatPdf.mjs';
-import { costFrom, renderCostLine } from './supplierPrices.mjs';
+import { costFrom, renderCostLine, surchargePct, SURCHARGE_SERIES } from './supplierPrices.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 let pass = 0, fail = 0;
@@ -195,6 +195,27 @@ await check('a configured code finds its base part, names its options, and cost 
     'a price question with no build in progress never goes to the configurator');
 });
 
+await check('when nothing matches as written or shortened, the family\'s stored parts answer, never a guess', async () => {
+  // James's second run, 11 September 2026: the list spells its pressure
+  // controllers another way, so the whole-line summary came back instead.
+  assert(familyKey('PCD-100PSIG-D-M12-PCV30/5P') === 'PCD-100PSIG' && familyKey('MC-500SCCM-D') === 'MC-500SCCM' && familyKey('P-10TORRA-D-SAE4') === 'P-10TORRA', 'series and range');
+  assert(familyKey('SEM203/P') === null && familyKey('7100') === null && familyKey('BB3') === null, 'a code without a hyphenated range has no family');
+  const matches = [
+    { partNumber: 'PCD-100PSIG-D-PCV30', description: 'Pressure controller, 100 psig, PCV30', prices: { GBP: 1520 }, listName: 'Alicat Q1 2026' },
+    { partNumber: 'PCD-100PSIG-D-PCV65', description: null, prices: { GBP: 1610 }, listName: 'Alicat Q1 2026' },
+  ];
+  const text = renderFamilyAnswer('PCD-100PSIG-D-M12-PCV30/5P', 'PCD-100PSIG', matches, { askedCost: true, costs: { 'PCD-100PSIG-D-PCV30': { cost: 988.5, currency: 'USD' } } });
+  assert(/\*\*PCD-100PSIG-D-M12-PCV30\/5P\*\* is not in the loaded list as written\. The list holds these PCD-100PSIG parts:/.test(text), 'the miss is stated first');
+  assert(/- PCD-100PSIG-D-PCV30, Pressure controller, 100 psig, PCV30: £1,520; purchase \$988\.50/.test(text), 'each stored part with its sell price, and the purchase price where held and asked');
+  assert(/- PCD-100PSIG-D-PCV65: £1,610$/m.test(text) && !/PCV65.*purchase/.test(text), 'no purchase figure is invented for a part without one');
+  assert(/Sell prices from the Alicat Q1 2026, never estimated\. The part after PCD-100PSIG in what was asked, D, M12, PCV30, 5P, reads as options or a variant/.test(text), 'the tail is named as options or a variant');
+  const unasked = renderFamilyAnswer('PCD-100PSIG-D-M12-PCV30/5P', 'PCD-100PSIG', matches, { askedCost: false, costs: { 'PCD-100PSIG-D-PCV30': { cost: 988.5, currency: 'USD' } } });
+  assert(!/purchase/i.test(unasked), 'not asked: no purchase figure, even with one to hand');
+  const none = renderFamilyAnswer('PCD-100PSIG-D-M12-PCV30/5P', 'PCD-100PSIG', matches, { askedCost: true, costs: {} });
+  assert(/Purchase price: not held for these parts\./.test(none), 'asked with nothing held: said plainly');
+  assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
+});
+
 await check('the purchase price is held apart, worked out from the list, and given only on an explicit ask', async () => {
   // John's rule, 11 September 2026, agreed with James: both prices may be
   // given, the supplier's only when asked for in so many words.
@@ -207,6 +228,13 @@ await check('the purchase price is held apart, worked out from the list, and giv
   assert(/Never a figure to quote; the sell price is the one for customers/.test(line), 'the line says what the figure is for');
   assert(/a stated net buying price/.test(renderCostLine({ ...cost, netPrice: 700, cost: 700 })), 'a net price says so');
   assert(renderCostLine(null) === 'Purchase price: not held for this part.', 'nothing held is said plainly');
+  // Alicat's rev 101 notice: the low-volume surcharge on BASIS and EP/C/D
+  // units, (51 minus quantity) times 2%, stated only for those series.
+  assert(surchargePct(10) === 82 && surchargePct(1) === 100 && surchargePct(51) === 0 && surchargePct(60) === 0, 'the notice\'s own example, ten units at 82%');
+  assert(SURCHARGE_SERIES.test('EPC-100PSI') && SURCHARGE_SERIES.test('EPD-500SCCM-D') && SURCHARGE_SERIES.test('EP-1SLPM') && SURCHARGE_SERIES.test('BASIS-2-100SCCM'), 'the series the notice names');
+  assert(!SURCHARGE_SERIES.test('PCD-100PSIG-D') && !SURCHARGE_SERIES.test('MC-500SCCM-D') && !SURCHARGE_SERIES.test('EPIC-1'), 'mainline units carry no surcharge');
+  assert(/Low-volume surcharge applies to BASIS and EP\/C\/D units, per Alicat's rev 101 notice/.test(renderCostLine({ ...cost, partNumber: 'EPC-100PSI' })) && /82% at ten units and 100% for a single unit/.test(renderCostLine({ ...cost, partNumber: 'EPC-100PSI' })), 'an EPC costing carries the surcharge');
+  assert(!/surcharge/i.test(line), 'a mainline costing does not');
   const m = { partNumber: 'PCD-100PSIG-D', description: 'Pressure controller', prices: { GBP: 1328 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null };
   const asked = renderPriceAnswer(m, { askedCost: true, cost });
   assert(/£1,328/.test(asked) && /Purchase price, given because you asked for it: \$1,234\.56/.test(asked), 'asked: the sell price first, then the purchase price');
