@@ -817,6 +817,7 @@ const PDF_FIXTURE = [
   'MCP-Series MCRS-Series MCQ-50SLPM-D £1,812',
   '10/32 5μ Brass/Buna ILFE20 £8',
   'PC-EXTSEN-D-ISC £964',
+  'PCD-100PSIA-D or PCD-100PSIG-D or PCD-100PSID-D                 £1,410',
   'FP-25              £2,689',
   'Carrying case for FP-25                                 £430',
   'FP-25              N/A                                  £430',
@@ -841,7 +842,12 @@ await check('four series columns to a line: each price belongs to the part just 
   assert(get('MCR-500SLPM-D')?.sellPrice === 2159 && get('MCR-500SLPM-D').description === 'Mass flow controller, 500 slpm', 'a description between the part and its price travels');
   assert(rows.filter(r => r.normKey === 'MCR-500SLPM-D').length === 1, 'the identical repeat is one row');
   assert(rows.every(r => r.currency === 'GBP' && r.sourceTab === 'pdf' && r.productLine === 'alicat'), 'rows carry the currency, the line and the source');
-  assert(report.currency.default === 'GBP' && report.parts === 13 && report.rows === 13, `counts: ${JSON.stringify([report.currency.default, report.parts, report.rows])}`);
+  assert(report.currency.default === 'GBP' && report.parts === 16 && report.rows === 16, `counts: ${JSON.stringify([report.currency.default, report.parts, report.rows])}`);
+  // The list's alternates: one price for the absolute, gauge and
+  // differential references, each stored as its own key.
+  assert(get('PCD-100PSIA-D')?.sellPrice === 1410 && get('PCD-100PSIG-D')?.sellPrice === 1410 && get('PCD-100PSID-D')?.sellPrice === 1410, `alternates each take the price: ${JSON.stringify(rows.filter(r => /^PCD-100/.test(r.partNumber)))}`);
+  assert(get('PCD-100PSIA-D').description === null && get('PCD-100PSIG-D').description === 'listed with PCD-100PSIA-D', 'the first carries no "or" text as a description, the others say where they were listed');
+  assert(report.alternates === 2, 'the alternates are counted');
   assert(report.head.length >= 10 && /Alicat Scientific/.test(report.head[1]), 'the top of the document travels for a human');
   assert(get('MCQ-50SLPM-D')?.sellPrice === 1812 && get('MCQ-50SLPM-D').description === null, 'a series heading sharing the line with the first pair is ignored, not a mention');
   assert(get('ILFE20')?.sellPrice === 8 && get('ILFE20').description === '10/32 5μ Brass/Buna', 'a specification before the code is its description');

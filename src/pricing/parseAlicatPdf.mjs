@@ -132,19 +132,38 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
       if (!supplier && price.currency === 'USD') { sample(report.usd, pair); continue; }
       if (supplier && price.currency && price.currency !== 'USD') { sample(report.otherCurrency, pair); continue; }
       if (!price.currency) { sample(report.bareUnknown, pair); continue; }
-      const description = text([lead, line.slice(first.end, price.at)].join(' ')) || null;
-      const key = `${normKey(first.part)}|${price.currency}`;
+      // Alternates, from John's lookup of 11 September 2026: the list prints
+      // "PCD-100PSIA-D or PCD-100PSIG-D or PCD-100PSID-D £1,410", one price
+      // for the absolute, gauge and differential references. Codes joined by
+      // "or" (or a slash or a comma) before the figure each take the price
+      // as their own row, and none of them is the first one's description.
+      const alternates = [];
+      let prevEnd = first.end;
+      for (const p of inSegment.slice(inSegment.indexOf(first) + 1)) {
+        if (!/^\s*(?:or|\/|,|;|&|and)\s*$/i.test(line.slice(prevEnd, p.at))) break;
+        alternates.push(p);
+        prevEnd = p.end;
+      }
+      const description = text([lead, line.slice(prevEnd, price.at)].join(' ')) || null;
+      if (alternates.length) report.alternates = (report.alternates || 0) + alternates.length;
       // sellPrice is the row's figure in either mode; the supplier ingest
       // stores it as the list price, never as a sell.
-      const row = { productLine, partNumber: first.part, normKey: normKey(first.part), description, currency: price.currency, sellPrice: price.price, price: price.price, sourceTab: 'pdf', line: pair };
-      const prior = seen.get(key);
-      if (prior && prior.sellPrice !== price.price) {
-        const c = conflicts.get(key) || { partNumber: prior.partNumber, currency: price.currency, occurrences: [prior] };
-        c.occurrences.push(row);
-        conflicts.set(key, c);
-        continue;
+      const rowsHere = [
+        { part: first.part, description },
+        ...alternates.map(a => ({ part: a.part, description: `listed with ${first.part}` })),
+      ];
+      for (const { part, description: desc } of rowsHere) {
+        const key = `${normKey(part)}|${price.currency}`;
+        const row = { productLine, partNumber: part, normKey: normKey(part), description: desc, currency: price.currency, sellPrice: price.price, price: price.price, sourceTab: 'pdf', line: pair };
+        const prior = seen.get(key);
+        if (prior && prior.sellPrice !== price.price) {
+          const c = conflicts.get(key) || { partNumber: prior.partNumber, currency: price.currency, occurrences: [prior] };
+          c.occurrences.push(row);
+          conflicts.set(key, c);
+          continue;
+        }
+        if (!prior) seen.set(key, row);
       }
-      if (!prior) seen.set(key, row);
     }
     const after = parts.filter(p => p.at >= prev);
     if (after.length && !prices.length) sample(report.partNoPrice, text(line));
