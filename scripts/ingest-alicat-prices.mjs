@@ -26,21 +26,42 @@ import { readFile } from 'node:fs/promises';
 import ExcelJS from 'exceljs';
 import { parseAlicatWorkbook, applyBlockers, colLetter } from '../src/pricing/parseAlicat.mjs';
 import { parseAlicatPdfText, pdfApplyBlockers } from '../src/pricing/parseAlicatPdf.mjs';
+import { costFrom } from '../src/pricing/supplierPrices.mjs';
 import { pool } from '../src/db.mjs';
 import { materialiseSource, isSharepointRef } from '../src/sharepoint.mjs';
 
 const args = process.argv.slice(2);
 const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : (args[i + 1] || null); };
 const APPLY = args.includes('--apply');
-const SOURCE = flag('--file');
+// --supplier reads the supplier's own list into the supplier table, held
+// apart from the sell table and given only on an explicit ask for the
+// purchase price. John's rule of 11 September 2026, agreed with James.
+//   node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:Alicat/08-Price-List-101-and-adjustment-OEM-units.pdf" --discount 35
+//   ... --net "PCD-100PSIG-D=950" --discount-for "MC-500SCCM-D=20" --apply
+const SUPPLIER = flag('--supplier');
+const SOURCE = flag('--file') || SUPPLIER;
 const SHEET = flag('--sheet');
-const LIST_NAME = flag('--list') || 'Alicat Q1 2026';
+const LIST_NAME = flag('--list') || (SUPPLIER ? 'Alicat Price List 101' : 'Alicat Q1 2026');
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 const LINE = 'alicat';
+const DISCOUNT = flag('--discount') == null ? 35 : parseFloat(flag('--discount'));
 
 if (!SOURCE) {
   console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--apply]');
+  console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--net "PART=figure"] [--discount-for "PART=pct"] [--list <name>] [--effective YYYY-MM-DD] [--apply]');
   process.exit(1);
+}
+if (SUPPLIER && !/\.pdf$/i.test(SUPPLIER)) { console.error('--supplier reads the supplier\'s PDF list; a workbook is not read this way'); process.exit(1); }
+if (SUPPLIER && (!Number.isFinite(DISCOUNT) || DISCOUNT < 0 || DISCOUNT >= 100)) { console.error('--discount wants a percentage off list, for example 35'); process.exit(1); }
+// Per-part exceptions to the standing discount: a stated net buying price,
+// or a different discount, both printed in the dry run beside the cost.
+const nets = {}, discounts = {};
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--net' || args[i] === '--discount-for') {
+    const m = /^(.+?)=\s*£?\$?([\d,]+(?:\.\d+)?)$/.exec(args[i + 1] || '');
+    if (!m) { console.error(`${args[i]} wants "PART=figure", got ${args[i + 1] || 'nothing'}`); process.exit(1); }
+    (args[i] === '--net' ? nets : discounts)[m[1].trim().toUpperCase().replace(/\s+/g, '')] = parseFloat(m[2].replace(/,/g, ''));
+  }
 }
 if (!/^\d{4}-\d{2}-\d{2}$/.test(EFFECTIVE)) {
   console.error(`--effective must be YYYY-MM-DD, got ${EFFECTIVE}`);
@@ -73,7 +94,9 @@ catch (e) { console.error(`Workbook fetch failed: ${String(e.message).slice(0, 2
 
 const at = c => `column ${c.col} (${colLetter(c.col)}) "${c.header}"`;
 const stop = async (code) => { await pool.end(); process.exit(code); };
-console.log(`\nAlicat price list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line.`);
+console.log(SUPPLIER
+  ? `\nAlicat supplier list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line, held apart from the sell prices and given only on an explicit ask.`
+  : `\nAlicat price list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line.`);
 
 let rows, blockers, sourceNote;
 if (/\.pdf$/i.test(SOURCE)) {
@@ -86,17 +109,29 @@ if (/\.pdf$/i.test(SOURCE)) {
     const { parseOfficeAsync } = await import('officeparser');
     pdfText = String(await parseOfficeAsync(await readFile(FILE)) || '');
   }
-  const parsed = parseAlicatPdfText(pdfText, { currency: CURRENCY, resolve });
+  const parsed = parseAlicatPdfText(pdfText, { currency: CURRENCY, resolve, mode: SUPPLIER ? 'supplier' : 'sell' });
   rows = parsed.rows;
   const r = parsed.report;
   console.log(`  read as a PDF: ${r.lines} line(s) of text, currency for bare figures ${r.currency.default || 'unknown'}` +
     ` (symbols seen: £ ${r.currency.seen.GBP}, € ${r.currency.seen.EUR}, $ ${r.currency.seen.USD})`);
   console.log(`\n  ${r.parts} part(s), ${r.rows} price row(s).`);
-  for (const s of rows.slice(0, 8)) console.log(`    sample: ${s.partNumber}  ${s.currency} ${s.sellPrice}${s.description ? '  ' + s.description.slice(0, 50) : ''}`);
+  const costOf = s => costFrom({ listPrice: s.price, discountPct: nets[s.normKey] != null ? null : (discounts[s.normKey] ?? DISCOUNT), netPrice: nets[s.normKey] ?? null });
+  for (const s of rows.slice(0, 8)) {
+    console.log(SUPPLIER
+      ? `    sample: ${s.partNumber}  list ${s.currency} ${s.price}  cost ${s.currency} ${costOf(s)}${nets[s.normKey] != null ? ' (stated net)' : ` (less ${discounts[s.normKey] ?? DISCOUNT}%)`}${s.description ? '  ' + s.description.slice(0, 40) : ''}`
+      : `    sample: ${s.partNumber}  ${s.currency} ${s.sellPrice}${s.description ? '  ' + s.description.slice(0, 50) : ''}`);
+  }
   const show = (label, list, why) => { if (list.length) { console.log(`  ${label}${why ? `, ${why}` : ''}:`); for (const l of list) console.log(`    ${l}`); } };
+  if (SUPPLIER) {
+    const missing = [...Object.keys(nets), ...Object.keys(discounts)].filter(k => !rows.some(s => s.normKey === k));
+    if (missing.length) console.log(`  exceptions named for parts the list does not show: ${missing.join(', ')}`);
+    const named = rows.filter(s => nets[s.normKey] != null || discounts[s.normKey] != null);
+    if (named.length) console.log(`  exceptions applied: ${named.map(s => `${s.partNumber} ${nets[s.normKey] != null ? `net ${nets[s.normKey]}` : `${discounts[s.normKey]}%`}`).join(', ')}`);
+  }
   show('conflicts settled on the command line', r.resolved);
-  show('excluded lines, never ingested', r.excluded, 'cost, discount, margin or the supplier list by name');
+  show('excluded lines, never ingested', r.excluded, SUPPLIER ? 'discount, margin or revision lines; read them for exceptions to state with --net or --discount-for' : 'cost, discount, margin or the supplier list by name');
   show('USD figures set aside', r.usd, 'the USD list is the supplier\'s');
+  show('sterling or euro figures set aside', r.otherCurrency, 'the supplier list is in USD');
   show('adders, not stored', r.adders, 'priced as an addition to a base unit, not a price of a part');
   show('parts mentioned inside a description, not stored as that part\'s price', r.mentions);
   show('option table rows, not stored', r.options, 'the figure is an option\'s, with a cell between the code and it');
@@ -155,6 +190,26 @@ if (!APPLY) {
 const client = await pool.connect();
 try {
   await client.query('BEGIN');
+  if (SUPPLIER) {
+    await client.query(`DELETE FROM supplier_prices WHERE product_line = $1`, [LINE]);
+    for (const r of rows) {
+      const net = nets[r.normKey] ?? null;
+      const pct = net != null ? null : (discounts[r.normKey] ?? DISCOUNT);
+      await client.query(
+        `INSERT INTO supplier_prices (product_line, part_number, norm_key, description, currency, list_price, discount_pct, net_price, list_name, effective_date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         ON CONFLICT (product_line, norm_key) DO UPDATE
+           SET part_number = EXCLUDED.part_number, description = EXCLUDED.description, currency = EXCLUDED.currency,
+               list_price = EXCLUDED.list_price, discount_pct = EXCLUDED.discount_pct, net_price = EXCLUDED.net_price,
+               list_name = EXCLUDED.list_name, effective_date = EXCLUDED.effective_date, ingested_at = now()`,
+        [r.productLine, r.partNumber, r.normKey, r.description, r.currency, r.price, pct, net, LIST_NAME, EFFECTIVE]);
+    }
+    await client.query('COMMIT');
+    console.log(`\nStored. ${rows.length} supplier list rows are held apart. The co-pilot gives the purchase price only when someone asks for it in so many words.`);
+    client.release();
+    await pool.end();
+    process.exit(0);
+  }
   await client.query(`DELETE FROM prices WHERE product_line = $1`, [LINE]);
   for (const r of rows) {
     await client.query(

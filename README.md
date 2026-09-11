@@ -571,7 +571,9 @@ every five minutes; `scripts/intel-poll.mjs` runs it by hand, dry by default.
 
 Sales pricing is deterministic end to end: prices never go through the
 embedding pipeline, and no model sits between a part number and its price.
-Migration 018 adds the `prices` table, holding customer sell prices only.
+Migration 018 adds the `prices` table, holding customer sell prices only;
+supplier prices, where held, live apart (see below) and are given only on
+an explicit ask.
 
 - `src/pricing/parseMega.mjs` parses the Mega Price List's explicit sell tabs
   (Status, EGE, King). Each tab's spec names the cost, purchase and supplier
@@ -658,6 +660,32 @@ each of these with poison values.
   with the lowest loaded row under the sell wording, never the guide caveat,
   and a whole-line question with the loaded range. Before the list is
   ingested the brand word routes to the enquiry note like the other lines.
+- A configured code (PCD-100PSIG-D-M12-PCV30/5P) is shortened a segment at
+  a time until a stored base part answers, and the reply names the options
+  that came off as additions not yet held. A price question never goes to
+  the part-number configurator while no build is in progress.
+
+### Supplier prices, on an explicit ask only
+
+John's rule of 11 September 2026, agreed with James: the co-pilot may give
+both prices, but the supplier's price only when someone asks for the
+purchase price in so many words ("what do we buy it for", "confirm our
+costings"); every other price question answers with the sell price and never
+mentions cost. So the supplier's list never joins the sell table. Migration
+040 holds it apart in `supplier_prices` with the standing discount or a
+stated net buying price beside each part; the cost is arithmetic over the
+two (`src/pricing/supplierPrices.mjs`), never guessed; and the lookup reads
+that table only on an explicit ask, rendering one line that says the figure,
+how it was arrived at, where it came from, and that it is never a figure to
+quote. Drafts, quotes and unasked answers never see it.
+
+`scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf"
+--discount 35` reads the supplier's USD list in its own mode, where a USD
+figure is the price and a sterling one is set aside; `--net "PART=figure"`
+and `--discount-for "PART=pct"` state the exceptions James described (a net
+buying price, or a different discount) per part, and the dry run prints the
+cost each row would carry. `--apply` replaces the line's supplier rows
+wholesale.
 
 ## Website trawl
 

@@ -36,6 +36,10 @@ CAMPAIGN_NOTIFY_EMAILS={"marwin_dc":"jameskybird@pctflow.com","pharma_steriflow"
 - The co-pilot answers only from the documents and cites them; when something is
   not in the corpus it says so rather than guessing.
 - The configurator never invents a part-number code.
+- Prices: the co-pilot answers a price question with the sell price. The
+  supplier's price is held apart and given only when someone asks for the
+  purchase price in so many words (John, 11 September 2026, agreed with
+  James); it never appears in a draft, a quote or an unasked answer.
 - An outbound draft may state only what the lead's research supports; an
   untraceable claim is flagged before a human ever sees the draft as clean.
 - The nameable-supplier guardrail holds: name the lines that may be named

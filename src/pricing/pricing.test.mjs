@@ -18,6 +18,7 @@ import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
 import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN } from './parseAlicatPdf.mjs';
+import { costFrom, renderCostLine } from './supplierPrices.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 let pass = 0, fail = 0;
@@ -185,13 +186,55 @@ await check('a configured code finds its base part, names its options, and cost 
   assert(/\*\*PCD-100PSIG-D\*\*, Pressure controller, 100 psig: £1,328\./.test(text), 'the base price renders');
   assert(/Sell price from the Alicat Q1 2026 list, effective 2026-09-10/.test(text) && !/pdf tab/.test(text), 'a PDF source reads as the list, not a tab');
   assert(/options are priced as additions and are not held in the engine yet/.test(text), 'the options are named as additions, honestly');
-  assert(/holds sell prices only; cost and supplier prices are never stored here/.test(text), 'cost is refused in a sentence');
+  assert(/Purchase price: not held for this part/.test(text), 'an ask for cost with nothing held says so in a sentence');
   assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
   const plain = renderPriceAnswer({ partNumber: 'MC-500SCCM-D', description: null, prices: { GBP: 1071 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null });
-  assert(!/reads as the base part|additions|cost and supplier/.test(plain), 'a plain part carries none of the configured or cost lines');
+  assert(!/reads as the base part|additions|Purchase price|purchase/i.test(plain), 'a plain part carries none of the configured or cost lines');
   const ans = readFileSync(new URL('../answer.mjs', import.meta.url), 'utf8');
   assert(/priceIntent\(question\) && !\(configState && configState\.active\)\s*\?\s*\{ handled: false/.test(ans),
     'a price question with no build in progress never goes to the configurator');
+});
+
+await check('the purchase price is held apart, worked out from the list, and given only on an explicit ask', async () => {
+  // John's rule, 11 September 2026, agreed with James: both prices may be
+  // given, the supplier's only when asked for in so many words.
+  assert(costFrom({ listPrice: 1000, discountPct: 35 }) === 650 && costFrom({ listPrice: 1000, discountPct: 20 }) === 800, 'list less the discount');
+  assert(costFrom({ listPrice: 1000, discountPct: 35, netPrice: 700 }) === 700, 'a stated net buying price wins');
+  assert(costFrom({ listPrice: 1000 }) === null && costFrom({ listPrice: 0, discountPct: 35 }) === null && costFrom({ listPrice: 1000, discountPct: 100 }) === null, 'a cost is never guessed');
+  const cost = { partNumber: 'PCD-100PSIG-D', currency: 'USD', listPrice: 1899.32, discountPct: 35, netPrice: null, cost: 1234.56, listName: 'Alicat Price List 101', effectiveDate: '2026-01-01' };
+  const line = renderCostLine(cost);
+  assert(/Purchase price, given because you asked for it: \$1,234\.56, the supplier's list \$1,899\.32 less 35%, from the Alicat Price List 101, effective 2026-01-01/.test(line), line);
+  assert(/Never a figure to quote; the sell price is the one for customers/.test(line), 'the line says what the figure is for');
+  assert(/a stated net buying price/.test(renderCostLine({ ...cost, netPrice: 700, cost: 700 })), 'a net price says so');
+  assert(renderCostLine(null) === 'Purchase price: not held for this part.', 'nothing held is said plainly');
+  const m = { partNumber: 'PCD-100PSIG-D', description: 'Pressure controller', prices: { GBP: 1328 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null };
+  const asked = renderPriceAnswer(m, { askedCost: true, cost });
+  assert(/£1,328/.test(asked) && /Purchase price, given because you asked for it: \$1,234\.56/.test(asked), 'asked: the sell price first, then the purchase price');
+  const unasked = renderPriceAnswer(m, { askedCost: false, cost });
+  assert(/£1,328/.test(unasked) && !/1,234|purchase|supplier's list/i.test(unasked), 'not asked: the sell price only, even with a cost to hand');
+  assert(asksCost('what do we buy the MC-500SCCM-D for') && asksCost('confirm our costings on PCD-100PSIG-D') && asksCost('purchase price please'), 'buying, costings and purchase are explicit asks');
+  assert(!asksCost('what is the price of an MC-500SCCM-D') && !asksCost('how much is the PCD-100PSIG-D'), 'a plain price question is not an ask for cost');
+  assert(!/[—–!]/.test(asked) && !/\bgenuinely\b/i.test(asked), 'voice rules hold');
+});
+
+await check('the supplier list reads in its own mode: USD is the price, sterling is set aside, and the sell mode still refuses it', async () => {
+  const usd = [
+    'Alicat Scientific Price List 101                Prices in USD',
+    'MC-500SCCM-D          Mass flow controller, 500 sccm           $1,650',
+    'MCR-5SLPM-D           $2,900 MCS-5SLPM-D           $3,200',
+    'FP-25                 $4,100',
+    'UK partner list reference   PC-15PSIG-D             £845',
+  ].join('\n');
+  const s = parseAlicatPdfText(usd, { mode: 'supplier' });
+  const get = k => s.rows.find(r => r.normKey === k);
+  assert(s.report.mode === 'supplier' && s.report.currency.default === 'USD', 'the supplier read expects USD');
+  assert(get('MC-500SCCM-D')?.price === 1650 && get('MC-500SCCM-D').currency === 'USD' && get('MCS-5SLPM-D')?.price === 3200 && get('FP-25')?.price === 4100, `USD figures are the prices: ${JSON.stringify(s.rows.map(r => r.partNumber + '=' + r.price))}`);
+  assert(!get('PC-15PSIG-D') && s.report.otherCurrency.some(l => /PC-15PSIG-D £845/.test(l)), 'a sterling figure is set aside in the supplier read');
+  assert(pdfApplyBlockers(s.report).length === 0, 'a clean supplier read has no blockers');
+  const sell = parseAlicatPdfText(usd.split('\n').slice(0, 4).join('\n'));
+  assert(sell.rows.length === 0 && pdfApplyBlockers(sell.report).some(b => /every price is in USD, which reads as the supplier list, never a sell/.test(b)), 'the same document in sell mode stores nothing and says why');
+  const wrongWay = parseAlicatPdfText('Prices in GBP\nMC-500SCCM-D  £1,071\n', { mode: 'supplier' });
+  assert(wrongWay.rows.length === 0 && pdfApplyBlockers(wrongWay.report).some(b => /reads as the customer list, not the supplier's/.test(b)), 'the customer list in supplier mode stores nothing and says why');
 });
 
 await check('a stored price renders with its source and never as an estimate', async () => {
