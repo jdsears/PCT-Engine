@@ -25,8 +25,8 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import ExcelJS from 'exceljs';
 import { parseAlicatWorkbook, applyBlockers, colLetter } from '../src/pricing/parseAlicat.mjs';
-import { parseAlicatPdfText, pdfApplyBlockers } from '../src/pricing/parseAlicatPdf.mjs';
-import { costFrom } from '../src/pricing/supplierPrices.mjs';
+import { parseAlicatPdfText, pdfApplyBlockers, parseOptionRows } from '../src/pricing/parseAlicatPdf.mjs';
+import { costFrom, parseCostRule, costRuleFor, applyCostRule } from '../src/pricing/supplierPrices.mjs';
 import { pool } from '../src/db.mjs';
 import { materialiseSource, isSharepointRef } from '../src/sharepoint.mjs';
 
@@ -48,21 +48,36 @@ const DISCOUNT = flag('--discount') == null ? 35 : parseFloat(flag('--discount')
 
 if (!SOURCE) {
   console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--apply]');
-  console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--net "PART=figure"] [--discount-for "PART=pct"] [--list <name>] [--effective YYYY-MM-DD] [--apply]');
+  console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--rule "PATTERN=pct|partner|list"] [--net "PART=figure"] [--list <name>] [--effective YYYY-MM-DD] [--apply]');
   process.exit(1);
 }
 if (SUPPLIER && !/\.pdf$/i.test(SUPPLIER)) { console.error('--supplier reads the supplier\'s PDF list; a workbook is not read this way'); process.exit(1); }
 if (SUPPLIER && (!Number.isFinite(DISCOUNT) || DISCOUNT < 0 || DISCOUNT >= 100)) { console.error('--discount wants a percentage off list, for example 35'); process.exit(1); }
-// Per-part exceptions to the standing discount: a stated net buying price,
-// or a different discount, both printed in the dry run beside the cost.
-const nets = {}, discounts = {};
+// Exceptions to the standing discount, James's rules of 11 September 2026,
+// as --rule "PATTERN=VALUE", repeatable: an exact code or a prefix with a
+// star, and a discount off list, "partner" (cost is the partner price the
+// list prints beside the list price) or "list" (cost is the stated price, no
+// discount). The first matching rule wins. --net "PART=figure" states a net
+// buying price for one part outright.
+//   --rule "BASIS*=partner" --rule "EPC*=partner" --rule "CODA*=20" --rule "RECAL*=list"
+const rules = [], nets = {};
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--net' || args[i] === '--discount-for') {
+  if (args[i] === '--rule' || args[i] === '--discount-for') {
+    const r = parseCostRule(args[i + 1]);
+    if (!r) { console.error(`${args[i]} wants "PATTERN=pct|partner|list", got ${args[i + 1] || 'nothing'}`); process.exit(1); }
+    rules.push(r);
+  }
+  if (args[i] === '--net') {
     const m = /^(.+?)=\s*£?\$?([\d,]+(?:\.\d+)?)$/.exec(args[i + 1] || '');
-    if (!m) { console.error(`${args[i]} wants "PART=figure", got ${args[i + 1] || 'nothing'}`); process.exit(1); }
-    (args[i] === '--net' ? nets : discounts)[m[1].trim().toUpperCase().replace(/\s+/g, '')] = parseFloat(m[2].replace(/,/g, ''));
+    if (!m) { console.error(`--net wants "PART=figure", got ${args[i + 1] || 'nothing'}`); process.exit(1); }
+    nets[m[1].trim().toUpperCase().replace(/\s+/g, '')] = parseFloat(m[2].replace(/,/g, ''));
   }
 }
+// What a supplier row stores: a stated net first, then the first matching
+// rule, then the standing discount.
+const storedFor = s => (nets[s.normKey] != null
+  ? { discountPct: null, netPrice: nets[s.normKey], costRule: 'stated net buying price' }
+  : applyCostRule(s, costRuleFor(s.normKey, rules), DISCOUNT));
 if (!/^\d{4}-\d{2}-\d{2}$/.test(EFFECTIVE)) {
   console.error(`--effective must be YYYY-MM-DD, got ${EFFECTIVE}`);
   process.exit(1);
@@ -98,7 +113,7 @@ console.log(SUPPLIER
   ? `\nAlicat supplier list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line, held apart from the sell prices and given only on an explicit ask.`
   : `\nAlicat price list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line.`);
 
-let rows, blockers, sourceNote;
+let rows, blockers, sourceNote, optionRows = null;
 if (/\.pdf$/i.test(SOURCE)) {
   // The PDF path: pdftotext keeps the columns; the plain extractor is the
   // fallback and keeps the words in order but not the layout.
@@ -115,18 +130,40 @@ if (/\.pdf$/i.test(SOURCE)) {
   console.log(`  read as a PDF: ${r.lines} line(s) of text, currency for bare figures ${r.currency.default || 'unknown'}` +
     ` (symbols seen: £ ${r.currency.seen.GBP}, € ${r.currency.seen.EUR}, $ ${r.currency.seen.USD})`);
   console.log(`\n  ${r.parts} part(s), ${r.rows} price row(s).`);
-  const costOf = s => costFrom({ listPrice: s.price, discountPct: nets[s.normKey] != null ? null : (discounts[s.normKey] ?? DISCOUNT), netPrice: nets[s.normKey] ?? null });
-  for (const s of rows.slice(0, 8)) {
+  const costOf = s => { const st = storedFor(s); return costFrom({ listPrice: s.price, discountPct: st.discountPct, netPrice: st.netPrice }); };
+  const sampleRows = SUPPLIER
+    // In the supplier read, show one row under each rule in play, then the
+    // first few, so every rule's arithmetic is seen before --apply.
+    ? [...new Map(rows.map(s => [storedFor(s).costRule, s])).values(), ...rows.slice(0, 6)].filter((s, i, a) => a.indexOf(s) === i).slice(0, 12)
+    : rows.slice(0, 8);
+  for (const s of sampleRows) {
+    const st = SUPPLIER ? storedFor(s) : null;
     console.log(SUPPLIER
-      ? `    sample: ${s.partNumber}  list ${s.currency} ${s.price}  cost ${s.currency} ${costOf(s)}${nets[s.normKey] != null ? ' (stated net)' : ` (less ${discounts[s.normKey] ?? DISCOUNT}%)`}${s.description ? '  ' + s.description.slice(0, 40) : ''}`
+      ? `    sample: ${s.partNumber}  list ${s.currency} ${s.price}${s.partnerPrice != null ? `  partner ${s.currency} ${s.partnerPrice}` : ''}  cost ${s.currency} ${costOf(s) ?? 'none'}  (${st.costRule})${s.description ? '  ' + s.description.slice(0, 40) : ''}`
       : `    sample: ${s.partNumber}  ${s.currency} ${s.sellPrice}${s.description ? '  ' + s.description.slice(0, 50) : ''}`);
   }
   const show = (label, list, why) => { if (list.length) { console.log(`  ${label}${why ? `, ${why}` : ''}:`); for (const l of list) console.log(`    ${l}`); } };
   if (SUPPLIER) {
-    const missing = [...Object.keys(nets), ...Object.keys(discounts)].filter(k => !rows.some(s => s.normKey === k));
-    if (missing.length) console.log(`  exceptions named for parts the list does not show: ${missing.join(', ')}`);
-    const named = rows.filter(s => nets[s.normKey] != null || discounts[s.normKey] != null);
-    if (named.length) console.log(`  exceptions applied: ${named.map(s => `${s.partNumber} ${nets[s.normKey] != null ? `net ${nets[s.normKey]}` : `${discounts[s.normKey]}%`}`).join(', ')}`);
+    console.log(`  partner prices read beside list prices: ${r.partnerPrices || 0}`);
+    const counts = {};
+    for (const s of rows) { const k = storedFor(s).costRule; counts[k] = (counts[k] || 0) + 1; }
+    console.log(`  rows by cost rule: ${Object.entries(counts).map(([k, n]) => `${n} ${k}`).join('; ')}`);
+    const unmatched = rules.filter(rule => !rows.some(s => costRuleFor(s.normKey, [rule]) === rule)).map(rule => `${rule.pattern}=${rule.value}`);
+    if (unmatched.length) console.log(`  rules that match no part on this list: ${unmatched.join(', ')}`);
+    const noCost = rows.filter(s => costOf(s) == null);
+    if (noCost.length) console.log(`  parts that would store no cost: ${noCost.slice(0, 10).map(s => `${s.partNumber} (${storedFor(s).costRule})`).join(', ')}${noCost.length > 10 ? `, and ${noCost.length - 10} more` : ''}`);
+    const missing = Object.keys(nets).filter(k => !rows.some(s => s.normKey === k));
+    if (missing.length) console.log(`  net prices named for parts the list does not show: ${missing.join(', ')}`);
+  }
+  if (!SUPPLIER) {
+    // The option tables, James's note of 11 September 2026: adders by code,
+    // stored with the sell prices so a configured code totals up.
+    optionRows = parseOptionRows(pdfText, { currency: r.currency.default || 'GBP' });
+    console.log(`\n  option adders read from the list's option tables: ${optionRows.options.length} code(s)`);
+    for (const o of optionRows.options.slice(0, 20)) console.log(`    ${o.code}: ${o.adder === 0 ? 'no cost' : `${o.currency} ${o.adder}`}  ${o.label}${o.markedDefault ? '  [default]' : ''}`);
+    if (optionRows.options.length > 20) console.log(`    and ${optionRows.options.length - 20} more`);
+    show('option rows with several figures, per-series tables not read yet, not stored', optionRows.multi);
+    show('option rows with no price beside them, not stored', optionRows.skipped);
   }
   show('conflicts settled on the command line', r.resolved);
   show('excluded lines, never ingested', r.excluded, SUPPLIER ? 'discount, margin or revision lines; read them for exceptions to state with --net or --discount-for' : 'cost, discount, margin or the supplier list by name');
@@ -193,16 +230,16 @@ try {
   if (SUPPLIER) {
     await client.query(`DELETE FROM supplier_prices WHERE product_line = $1`, [LINE]);
     for (const r of rows) {
-      const net = nets[r.normKey] ?? null;
-      const pct = net != null ? null : (discounts[r.normKey] ?? DISCOUNT);
+      const st = storedFor(r);
       await client.query(
-        `INSERT INTO supplier_prices (product_line, part_number, norm_key, description, currency, list_price, discount_pct, net_price, list_name, effective_date)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `INSERT INTO supplier_prices (product_line, part_number, norm_key, description, currency, list_price, discount_pct, net_price, partner_price, cost_rule, list_name, effective_date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          ON CONFLICT (product_line, norm_key) DO UPDATE
            SET part_number = EXCLUDED.part_number, description = EXCLUDED.description, currency = EXCLUDED.currency,
                list_price = EXCLUDED.list_price, discount_pct = EXCLUDED.discount_pct, net_price = EXCLUDED.net_price,
+               partner_price = EXCLUDED.partner_price, cost_rule = EXCLUDED.cost_rule,
                list_name = EXCLUDED.list_name, effective_date = EXCLUDED.effective_date, ingested_at = now()`,
-        [r.productLine, r.partNumber, r.normKey, r.description, r.currency, r.price, pct, net, LIST_NAME, EFFECTIVE]);
+        [r.productLine, r.partNumber, r.normKey, r.description, r.currency, r.price, st.discountPct, st.netPrice, r.partnerPrice ?? null, st.costRule, LIST_NAME, EFFECTIVE]);
     }
     await client.query('COMMIT');
     console.log(`\nStored. ${rows.length} supplier list rows are held apart. The co-pilot gives the purchase price only when someone asks for it in so many words.`);
@@ -221,8 +258,27 @@ try {
              source_tab = EXCLUDED.source_tab, effective_date = EXCLUDED.effective_date, ingested_at = now()`,
       [r.productLine, r.partNumber, r.normKey, r.description, r.currency, r.sellPrice, LIST_NAME, r.sourceTab || sourceNote, EFFECTIVE]);
   }
+  // The option adders ride with the sell prices, replaced wholesale with
+  // them, when the list came as a PDF with option tables and the table
+  // exists (migration 042).
+  let optionsStored = 0;
+  if (optionRows?.options?.length) {
+    const ready = (await client.query(`SELECT to_regclass('price_options') AS t`)).rows[0]?.t;
+    if (ready) {
+      await client.query(`DELETE FROM price_options WHERE product_line = $1`, [LINE]);
+      for (const o of optionRows.options) {
+        const ins = await client.query(
+          `INSERT INTO price_options (product_line, code, norm_code, label, currency, adder, marked_default, list_name, effective_date)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (product_line, norm_code) DO NOTHING`,
+          [LINE, o.code, o.normCode, o.label, o.currency, o.adder, o.markedDefault, LIST_NAME, EFFECTIVE]);
+        optionsStored += ins.rowCount;
+      }
+    } else {
+      console.log('\n  The option table is not created yet (migration 042); the adders were read but not stored. Run npm run migrate and apply again.');
+    }
+  }
   await client.query('COMMIT');
-  console.log(`\nStored. ${rows.length} Alicat price rows are live. The co-pilot answers Alicat part numbers from them once the price lookup switch on the Health page is on.`);
+  console.log(`\nStored. ${rows.length} Alicat price rows are live${optionsStored ? `, with ${optionsStored} option adder(s) by code` : ''}. The co-pilot answers Alicat part numbers from them once the price lookup switch on the Health page is on.`);
 } catch (e) {
   await client.query('ROLLBACK');
   console.error(`\nFailed, nothing changed: ${e.message}`);

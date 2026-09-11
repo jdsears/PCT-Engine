@@ -6,7 +6,7 @@
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
 import { quotedLine } from './quotedLines.mjs';
-import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost, familyKey, renderFamilyAnswer } from './priceAnswer.mjs';
+import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost, familyKey, renderFamilyAnswer, renderConfiguredTotal } from './priceAnswer.mjs';
 import { readFileSync } from 'node:fs';
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
@@ -17,8 +17,9 @@ import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } fr
 import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
-import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN } from './parseAlicatPdf.mjs';
-import { costFrom, renderCostLine, surchargePct, SURCHARGE_SERIES } from './supplierPrices.mjs';
+import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows } from './parseAlicatPdf.mjs';
+import { costFrom, renderCostLine, parseCostRule, costRuleFor, applyCostRule } from './supplierPrices.mjs';
+import { syncDecision } from '../sharepointSync.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 let pass = 0, fail = 0;
@@ -185,6 +186,9 @@ await check('a configured code finds its base part, names its options, and cost 
   assert(/reads as the base part PCD-100PSIG-D with the options M12, PCV30, 5P/.test(text), 'the read-back names the base and the options');
   assert(/\*\*PCD-100PSIG-D\*\*, Pressure controller, 100 psig: £1,328\./.test(text), 'the base price renders');
   assert(/Sell price from the Alicat Q1 2026 list, effective 2026-09-10/.test(text) && !/pdf tab/.test(text), 'a PDF source reads as the list, not a tab');
+  // A date from the database is a Date, and it must still read as a day.
+  const dated = renderPriceAnswer({ partNumber: 'PCD-100PSIG-D', description: null, prices: { GBP: 1410 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: new Date('2026-09-11T00:00:00Z') });
+  assert(/effective 2026-09-11\./.test(dated) && !/Fri Sep/.test(dated), `a Date renders as a day, not a weekday: ${dated}`);
   assert(/options are priced as additions and are not held in the engine yet/.test(text), 'the options are named as additions, honestly');
   assert(/Purchase price: not held for this part/.test(text), 'an ask for cost with nothing held says so in a sentence');
   assert(!/[—–!]/.test(text) && !/\bgenuinely\b/i.test(text), 'voice rules hold');
@@ -193,6 +197,41 @@ await check('a configured code finds its base part, names its options, and cost 
   const ans = readFileSync(new URL('../answer.mjs', import.meta.url), 'utf8');
   assert(/priceIntent\(question\) && !\(configState && configState\.active\)\s*\?\s*\{ handled: false/.test(ans),
     'a price question with no build in progress never goes to the configurator');
+});
+
+await check('option adders read from the list\'s own option table, and a configured code totals base plus the adders it names', async () => {
+  // James's note on the first answer, 11 September 2026: M12 is an option at
+  // £62 on the list, PCV a no-cost option.
+  const table = [
+    'Communication options',
+    'Serial (RS232 or RS485) w/ analogs [default] DB9M **Recommended** £0 male Alicat pinout only',
+    'Serial w/ analogs + alarm (-ALM)                                    £41',
+    'M12 (-M12 or -M12O)                                                 £62',
+    'Display (D, TFT, O) [default]                                       £124',
+    'Remote Display (RD or TFTRD)                                        £145 £252 N/A',
+    'Valve (PCV30, PCV65)                                                Included',
+    'Housing (H)',
+  ].join('\n');
+  const o = parseOptionRows(table);
+  const get = c => o.options.find(x => x.normCode === c);
+  assert(get('M12')?.adder === 62 && get('M12O')?.adder === 62 && get('M12').label === 'M12', `M12 and M12O at £62: ${JSON.stringify(o.options)}`);
+  assert(get('ALM')?.adder === 41 && get('ALM').label === 'Serial w/ analogs + alarm', 'the dash comes off the code and the label is the list\'s own');
+  assert(get('D')?.adder === 124 && get('TFT')?.adder === 124 && get('O')?.markedDefault === true, 'a row marked default carries the mark');
+  assert(get('PCV30')?.adder === 0 && get('PCV65')?.adder === 0, 'an included option is a no-cost option');
+  assert(!get('RD') && o.multi.some(l => /Remote Display/.test(l)), 'a per-series row with several figures is reported, not stored');
+  assert(!get('H') && !o.skipped.some(l => /Housing/.test(l)), 'a row with no price and nothing after it is simply not an option row');
+  assert(!o.options.some(x => /RS232|RS485/.test(x.normCode)) && o.skipped.some(l => /^Serial \(RS232/.test(l)), 'a £0 default line with connector names in brackets is not an adder, and is listed as read without a price');
+  const adders = { M12: { code: 'M12', label: 'M12', currency: 'GBP', adder: 62 }, PCV30: { code: 'PCV30', label: 'Valve', currency: 'GBP', adder: 0, byFamily: 'PCV' } };
+  const total = renderConfiguredTotal(1410, ['M12', 'PCV30', '5P'], adders, 'GBP');
+  assert(/- M12: £62, M12/.test(total) && /- PCV30: no cost, Valve \(priced as PCV\)/.test(total), `each option traceable: ${total}`);
+  assert(/Base plus the priced options: £1,472\. 5P is not priced on the loaded list/.test(total), 'the partial total is stated and the unpriced option named');
+  const full = renderConfiguredTotal(1410, ['M12', 'PCV30'], adders, 'GBP');
+  assert(/Configured price: £1,472, the base £1,410 plus £62 of options\./.test(full), 'all options priced: one configured figure');
+  assert(/not priced on the loaded list/.test(renderConfiguredTotal(1410, ['XYZ'], {}, 'GBP')) && !/£/.test(renderConfiguredTotal(1410, ['XYZ'], {}, 'GBP').split('\n')[0].replace('£1,410', '')), 'nothing priced: no total is invented');
+  const answer = renderPriceAnswer({ partNumber: 'PCD-100PSIG-D', description: null, prices: { GBP: 1410 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null },
+    { configured: 'PCD-100PSIG-D-M12-PCV30/5P', options: ['M12', 'PCV30', '5P'], adders });
+  assert(/Base plus the priced options: £1,472/.test(answer) && !/not held in the engine yet/.test(answer), 'the configured answer totals when adders are held');
+  assert(!/[—–!]/.test(answer) && !/\bgenuinely\b/i.test(answer), 'voice rules hold');
 });
 
 await check('when nothing matches as written or shortened, the family\'s stored parts answer, never a guess', async () => {
@@ -228,13 +267,10 @@ await check('the purchase price is held apart, worked out from the list, and giv
   assert(/Never a figure to quote; the sell price is the one for customers/.test(line), 'the line says what the figure is for');
   assert(/a stated net buying price/.test(renderCostLine({ ...cost, netPrice: 700, cost: 700 })), 'a net price says so');
   assert(renderCostLine(null) === 'Purchase price: not held for this part.', 'nothing held is said plainly');
-  // Alicat's rev 101 notice: the low-volume surcharge on BASIS and EP/C/D
-  // units, (51 minus quantity) times 2%, stated only for those series.
-  assert(surchargePct(10) === 82 && surchargePct(1) === 100 && surchargePct(51) === 0 && surchargePct(60) === 0, 'the notice\'s own example, ten units at 82%');
-  assert(SURCHARGE_SERIES.test('EPC-100PSI') && SURCHARGE_SERIES.test('EPD-500SCCM-D') && SURCHARGE_SERIES.test('EP-1SLPM') && SURCHARGE_SERIES.test('BASIS-2-100SCCM'), 'the series the notice names');
-  assert(!SURCHARGE_SERIES.test('PCD-100PSIG-D') && !SURCHARGE_SERIES.test('MC-500SCCM-D') && !SURCHARGE_SERIES.test('EPIC-1'), 'mainline units carry no surcharge');
-  assert(/Low-volume surcharge applies to BASIS and EP\/C\/D units, per Alicat's rev 101 notice/.test(renderCostLine({ ...cost, partNumber: 'EPC-100PSI' })) && /82% at ten units and 100% for a single unit/.test(renderCostLine({ ...cost, partNumber: 'EPC-100PSI' })), 'an EPC costing carries the surcharge');
-  assert(!/surcharge/i.test(line), 'a mainline costing does not');
+  // James's ruling of 11 September 2026: the rev 101 announcement email in
+  // the Alicat folder is ignored, so no costing carries anything from it.
+  assert(!/surcharge|rev 101 notice/i.test(renderCostLine({ ...cost, partNumber: 'EPC-100PSI' })) && !/surcharge/i.test(line), 'nothing from the announcement email reaches a costing');
+  assert(syncDecision('08-Price-List-101-and-adjustment-OEM-units.pdf').sync === false, 'and the corpus sync refuses the email file by name');
   const m = { partNumber: 'PCD-100PSIG-D', description: 'Pressure controller', prices: { GBP: 1328 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null };
   const asked = renderPriceAnswer(m, { askedCost: true, cost });
   assert(/£1,328/.test(asked) && /Purchase price, given because you asked for it: \$1,234\.56/.test(asked), 'asked: the sell price first, then the purchase price');
@@ -247,10 +283,12 @@ await check('the purchase price is held apart, worked out from the list, and giv
 
 await check('the supplier list reads in its own mode: USD is the price, sterling is set aside, and the sell mode still refuses it', async () => {
   const usd = [
-    'Alicat Scientific Price List 101                Prices in USD',
+    'Alicat Scientific Price List 101                List Price      Partner Price',
     'MC-500SCCM-D          Mass flow controller, 500 sccm           $1,650',
     'MCR-5SLPM-D           $2,900 MCS-5SLPM-D           $3,200',
     'FP-25                 $4,100',
+    'BASIS-2-100SCCM       $520          $420',
+    'EPC-100PSI            $400          $300',
     'UK partner list reference   PC-15PSIG-D             £845',
   ].join('\n');
   const s = parseAlicatPdfText(usd, { mode: 'supplier' });
@@ -258,7 +296,25 @@ await check('the supplier list reads in its own mode: USD is the price, sterling
   assert(s.report.mode === 'supplier' && s.report.currency.default === 'USD', 'the supplier read expects USD');
   assert(get('MC-500SCCM-D')?.price === 1650 && get('MC-500SCCM-D').currency === 'USD' && get('MCS-5SLPM-D')?.price === 3200 && get('FP-25')?.price === 4100, `USD figures are the prices: ${JSON.stringify(s.rows.map(r => r.partNumber + '=' + r.price))}`);
   assert(!get('PC-15PSIG-D') && s.report.otherCurrency.some(l => /PC-15PSIG-D £845/.test(l)), 'a sterling figure is set aside in the supplier read');
+  // The partner price beside the list price, James's rule for BASIS and EPC.
+  assert(get('BASIS-2-100SCCM')?.price === 520 && get('BASIS-2-100SCCM').partnerPrice === 420 && get('EPC-100PSI')?.partnerPrice === 300, `a second figure straight after the first is the partner price: ${JSON.stringify(s.rows.filter(r => r.partnerPrice != null))}`);
+  assert(get('MC-500SCCM-D').partnerPrice === null && s.report.partnerPrices === 2 && !s.report.priceNoPart.some(l => /\$420|\$300/.test(l)), 'a part with one figure has no partner price, and partner figures are not prices with no part');
   assert(pdfApplyBlockers(s.report).length === 0, 'a clean supplier read has no blockers');
+  // The rules, by code: the specific before the general, the first match wins.
+  const rules = ['BASIS*=partner', 'EPC*=partner', 'CODA*=20', 'RECAL*=list', 'CLEAN*=list'].map(parseCostRule);
+  assert(rules.every(Boolean) && parseCostRule('nonsense') === null && parseCostRule('X=') === null, 'rules parse, junk does not');
+  assert(costRuleFor('BASIS-2-100SCCM', rules)?.value === 'partner' && costRuleFor('EPC-100PSI', rules)?.value === 'partner', 'BASIS and EPC take the partner price');
+  assert(costRuleFor('CODA-KC-500SCCM', rules)?.value === 20 && costRuleFor('RECAL-MC', rules)?.value === 'list' && costRuleFor('MC-500SCCM-D', rules) === null, 'CODA at 20%, recalibration at list, the mainline on the standing rule');
+  const basis = applyCostRule(get('BASIS-2-100SCCM'), costRuleFor('BASIS-2-100SCCM', rules), 35);
+  assert(basis.netPrice === 420 && basis.discountPct === null && basis.costRule === 'partner price' && costFrom(basis) === 420, 'a partner rule stores the partner price as the net');
+  const noPartner = applyCostRule(get('MC-500SCCM-D'), parseCostRule('MC*=partner'), 35);
+  assert(noPartner.netPrice === null && /none printed/.test(noPartner.costRule) && costFrom({ listPrice: 1650, ...noPartner }) === null, 'a partner rule with no partner price on the row stores no cost, and says so');
+  const listRule = applyCostRule(get('FP-25'), parseCostRule('FP-25=list'), 35);
+  assert(listRule.discountPct === 0 && costFrom({ listPrice: 4100, ...listRule }) === 4100, 'a list rule is the stated price with no discount');
+  const standing = applyCostRule(get('MC-500SCCM-D'), null, 35);
+  assert(standing.discountPct === 35 && standing.costRule === 'list less 35%' && costFrom({ listPrice: 1650, ...standing }) === 1072.5, 'no rule is the standing discount');
+  assert(/the supplier's partner price as printed/.test(renderCostLine({ partNumber: 'EPC-100PSI', currency: 'USD', listPrice: 400, netPrice: 300, cost: 300, costRule: 'partner price', listName: 'Alicat Price List 101' })), 'the answer names the partner price for what it is');
+  assert(/the supplier's stated price \$50\.00 with no discount/.test(renderCostLine({ partNumber: 'RECAL-MC', currency: 'USD', listPrice: 50, discountPct: 0, netPrice: null, cost: 50, costRule: 'list price, no discount', listName: 'Alicat Price List 101' })), 'and a no-discount price for what it is');
   const sell = parseAlicatPdfText(usd.split('\n').slice(0, 4).join('\n'));
   assert(sell.rows.length === 0 && pdfApplyBlockers(sell.report).some(b => /every price is in USD, which reads as the supplier list, never a sell/.test(b)), 'the same document in sell mode stores nothing and says why');
   const wrongWay = parseAlicatPdfText('Prices in GBP\nMC-500SCCM-D  £1,071\n', { mode: 'supplier' });

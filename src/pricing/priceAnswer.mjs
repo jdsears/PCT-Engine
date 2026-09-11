@@ -1,9 +1,9 @@
 import { pool } from '../db.mjs';
-import { lookupPrice } from './lookup.mjs';
+import { lookupPrice, lookupOptions } from './lookup.mjs';
 import { quotedLine } from './quotedLines.mjs';
 import { marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
 import { superlativeIntent, cheapestOf, renderCheapestValve } from './cheapest.mjs';
-import { lookupCost, renderCostLine } from './supplierPrices.mjs';
+import { lookupCost, renderCostLine, isoDay } from './supplierPrices.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 // Price questions in the co-pilot answer deterministically, never through the
@@ -84,15 +84,44 @@ export function renderFamilyAnswer(token, family, matches, { askedCost = false, 
 // price and never mentions cost.
 export const asksCost = q => /\b(cost|costs|costing|costings|supplier|suppliers|buy|buying|purchase|purchasing|margin)\b/i.test(String(q || ''));
 
-export function renderPriceAnswer(m, { configured = null, options = [], askedCost = false, cost = null } = {}) {
+// The configured price: the base plus the adders the list prices for the
+// options named, each traceable, and any option the list does not price
+// named as not held rather than priced at nothing. Pure, so the arithmetic
+// and the honesty are provable.
+export function renderConfiguredTotal(base, options, adders, currency = 'GBP') {
+  const sym = SYM[currency] || '';
+  const fmt = n => `${sym}${Number(n).toLocaleString('en-GB')}`;
+  const known = [], unknown = [];
+  for (const o of options) {
+    const key = String(o).toUpperCase().replace(/^-+/, '');
+    const a = adders?.[key];
+    if (a && a.currency === currency) known.push({ code: o, ...a }); else unknown.push(o);
+  }
+  if (!known.length && unknown.length) {
+    return `The options ${unknown.join(', ')} are not priced on the loaded list, so the configured price is the base plus those adders, per enquiry.`;
+  }
+  const lines = ['Options from the list\'s own option table:'];
+  for (const k of known) {
+    lines.push(`- ${k.code}: ${k.adder === 0 ? 'no cost' : fmt(k.adder)}${k.label ? `, ${k.label}` : ''}${k.byFamily ? ` (priced as ${k.byFamily})` : ''}${k.markedDefault ? ', marked default on the list' : ''}`);
+  }
+  const sum = known.reduce((n, k) => n + k.adder, 0);
+  if (unknown.length) {
+    lines.push('', `Base plus the priced options: ${fmt(Number(base) + sum)}. ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} not priced on the loaded list, so the full configured price is that plus ${unknown.length === 1 ? 'that adder' : 'those adders'}, per enquiry.`);
+  } else {
+    lines.push('', `Configured price: ${fmt(Number(base) + sum)}, the base ${fmt(base)} plus ${sum ? `${fmt(sum)} of options` : 'no-cost options'}.`);
+  }
+  return lines.join('\n');
+}
+
+export function renderPriceAnswer(m, { configured = null, options = [], adders = null, askedCost = false, cost = null } = {}) {
   const prices = ['GBP', 'EUR', 'USD'].filter(c => m.prices[c] != null)
     .map(c => `${SYM[c]}${Number(m.prices[c]).toLocaleString('en-GB')}`).join(', ');
   const basis = m.basis === 'guide'
     ? `Guide price at the standard margin, computed from the ${m.listName}` +
-      `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
+      `${m.effectiveDate ? `, effective ${isoDay(m.effectiveDate)}` : ''}. ` +
       'The margin is the standard one the master price sheet sets, the single source for margin.'
     : `Sell price from the ${m.sourceTab === 'pdf' ? `${m.listName} list` : `${m.sourceTab} tab of the ${m.listName}`}` +
-      `${m.effectiveDate ? `, effective ${String(m.effectiveDate).slice(0, 10)}` : ''}. ` +
+      `${m.effectiveDate ? `, effective ${isoDay(m.effectiveDate)}` : ''}. ` +
       'Prices come from the loaded lists and are never estimated.';
   const lines = [];
   if (configured && options.length) {
@@ -100,7 +129,10 @@ export function renderPriceAnswer(m, { configured = null, options = [], askedCos
   }
   lines.push(`**${m.partNumber}**${m.description ? `, ${m.description}` : ''}: ${prices}.`, '', basis);
   if (configured && options.length) {
-    lines.push('', 'The list prices the base unit. The options are priced as additions and are not held in the engine yet, so the configured price is the base plus the option adders, per enquiry until the option pricing is loaded.');
+    const cur = m.prices.GBP != null ? 'GBP' : Object.keys(m.prices)[0];
+    lines.push('', adders && Object.keys(adders).length
+      ? renderConfiguredTotal(m.prices[cur], options, adders, cur)
+      : 'The list prices the base unit. The options are priced as additions and are not held in the engine yet, so the configured price is the base plus the option adders, per enquiry until the option pricing is loaded.');
   }
   // The purchase price appears only on an explicit ask, and only from the
   // supplier table; a sell answer never carries it.
@@ -208,7 +240,9 @@ export async function priceTurn(question) {
     for (const base of baseKeys(tok)) {
       const b = await lookupPrice(base);
       if (b.exact && b.matches.length) {
-        return { answer: renderPriceAnswer(b.matches[0], { configured: tok, options: optionsAfter(tok, base), askedCost, cost: await costFor(base) }), kind: 'price' };
+        const options = optionsAfter(tok, base);
+        const adders = await lookupOptions(b.matches[0].productLine, options).catch(() => ({}));
+        return { answer: renderPriceAnswer(b.matches[0], { configured: tok, options, adders, askedCost, cost: await costFor(base) }), kind: 'price' };
       }
     }
     // Nothing stored as written or shortened: the family's stored parts,

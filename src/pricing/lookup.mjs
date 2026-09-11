@@ -40,6 +40,40 @@ export async function lookupPrice(query, { limit = 8 } = {}) {
   return { query, exact: false, matches, ...(quoted ? { quoted } : {}) };
 }
 
+// Option adders for a line, by code, from the customer list's own option
+// tables (migration 042). A code the list does not price comes back absent,
+// never as zero, so an answer can say it is not held.
+export async function lookupOptions(productLine, codes = []) {
+  const wanted = [...new Set((codes || []).map(c => String(c || '').toUpperCase().replace(/^-+/, '').replace(/\s+/g, '')).filter(Boolean))];
+  if (!wanted.length) return {};
+  try {
+    const { rows } = await pool.query(
+      `SELECT code, norm_code, label, currency, adder, marked_default FROM price_options
+       WHERE product_line = $1 AND norm_code = ANY($2)`, [productLine, wanted]);
+    const out = {};
+    for (const r of rows) out[r.norm_code] = { code: r.code, label: r.label, currency: r.currency, adder: Number(r.adder), markedDefault: r.marked_default };
+    // A code with a trailing figure (PCV30) that the list prices by its
+    // family (PCV) takes the family's adder.
+    const missing = wanted.filter(c => !out[c]);
+    if (missing.length) {
+      const families = [...new Set(missing.map(c => c.replace(/\d+[A-Z]?$/, '')).filter(f => f && f.length >= 2))];
+      if (families.length) {
+        const fam = await pool.query(
+          `SELECT code, norm_code, label, currency, adder, marked_default FROM price_options
+           WHERE product_line = $1 AND norm_code = ANY($2)`, [productLine, families]);
+        for (const c of missing) {
+          const f = fam.rows.find(r => r.norm_code === c.replace(/\d+[A-Z]?$/, ''));
+          if (f) out[c] = { code: f.code, label: f.label, currency: f.currency, adder: Number(f.adder), markedDefault: f.marked_default, byFamily: f.norm_code };
+        }
+      }
+    }
+    return out;
+  } catch (e) {
+    if (/relation "price_options" does not exist/i.test(String(e))) return {};
+    throw e;
+  }
+}
+
 export async function priceStatus() {
   try {
     const { rows } = await pool.query(
