@@ -246,6 +246,21 @@ await check('option adders read from the list\'s own option table, and a configu
   assert(wrapped.options.find(x => x.normCode === 'EIPX')?.adder === 252, `the wrapped row reads as one: ${JSON.stringify(wrapped.options)}`);
   assert(joinWrappedBrackets(['a (b', 'c) d']).length === 1 && joinWrappedBrackets(['a (b)', 'c']).length === 2 && joinWrappedBrackets(['a (b', 'c no close']).length === 2,
     'a line joins the next only when its bracket is open and the next one closes it');
+  // Three rows from the real list, verbatim, that John's dry run of 12
+  // September 2026 read wrong: a note that begins "Free", a cable table
+  // row, and a fittings row whose bracket holds a part number.
+  const real = [
+    'Mainline Locking (IPJ)                       £21 411149                  Single-Ended, 6ft, IPJ              Included with all Locking Power Jacks',
+    'Locking (-IPJ)                                     £62 Free with Ethernet protocol                       P or A515 (MCP, -A515)           £165',
+    'Brass (410133)                               £12                                           3mm           4mm        6mm',
+  ].join('\n');
+  const rr = parseOptionRows(real);
+  const rg = c => rr.options.find(x => x.normCode === c);
+  assert(rg('IPJ')?.adder === 62, `the locking option takes its own £62, not the cable's £21: ${JSON.stringify(rr.options.map(x => x.normCode + '=' + x.adder))}`);
+  assert(rg('MCP')?.adder === 165 && rg('A515')?.adder === 165, 'the second cell on the locking row is its own option at £165');
+  assert(!rg('410133') && !rr.options.some(x => /^\d{5,}$/.test(x.normCode)), 'a bracket holding a part number prices that part, and is no adder');
+  assert(rr.multi.length === 0 && rr.conflicts.length === 0, `all three rows read cleanly: ${JSON.stringify([rr.multi, rr.conflicts])}`);
+  assert(parseOptionRows('Valve (PCV30, PCV65)     Included').options[0]?.adder === 0, 'a no-charge word that ends its cell is still a no-cost option');
   const wide = `High Accuracy Calibration (HC) ${' '.repeat(90)} £186 ${' '.repeat(60)} Relative Humidity (-RH) £290 gas flow only`;
   assert(parseOptionRows(wide).options.find(x => x.normCode === 'RH')?.line.endsWith('gas flow only'),
     'the whole row travels, not a cut of it, so a person can judge an adder against what the list printed');
