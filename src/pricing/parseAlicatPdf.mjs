@@ -260,6 +260,25 @@ const valueOf = (m, currency) => {
   if (t === '[default]') return { kind: 'default', adder: 0, currency };
   return { kind: 'free', adder: 0, currency };
 };
+// A bracket the list wraps across two lines, John's read of 12 September
+// 2026: "Ethernet protocol (EIP, ECAT, PROFINET," ends a line and
+// "MODTCPIP) £252" opens the next, so the option's codes and its price sit
+// on different lines and neither line reads alone. A line with an unclosed
+// bracket takes the next line onto its end, once, when that line closes it.
+export function joinWrappedBrackets(lines) {
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const open = (lines[i].match(/\(/g) || []).length, close = (lines[i].match(/\)/g) || []).length;
+    if (open > close && i + 1 < lines.length && /\)/.test(lines[i + 1])) {
+      out.push(`${lines[i]} ${lines[i + 1].trim()}`);
+      i++;
+      continue;
+    }
+    out.push(lines[i]);
+  }
+  return out;
+}
+
 export function parseOptionRows(src, { currency = 'GBP' } = {}) {
   const out = { options: [], multi: [], skipped: [], conflicts: [] };
   const seen = new Map();
@@ -270,18 +289,20 @@ export function parseOptionRows(src, { currency = 'GBP' } = {}) {
     if (prior && (prior.conflicted || prior.adder !== value.adder)) {
       // The same code at two adders: named, and neither stored.
       const c = out.conflicts.find(x => x.code === normCode);
-      if (c) { c.adders.push(value.adder); c.lines.push(line.slice(0, 120)); }
-      else out.conflicts.push({ code: normCode, adders: [prior.adder, value.adder], lines: [prior.line, line.slice(0, 120)] });
+      if (c) { c.adders.push(value.adder); c.lines.push(line.slice(0, 240)); }
+      else out.conflicts.push({ code: normCode, adders: [prior.adder, value.adder], lines: [prior.line, line.slice(0, 240)] });
       out.options = out.options.filter(o => o.normCode !== normCode);
       seen.set(normCode, { ...prior, conflicted: true });
       return;
     }
     if (prior) return;
-    const row = { code, normCode, label: text(label.replace(/\[default\]/ig, '')) || null, currency, adder: value.adder, markedDefault: markedDefault || value.kind === 'default', line: line.slice(0, 120) };
+    const row = { code, normCode, label: text(label.replace(/\[default\]/ig, '')) || null, currency, adder: value.adder, markedDefault: markedDefault || value.kind === 'default', line: line.slice(0, 240) };
     seen.set(normCode, row);
     out.options.push(row);
   };
-  for (const raw of String(src || '').replace(/\f/g, '\n').split(/\r?\n/)) {
+  // The whole line travels into the report: a row cut short hides the very
+  // evidence a person needs to say an adder is wrong.
+  for (const raw of joinWrappedBrackets(String(src || '').replace(/\f/g, '\n').split(/\r?\n/))) {
     const line = raw.trim();
     if (!line || EXCLUDE_LINE.test(line)) continue;
     const brackets = [...line.matchAll(/\(([^()]{1,80})\)/g)]
@@ -318,14 +339,14 @@ export function parseOptionRows(src, { currency = 'GBP' } = {}) {
     // row carries prices and no brackets, and listing every one of those
     // buried the real skips in John's read of 12 September 2026.
     if (!owners.length) {
-      if (/\([^()]{1,80}\)/.test(line)) out.skipped.push(line.slice(0, 120));
+      if (/\([^()]{1,80}\)/.test(line)) out.skipped.push(line.slice(0, 240));
       continue;
     }
     for (const o of owners) {
       const vals = o.values;
       if (vals.length === 1) { for (const code of o.codes) add(code, o.label, vals[0], line); continue; }
       if (vals.length === o.codes.length) { o.codes.forEach((code, i) => add(code, o.label, vals[i], line)); continue; }
-      out.multi.push(line.slice(0, 120));
+      out.multi.push(line.slice(0, 240));
     }
   }
   return out;
