@@ -233,6 +233,12 @@ await check('option adders read from the list\'s own option table, and a configu
   assert(!get('RD') && o.multi.some(l => /Remote Display/.test(l)), 'a per-series row with more values than codes is reported, not stored');
   assert(!get('IPJ') && o.conflicts.some(c => c.code === 'IPJ' && c.adders.includes(62) && c.adders.includes(21)), `the same code at two adders is a conflict, named and not stored: ${JSON.stringify(o.conflicts)}`);
   assert(!get('H') && !o.skipped.some(l => /Housing/.test(l)), 'a row with no value and nothing after it is simply not an option row');
+  // A product row carries prices and no brackets: never an option row, and
+  // never reported as a skipped one, which buried the real skips.
+  const noisy = parseOptionRows(['M-0.5SCCM-D £1,526 MS-0.5SCCM-D £1,923', 'PCD-100PSIA-D or PCD-100PSIG-D £1,410', 'BB3 £145 £248 USB £83'].join('\n'));
+  assert(noisy.options.length === 0 && noisy.skipped.length === 0 && noisy.multi.length === 0, `product rows are silent in the option read: ${JSON.stringify(noisy)}`);
+  assert(o.skipped.some(l => /^Serial \(RS232/.test(l)), 'a bracketed line that priced no option is still reported, so a real miss is visible');
+  assert(o.options.every(x => typeof x.line === 'string' && x.line.length), 'every adder carries the line it was read from');
   assert(!o.options.some(x => /RS232|RS485|EIP|ECAT|PROFINET/.test(x.normCode)), 'connector names and protocol names in brackets never become adders');
   const adders = { M12: { code: 'M12', label: 'M12', currency: 'GBP', adder: 62 }, PCV30: { code: 'PCV30', label: 'Valve', currency: 'GBP', adder: 0, byFamily: 'PCV' } };
   const total = renderConfiguredTotal(1410, ['M12', 'PCV30', '5P'], adders, 'GBP');
