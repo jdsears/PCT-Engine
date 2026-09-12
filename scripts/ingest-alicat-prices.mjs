@@ -47,7 +47,7 @@ const LINE = 'alicat';
 const DISCOUNT = flag('--discount') == null ? 35 : parseFloat(flag('--discount'));
 
 if (!SOURCE) {
-  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--apply]');
+  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--option "CODE=adder"] [--apply]');
   console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--rule "PATTERN=pct|partner|list"] [--net "PART=figure"] [--list <name>] [--effective YYYY-MM-DD] [--apply]');
   process.exit(1);
 }
@@ -60,8 +60,15 @@ if (SUPPLIER && (!Number.isFinite(DISCOUNT) || DISCOUNT < 0 || DISCOUNT >= 100))
 // discount). The first matching rule wins. --net "PART=figure" states a net
 // buying price for one part outright.
 //   --rule "BASIS*=partner" --rule "EPC*=partner" --rule "CODA*=20" --rule "RECAL*=list"
-const rules = [], nets = {};
+const rules = [], nets = {}, statedOptions = {};
 for (let i = 0; i < args.length; i++) {
+  // --option "CODE=adder": an option the list does not print, stated on
+  // James's word, for example PCV as a no-cost option.
+  if (args[i] === '--option') {
+    const m = /^([A-Z0-9-]{1,15})=\s*(-?)£?\$?([\d,]+(?:\.\d+)?)$/i.exec(args[i + 1] || '');
+    if (!m) { console.error(`--option wants "CODE=adder", got ${args[i + 1] || 'nothing'}`); process.exit(1); }
+    statedOptions[m[1].toUpperCase()] = (m[2] ? -1 : 1) * parseFloat(m[3].replace(/,/g, ''));
+  }
   if (args[i] === '--rule' || args[i] === '--discount-for') {
     const r = parseCostRule(args[i + 1]);
     if (!r) { console.error(`${args[i]} wants "PATTERN=pct|partner|list", got ${args[i + 1] || 'nothing'}`); process.exit(1); }
@@ -155,15 +162,25 @@ if (/\.pdf$/i.test(SOURCE)) {
     const missing = Object.keys(nets).filter(k => !rows.some(s => s.normKey === k));
     if (missing.length) console.log(`  net prices named for parts the list does not show: ${missing.join(', ')}`);
   }
+  if (r.grouped) console.log(`  parts priced from merged groups in the columned layout: ${r.grouped}${r.groupedDisagreements ? `; ${r.groupedDisagreements} part(s) whose own price disagrees with the group's, own price kept, columns worth a look` : ''}`);
   if (!SUPPLIER) {
     // The option tables, James's note of 11 September 2026: adders by code,
-    // stored with the sell prices so a configured code totals up.
+    // stored with the sell prices so a configured code totals up. --option
+    // "CODE=adder" states one the list does not print, on James's word.
     optionRows = parseOptionRows(pdfText, { currency: r.currency.default || 'GBP' });
+    for (const [code, adder] of Object.entries(statedOptions)) {
+      const normCode = code.toUpperCase();
+      if (!optionRows.options.some(o => o.normCode === normCode)) optionRows.options.push({ code, normCode, label: 'stated on ingest', currency: r.currency.default || 'GBP', adder, markedDefault: false, line: 'command line' });
+    }
     console.log(`\n  option adders read from the list's option tables: ${optionRows.options.length} code(s)`);
-    for (const o of optionRows.options.slice(0, 20)) console.log(`    ${o.code}: ${o.adder === 0 ? 'no cost' : `${o.currency} ${o.adder}`}  ${o.label}${o.markedDefault ? '  [default]' : ''}`);
-    if (optionRows.options.length > 20) console.log(`    and ${optionRows.options.length - 20} more`);
-    show('option rows with several figures, per-series tables not read yet, not stored', optionRows.multi);
-    show('option rows with no price beside them, not stored', optionRows.skipped);
+    for (const o of optionRows.options.slice(0, 60)) console.log(`    ${o.code}: ${o.adder === 0 ? 'no cost' : `${o.currency} ${o.adder}`}  ${o.label || ''}${o.markedDefault ? '  [default]' : ''}`);
+    if (optionRows.options.length > 60) console.log(`    and ${optionRows.options.length - 60} more`);
+    if (optionRows.conflicts.length) {
+      console.log('  option codes at two adders, not stored:');
+      for (const c of optionRows.conflicts) console.log(`    ${c.code}: ${c.adders.join(', ')}  lines: ${c.lines.map(l => `"${l}"`).join(' | ')}`);
+    }
+    show('option rows with more values than codes, per-series tables not read yet, not stored', optionRows.multi);
+    show('option rows with no value beside them, not stored', optionRows.skipped);
   }
   show('conflicts settled on the command line', r.resolved);
   show('excluded lines, never ingested', r.excluded, SUPPLIER ? 'discount, margin or revision lines; read them for exceptions to state with --net or --discount-for' : 'cost, discount, margin or the supplier list by name');
