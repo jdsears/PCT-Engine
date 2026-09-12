@@ -17,7 +17,7 @@ import { decomposePart, buildRangeTree, marwinSeriesOf, renderSeriesSummary } fr
 import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
-import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows, parseGroupedColumns } from './parseAlicatPdf.mjs';
+import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows, parseGroupedColumns, joinWrappedBrackets } from './parseAlicatPdf.mjs';
 import { costFrom, renderCostLine, parseCostRule, costRuleFor, applyCostRule } from './supplierPrices.mjs';
 import { syncDecision } from '../sharepointSync.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
@@ -239,6 +239,16 @@ await check('option adders read from the list\'s own option table, and a configu
   assert(noisy.options.length === 0 && noisy.skipped.length === 0 && noisy.multi.length === 0, `product rows are silent in the option read: ${JSON.stringify(noisy)}`);
   assert(o.skipped.some(l => /^Serial \(RS232/.test(l)), 'a bracketed line that priced no option is still reported, so a real miss is visible');
   assert(o.options.every(x => typeof x.line === 'string' && x.line.length), 'every adder carries the line it was read from');
+  // A bracket the list wraps across two lines: the codes end one line and
+  // the closing bracket with the price opens the next, John's read of 12
+  // September 2026, where the Ethernet protocol row had no code at all.
+  const wrapped = parseOptionRows(['Ethernet protocol (EIP, ECAT, PROFINET,', 'MODTCPIP, -EIPX)        £252    Industrial Protocol specific'].join('\n'));
+  assert(wrapped.options.find(x => x.normCode === 'EIPX')?.adder === 252, `the wrapped row reads as one: ${JSON.stringify(wrapped.options)}`);
+  assert(joinWrappedBrackets(['a (b', 'c) d']).length === 1 && joinWrappedBrackets(['a (b)', 'c']).length === 2 && joinWrappedBrackets(['a (b', 'c no close']).length === 2,
+    'a line joins the next only when its bracket is open and the next one closes it');
+  const wide = `High Accuracy Calibration (HC) ${' '.repeat(90)} £186 ${' '.repeat(60)} Relative Humidity (-RH) £290 gas flow only`;
+  assert(parseOptionRows(wide).options.find(x => x.normCode === 'RH')?.line.endsWith('gas flow only'),
+    'the whole row travels, not a cut of it, so a person can judge an adder against what the list printed');
   assert(!o.options.some(x => /RS232|RS485|EIP|ECAT|PROFINET/.test(x.normCode)), 'connector names and protocol names in brackets never become adders');
   const adders = { M12: { code: 'M12', label: 'M12', currency: 'GBP', adder: 62 }, PCV30: { code: 'PCV30', label: 'Valve', currency: 'GBP', adder: 0, byFamily: 'PCV' } };
   const total = renderConfiguredTotal(1410, ['M12', 'PCV30', '5P'], adders, 'GBP');
