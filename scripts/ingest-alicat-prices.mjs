@@ -47,7 +47,7 @@ const LINE = 'alicat';
 const DISCOUNT = flag('--discount') == null ? 35 : parseFloat(flag('--discount'));
 
 if (!SOURCE) {
-  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--option "CODE=adder"] [--apply]');
+  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--option "CODE=adder"] [--no-option "CODE"] [--apply]');
   console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--rule "PATTERN=pct|partner|list"] [--net "PART=figure"] [--list <name>] [--effective YYYY-MM-DD] [--apply]');
   process.exit(1);
 }
@@ -60,8 +60,15 @@ if (SUPPLIER && (!Number.isFinite(DISCOUNT) || DISCOUNT < 0 || DISCOUNT >= 100))
 // discount). The first matching rule wins. --net "PART=figure" states a net
 // buying price for one part outright.
 //   --rule "BASIS*=partner" --rule "EPC*=partner" --rule "CODA*=20" --rule "RECAL*=list"
-const rules = [], nets = {}, statedOptions = {};
+const rules = [], nets = {}, statedOptions = {}, droppedOptions = [];
 for (let i = 0; i < args.length; i++) {
+  // --no-option "CODE": a code the parser read as an option and James says
+  // is not one, or is wrong; dropped and named, never stored.
+  if (args[i] === '--no-option') {
+    const c = String(args[i + 1] || '').trim().toUpperCase();
+    if (!/^[A-Z0-9-]{1,15}$/.test(c)) { console.error(`--no-option wants a code, got ${args[i + 1] || 'nothing'}`); process.exit(1); }
+    droppedOptions.push(c);
+  }
   // --option "CODE=adder": an option the list does not print, stated on
   // James's word, for example PCV as a no-cost option.
   if (args[i] === '--option') {
@@ -151,7 +158,6 @@ if (/\.pdf$/i.test(SOURCE)) {
   }
   const show = (label, list, why) => { if (list.length) { console.log(`  ${label}${why ? `, ${why}` : ''}:`); for (const l of list) console.log(`    ${l}`); } };
   if (SUPPLIER) {
-    console.log(`  partner prices read beside list prices: ${r.partnerPrices || 0}`);
     const counts = {};
     for (const s of rows) { const k = storedFor(s).costRule; counts[k] = (counts[k] || 0) + 1; }
     console.log(`  rows by cost rule: ${Object.entries(counts).map(([k, n]) => `${n} ${k}`).join('; ')}`);
@@ -162,19 +168,40 @@ if (/\.pdf$/i.test(SOURCE)) {
     const missing = Object.keys(nets).filter(k => !rows.some(s => s.normKey === k));
     if (missing.length) console.log(`  net prices named for parts the list does not show: ${missing.join(', ')}`);
   }
-  if (r.grouped) console.log(`  parts priced from merged groups in the columned layout: ${r.grouped}${r.groupedDisagreements ? `; ${r.groupedDisagreements} part(s) whose own price disagrees with the group's, own price kept, columns worth a look` : ''}`);
+  if (r.grouped) console.log(`  parts priced from merged groups in the columned layout: ${r.grouped}`);
+  if (r.groupedDisagreements?.length) {
+    console.log(`  ${r.groupedDisagreements.length} part(s) whose own price disagrees with the group's, own price kept, columns worth a look:`);
+    for (const d of r.groupedDisagreements) console.log(`    ${d}`);
+  }
+  if (r.unpriced?.length) console.log(`  parts in a column past its last price, no price taken: ${r.unpriced.join(', ')}`);
+  if (SUPPLIER) {
+    const withPartner = rows.filter(x => x.partnerPrice != null);
+    console.log(`  partner prices read beside list prices: ${withPartner.length}${withPartner.length ? ` (${withPartner.slice(0, 12).map(x => `${x.partNumber} ${x.price}/${x.partnerPrice}`).join(', ')})` : ''}`);
+  }
   if (!SUPPLIER) {
     // The option tables, James's note of 11 September 2026: adders by code,
     // stored with the sell prices so a configured code totals up. --option
     // "CODE=adder" states one the list does not print, on James's word.
     optionRows = parseOptionRows(pdfText, { currency: r.currency.default || 'GBP' });
+    // --no-option drops a code James says the parser read wrong, and the
+    // drop is printed, never silent.
+    const dropped = optionRows.options.filter(o => droppedOptions.includes(o.normCode));
+    optionRows.options = optionRows.options.filter(o => !droppedOptions.includes(o.normCode));
     for (const [code, adder] of Object.entries(statedOptions)) {
       const normCode = code.toUpperCase();
-      if (!optionRows.options.some(o => o.normCode === normCode)) optionRows.options.push({ code, normCode, label: 'stated on ingest', currency: r.currency.default || 'GBP', adder, markedDefault: false, line: 'command line' });
+      const at = optionRows.options.findIndex(o => o.normCode === normCode);
+      const row = { code, normCode, label: 'stated on ingest', currency: r.currency.default || 'GBP', adder, markedDefault: false, line: 'command line' };
+      if (at === -1) optionRows.options.push(row); else optionRows.options[at] = row;
     }
-    console.log(`\n  option adders read from the list's option tables: ${optionRows.options.length} code(s)`);
-    for (const o of optionRows.options.slice(0, 60)) console.log(`    ${o.code}: ${o.adder === 0 ? 'no cost' : `${o.currency} ${o.adder}`}  ${o.label || ''}${o.markedDefault ? '  [default]' : ''}`);
+    console.log(`\n  option adders read from the list's option tables: ${optionRows.options.length} code(s), each with the line it was read from`);
+    for (const o of optionRows.options.slice(0, 60)) {
+      console.log(`    ${o.code}: ${o.adder === 0 ? 'no cost' : `${o.currency} ${o.adder}`}  ${o.label || ''}${o.markedDefault ? '  [default]' : ''}`);
+      console.log(`        from: ${o.line}`);
+    }
     if (optionRows.options.length > 60) console.log(`    and ${optionRows.options.length - 60} more`);
+    if (dropped.length) console.log(`  dropped on the command line: ${dropped.map(o => `${o.code} (was ${o.adder})`).join(', ')}`);
+    const unknownDrops = droppedOptions.filter(c => !dropped.some(o => o.normCode === c));
+    if (unknownDrops.length) console.log(`  --no-option named codes the list does not price: ${unknownDrops.join(', ')}`);
     if (optionRows.conflicts.length) {
       console.log('  option codes at two adders, not stored:');
       for (const c of optionRows.conflicts) console.log(`    ${c.code}: ${c.adders.join(', ')}  lines: ${c.lines.map(l => `"${l}"`).join(' | ')}`);

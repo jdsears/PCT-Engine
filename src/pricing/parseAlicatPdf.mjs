@@ -192,17 +192,24 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
   // with it is counted as a disagreement for the dry run to show, since it
   // means the columns were misread, not that the list prices it twice.
   report.grouped = 0;
-  report.groupedDisagreements = 0;
+  report.groupedDisagreements = [];
+  report.unpriced = [];
   if (supplier) {
     const grouped = parseGroupedColumns(src, { currency: 'USD', productLine });
     for (const g of grouped.rows) {
       const key = `${g.normKey}|${g.currency}`;
       const prior = seen.get(key);
-      if (prior) { if (prior.sellPrice !== g.sellPrice) report.groupedDisagreements++; continue; }
+      if (prior) {
+        if (prior.sellPrice !== g.sellPrice && report.groupedDisagreements.length < 20) {
+          report.groupedDisagreements.push(`${g.partNumber}: own ${prior.sellPrice}, group ${g.sellPrice}`);
+        }
+        continue;
+      }
       if (conflicts.has(key)) continue;
       seen.set(key, g);
       report.grouped++;
     }
+    report.unpriced = grouped.unpriced.filter(p => !seen.has(`${normKey(p)}|USD`)).slice(0, 20);
     if (report.grouped) report.partNoPrice = report.partNoPrice.filter(l => !grouped.rows.some(g => l.includes(g.partNumber)));
   }
   // A conflict a human settled on the command line keeps the stated figure,
@@ -306,9 +313,14 @@ export function parseOptionRows(src, { currency = 'GBP' } = {}) {
       if (current) current.values.push(v);
       prev = v.end;
     }
-    // Values with nobody to own them: a line read, with figures on it,
-    // that priced no option, listed so a person can see what it was.
-    if (!owners.length) { out.skipped.push(line.slice(0, 120)); continue; }
+    // Values with nobody to own them. Only a line that looked like an
+    // option row, one with a bracket on it, is worth reporting: a product
+    // row carries prices and no brackets, and listing every one of those
+    // buried the real skips in John's read of 12 September 2026.
+    if (!owners.length) {
+      if (/\([^()]{1,80}\)/.test(line)) out.skipped.push(line.slice(0, 120));
+      continue;
+    }
     for (const o of owners) {
       const vals = o.values;
       if (vals.length === 1) { for (const code of o.codes) add(code, o.label, vals[0], line); continue; }
