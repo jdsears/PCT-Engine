@@ -247,12 +247,22 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
 // too. A row whose values outnumber its codes is a per-series table, still
 // reported and not stored. The same code at two adders is a conflict,
 // named and not stored. Pure, so every shape is provable.
-const VALUE_TOKEN = /(-)?\s?([£$€])\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)|\bN\/A\b|\[default\]|\b(?:included|incl\.|no charge|n\/c|free)\b/gi;
+// A value in an option cell: a figure, N/A, the default mark, or a word
+// that means no charge. The no-charge word counts only when it ends its
+// cell, John's read of 12 September 2026: "Free with Ethernet protocol" is
+// a note on the locking option, not a value, and reading it as one gave
+// that row two values for one code and held the row.
+const VALUE_TOKEN = /(-)?\s?([£$€])\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)|\bN\/A\b|\[default\]|\b(?:included|incl\.|no charge|n\/c|free)\b(?=\s{2,}|\s*$)/gi;
 // Names that sit in brackets on an option row without being option codes:
 // serial and connector standards and protocol names.
 const NOT_OPTION = /^(RS\d{3}|RJ\d{2}|USB[A-Z0-9-]*|EIP|ECAT|PROFINET|MODBUS|NEMA\d+)$/i;
 const CODE_OK = /^[A-Z0-9][A-Z0-9-]{0,14}$/i;
-const codesIn = s => String(s || '').split(/\s*(?:,|\bor\b|\/)\s*/i).map(c => c.trim().replace(/^-+/, '')).filter(c => CODE_OK.test(c) && !/#/.test(c) && !/^etc$/i.test(c));
+// A bracket holding nothing but a five-or-more-digit number is a part
+// number, not an option code: the fittings table prints "Brass (410133)
+// £12", which is the price of that part, not an adder to a controller.
+const PART_IN_BRACKET = /^\d{5,}$/;
+const codesIn = s => String(s || '').split(/\s*(?:,|\bor\b|\/)\s*/i).map(c => c.trim().replace(/^-+/, ''))
+  .filter(c => CODE_OK.test(c) && !/#/.test(c) && !/^etc$/i.test(c) && !PART_IN_BRACKET.test(c));
 const valueOf = (m, currency) => {
   if (m[3] != null) return { kind: 'price', adder: (m[1] ? -1 : 1) * (priceNumber(m[3]) ?? 0), currency: SYMBOL[m[2]] || currency };
   const t = m[0].toLowerCase();
@@ -318,6 +328,11 @@ export function parseOptionRows(src, { currency = 'GBP' } = {}) {
     const owners = [];
     let prev = 0, current = null;
     for (const v of values) {
+      // A figure with a part number straight after it is that part's price
+      // in an accessory table, never the adder of the option before it:
+      // "Mainline Locking (IPJ) £21 411149 Single-Ended, 6ft" prices the
+      // cable, and the locking option is priced on its own row.
+      if (/^\s+\d{5,}\b/.test(line.slice(v.end, v.end + 12))) { current = null; prev = v.end; continue; }
       const segment = line.slice(prev, v.at);
       const inSeg = brackets.filter(b => b.at >= prev && b.end <= v.at);
       const bare = text(segment);
