@@ -345,6 +345,100 @@ await check('a columned list prices a merged group once, at its middle, and ever
   assert(!whole.report.partNoPrice.some(l => /M-5SCCM-D/.test(l)), 'a part priced by its group is no longer listed as unpriced');
 });
 
+await check('the pressure tables read whole: alternates share a cell, a price is its own cell, and every part takes its group', async () => {
+  // Lines 138 to 157 of the supplier list as John's --show printed them on
+  // 22 September 2026, verbatim, the numbering prefix stripped here. Twenty
+  // of these parts had no price and eight were dropped: a cell of
+  // alternates was placed part by part against the heading's centre, and
+  // "$765 PS-15PSIA-D or PS-15PSIG-D" read as one cell.
+  const verbatim = s => s.split('\n').map(l => l.replace(/^\s*\d+ \| ?/, '')).join('\n');
+  const pressure = verbatim([
+    '     138 |             Pressure - Elastomer Sealed',
+    '     139 | ',
+    '     140 |                                            P-Series                                                           PS-Series',
+    '     141 |             P-10TORRA-D-SAE4',
+    '     142 |             P-100TORRA-D-SAE4                                        $1,360',
+    '     143 |             P-1000TORRA-D-SAE4',
+    '     144 |             P-2INH2OG-D or P-2INH2OD-D                                   $880',
+    '     145 |             P-1PSIG-D or P-1PSID-D',
+    '     146 |             P-5PSIG-D or P-5PSID-D                                          PS-5PSIG-D or PS-5PSID-D',
+    '     147 |             P-15PSIA-D or P-15PSIG-D or P-15PSID-D                     $765 PS-15PSIA-D or PS-15PSIG-D',
+    '     148 |                                                                                                                                              $1,315',
+    '     149 |             P-30PSIA-D or P-30PSIG-D or P-30PSID-D                          PS-30PSIA-D or PS-30PSIG-D or PS-30PSID-D',
+    '     150 |             P-100PSIA-D or P-100PSIG-D or P-100PSID-D                       PS-100PSIA-D or PS-100PSIG-D or PS-100PSID-D',
+    '     151 |             P-500PSIA-D or P-500PSIG-D or P-500PSID-D                $1,005 PS-500PSIA-D or PS-500PSIG-D or PS-500PSID-D                     $1,560',
+    '     152 |             P-1000PSIA-D or P-1000PSIG-D                                    PS-1000PSIA-D or PS-1000PSIG-D',
+    '     153 |                                                                      $1,250                                                                  $1,800',
+    '     154 |             P-1500PSIA-D or P-1500PSIG-D                                    PS-1500PSIA-D or PS-1500PSIG-D',
+    '     155 |             P-3000PSIA-D or P-3000PSIG-D                             $1,465 PS-3000PSIA-D or PS-3000PSIG-D                                   $2,035',
+    '     156 | ',
+    '     157 |                                               PB            $225 + meter                                        PBS               $225 + meter',
+  ].join('\n'));
+  const whole = parseAlicatPdfText(pressure, { mode: 'supplier' });
+  const price = k => whole.rows.find(r => r.normKey === k)?.price;
+  assert(whole.rows.length === 46, `twenty-seven P parts and nineteen PS parts, every one priced: ${whole.rows.length} (${JSON.stringify(whole.report.unpriced)})`);
+  assert(price('P-10TORRA-D-SAE4') === 1360 && price('P-1000TORRA-D-SAE4') === 1360, 'the torr group takes the price on its middle row');
+  assert(price('P-2INH2OG-D') === 880 && price('P-2INH2OD-D') === 880, 'a row of two alternates is a group of one');
+  assert(price('P-1PSID-D') === 765 && price('P-5PSIG-D') === 765 && price('P-30PSID-D') === 765 && price('P-100PSIG-D') === 765, 'the five-row group takes the price on its middle row, alternates included');
+  assert(price('P-500PSID-D') === 1005 && price('P-1000PSIG-D') === 1250 && price('P-1500PSIA-D') === 1250 && price('P-3000PSIG-D') === 1465, 'the even group of two takes the price on the line between its rows');
+  assert(price('PS-5PSID-D') === 1315 && price('PS-15PSIG-D') === 1315 && price('PS-30PSIA-D') === 1315 && price('PS-100PSID-D') === 1315,
+    'the PS cell after the P price is its own cell in its own column, and its even group of four takes the line between');
+  assert(price('PS-500PSIA-D') === 1560 && price('PS-1000PSIG-D') === 1800 && price('PS-1500PSIA-D') === 1800 && price('PS-3000PSIA-D') === 2035, 'the rest of the PS column');
+  assert(whole.report.groupedDisagreements.length === 0 && whole.report.unpriced.length === 0 && whole.report.conflicts.length === 0,
+    `the line read and the column read agree everywhere: ${JSON.stringify([whole.report.groupedDisagreements, whole.report.unpriced])}`);
+  assert(!whole.rows.some(r => r.price === 225), 'a portable adder is never a group price');
+  // A cell of alternates is placed as one, by where it starts: under a
+  // heading no wider than its first part, the second alternate begins past
+  // the heading's centre and would otherwise fall into the next column.
+  const tight = parseGroupedColumns([
+    '             P-Series                     PS-Series',
+    '             P-1PSIG-D or P-1PSID-D       PS-1PSIG-D or PS-1PSID-D',
+    '                            $700                      $900',
+  ].join('\n'), { currency: 'USD' });
+  const tp = k => tight.rows.find(r => r.normKey === k);
+  assert(tp('P-1PSID-D')?.price === 700 && tp('P-1PSID-D').column === 'P' && tp('PS-1PSID-D')?.price === 900 && tp('PS-1PSID-D').column === 'PS',
+    `alternates stay in their cell's column: ${JSON.stringify(tight.rows.map(r => r.partNumber + ':' + r.column + '=' + r.price))}`);
+  // Lines from the MC tables, verbatim, where headings arrive part-way down
+  // and a price sits after the second cell on its line: "MCR-100SLPM-D
+  // MCRS-2000SLPM-D $4,920" read as the first part's price, which is one of
+  // the eight disagreements John's apply printed.
+  const mc = verbatim([
+    '      60 |                       MC-Series                        MS-Series                       MCQ-Series                         MCW-Series',
+    '      74 |             MC-5SLPM-D                        MCS-5SLPM-D                    MCQ-5SLPM-D                                  MCRW-Series',
+    '      77 |                       MCP-Series                      MCRS-Series            MCQ-50SLPM-D                       MCRW-20SLPM-D',
+    '      81 |             MCP-50SLPM-D             $2,065   MCRS-100SLPM-D                        MCRQ-Series                 MCRW-50SLPM-D',
+    '      84 |                       MCR-Series              MCRS-500SLPM-D                 MCRQ-500SLPM-D                     MCRW-250SLPM-D',
+    '      87 |             MCR-100SLPM-D                     MCRS-2000SLPM-D      $4,920    MCRQ-2000SLPM-D     $4,510                  MCRHW-Series',
+  ].join('\n'));
+  const m = parseAlicatPdfText(mc, { mode: 'supplier' });
+  const mp = k => m.rows.find(r => r.normKey === k);
+  assert(mp('MCP-50SLPM-D')?.price === 2065 && mp('MCRS-2000SLPM-D')?.price === 4920 && mp('MCRQ-2000SLPM-D')?.price === 4510,
+    `a price belongs to the last cell of parts before it: ${JSON.stringify(m.rows.map(r => r.partNumber + '=' + r.price))}`);
+  assert(!mp('MCR-100SLPM-D') && m.report.unpriced.includes('MCR-100SLPM-D'), 'the part in the earlier cell is not priced by that line, and is named as unpriced');
+  assert(m.report.groupedDisagreements.length === 0, `the two reads agree: ${JSON.stringify(m.report.groupedDisagreements)}`);
+  const g = parseGroupedColumns(mc, { currency: 'USD' });
+  const col = k => g.rows.find(r => r.normKey === k)?.column;
+  assert(col('MCP-50SLPM-D') === 'MCP' && col('MCRS-2000SLPM-D') === 'MCRS' && col('MCRQ-2000SLPM-D') === 'MCRQ',
+    `a heading printed part-way down replaces the column under it: ${JSON.stringify(g.rows.map(r => r.partNumber + ':' + r.column))}`);
+  // Accessories and adders beside a column: the break-out box prices are
+  // without and with a kit, and "PC + $200" is an addition, never an anchor.
+  const acc = verbatim([
+    '     399 |                  BB3            $175       $300                        USB           $100     Any mainline connector, 232/485 (Ex: USB-MD8-232)',
+  ].join('\n'));
+  const a = parseAlicatPdfText(acc, { mode: 'supplier' });
+  assert(a.rows.find(r => r.normKey === 'BB3')?.price === 175 && a.rows.find(r => r.normKey === 'BB3').partnerPrice === null && a.report.priceNoPart.some(l => /\$300/.test(l)),
+    'the box takes its first figure, and the second is named as a figure with no part');
+  const pcx = verbatim([
+    '     198 |             PCX-Series                                                                  Pressure - Valve and Port Options',
+    '     199 |             PCX-15PSIA-D-SFF                            PCP                     PC + $200             PCPD                  PCD + $400',
+    '     200 |             PCX-30PSIA-D-SFF         $2,385             PCR                     PC + $500             PCRD                  PCD + $1000',
+  ].join('\n'));
+  const x = parseAlicatPdfText(pcx, { mode: 'supplier' });
+  const xp = k => x.rows.find(r => r.normKey === k)?.price;
+  assert(xp('PCX-30PSIA-D-SFF') === 2385 && xp('PCX-15PSIA-D-SFF') === 2385 && !x.rows.some(r => [200, 400, 500, 1000].includes(r.price)),
+    `a lone heading opens its column, and the valve adders beside it never price a part: ${JSON.stringify(x.rows.map(r => r.partNumber + '=' + r.price))}`);
+});
+
 await check('when nothing matches as written or shortened, the family\'s stored parts answer, never a guess', async () => {
   // James's second run, 11 September 2026: the list spells its pressure
   // controllers another way, so the whole-line summary came back instead.
@@ -407,17 +501,19 @@ await check('the supplier list reads in its own mode: USD is the price, sterling
   assert(s.report.mode === 'supplier' && s.report.currency.default === 'USD', 'the supplier read expects USD');
   assert(get('MC-500SCCM-D')?.price === 1650 && get('MC-500SCCM-D').currency === 'USD' && get('MCS-5SLPM-D')?.price === 3200 && get('FP-25')?.price === 4100, `USD figures are the prices: ${JSON.stringify(s.rows.map(r => r.partNumber + '=' + r.price))}`);
   assert(!get('PC-15PSIG-D') && s.report.otherCurrency.some(l => /PC-15PSIG-D £845/.test(l)), 'a sterling figure is set aside in the supplier read');
-  // The partner price beside the list price, James's rule for BASIS and EPC.
-  assert(get('BASIS-2-100SCCM')?.price === 520 && get('BASIS-2-100SCCM').partnerPrice === 420 && get('EPC-100PSI')?.partnerPrice === 300, `a second figure straight after the first is the partner price: ${JSON.stringify(s.rows.filter(r => r.partnerPrice != null))}`);
-  assert(get('MC-500SCCM-D').partnerPrice === null && s.report.partnerPrices === 2 && !s.report.priceNoPart.some(l => /\$420|\$300/.test(l)), 'a part with one figure has no partner price, and partner figures are not prices with no part');
+  // A second figure beside a part is named, never assumed to be the partner
+  // price: John's read of 22 September 2026 showed "BB3 $175 $300" is a box
+  // without and with its kit. Partner prices live in the range tables.
+  assert(get('BASIS-2-100SCCM')?.price === 520 && get('BASIS-2-100SCCM').partnerPrice === null && get('EPC-100PSI')?.partnerPrice === null, `the first figure is the price and the second is nobody's: ${JSON.stringify(s.rows.filter(r => r.partnerPrice != null))}`);
+  assert(s.report.priceNoPart.some(l => /\$420/.test(l)) && s.report.priceNoPart.some(l => /\$300/.test(l)), 'and each second figure is reported as a price with no part beside it');
   assert(pdfApplyBlockers(s.report).length === 0, 'a clean supplier read has no blockers');
   // The rules, by code: the specific before the general, the first match wins.
   const rules = ['BASIS*=partner', 'EPC*=partner', 'CODA*=20', 'RECAL*=list', 'CLEAN*=list'].map(parseCostRule);
   assert(rules.every(Boolean) && parseCostRule('nonsense') === null && parseCostRule('X=') === null, 'rules parse, junk does not');
   assert(costRuleFor('BASIS-2-100SCCM', rules)?.value === 'partner' && costRuleFor('EPC-100PSI', rules)?.value === 'partner', 'BASIS and EPC take the partner price');
   assert(costRuleFor('CODA-KC-500SCCM', rules)?.value === 20 && costRuleFor('RECAL-MC', rules)?.value === 'list' && costRuleFor('MC-500SCCM-D', rules) === null, 'CODA at 20%, recalibration at list, the mainline on the standing rule');
-  const basis = applyCostRule(get('BASIS-2-100SCCM'), costRuleFor('BASIS-2-100SCCM', rules), 35);
-  assert(basis.netPrice === 420 && basis.discountPct === null && basis.costRule === 'partner price' && costFrom(basis) === 420, 'a partner rule stores the partner price as the net');
+  const basis = applyCostRule({ ...get('BASIS-2-100SCCM'), partnerPrice: 420 }, costRuleFor('BASIS-2-100SCCM', rules), 35);
+  assert(basis.netPrice === 420 && basis.discountPct === null && basis.costRule === 'partner price' && costFrom(basis) === 420, 'a partner rule stores the partner price the row carries as the net');
   const noPartner = applyCostRule(get('MC-500SCCM-D'), parseCostRule('MC*=partner'), 35);
   assert(noPartner.netPrice === null && /none printed/.test(noPartner.costRule) && costFrom({ listPrice: 1650, ...noPartner }) === null, 'a partner rule with no partner price on the row stores no cost, and says so');
   const listRule = applyCostRule(get('FP-25'), parseCostRule('FP-25=list'), 35);

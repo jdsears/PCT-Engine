@@ -51,6 +51,8 @@ const PROSE = /\b(for|with|of|the|and|per|to|in|on|by|only|case|kit|cable|set|sp
 // first column not applicable), and the figure is the option's, never the
 // part's. John's third dry run, 9 September 2026.
 const OPTION_CELL = /\bN\/A\b|\bn\/c\b|\bby quote\b|\bincluded\b|\bstandard\b|\bstd\b/i;
+// What joins two codes into alternates of one price: "or", a slash, a comma.
+const ALTERNATE_JOIN = /^\s*(?:or|\/|,|;|&|and)\s*$/i;
 const SYMBOL = { '£': 'GBP', '$': 'USD', '€': 'EUR' };
 
 const tokens = (re, line) => {
@@ -98,6 +100,7 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
   };
   const seen = new Map();
   const conflicts = new Map();
+  const allParts = new Map();
   const sample = (list, v, cap = 8) => { if (list.length < cap && !list.includes(v)) list.push(v); };
   for (const raw of lines) {
     const line = raw.replace(/\s+$/, '');
@@ -108,13 +111,11 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
     const prices = pricesOn(line, defaultCurrency);
     for (const p of prices) if (p.currency) report.currency.seen[p.currency]++;
     const parts = tokens(PART_TOKEN, line).map(t => ({ part: t.m[1], at: t.at, end: t.end })).filter(p => !NOT_PART.test(p.part));
+    for (const p of parts) if (!allParts.has(normKey(p.part))) allParts.set(normKey(p.part), p.part);
     let prev = 0;
-    // In the supplier read a second figure straight after a part's first,
-    // with nothing between them, is the partner price beside the list price.
-    let lastRows = [];
     for (const price of prices) {
-      // Each price belongs to the part that starts its own stretch of the
-      // line, the text since the previous price.
+      // Each price belongs to the parts in its own stretch of the line, the
+      // text since the previous price.
       const segStart = prev;
       const segment = line.slice(segStart, price.at);
       const inSegment = parts.filter(p => p.at >= segStart && p.end <= price.at);
@@ -131,19 +132,36 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
         sample(report.adders, text(`${code} ${figure} ${(tail.match(phrase) || ['+'])[0]}`));
         continue;
       }
+      if (/\+\s*$/.test(segment)) {
+        // "PCP   PC + $200": the plus before the figure makes it an addition
+        // to the named base, never the price of the part earlier on the line.
+        sample(report.adders, text(`${segment.split(/\s{2,}/).filter(s => s.trim()).slice(-2).join(' ')} ${figure}`));
+        continue;
+      }
       if (!inSegment.length) {
-        if (supplier && !segment.trim() && lastRows.length && price.currency === 'USD') {
-          for (const r of lastRows) if (r.partnerPrice == null) r.partnerPrice = price.price;
-          report.partnerPrices = (report.partnerPrices || 0) + 1;
-          continue;
-        }
-        lastRows = [];
+        // A figure with no part in its stretch is named, never assumed to
+        // be anything: John's read of 22 September 2026 showed "BB3 $175
+        // $300" is a box without and with its kit, where an earlier guess
+        // had read a second figure as the partner price. The list prints
+        // partner prices only in its range tables.
         sample(report.priceNoPart, segment.trim() ? pair : text(line));
         continue;
       }
-      lastRows = [];
-      const first = inSegment[0];
-      const lead = line.slice(segStart, first.at).replace(HEADING, ' ').trim();
+      // The price belongs to the last cell of parts before it: the last
+      // part and any alternates joined to it by "or". Parts in earlier
+      // cells of the stretch sit in other columns of a merged-group layout,
+      // unpriced on this line, and the columned read prices them by their
+      // group. John's supplier read of 22 September 2026: "MCR-100SLPM-D
+      // MCRS-2000SLPM-D $4,920" prices the second, never the first.
+      let firstIdx = inSegment.length - 1;
+      while (firstIdx > 0 && ALTERNATE_JOIN.test(line.slice(inSegment[firstIdx - 1].end, inSegment[firstIdx].at))) firstIdx--;
+      const first = inSegment[firstIdx];
+      const leftBehind = inSegment.slice(0, firstIdx);
+      if (leftBehind.length) {
+        report.leftForColumns = (report.leftForColumns || 0) + leftBehind.length;
+        if (!supplier) sample(report.partNoPrice, text(line.slice(segStart, leftBehind[leftBehind.length - 1].end)));
+      }
+      const lead = line.slice(leftBehind.length ? leftBehind[leftBehind.length - 1].end : segStart, first.at).replace(HEADING, ' ').trim();
       if (lead && PROSE.test(lead)) { sample(report.mentions, pair); continue; }
       if (OPTION_CELL.test(line.slice(first.end, price.at))) { sample(report.options, pair); continue; }
       if (!supplier && price.currency === 'USD') { sample(report.usd, pair); continue; }
@@ -154,13 +172,8 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
       // for the absolute, gauge and differential references. Codes joined by
       // "or" (or a slash or a comma) before the figure each take the price
       // as their own row, and none of them is the first one's description.
-      const alternates = [];
-      let prevEnd = first.end;
-      for (const p of inSegment.slice(inSegment.indexOf(first) + 1)) {
-        if (!/^\s*(?:or|\/|,|;|&|and)\s*$/i.test(line.slice(prevEnd, p.at))) break;
-        alternates.push(p);
-        prevEnd = p.end;
-      }
+      const alternates = inSegment.slice(firstIdx + 1);
+      const prevEnd = alternates.length ? alternates[alternates.length - 1].end : first.end;
       const description = text([lead, line.slice(prevEnd, price.at)].join(' ')) || null;
       if (alternates.length) report.alternates = (report.alternates || 0) + alternates.length;
       // sellPrice is the row's figure in either mode; the supplier ingest
@@ -179,7 +192,7 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
           conflicts.set(key, c);
           continue;
         }
-        if (!prior) { seen.set(key, row); lastRows.push(row); }
+        if (!prior) seen.set(key, row);
       }
     }
     const after = parts.filter(p => p.at >= prev);
@@ -209,7 +222,11 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
       seen.set(key, g);
       report.grouped++;
     }
-    report.unpriced = grouped.unpriced.filter(p => !seen.has(`${normKey(p)}|USD`)).slice(0, 20);
+    // Every part the document printed that still has no price, from either
+    // read, so a column the layout defeated is named in full.
+    const missing = [...allParts.entries()].filter(([k]) => !seen.has(`${k}|USD`) && !conflicts.has(`${k}|USD`)).map(([, p]) => p);
+    report.unpriced = missing.slice(0, 40);
+    report.unpricedCount = missing.length;
     if (report.grouped) report.partNoPrice = report.partNoPrice.filter(l => !grouped.rows.some(g => l.includes(g.partNumber)));
   }
   // A conflict a human settled on the command line keeps the stated figure,
@@ -424,71 +441,100 @@ export function parseOptionRows(src, { currency = 'GBP' } = {}) {
 // same distance past its price as the price is from its start. Columns are
 // the series headings ("M-Series MS-Series ..."), and a figure belongs to
 // the column whose heading is nearest above it. Pure over the layout text.
+//
+// The geometry, from John's verbatim read of 22 September 2026: a heading
+// is centred over its column, the parts of the column start at its left
+// edge, and the price sits to the right of the parts. So a cell of parts
+// (one part, or alternates joined by "or") belongs to the first heading
+// whose centre is at or past where the cell starts, and a price belongs to
+// the last heading whose centre is at or before where the price starts. A
+// heading printed part-way down, alone or beside parts ("MCRW-Series" over
+// the fourth column while the first three carry on), replaces the column
+// under it and starts that column's next table; a line of two or more
+// headings and nothing else starts a fresh set of columns; a titled line
+// with no parts, prices or headings ("Pressure - Elastomer Sealed") ends
+// every column. A figure that follows a plus ("PC + $200") is an adder,
+// never a group's price.
 export function parseGroupedColumns(src, { currency = 'USD', productLine = 'alicat' } = {}) {
   const lines = String(src || '').replace(/\f/g, '\n').split(/\r?\n/);
   const out = { rows: [], blocks: 0, unpriced: [] };
-  let block = null;
-  const nearest = (cols, x) => {
-    let best = null;
-    for (const [i, c] of cols.entries()) { const d = Math.abs(c.x - x); if (best == null || d < best.d) best = { i, d }; }
-    return best && best.d <= 22 ? best.i : null;
-  };
-  const flush = () => {
-    if (!block) return;
-    out.blocks++;
-    for (const [i, col] of block.columns.entries()) {
-      const parts = col.parts.sort((a, b) => a.row - b.row);
-      const anchors = col.anchors.sort((a, b) => a.row - b.row);
-      let start = null, ai = 0;
-      for (let pi = 0; pi < parts.length;) {
-        start = parts[pi].row;
-        while (ai < anchors.length && anchors[ai].row < start) ai++;
-        if (ai >= anchors.length) { for (const p of parts.slice(pi)) out.unpriced.push(p.part); break; }
-        const anchor = anchors[ai++];
-        const end = start + 2 * (anchor.row - start);
-        let taken = 0;
-        while (pi < parts.length && parts[pi].row <= end) {
-          const p = parts[pi++];
-          out.rows.push({ productLine, partNumber: p.part, normKey: normKey(p.part), description: null, currency: anchor.currency, sellPrice: anchor.price, price: anchor.price, partnerPrice: null, sourceTab: 'pdf', column: block.cols[i].name, line: `${p.part} ${SYMBOL[anchor.currency] || ''}${anchor.price} (group price)` });
-          taken++;
-        }
-        if (!taken) break;
-      }
-    }
-    block = null;
-  };
+  let cols = [];
   let row = 0;
+  const tile = (col) => {
+    const parts = col.parts.sort((a, b) => a.row - b.row);
+    const anchors = col.anchors.sort((a, b) => a.row - b.row);
+    let ai = 0;
+    for (let pi = 0; pi < parts.length;) {
+      const start = parts[pi].row;
+      while (ai < anchors.length && anchors[ai].row < start) ai++;
+      if (ai >= anchors.length) { for (const p of parts.slice(pi)) out.unpriced.push(p.part); break; }
+      const anchor = anchors[ai++];
+      const end = start + 2 * (anchor.row - start);
+      let taken = 0;
+      while (pi < parts.length && parts[pi].row <= end) {
+        const p = parts[pi++];
+        out.rows.push({ productLine, partNumber: p.part, normKey: normKey(p.part), description: null, currency: anchor.currency, sellPrice: anchor.price, price: anchor.price, partnerPrice: null, sourceTab: 'pdf', column: col.name, line: `${p.part} ${SYMBOL[anchor.currency] || ''}${anchor.price} (group price)` });
+        taken++;
+      }
+      if (!taken) break;
+    }
+    col.parts = [];
+    col.anchors = [];
+  };
+  const flushAll = () => { for (const c of cols) tile(c); if (cols.length) out.blocks++; cols = []; };
+  const colForPart = (x) => cols.find(c => c.x >= x) || cols[cols.length - 1] || null;
+  const colForPrice = (x) => { let hit = null; for (const c of cols) if (c.x <= x) hit = c; return hit || cols[0] || null; };
+  const colUnder = (x) => { let best = null; for (const c of cols) { const d = Math.abs(c.x - x); if (!best || d < best.d) best = { c, d }; } return best?.c || null; };
   for (const raw of lines) {
     const line = raw.replace(/\s+$/, '');
-    const heads = [...line.matchAll(/\b([A-Z]{1,5}\d{0,3})-Series\b/g)];
-    if (heads.length >= 2) {
-      flush();
-      block = { cols: heads.map(h => ({ name: h[1], x: h.index + h[0].length / 2 })), columns: heads.map(() => ({ parts: [], anchors: [] })) };
-      row = 0;
-      continue;
-    }
-    if (!block) continue;
     if (!line.trim() || EXCLUDE_LINE.test(line)) continue;
-    const parts = tokens(PART_TOKEN, line).map(t => ({ part: t.m[1], x: t.at + t.m[1].length / 2 })).filter(p => !NOT_PART.test(p.part));
-    const prices = pricesOn(line, currency).filter(p => p.currency === currency).map(p => ({ ...p, x: p.at + (p.end - p.at) / 2 }));
-    // A line of prose inside a block ends it: the next table has its own
-    // heading. A price-only line is a group's price only when it is nothing
-    // but figures; "$700 + controller" is an adder, never an anchor.
+    const heads = [...line.matchAll(/\b([A-Z]{1,5}\d{0,3}(?:-[A-Z]{2,4})?)-Series\b/g)].map(h => ({ name: h[1], x: h.index + h[0].length / 2 }));
+    const parts = tokens(PART_TOKEN, line).map(t => ({ part: t.m[1], at: t.at, end: t.end })).filter(p => !NOT_PART.test(p.part));
+    const prices = pricesOn(line, currency).filter(p => p.currency === currency && !/\+\s*$/.test(line.slice(0, p.at)));
+    if (heads.length) {
+      if (heads.length >= 2 && !parts.length) {
+        flushAll();
+        cols = heads.map(h => ({ name: h.name, x: h.x, parts: [], anchors: [] }));
+        row = 0;
+        continue;
+      }
+      for (const h of heads) {
+        const under = colUnder(h.x);
+        if (under) { tile(under); under.name = h.name; under.x = h.x; }
+        else { cols.push({ name: h.name, x: h.x, parts: [], anchors: [] }); cols.sort((a, b) => a.x - b.x); }
+      }
+    }
+    if (!cols.length) continue;
     if (!parts.length && !prices.length) {
-      if ((line.match(/[a-z]{3,}/g) || []).length >= 5) flush();
+      // A titled line between tables ends every column; a stray word does
+      // not, and nor does a heading line, which has just placed its column.
+      if (!heads.length && (line.match(/[A-Za-z]{2,}/g) || []).length >= 2) flushAll();
       continue;
     }
+    // A price-only line is a group's price only when it is nothing but
+    // figures; "$700 + controller" is an adder, never an anchor.
     if (!parts.length && !/^[\s$£€\d,.]+$/.test(line)) continue;
     if (parts.length) {
       row++;
-      for (const p of parts) { const c = nearest(block.cols, p.x); if (c != null) block.columns[c].parts.push({ part: p.part, row }); }
+      // Cells of parts: alternates joined by "or" share one cell, and the
+      // cell belongs to the column its first part starts under.
+      const cells = [];
+      for (const p of parts) {
+        const last = cells[cells.length - 1];
+        if (last && ALTERNATE_JOIN.test(line.slice(last.end, p.at))) { last.parts.push(p); last.end = p.end; }
+        else cells.push({ at: p.at, end: p.end, parts: [p] });
+      }
+      for (const cell of cells) {
+        const col = colForPart(cell.at);
+        if (col) for (const q of cell.parts) col.parts.push({ part: q.part, row });
+      }
     }
     for (const p of prices) {
-      const c = nearest(block.cols, p.x);
-      if (c != null) block.columns[c].anchors.push({ row: parts.length ? row : row + 0.5, price: p.price, currency: p.currency });
+      const col = colForPrice(p.at);
+      if (col) col.anchors.push({ row: parts.length ? row : row + 0.5, price: p.price, currency: p.currency });
     }
   }
-  flush();
+  flushAll();
   return out;
 }
 

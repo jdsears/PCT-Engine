@@ -218,11 +218,8 @@ if (/\.pdf$/i.test(SOURCE)) {
     console.log(`  ${r.groupedDisagreements.length} part(s) whose own price disagrees with the group's, own price kept, columns worth a look:`);
     for (const d of r.groupedDisagreements) console.log(`    ${d}`);
   }
-  if (r.unpriced?.length) console.log(`  parts in a column past its last price, no price taken: ${r.unpriced.join(', ')}`);
-  if (SUPPLIER) {
-    const withPartner = rows.filter(x => x.partnerPrice != null);
-    console.log(`  partner prices read beside list prices: ${withPartner.length}${withPartner.length ? ` (${withPartner.slice(0, 12).map(x => `${x.partNumber} ${x.price}/${x.partnerPrice}`).join(', ')})` : ''}`);
-  }
+  if (r.leftForColumns) console.log(`  parts left on their line for the columned read, other columns' rows: ${r.leftForColumns}`);
+  if (r.unpricedCount) console.log(`  parts the document prints that took no price from either read: ${r.unpricedCount}${r.unpricedCount > r.unpriced.length ? `, the first ${r.unpriced.length}` : ''}: ${r.unpriced.join(', ')}`);
   if (!SUPPLIER) {
     // The option tables, James's note of 11 September 2026: adders by code,
     // stored with the sell prices so a configured code totals up. --option

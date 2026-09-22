@@ -720,6 +720,19 @@ that table only on an explicit ask, rendering one line that says the figure,
 how it was arrived at, where it came from, and that it is never a figure to
 quote. Drafts, quotes and unasked answers never see it.
 
+The supplier's list prints its mainline series in columns, the parts of a
+series down a column and one price per group of ranges at the group's
+vertical middle, so `parseGroupedColumns` reads the layout rather than the
+lines: a heading is centred over its column, a cell of parts (one part or
+alternates joined by "or") belongs to the first heading whose centre is at
+or past where the cell starts, a price to the last heading whose centre is at
+or before it, and a heading printed part-way down replaces the column under
+it. On a line, a price belongs to the last cell of parts before it, never
+the first, and a figure after a plus is an addition. A second figure beside
+a part is named as a figure with no part, never assumed to be a partner
+price: the list prints those only in its range tables. The dry run names
+every printed part that took no price from either read.
+
 `scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf"
 --discount 35` reads the supplier's USD list in its own mode, where a USD
 figure is the price and a sterling one is set aside; `--net "PART=figure"`
