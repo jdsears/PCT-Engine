@@ -181,7 +181,7 @@ export async function dripInvitesOnce({ log = () => {}, auto = false } = {}) {
     // invitation: they are further down the sequence and waiting on us.
     const msg = await releaseMessage({ campaign, accountId, auto, log });
     if (msg === 'sent') { out.sent.push({ campaign, kind: 'message' }); continue; }
-    if (msg === 'unhealthy') { out.unhealthy = 'LinkedIn reported an account health problem while sending a message'; break; }
+    if (msg === 'unhealthy') { out.unhealthy = 'LinkedIn reported an account health problem while sending a message'; out.unhealthyAccount = accountId; break; }
     const pick = approved.filter(x => x.lane === campaign)
       .find(x => canInvite(x).ok && emailTimingClear({ lastEmailAt: x.last_email_at, replied: x.replied })
         // An unapproved automatic pick is screened with the recipient-truth
@@ -210,7 +210,7 @@ export async function dripInvitesOnce({ log = () => {}, auto = false } = {}) {
         out.skipped.push({ campaign, reason: r.reason });
       }
     } catch (e) {
-      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); break; }
+      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); out.unhealthyAccount = e.accountId || accountId; break; }
       if (e instanceof CapReached) { out.skipped.push({ campaign, reason: 'the daily Unipile call cap is reached' }); continue; }
       const refusal = inviteRefusal(e);
       if (refusal?.alreadyInvited) {

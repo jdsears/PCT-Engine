@@ -2,7 +2,7 @@
 // stand-in model is injected so the full draft -> check -> revise pipeline runs
 // without a network or a key. The case that matters most is the planted
 // fabrication being caught and surfaced, never stored as clean.
-import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks, stripSignoff, reflagText, ensureGreeting } from './draft.mjs';
+import { composeDraft, findUnsupported, applySupplierGuardrail, outboundVoice, voiceClean, renderGrounding, flagEndCustomers, findLinks, stripSignoff, reflagText, ensureGreeting, greetingName, flagGreetingMismatch } from './draft.mjs';
 import { draftQueries } from './generateDrafts.mjs';
 import { hasBlockingFlag } from './sendDecision.mjs';
 import { isOpenerGrade, openerNote } from './openerGrade.mjs';
@@ -390,6 +390,19 @@ await check('the greeting is guaranteed: Dear on cold opens, bare on thread emai
   assert(ensureGreeting('Body.', 'anne-marie smith', { dear: true }).startsWith('Dear Anne-Marie,'), 'hyphens keep their capitals');
   assert(ensureGreeting('Body.', 'McDowall Steven', { dear: true }).startsWith('Dear McDowall,'), 'a mixed-case name passes through untouched');
   assert(ensureGreeting('Body.', 'JP Morgan', { dear: true }).startsWith('Dear JP,'), 'short initials pass through untouched');
+  // James's catch of 15 September 2026: a draft to a doctor opened "Dr.,"
+  // because the first token was taken as the first name. Post-nominals come
+  // off, the honorific stays and the given name follows it.
+  const dr = 'Dr. Mohamed Abdelaal, PhD, MSc, BSc, MCIOB, PMP';
+  assert(greetingName(dr) === 'Dr Mohamed', `prefix plus first name: ${greetingName(dr)}`);
+  assert(greetingName('Prof. Jane Smith') === 'Prof Jane' && greetingName('Sir Terry Morgan CBE') === 'Sir Terry', 'other honorifics the same way');
+  assert(greetingName('Sam Lee, MEng CEng') === 'Sam' && greetingName('gary armstrong') === 'Gary' && greetingName('') === '', 'no honorific, first name as before; qualifications never greet');
+  assert(ensureGreeting('Dr.,\n\nControl valve selection is an area.', dr, { dear: true }) === 'Dear Dr Mohamed,\n\nControl valve selection is an area.', 'the model\'s "Dr.," lead-in is replaced, not stacked');
+  assert(ensureGreeting('Dear Mohamed,\n\nText.', dr, { dear: true }) === 'Dear Dr Mohamed,\n\nText.', 'a first-name-only lead-in takes the honorific');
+  assert(ensureGreeting('Dr Mohamed, understood.', dr) === 'Dr Mohamed, understood.', 'a thread email keeps its inline register with the honorific');
+  assert(ensureGreeting('Drawing on your Slough scheme.', dr, { dear: true }) === 'Dear Dr Mohamed,\n\nDrawing on your Slough scheme.', 'a word that merely starts with the honorific is body text, and the greeting goes in front of it');
+  assert(flagGreetingMismatch('Dear Dr Mohamed,\n\nText.', { name: dr }) === null && flagGreetingMismatch('Dear Mohamed,\n\nText.', { name: dr }) === null, 'the drift net accepts the honorific form and the bare first name');
+  assert(/greeting names Dr Sarah/.test(flagGreetingMismatch('Dear Dr Sarah,\n\nText.', { name: dr }) || ''), 'and still blocks a different person');
   const composed = await composeDraft(grounding, { callModel: fakeModel({
     draft: { subject: 'Slough', body: 'You secured planning in Slough.\n\nWorth a short call.', claims: [] },
     check: { claims: [] },

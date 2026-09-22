@@ -168,16 +168,23 @@ async function doCall(route, { pathSuffix = '', rawSuffix = false, query = {}, b
   }
 
   const text = await res.text();
-  await log(endpoint, target, res.ok ? 'ok' : `http_${res.status}`, acct);
-
   let json = null;
   try { json = text ? JSON.parse(text) : null; } catch { /* non-JSON error body */ }
 
+  // Account-health failures stop the run, no retry: the account is the
+  // asset. The ledger records the outcome as unhealthy, against the acting
+  // account, so the Health page can say which account is disconnected
+  // (James's ask of 15 September 2026), and the error carries the account
+  // so the team note can name whose it is.
+  const probe = res.ok ? '' : (JSON.stringify(json) || text || '').toLowerCase();
+  const unhealthy = !res.ok && /checkpoint|disconnected|relogin|credentials.*(expired|invalid)|account.*restricted/.test(probe);
+  await log(endpoint, target, res.ok ? 'ok' : unhealthy ? 'unhealthy' : `http_${res.status}`, acct);
+
   if (!res.ok) {
-    // Account-health failures stop the run, no retry: the account is the asset.
-    const probe = (JSON.stringify(json) || text || '').toLowerCase();
-    if (/checkpoint|disconnected|relogin|credentials.*(expired|invalid)|account.*restricted/.test(probe)) {
-      throw new AccountUnhealthy(`Unipile reports an account health problem (${res.status}): ${text.slice(0, 300)}`);
+    if (unhealthy) {
+      const err = new AccountUnhealthy(`Unipile reports an account health problem (${res.status}): ${text.slice(0, 300)}`);
+      err.accountId = acct || null;
+      throw err;
     }
     const err = new Error(`Unipile ${res.status} on ${route.method} ${route.path}: ${text.slice(0, 300)}`);
     err.status = res.status;

@@ -6,7 +6,7 @@ import { draftResponse } from './respond.mjs';
 import { provenanceReply } from './provenance.mjs';
 import { senderFor } from './senders.mjs';
 import { gatherGrounding } from './grounding.mjs';
-import { composeDraft } from './draft.mjs';
+import { composeDraft, greetingName } from './draft.mjs';
 
 // Reply triage: every captured reply is read once, classified, and acted on
 // within minutes rather than sitting until someone looks. The classifier's
@@ -221,7 +221,7 @@ export async function triageOne(r, { callModel = callClaude, log = () => {} } = 
         `SELECT ct.full_name, ct.source, c.region FROM contacts ct
          LEFT JOIN companies c ON c.id = ct.company_id WHERE ct.id = $1`, [r.contact_id])).rows[0] || {};
       const answer = provenanceReply({
-        firstName: String(c.full_name || '').trim().split(/\s+/)[0] || null,
+        firstName: greetingName(c.full_name) || null,
         source: c.source, sender: senderFor(c.region), subject: r.subject,
       });
       const ins = await pool.query(

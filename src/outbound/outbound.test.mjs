@@ -570,6 +570,31 @@ check('a reply card says what the engine did, and an away reply takes a hand-set
   assert(/actedLine/.test(ob) && /Left for a human read/.test(ob), 'every triaged card states the action taken, including none');
 });
 
+check('Send all approved runs every draft through the single send path, and names each refusal', () => {
+  // James's ask, 15 September 2026: the approved queue goes in one click.
+  // The point of the gate is that there is still one send: the same
+  // function behind the single button, so the kill switch, the recipient
+  // check, the bounce check, the ledger row and the audit stamp cannot
+  // drift between the two.
+  const ROOT6 = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const srv = readFileSync(join(ROOT6, 'src/server.mjs'), 'utf8');
+  assert(/async function sendDraftNow\(id, req\)/.test(srv), 'one function holds the gate, the send, the ledger row and the status change');
+  assert(/const r = await sendDraftNow\(req\.params\.id, req\)/.test(srv), 'the single Send button calls it');
+  assert((srv.match(/canSendReal\(\{ status: d\.status/g) || []).length === 1, 'the real-send gate is written once, not copied');
+  const all = srv.slice(srv.indexOf("app.post('/api/outbound/drafts/send-all'"), srv.indexOf("app.get('/api/outbound/replies'"));
+  assert(all.length > 0 && /const s = await sendDraftNow\(r\.id, req\)/.test(all), 'Send all calls the same function per draft, never a second copy of the send');
+  assert(/d\.status = 'approved' AND d\.campaign <> 'rehearsal' AND \(\$1::text IS NULL OR d\.campaign = \$1\)/.test(all),
+    'only approved drafts on real lanes, in the campaign the queue is showing');
+  assert(/ORDER BY d\.created_at ASC/.test(all), 'in the order they were drafted');
+  assert(/out\.failed\.push\(\{ id: r\.id, to: r\.full_name \|\| r\.email/.test(all), 'each refusal is named against its recipient');
+  assert(/catch \(e\) \{\s*out\.failed\.push/.test(all), 'one failure never stops the rest');
+  const ob = readFileSync(join(ROOT6, 'web/src/Outbound.jsx'), 'utf8');
+  assert(/function SendAllBar/.test(ob) && /Confirm send all/.test(ob), 'the button arms and then confirms, two clicks');
+  assert(/filter === 'approved'/.test(ob) && /<SendAllBar/.test(ob), 'it lives on the Approved tab');
+  assert(/api\/outbound\/drafts\/send-all\$\{q\}/.test(ob) && /encodeURIComponent\(campaign\)/.test(ob), 'and it carries the campaign scope of the view');
+  assert(/not sent: \$\{failed/.test(ob), 'the outcome names who was not sent to, and why');
+});
+
 console.log('\nReal send gate and reply matching:');
 
 await check('a real send is allowed only for an approved draft with a deliverable recipient', () => {

@@ -118,6 +118,7 @@ export async function discoverPeople({ limit = peopleSearchLimit(), log = () => 
         // The account is the asset. Stop, and tell the caller to stand the
         // feature down rather than let the schedule knock again in six hours.
         report.unhealthy = String(e.message).slice(0, 300);
+        report.unhealthyAccount = e.accountId || accountForCampaign(co.campaign) || null;
         return report;
       }
       if (e instanceof CapReached) {

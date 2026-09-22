@@ -94,7 +94,7 @@ export async function sweepConnectionsOnce({ limit = 5, log = () => {} } = {}) {
       }
     } catch (e) {
       if (e instanceof CapReached) break;
-      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); break; }
+      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); out.unhealthyAccount = e.accountId || accountId; break; }
       // A profile that cannot be read is not a verdict: stamp the check so
       // the sweep moves on, and try again after the recheck interval.
       await pool.query(`UPDATE contacts SET li_connection_checked_at = now() WHERE id = $1`, [r.id]);
