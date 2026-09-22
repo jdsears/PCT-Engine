@@ -680,10 +680,30 @@ each of these with poison values.
   with the lowest loaded row under the sell wording, never the guide caveat,
   and a whole-line question with the loaded range. Before the list is
   ingested the brand word routes to the enquiry note like the other lines.
+- The list's option tables are read too (James's note of 11 September 2026:
+  M12 is an option at £62, PCV a no-cost option), into `price_options`
+  (migration 042) as an adder per code. Each figure belongs to the last
+  bracketed code set before it in its own cell, a choice table maps its
+  values to its codes in order, "[default]" and a no-charge word that ends
+  its cell are no cost, a minus is a credit, and the same code at two
+  adders is named and neither stored. A label is the bracket's own cell,
+  and a note printed one space after the figure rides with it, so a total
+  shows the condition ("IPJ: £62, Locking, free with Ethernet protocol").
+  A bracket the layout wraps onto the next line is closed where it broke.
+  Protocol codes (EIP, ECAT, PROFINET, MODTCPIP) are options when the list
+  prices them; connector standards (RS232, RS485) never are. `--option
+  "PCV=0"` states an adder the list does not print, on James's word,
+  `--no-option "CODE"` drops one the parser read wrong, and both are printed
+  as such. Per-series rows with more values than codes (Remote Display) are
+  reported and not stored.
 - A configured code (PCD-100PSIG-D-M12-PCV30/5P) is shortened a segment at
   a time until a stored base part answers, and the reply names the options
   that came off as additions not yet held. A price question never goes to
   the part-number configurator while no build is in progress.
+- `--find "BASIS|CODA|EPC"` prints the document's own lines that match,
+  with line numbers, so a rule or an exception is written from what the
+  list says rather than from memory of it. The dry run also lists the
+  series read and how many parts each carries.
 
 ### Supplier prices, on an explicit ask only
 
@@ -702,10 +722,14 @@ quote. Drafts, quotes and unasked answers never see it.
 `scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf"
 --discount 35` reads the supplier's USD list in its own mode, where a USD
 figure is the price and a sterling one is set aside; `--net "PART=figure"`
-and `--discount-for "PART=pct"` state the exceptions James described (a net
-buying price, or a different discount) per part, and the dry run prints the
-cost each row would carry. `--apply` replaces the line's supplier rows
-wholesale.
+states a net buying price for one part, and `--rule "PATTERN=pct|partner|list"`
+(an exact code or a prefix with a star, first match wins) states James's
+exceptions to the standing discount: a different percentage, the partner
+price the list prints beside the list price, or the stated price with no
+discount. The dry run prints the cost each row would carry, one sample per
+rule in play, and names any rule that matches no part on the list, which
+is the cue to run `--find` and read what codes that series really carries.
+`--apply` replaces the line's supplier rows wholesale.
 
 ## Website trawl
 

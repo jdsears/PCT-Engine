@@ -254,8 +254,11 @@ export function parseAlicatPdfText(src, { currency = null, productLine = 'alicat
 // that row two values for one code and held the row.
 const VALUE_TOKEN = /(-)?\s?([£$€])\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)|\bN\/A\b|\[default\]|\b(?:included|incl\.|no charge|n\/c|free)\b(?=\s{2,}|\s*$)/gi;
 // Names that sit in brackets on an option row without being option codes:
-// serial and connector standards and protocol names.
-const NOT_OPTION = /^(RS\d{3}|RJ\d{2}|USB[A-Z0-9-]*|EIP|ECAT|PROFINET|MODBUS|NEMA\d+)$/i;
+// serial and connector standards. Protocol names are option codes when the
+// list prices them, John's live read of 16 September 2026: "Ethernet
+// protocol (EIP, ECAT, PROFINET, MODTCPIP) £252" prices those four codes
+// the way "Other Protocol (DNET, PROFIBUS) £252" prices its two.
+const NOT_OPTION = /^(RS\d{3}|RJ\d{2}|USB[A-Z0-9-]*|NEMA\d+)$/i;
 const CODE_OK = /^[A-Z0-9][A-Z0-9-]{0,14}$/i;
 // A bracket holding nothing but a five-or-more-digit number is a part
 // number, not an option code: the fittings table prints "Brass (410133)
@@ -274,19 +277,55 @@ const valueOf = (m, currency) => {
 // 2026: "Ethernet protocol (EIP, ECAT, PROFINET," ends a line and
 // "MODTCPIP) £252" opens the next, so the option's codes and its price sit
 // on different lines and neither line reads alone. A line with an unclosed
-// bracket takes the next line onto its end, once, when that line closes it.
+// bracket takes the closing fragment of the next line, once, when that line
+// closes it. The fragment goes where the bracket broke, the end of its own
+// cell, not the end of the line: in the layout read of 16 September 2026 the
+// first line carried on past the bracket ("£252   6-pin locking (-I or -IO)
+// £62 6-pin industrial"), and tacking "MODTCPIP)" onto its end closed the
+// bracket around the neighbouring option, so nothing in it was read. What
+// remains of the next line after the fragment stands as its own line.
 export function joinWrappedBrackets(lines) {
   const out = [];
   for (let i = 0; i < lines.length; i++) {
-    const open = (lines[i].match(/\(/g) || []).length, close = (lines[i].match(/\)/g) || []).length;
+    const cur = lines[i];
+    const open = (cur.match(/\(/g) || []).length, close = (cur.match(/\)/g) || []).length;
     if (open > close && i + 1 < lines.length && /\)/.test(lines[i + 1])) {
-      out.push(`${lines[i]} ${lines[i + 1].trim()}`);
+      const next = lines[i + 1];
+      const stack = [];
+      for (let k = 0; k < cur.length; k++) { if (cur[k] === '(') stack.push(k); else if (cur[k] === ')') stack.pop(); }
+      const openAt = stack.length ? stack[0] : cur.lastIndexOf('(');
+      // The bracket's cell ends at the first run of two or more spaces after
+      // it; a bracket that ends its line takes the whole next line, as before.
+      const gap = /\s{2,}/.exec(cur.slice(openAt));
+      const cellEnd = gap ? openAt + gap.index : cur.length;
+      const closeAt = next.indexOf(')');
+      if (cellEnd >= cur.length) {
+        out.push(`${cur} ${next.trim()}`);
+      } else {
+        out.push(`${cur.slice(0, cellEnd)} ${next.slice(0, closeAt + 1).trim()}${cur.slice(cellEnd)}`);
+        const rest = next.slice(closeAt + 1);
+        if (rest.trim()) out.push(rest);
+      }
       i++;
       continue;
     }
-    out.push(lines[i]);
+    out.push(cur);
   }
   return out;
+}
+
+// Words printed after a figure in its own cell qualify that value: "£62 with
+// or without powerjack", "£290 Gas flow only", "£62 Free with Ethernet
+// protocol". One space, then text up to the next run of two or more spaces
+// or the line's end; a part number ("£21 411149"), an addition ("+ MC"),
+// another figure or a bracket is not a note. James's read of 16 September
+// 2026: the condition on an adder belongs in the answer beside it.
+function noteAfter(line, end) {
+  const m = /^ ((?:[A-Za-z]|\d{1,2}-[A-Za-z])[^£$€()\[\]]*?)(?=\s{2,}|\s*$)/.exec(line.slice(end));
+  if (!m) return null;
+  const t = text(m[1]);
+  if (!t || t.length > 60 || /^(?:or|and|only|N\/A)$/i.test(t)) return null;
+  return /^[A-Z][a-z]/.test(t) ? t[0].toLowerCase() + t.slice(1) : t;
 }
 
 export function parseOptionRows(src, { currency = 'GBP' } = {}) {
@@ -306,7 +345,10 @@ export function parseOptionRows(src, { currency = 'GBP' } = {}) {
       return;
     }
     if (prior) return;
-    const row = { code, normCode, label: text(label.replace(/\[default\]/ig, '')) || null, currency, adder: value.adder, markedDefault: markedDefault || value.kind === 'default', line: line.slice(0, 240) };
+    // The label is the cell's own words, and the note printed beside the
+    // figure rides with it: "Locking, free with Ethernet protocol".
+    const named = [text(label.replace(/\[default\]/ig, '')), value.note].filter(Boolean).join(', ');
+    const row = { code, normCode, label: named || null, currency, adder: value.adder, markedDefault: markedDefault || value.kind === 'default', line: line.slice(0, 240) };
     seen.set(normCode, row);
     out.options.push(row);
   };
@@ -318,7 +360,7 @@ export function parseOptionRows(src, { currency = 'GBP' } = {}) {
     const brackets = [...line.matchAll(/\(([^()]{1,80})\)/g)]
       .map(m => ({ at: m.index, end: m.index + m[0].length, codes: codesIn(m[1]).filter(c => !NOT_OPTION.test(c)) }))
       .filter(b => b.codes.length);
-    const values = [...line.matchAll(VALUE_TOKEN)].map(m => ({ at: m.index, end: m.index + m[0].length, ...valueOf(m, currency) }));
+    const values = [...line.matchAll(VALUE_TOKEN)].map(m => ({ at: m.index, end: m.index + m[0].length, ...valueOf(m, currency), note: noteAfter(line, m.index + m[0].length) }));
     if (!values.length) continue;
     // Every value has an owner: the last bracket in the text since the
     // previous value, or codes joined by "or" standing there with no
@@ -338,7 +380,13 @@ export function parseOptionRows(src, { currency = 'GBP' } = {}) {
       const bare = text(segment);
       if (inSeg.length) {
         const b = inSeg[inSeg.length - 1];
-        current = { codes: b.codes, label: text(line.slice(prev, b.at).replace(/\[default\]/ig, '')) || text(segment.replace(/\([^()]*\)/g, '')) || b.codes.join(', '), values: [] };
+        // The label is the bracket's own cell, the words since the last run
+        // of two or more spaces, never the note that trails the previous
+        // value in the cell before ("£62 Free with Ethernet protocol   P or
+        // A515 (MCP, -A515)" labels MCP "P or A515", John's live read of 16
+        // September 2026).
+        const cell = line.slice(prev, b.at).replace(/\[default\]/ig, '').split(/\s{2,}/).filter(s => s.trim()).pop() || '';
+        current = { codes: b.codes, label: text(cell) || text(segment.replace(/\([^()]*\)/g, '')) || b.codes.join(', '), values: [] };
         owners.push(current);
       } else if (/^[A-Z]{1,5}\d{1,4}[A-Z]?(?:\s+or\s+[A-Z]{1,5}\d{1,4}[A-Z]?)+$/i.test(bare)) {
         current = { codes: bare.split(/\s+or\s+/i), label: bare, values: [] };
