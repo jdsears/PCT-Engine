@@ -208,9 +208,14 @@ await check('option adders read from the list\'s own option table, and a configu
   const table = [
     'Communication options',
     'Serial (RS232 or RS485) w/ analogs [default] DB9M **Recommended** £0 male Alicat pinout only',
-    'Serial w/ analogs + alarm (-ALM)                   £41              M12 (-M12 or -M12O)                        £62 with',
-    'Serial w/ analogs + pulse (PUL)                    £83              D-sub (-DB9x or -DB15x)                    £62 9-pin',
-    'Ethernet protocol (EIP, ECAT, PROFINET) (-I or -IO)   £252         6-pin locking (-IPJ)                     £62',
+    'Serial w/ analogs + alarm (-ALM)                   £41              M12 (-M12 or -M12O)                        £62 with or without powerjack',
+    'Serial w/ analogs + pulse (PUL)                    £83              D-sub (-DB9x or -DB15x)                    £62 9-pin or 15-pin',
+    // The Ethernet row as the layout prints it, John's live read of 16
+    // September 2026: the bracket wraps onto the next line while the first
+    // line carries on into the neighbouring option.
+    'Ethernet protocol (EIP, ECAT, PROFINET,           £252              6-pin locking (-I or -IO)                  £62 6-pin industrial',
+    'MODTCPIP)                                         £252              Industrial Protocol specific',
+    'Locking (-IPJ)                                     £62 Free with Ethernet protocol',
     'Display Type                         Monochrome (D)    Color (TFT) None (O)',
     'Display (D, TFT, O)                                              [default]       £124        -£83',
     'Remote Display (RD or TFTRD)                                            £145     £252      N/A',
@@ -222,10 +227,13 @@ await check('option adders read from the list\'s own option table, and a configu
   ].join('\n');
   const o = parseOptionRows(table);
   const get = c => o.options.find(x => x.normCode === c);
-  assert(get('M12')?.adder === 62 && get('M12O')?.adder === 62 && get('M12').label === 'M12', `M12 and M12O at £62 from the right-hand cell: ${JSON.stringify(o.options.map(x => x.normCode + '=' + x.adder))}`);
+  assert(get('M12')?.adder === 62 && get('M12O')?.adder === 62 && get('M12').label === 'M12, with or without powerjack',
+    `M12 and M12O at £62 from the right-hand cell, the note beside the figure riding with the label: ${JSON.stringify(o.options.map(x => x.normCode + '=' + x.adder))}`);
   assert(get('ALM')?.adder === 41 && get('ALM').label === 'Serial w/ analogs + alarm' && get('PUL')?.adder === 83, 'the left-hand cells read too, dash off the code, label the list\'s own');
-  assert(get('DB9X')?.adder === 62 && get('DB15X')?.adder === 62, 'the D-sub cell');
-  assert(get('I')?.adder === 252 && get('IO')?.adder === 252, 'the Ethernet protocol takes its own £252, not the locking adder beside it');
+  assert(get('DB9X')?.adder === 62 && get('DB15X')?.adder === 62 && get('DB9X').label === 'D-sub, 9-pin or 15-pin', 'the D-sub cell, with its note');
+  assert(['EIP', 'ECAT', 'PROFINET', 'MODTCPIP'].every(c => get(c)?.adder === 252 && get(c).label === 'Ethernet protocol'),
+    `the wrapped Ethernet bracket closes in place and prices its four protocol codes: ${JSON.stringify(o.options.filter(x => x.adder === 252).map(x => x.normCode))}`);
+  assert(get('I')?.adder === 62 && get('IO')?.adder === 62 && get('I').label === '6-pin locking, 6-pin industrial', 'the locking connector beside it keeps its own £62 and its own note');
   assert(get('D')?.adder === 0 && get('D').markedDefault && get('TFT')?.adder === 124 && get('O')?.adder === -83, `a choice table maps values to codes in order, default free, minus a credit: ${JSON.stringify(['D', 'TFT', 'O'].map(get))}`);
   assert(get('PCV30')?.adder === 0 && get('PCV65')?.adder === 0, 'an included option is a no-cost option');
   assert(get('SV')?.adder === 0 && get('SV').markedDefault && get('RV')?.adder === 124, 'a default choice with no value of its own costs nothing, its neighbour takes its own value');
@@ -246,6 +254,9 @@ await check('option adders read from the list\'s own option table, and a configu
   assert(wrapped.options.find(x => x.normCode === 'EIPX')?.adder === 252, `the wrapped row reads as one: ${JSON.stringify(wrapped.options)}`);
   assert(joinWrappedBrackets(['a (b', 'c) d']).length === 1 && joinWrappedBrackets(['a (b)', 'c']).length === 2 && joinWrappedBrackets(['a (b', 'c no close']).length === 2,
     'a line joins the next only when its bracket is open and the next one closes it');
+  const spliced = joinWrappedBrackets(['x (a,   £9   y (b) £1', 'c)   £9 note']);
+  assert(spliced.length === 2 && spliced[0] === 'x (a, c)   £9   y (b) £1' && spliced[1].trim() === '£9 note',
+    `the closing fragment goes where the bracket broke, and the rest of the next line stands alone: ${JSON.stringify(spliced)}`);
   // Three rows from the real list, verbatim, that John's dry run of 12
   // September 2026 read wrong: a note that begins "Free", a cable table
   // row, and a fittings row whose bracket holds a part number.
@@ -253,18 +264,27 @@ await check('option adders read from the list\'s own option table, and a configu
     'Mainline Locking (IPJ)                       £21 411149                  Single-Ended, 6ft, IPJ              Included with all Locking Power Jacks',
     'Locking (-IPJ)                                     £62 Free with Ethernet protocol                       P or A515 (MCP, -A515)           £165',
     'Brass (410133)                               £12                                           3mm           4mm        6mm',
+    'None                                                £0 Default for Class 1 Div 2                         Stainless (-SV)                  £124',
+    'High Accuracy Calibration (HC)                   £186               Relative Humidity (-RH)        £290 Gas flow only',
+    'Conformal Coating (-CC)                          £124               Available by Quote Only',
   ].join('\n');
   const rr = parseOptionRows(real);
   const rg = c => rr.options.find(x => x.normCode === c);
   assert(rg('IPJ')?.adder === 62, `the locking option takes its own £62, not the cable's £21: ${JSON.stringify(rr.options.map(x => x.normCode + '=' + x.adder))}`);
+  assert(rg('IPJ').label === 'Locking, free with Ethernet protocol', `the condition printed beside the figure rides with the adder: ${rg('IPJ').label}`);
   assert(rg('MCP')?.adder === 165 && rg('A515')?.adder === 165, 'the second cell on the locking row is its own option at £165');
+  assert(rg('MCP').label === 'P or A515', `its label is its own cell, never the note trailing the cell before: ${rg('MCP').label}`);
+  assert(rg('SV')?.adder === 124 && rg('SV').label === 'Stainless', `a label is the bracket's own cell: ${rg('SV')?.label}`);
+  assert(rg('RH')?.label === 'Relative Humidity, gas flow only' && rg('HC')?.label === 'High Accuracy Calibration',
+    'a note one space after the figure is the value\'s; a cell two or more spaces away is not');
+  assert(rg('CC')?.adder === 124 && rg('CC').label === 'Conformal Coating', 'a heading two spaces on is not a note');
   assert(!rg('410133') && !rr.options.some(x => /^\d{5,}$/.test(x.normCode)), 'a bracket holding a part number prices that part, and is no adder');
   assert(rr.multi.length === 0 && rr.conflicts.length === 0, `all three rows read cleanly: ${JSON.stringify([rr.multi, rr.conflicts])}`);
   assert(parseOptionRows('Valve (PCV30, PCV65)     Included').options[0]?.adder === 0, 'a no-charge word that ends its cell is still a no-cost option');
   const wide = `High Accuracy Calibration (HC) ${' '.repeat(90)} £186 ${' '.repeat(60)} Relative Humidity (-RH) £290 gas flow only`;
   assert(parseOptionRows(wide).options.find(x => x.normCode === 'RH')?.line.endsWith('gas flow only'),
     'the whole row travels, not a cut of it, so a person can judge an adder against what the list printed');
-  assert(!o.options.some(x => /RS232|RS485|EIP|ECAT|PROFINET/.test(x.normCode)), 'connector names and protocol names in brackets never become adders');
+  assert(!o.options.some(x => /RS232|RS485/.test(x.normCode)), 'connector standards in brackets never become adders');
   const adders = { M12: { code: 'M12', label: 'M12', currency: 'GBP', adder: 62 }, PCV30: { code: 'PCV30', label: 'Valve', currency: 'GBP', adder: 0, byFamily: 'PCV' } };
   const total = renderConfiguredTotal(1410, ['M12', 'PCV30', '5P'], adders, 'GBP');
   assert(/- M12: £62, M12/.test(total) && /- PCV30: no cost, Valve \(priced as PCV\)/.test(total), `each option traceable: ${total}`);

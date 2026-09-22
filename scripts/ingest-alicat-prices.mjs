@@ -45,10 +45,21 @@ const LIST_NAME = flag('--list') || (SUPPLIER ? 'Alicat Price List 101' : 'Alica
 const EFFECTIVE = flag('--effective') || new Date().toISOString().slice(0, 10);
 const LINE = 'alicat';
 const DISCOUNT = flag('--discount') == null ? 35 : parseFloat(flag('--discount'));
+// --find "PATTERN": print the document's own lines that match, with line
+// numbers, so a cost rule or an option is written from what the list says
+// rather than from memory of it. John's supplier apply of 16 September 2026
+// found none of James's three exceptions (BASIS, EPC, CODA) by prefix; the
+// codes those series carry on the list are what this shows.
+const FIND = flag('--find');
+let FIND_RE = null;
+if (FIND) {
+  try { FIND_RE = new RegExp(FIND, 'i'); }
+  catch (e) { console.error(`--find wants a pattern, got ${JSON.stringify(FIND)}: ${e.message}`); process.exit(1); }
+}
 
 if (!SOURCE) {
-  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--option "CODE=adder"] [--no-option "CODE"] [--apply]');
-  console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--rule "PATTERN=pct|partner|list"] [--net "PART=figure"] [--list <name>] [--effective YYYY-MM-DD] [--apply]');
+  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--option "CODE=adder"] [--no-option "CODE"] [--find "PATTERN"] [--apply]');
+  console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--rule "PATTERN=pct|partner|list"] [--net "PART=figure"] [--list <name>] [--effective YYYY-MM-DD] [--find "PATTERN"] [--apply]');
   process.exit(1);
 }
 if (SUPPLIER && !/\.pdf$/i.test(SUPPLIER)) { console.error('--supplier reads the supplier\'s PDF list; a workbook is not read this way'); process.exit(1); }
@@ -138,12 +149,23 @@ if (/\.pdf$/i.test(SOURCE)) {
     const { parseOfficeAsync } = await import('officeparser');
     pdfText = String(await parseOfficeAsync(await readFile(FILE)) || '');
   }
+  if (FIND_RE) {
+    const hits = pdfText.replace(/\f/g, '\n').split(/\r?\n/).map((l, i) => [i + 1, l.replace(/\s+$/, '')]).filter(([, l]) => FIND_RE.test(l));
+    console.log(`\n  lines of the document matching --find ${JSON.stringify(FIND)}: ${hits.length}${hits.length > 80 ? ', the first 80' : ''}`);
+    for (const [n, l] of hits.slice(0, 80)) console.log(`    ${String(n).padStart(4)} | ${l.slice(0, 220)}`);
+    if (!hits.length) console.log('    none; the document does not print that anywhere');
+  }
   const parsed = parseAlicatPdfText(pdfText, { currency: CURRENCY, resolve, mode: SUPPLIER ? 'supplier' : 'sell' });
   rows = parsed.rows;
   const r = parsed.report;
   console.log(`  read as a PDF: ${r.lines} line(s) of text, currency for bare figures ${r.currency.default || 'unknown'}` +
     ` (symbols seen: £ ${r.currency.seen.GBP}, € ${r.currency.seen.EUR}, $ ${r.currency.seen.USD})`);
   console.log(`\n  ${r.parts} part(s), ${r.rows} price row(s).`);
+  // The series on the list and how many parts each carries, so a rule
+  // written by prefix can be checked against what was read.
+  const series = {};
+  for (const s of rows) { const k = (String(s.partNumber).match(/^[A-Z]+\d{0,3}/i) || [String(s.partNumber).split('-')[0]])[0].toUpperCase(); series[k] = (series[k] || 0) + 1; }
+  console.log(`  series read, parts each: ${Object.entries(series).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([k, n]) => `${k} ${n}`).join(', ')}`);
   const costOf = s => { const st = storedFor(s); return costFrom({ listPrice: s.price, discountPct: st.discountPct, netPrice: st.netPrice }); };
   const sampleRows = SUPPLIER
     // In the supplier read, show one row under each rule in play, then the
