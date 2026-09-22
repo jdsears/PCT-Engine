@@ -56,10 +56,23 @@ if (FIND) {
   try { FIND_RE = new RegExp(FIND, 'i'); }
   catch (e) { console.error(`--find wants a pattern, got ${JSON.stringify(FIND)}: ${e.message}`); process.exit(1); }
 }
+// --show "300-370,478-492": print those lines of the document verbatim,
+// numbered as --find numbers them, so a table the parser did not read is
+// seen whole before its rule is written. John's find of 22 September 2026
+// showed the BASIS, EPC and CODA headings and none of their rows.
+const SHOW = flag('--show');
+let SHOW_RANGES = null;
+if (SHOW) {
+  SHOW_RANGES = SHOW.split(',').map(s => s.trim()).filter(Boolean).map(s => {
+    const m = /^(\d+)(?:-(\d+))?$/.exec(s);
+    if (!m) { console.error(`--show wants line ranges like "300-370,478-492", got ${JSON.stringify(SHOW)}`); process.exit(1); }
+    return [parseInt(m[1], 10), parseInt(m[2] || m[1], 10)];
+  });
+}
 
 if (!SOURCE) {
-  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--option "CODE=adder"] [--no-option "CODE"] [--find "PATTERN"] [--apply]');
-  console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--rule "PATTERN=pct|partner|list"] [--net "PART=figure"] [--list <name>] [--effective YYYY-MM-DD] [--find "PATTERN"] [--apply]');
+  console.error('Usage: node --env-file=.env scripts/ingest-alicat-prices.mjs --file "sharepoint:<path>" [--sheet <name>] [--list <name>] [--effective YYYY-MM-DD] [--gbp-column N] [--eur-column N] [--usd-column N] [--currency GBP] [--price "PART=figure"] [--option "CODE=adder"] [--no-option "CODE"] [--find "PATTERN"] [--show "A-B,C-D"] [--apply]');
+  console.error('       node --env-file=.env scripts/ingest-alicat-prices.mjs --supplier "sharepoint:<path>.pdf" [--discount 35] [--rule "PATTERN=pct|partner|list"] [--net "PART=figure"] [--list <name>] [--effective YYYY-MM-DD] [--find "PATTERN"] [--show "A-B,C-D"] [--apply]');
   process.exit(1);
 }
 if (SUPPLIER && !/\.pdf$/i.test(SUPPLIER)) { console.error('--supplier reads the supplier\'s PDF list; a workbook is not read this way'); process.exit(1); }
@@ -149,11 +162,21 @@ if (/\.pdf$/i.test(SOURCE)) {
     const { parseOfficeAsync } = await import('officeparser');
     pdfText = String(await parseOfficeAsync(await readFile(FILE)) || '');
   }
+  const docLines = pdfText.replace(/\f/g, '\n').split(/\r?\n/).map(l => l.replace(/\s+$/, ''));
   if (FIND_RE) {
-    const hits = pdfText.replace(/\f/g, '\n').split(/\r?\n/).map((l, i) => [i + 1, l.replace(/\s+$/, '')]).filter(([, l]) => FIND_RE.test(l));
+    const hits = docLines.map((l, i) => [i + 1, l]).filter(([, l]) => FIND_RE.test(l));
     console.log(`\n  lines of the document matching --find ${JSON.stringify(FIND)}: ${hits.length}${hits.length > 80 ? ', the first 80' : ''}`);
     for (const [n, l] of hits.slice(0, 80)) console.log(`    ${String(n).padStart(4)} | ${l.slice(0, 220)}`);
     if (!hits.length) console.log('    none; the document does not print that anywhere');
+  }
+  if (SHOW_RANGES) {
+    let shown = 0;
+    for (const [a, b] of SHOW_RANGES) {
+      const to = Math.min(b, docLines.length);
+      console.log(`\n  lines ${a} to ${to} of the document, verbatim (${docLines.length} lines in all):`);
+      for (let n = a; n <= to && shown < 400; n++, shown++) console.log(`    ${String(n).padStart(4)} | ${docLines[n - 1].slice(0, 220)}`);
+    }
+    if (shown >= 400) console.log('  (400 lines shown; narrow the ranges for the rest)');
   }
   const parsed = parseAlicatPdfText(pdfText, { currency: CURRENCY, resolve, mode: SUPPLIER ? 'supplier' : 'sell' });
   rows = parsed.rows;

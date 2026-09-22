@@ -701,9 +701,10 @@ each of these with poison values.
   that came off as additions not yet held. A price question never goes to
   the part-number configurator while no build is in progress.
 - `--find "BASIS|CODA|EPC"` prints the document's own lines that match,
-  with line numbers, so a rule or an exception is written from what the
-  list says rather than from memory of it. The dry run also lists the
-  series read and how many parts each carries.
+  with line numbers, and `--show "300-370,478-492"` prints those lines
+  verbatim under the same numbering, so a rule or an exception is written
+  from what the list says rather than from memory of it. The dry run also
+  lists the series read and how many parts each carries.
 
 ### Supplier prices, on an explicit ask only
 
