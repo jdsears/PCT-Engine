@@ -156,7 +156,7 @@ export async function autopostOnce({ log = () => {} } = {}) {
         }
         out.skipped.push({ campaign, reason: r.reason });
       } catch (e) {
-        if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); return out; }
+        if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); out.unhealthyAccount = e.accountId || group.accountId; return out; }
         if (e instanceof CapReached) { out.skipped.push({ campaign, reason: 'daily call cap reached' }); break; }
         out.skipped.push({ campaign, reason: String(e.message).slice(0, 200) });
       }

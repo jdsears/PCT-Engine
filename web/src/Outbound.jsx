@@ -306,8 +306,42 @@ function ReplyCard({ reply, onChanged }) {
   );
 }
 
+// Send all approved, James's ask of 15 September 2026: the approved queue
+// goes in one click rather than one per email. Two clicks (arm, then
+// confirm), the server runs each draft through the same path as the single
+// Send button, and every refusal is named against its recipient.
+function SendAllBar({ count, campaign, onDone }) {
+  const [arm, setArm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    if (!arm) { setArm(true); return; }
+    setBusy(true); setArm(false);
+    try {
+      const q = campaign ? `?campaign=${encodeURIComponent(campaign)}` : '';
+      const r = await action(`/api/outbound/drafts/send-all${q}`, jsonOpts('POST'));
+      const failed = (r.failed || []);
+      onDone(`Sent ${r.sent} of ${r.considered}.${failed.length
+        ? ` ${failed.length} not sent: ${failed.slice(0, 6).map(f => `${f.to} (${f.reason})`).join('; ')}${failed.length > 6 ? `; and ${failed.length - 6} more` : ''}.`
+        : ''}`);
+    } catch (e) { onDone(String(e.message || e)); }
+    setBusy(false);
+  };
+  return (
+    <div className="ob-actions" style={{ marginBottom: 12 }}>
+      <span className="ob-banner-note">{count} approved, waiting to send</span>
+      <span className="ob-spacer" />
+      <button className="ob-btn primary" onClick={run} disabled={busy}
+        title="Sends every approved email in this view now, each from its lead's regional sender, through the same checks as the single Send button. The kill switch still refuses everything when it is on.">
+        {arm ? `Confirm send all (${count})` : `Send all approved (${count})`}
+      </button>
+      {arm && <button className="ob-btn ghost" onClick={() => setArm(false)} disabled={busy}>Cancel</button>}
+    </div>
+  );
+}
+
 // Bulk review. Two clicks each way (arm, then confirm), blocking flags are
-// skipped by the server and reported, and sending stays one click per email.
+// skipped by the server and reported; sending in bulk lives on the Approved
+// tab.
 function BulkBar({ count, onDone }) {
   const [arm, setArm] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -317,7 +351,7 @@ function BulkBar({ count, onDone }) {
     try {
       const r = await action(`/api/outbound/drafts/${which}-all`, jsonOpts('POST'));
       onDone(which === 'approve'
-        ? `Approved ${r.approved}. ${r.skippedBlocking ? `${r.skippedBlocking} skipped with blocking flags, fix those by hand.` : 'Nothing skipped.'} Sending remains one click per email.`
+        ? `Approved ${r.approved}. ${r.skippedBlocking ? `${r.skippedBlocking} skipped with blocking flags, fix those by hand.` : 'Nothing skipped.'} Send all approved is on the Approved tab.`
         : `Rejected ${r.rejected}. Their leads are back in the pool; the next drafting run writes them fresh.`);
     } catch (e) { onDone(String(e.message || e)); }
     setBusy(false);
@@ -582,6 +616,9 @@ export default function Outbound({ campaign }) {
 
       {state === 'ready' && filter === 'draft' && drafts && drafts.length > 1 && (
         <BulkBar count={drafts.filter(d => !d.rehearsal).length} onDone={(m) => { setGenNote(m); refresh(); }} />
+      )}
+      {state === 'ready' && filter === 'approved' && drafts && drafts.filter(d => !d.rehearsal).length > 1 && (
+        <SendAllBar count={drafts.filter(d => !d.rehearsal).length} campaign={campaign} onDone={(m) => { setGenNote(m); refresh(); }} />
       )}
       {state === 'loading' && <p className="muted-note">Loading drafts.</p>}
       {state === 'error' && <p className="muted-note">Drafts are not available right now.</p>}

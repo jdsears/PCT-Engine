@@ -175,11 +175,23 @@ function EngineCard() {
   if (lr?.ok && lr.peopleStopped) {
     attentions.push({ key: 'people', text: `The people search stood down on ${lr.peopleStopped} during the last run.` });
   }
+  // Which LinkedIn account is disconnected, by owner, James's ask of 15
+  // September 2026 after reconnecting his own: the state comes from the call
+  // ledger, so an account reads as connected again the moment a call
+  // succeeds on it, with no switch to flip for the reading itself.
+  const accounts = engine.linkedinAccounts || [];
+  const accountLabel = a => `${a.owner?.name || 'an unnamed owner'}'s LinkedIn account (${(a.campaigns || []).map(c => c.name).join(', ')})`;
+  for (const a of accounts.filter(x => x.state === 'disconnected')) {
+    attentions.push({
+      key: `account-${a.accountId}`,
+      text: `${accountLabel(a)} is disconnected: its last call was refused on account health${a.lastUnhealthyAt ? ` at ${fmtClockDay(a.lastUnhealthyAt)}` : ''}. Reconnect it in Unipile, then turn the stood-down switches back on.${accounts.length > 1 ? ' The other account is unaffected.' : ''}`,
+    });
+  }
   if (engine.studioLast && engine.studioLast.ok === false && engine.studioLast.unhealthy) {
-    attentions.push({ key: 'studio', text: 'The studio autopilot stood itself down on a LinkedIn account-health error. Check the account, then turn the switch back on.' });
+    attentions.push({ key: 'studio', text: `The studio autopilot stood itself down on a LinkedIn account-health error${engine.studioLast.account && accounts.find(a => a.accountId === engine.studioLast.account) ? ` on ${accountLabel(accounts.find(a => a.accountId === engine.studioLast.account))}` : ''}. Once the account is reconnected, turn the switch back on.` });
   }
   if (engine.inviteDripLast && engine.inviteDripLast.ok === false && engine.inviteDripLast.unhealthy) {
-    attentions.push({ key: 'drip', text: 'The invite drip stood itself down on a LinkedIn account-health error. Check the account, then turn the switch back on.' });
+    attentions.push({ key: 'drip', text: `The invite drip stood itself down on a LinkedIn account-health error${engine.inviteDripLast.account && accounts.find(a => a.accountId === engine.inviteDripLast.account) ? ` on ${accountLabel(accounts.find(a => a.accountId === engine.inviteDripLast.account))}` : ''}. Once the account is reconnected, turn the switch back on.` });
   }
 
   // The calm summary of what is acknowledged: one line, plain text, with the
@@ -242,6 +254,11 @@ function EngineCard() {
           ? `Finding signals and pulling leads every ${engine.intervalHours} hours.`
           : 'Automatic signal finding and lead pulling is off. Manual runs still work.'}
       </div>
+      {accounts.length > 0 && (
+        <div className="muted-small">
+          LinkedIn accounts: {accounts.map(a => `${a.owner?.name || 'unnamed'} (${(a.campaigns || []).map(c => c.name).join(', ')}) ${a.state === 'connected' ? `connected, last call ${a.lastOkAt ? fmtClockDay(a.lastOkAt) : 'unknown'}` : a.state === 'disconnected' ? 'disconnected' : 'not called yet'}`).join('; ')}.
+        </div>
+      )}
       {lr?.ok && (
         <div className="muted-small">
           Last run {fmtClockDay(lr.at)}{lr.trigger ? ` (${lr.trigger})` : ''}: {lr.signalsStored ?? 0} signals stored, {lr.signalsRejected ?? 0} rejected, {lr.matched ?? 0} matched, {lr.leadsCreated ?? 0} leads created, {lr.leadsUpdated ?? 0} refreshed{lr.peopleSearched != null ? `, ${lr.peopleSearched} account(s) people-searched, ${lr.peopleFound ?? 0} contacts (${lr.peopleOrbit ?? 0} in orbit)` : ''}{lr.sitesRead != null ? `, ${lr.sitesRead} website(s) read for people, ${lr.sitePeopleFound ?? 0} in orbit found` : ''}{lr.emailsResolved != null ? `, ${lr.emailsResolved} emails resolved (${lr.emailCredits ?? 0} credits)` : ''}{lr.docsChecked != null ? `, ${lr.docsChecked} document(s) checked, ${lr.docsUpdated ?? 0} refreshed${lr.docsRemoved ? `, ${lr.docsRemoved} withdrawn` : ''}` : ''}{lr.docsSkipped ? `, document sync skipped: ${lr.docsSkipped}` : ''}.

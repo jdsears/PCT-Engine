@@ -230,12 +230,42 @@ const displayFirst = (w) => {
   if (!recase) return w;
   return w.toLowerCase().replace(/(^|[-'])([a-z])/g, (m, p, c) => p + c.toUpperCase());
 };
+// The name a greeting uses, from a stored name as LinkedIn printed it. James's
+// catch of 15 September 2026: a draft to "Dr. Mohamed Abdelaal, PhD, MSc,
+// BSc, MCIOB, PMP" opened "Dr.," because the first token was taken as the
+// first name. Post-nominals after a comma come off, an honorific is kept and
+// the given name follows it, per James: prefix plus first name, "Dr Mohamed".
+// A name with no honorific greets by its first name as before.
+const HONORIFICS = /^(dr|prof|professor|sir|dame|rev|reverend|lord|lady)\.?$/i;
+const POST_NOMINAL = /^(phd|dphil|msc|bsc|ba|ma|mba|meng|beng|ceng|miet|mcio|mciob|pmp|frics|mrics|mice|fice|mimeche|cmgr|fiet|prince2|\(hons\)|hons)$/i;
+export function greetingName(fullName) {
+  const raw = String(fullName || '').trim();
+  if (!raw) return '';
+  // Everything from the first comma is qualifications, not name.
+  const tokens = raw.split(',')[0].trim().split(/\s+/).filter(Boolean);
+  while (tokens.length && POST_NOMINAL.test(tokens[tokens.length - 1])) tokens.pop();
+  if (!tokens.length) return '';
+  const honorific = HONORIFICS.test(tokens[0]) ? tokens.shift().replace(/\.$/, '') : null;
+  if (!tokens.length) return '';
+  const first = displayFirst(tokens[0]);
+  if (!honorific) return first;
+  const cased = honorific.charAt(0).toUpperCase() + honorific.slice(1).toLowerCase();
+  return `${cased} ${first}`;
+}
+
 export function ensureGreeting(body, fullName, { dear = false } = {}) {
-  const first = displayFirst(String(fullName || '').trim().split(/\s+/)[0] || '');
+  const first = greetingName(fullName);
   const b = String(body || '').trim();
   if (!first || !b) return b;
   const greet = dear ? `Dear ${first},` : `${first},`;
-  const lead = new RegExp(`^(?:dear\\s+|hi\\s+|hello\\s+)?${escapeRe(first)}\\s*,?`, 'i');
+  // Any lead-in the model may have written is replaced: the greeting name,
+  // the honorific alone ("Dr.,"), the given name alone ("Dear Mohamed,"), or
+  // the raw first token of the stored name. Longest first, and a name must
+  // end where the word ends, so "Dr" never claims the start of "Drawing".
+  const rawFirst = String(fullName || '').trim().split(/\s+/)[0] || '';
+  const alts = [...new Set([first, first.split(' ')[0], first.split(' ').pop(), rawFirst].filter(Boolean))]
+    .sort((a, b) => b.length - a.length).map(escapeRe).map(a => `${a}\\.?(?![\\w'-])`);
+  const lead = new RegExp(`^(?:dear\\s+|hi\\s+|hello\\s+)?(?:${alts.join('|')})\\s*,?`, 'i');
   if (lead.test(b)) return b.replace(lead, greet);
   return `${greet}\n\n${b}`;
 }
@@ -488,11 +518,15 @@ export function flagForeignRegister(text, def) {
 // human looks. Only the fault of a wrong human blocks; a body with no
 // greeting yet, or no contact on file, says nothing.
 export function flagGreetingMismatch(body, contact) {
-  const first = String(contact?.name || '').trim().split(/\s+/)[0];
-  if (!first) return null;
-  const m = String(body || '').trimStart().match(/^(?:dear\s+|hi\s+|hello\s+)?([A-Za-z][\w'-]*)\s*,/i);
+  const expected = greetingName(contact?.name);
+  if (!expected) return null;
+  // The greeting's name, honorific included when there is one.
+  const m = String(body || '').trimStart().match(/^(?:dear\s+|hi\s+|hello\s+)?((?:(?:dr|prof|professor|sir|dame|rev|reverend|lord|lady)\.?\s+)?[A-Za-z][\w'-]*)\s*,/i);
   if (!m) return null;
-  if (m[1].toLowerCase() === first.toLowerCase()) return null;
+  const norm = s => String(s).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+  const said = norm(m[1]);
+  const want = norm(expected);
+  if (said === want || said === norm(want.split(' ').pop())) return null;
   return `blocking: the greeting names ${m[1]} but the recipient is ${contact.name}; this thread may belong to a different person. Fix the contact or reject`;
 }
 

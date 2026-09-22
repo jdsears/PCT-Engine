@@ -295,6 +295,12 @@ second pause, every call is logged to `unipile_calls` (migration 006), and the
 same ledger enforces `LINKEDIN_DAILY_CAP` per UTC day. Invites sit under a
 second, stricter cap from the same ledger, `LINKEDIN_INVITE_DAILY_CAP` (default
 10). Any account-health error from Unipile stops the run immediately, no retry.
+The refusal is logged as `unhealthy` against the acting account, and
+`src/research/linkedinAccounts.mjs` reads each account's state from that
+ledger (last success against last refusal), so the Health page says which
+account is disconnected by its owner and lanes ("James Kybird's LinkedIn
+account (Data centres)") and every stand-down note names whose account it
+was. An account reads as connected again the moment a call succeeds on it.
 
 Setting up:
 
@@ -419,6 +425,20 @@ allowed only when the recipient has a deliverable, non-suppressed email, and
 refused and nothing changes. A real send is logged, marks the draft sent, and
 advances the lead to the outbound stage. The send is made in two steps, create
 then send, so the conversation id is captured for reply matching.
+
+Send all approved, on the Approved tab of the Outbound section, sends every
+approved draft in the current campaign view in one go (James's ask of 15
+September 2026). It arms on the first click and sends on the second, runs each
+draft through the same function as the single Send button, so the same
+recipient check, bounce check, kill switch, ledger row and audit stamp apply,
+and reports who was not sent to and why. One refusal never stops the rest.
+
+Greetings follow the stored name as LinkedIn printed it, with two rules: any
+qualifications after a comma or at the end ("PhD, MSc, MCIOB") never greet,
+and an honorific stays with the given name, so "Dr. Mohamed Abdelaal, PhD"
+opens "Dear Dr Mohamed," and "Sam Lee, MEng CEng" opens "Dear Sam,". The
+drift net that blocks a greeting naming the wrong person accepts either the
+honorific form or the bare first name.
 
 `scripts/outbound-replies.mjs` polls the engine mailbox for prospect replies,
 matches each to the send it answers (by conversation first, then by address),

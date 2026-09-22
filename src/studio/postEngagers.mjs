@@ -163,7 +163,7 @@ export async function sweepEngagersOnce({ log = () => {} } = {}) {
       r = await fetchPostEngagers(p.id);
     } catch (e) {
       if (e instanceof CapReached) { out.capStopped = true; break; }
-      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); break; }
+      if (e instanceof AccountUnhealthy) { out.unhealthy = String(e.message).slice(0, 300); out.unhealthyAccount = e.accountId || null; break; }
       log(`sweep failed on post ${p.id}: ${String(e.message).slice(0, 160)}`);
       continue;
     }

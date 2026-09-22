@@ -17,7 +17,7 @@ import { gatherDigestData, renderDigest, renderDigestHtml, digestDue } from './d
 import { gatherOutboundAnalytics } from './outbound/analytics.mjs';
 import { removalConfirmation } from './outbound/provenance.mjs';
 import { canSendReal, hasBlockingFlag } from './outbound/sendDecision.mjs';
-import { reflagText } from './outbound/draft.mjs';
+import { reflagText, greetingName } from './outbound/draft.mjs';
 import { runResearch } from './research/runResearch.mjs';
 import { fetchPostEngagers, titleFitsCampaign, sweepEngagersOnce } from './studio/postEngagers.mjs';
 import { autopostOnce, topUpStudioPosts } from './studio/autopost.mjs';
@@ -46,6 +46,7 @@ import { webStatus, addSite, removeSite, getSite, trawlSite, refreshDueSites, tr
 import { profileSite, describeProfile } from './web/siteProfile.mjs';
 import { discoverEmails } from './research/emailDiscovery.mjs';
 import { discoverPeople, peopleCoolingUntil, orbitWindows, peopleRetryDays } from './research/peopleDiscovery.mjs';
+import { accountHealth, unhealthyNote } from './research/linkedinAccounts.mjs';
 import { discoverSitePeople } from './research/sitePeople.mjs';
 import { processIntelInbox, pendingIntelEmails, intelSenders } from './studio/intelInbox.mjs';
 import { canInvite, sendConnectionInvite, invitesUsedToday, inviteDailyCap, inviteReady, inviteRefusal } from './studio/liInvite.mjs';
@@ -1293,6 +1294,9 @@ async function engineStatus() {
     inviteDrip: (await kvGet('invite_drip_enabled')) === 'on',
     inviteDripAuto: (await kvGet('invite_drip_auto')) === 'on',
     inviteDripLast: await kvGet('invite_drip_last'),
+    // Each connected LinkedIn account by owner, with its state read from the
+    // call ledger, so the page says which account is disconnected.
+    linkedinAccounts: await accountHealth().catch(() => []),
     syncConfigured: syncRoots().length > 0,
     intervalHours: ENGINE_INTERVAL_MS / 3600_000,
     lastRun,
@@ -1348,7 +1352,7 @@ async function runEngineOnce(trigger) {
       if (people.unhealthy) {
         await kvSet('autopeople_enabled', 'off');
         await sendTeamNote('LinkedIn account health stopped the people search',
-          `Unipile reported an account health problem during the engine's people search, so the automatic search has switched itself off and nothing will retry.\n\n${people.unhealthy}\n\nCheck the LinkedIn account (a login prompt or checkpoint usually explains it), then turn the switch back on from the Health page.`);
+          unhealthyNote("the engine's people search", people.unhealthy, people.unhealthyAccount));
       }
     }
     // The second route to people needs no LinkedIn at all: a company's own
@@ -1584,10 +1588,11 @@ async function studioAutopilotOnce(trigger) {
     const sweep = posts.unhealthy ? null : await sweepEngagersOnce({ log: m => console.log('[studio]', m) });
     const unhealthy = posts.unhealthy || sweep?.unhealthy || null;
     if (unhealthy) {
+      const account = posts.unhealthyAccount || sweep?.unhealthyAccount || null;
       await kvSet('studio_autopilot_enabled', 'off');
-      await kvSet('studio_autopilot_last', { ok: false, at: startedAt, trigger, unhealthy });
+      await kvSet('studio_autopilot_last', { ok: false, at: startedAt, trigger, unhealthy, account });
       await sendTeamNote('LinkedIn account health stopped the studio autopilot',
-        `Unipile reported an account health problem during the studio autopilot, so scheduled posting and engagement sweeps have switched themselves off and nothing will retry.\n\n${unhealthy}\n\nCheck the LinkedIn account (a login prompt or checkpoint usually explains it), then turn the switch back on from the Health page.`);
+        unhealthyNote('the studio autopilot', unhealthy, account));
       return true;
     }
     // Record only when something happened, so a quiet tick does not churn the
@@ -1637,10 +1642,11 @@ async function inviteDripOnce(trigger) {
     const r = conn.unhealthy ? { sent: [], skipped: [], unhealthy: conn.unhealthy }
       : await dripInvitesOnce({ log: m => console.log('[drip]', m), auto });
     if (r.unhealthy) {
+      const account = r.unhealthyAccount || conn.unhealthyAccount || null;
       await kvSet('invite_drip_enabled', 'off');
-      await kvSet('invite_drip_last', { ok: false, at: startedAt, trigger, unhealthy: r.unhealthy });
+      await kvSet('invite_drip_last', { ok: false, at: startedAt, trigger, unhealthy: r.unhealthy, account });
       await sendTeamNote('LinkedIn account health stopped the invite drip',
-        `Unipile reported an account health problem while the invite drip was releasing an approved invite, so the drip has switched itself off and nothing will retry.\n\n${r.unhealthy}\n\nCheck the LinkedIn account (a login prompt or checkpoint usually explains it), then turn the switch back on from the Health page.`);
+        unhealthyNote('the invite drip', r.unhealthy, account));
       return true;
     }
     if (r.sent.length || r.skipped.length) {
@@ -2793,51 +2799,89 @@ app.post('/api/outbound/drafts/:id/send-test', async (req, res) => {
 // non-suppressed recipient; the kill switch (in sendMail) is the final gate, so a
 // refused send returns 200 with the reason and changes nothing. A real send logs,
 // marks the draft sent, and advances the lead to the outbound stage.
+// One approved draft to its prospect: the gate, the send, the ledger row and
+// the status change, in one function so the single Send button and Send all
+// approved run the same path (James's ask of 15 September 2026). Returns
+// { status, body } for the caller to answer with; never throws for a
+// refusal, only for a fault.
+async function sendDraftNow(id, req) {
+  const { rows } = await pool.query(
+    `SELECT d.id, d.subject, d.body, d.status, d.lead_id, d.email_type, d.reply_id,
+            ct.email, ct.suppressed, ct.email_bounced_at,
+            r.graph_message_id AS inbound_message_id, r.mailbox AS inbound_mailbox,
+            COALESCE(l.region, co.region) AS region
+     FROM outbound_drafts d
+     LEFT JOIN contacts ct ON ct.id = d.contact_id
+     LEFT JOIN outbound_replies r ON r.id = d.reply_id
+     LEFT JOIN leads l ON l.id = d.lead_id
+     LEFT JOIN companies co ON co.id = d.company_id
+     WHERE d.id = $1`, [id]);
+  if (!rows.length) return { status: 404, body: { error: 'draft not found' } };
+  const d = rows[0];
+  const gate = canSendReal({ status: d.status, contactEmail: d.email, suppressed: d.suppressed });
+  if (!gate.ok) return { status: 409, body: { error: gate.reason } };
+  if (d.email_bounced_at) return { status: 409, body: { error: 'the address on file has bounced; find a fresh one before sending' } };
+
+  // A response threads as a true reply to the prospect's own message, through
+  // the mailbox the inbound message lives in; a cold open or follow-up sends
+  // as a tracked message from the lead's regional sender. Same footer rules,
+  // same kill switch.
+  const sender = senderFor(d.region);
+  const html = prospectHtml(d.body, sender);
+  const result = d.email_type === 'response' && d.inbound_message_id
+    ? await sendMailReply({ inboundMessageId: d.inbound_message_id, html, to: d.email, from: d.inbound_mailbox || null })
+    : await sendMail({ to: d.email, subject: d.subject, html, from: sender?.mailbox || null });
+  const sentFrom = d.email_type === 'response' && d.inbound_message_id
+    ? (d.inbound_mailbox || null) : (sender?.mailbox || null);
+  await pool.query(
+    `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason, graph_message_id, conversation_id, internet_message_id, sender_mailbox)
+     VALUES ($1, $2, $3, false, $4, $5, $6, $7, $8, $9)`,
+    [d.id, d.email, d.subject, !!result.sent, result.reason || null,
+     result.messageId || null, result.conversationId || null, result.internetMessageId || null, sentFrom]);
+
+  if (result.sent) {
+    const by = await actorFor('outbound_drafts', 'sent_by', req);
+    await pool.query(
+      `UPDATE outbound_drafts SET status = 'sent', sent_at = now(), updated_at = now()${by ? ', sent_by = $2' : ''} WHERE id = $1`,
+      by ? [d.id, by] : [d.id]);
+    if (d.lead_id) await pool.query(
+      `UPDATE leads SET stage = 'outbound', updated_at = now() WHERE id = $1 AND stage IN ('sourced','researched')`, [d.lead_id]);
+  }
+  return { status: 200, body: result };
+}
+
 app.post('/api/outbound/drafts/:id/send', async (req, res) => {
   try {
+    const r = await sendDraftNow(req.params.id, req);
+    res.status(r.status).json(r.body);
+  } catch (e) { res.status(500).json({ error: String(e) }); }
+});
+
+// Send all approved, James's ask of 15 September 2026: the approved queue
+// goes in one click rather than one per email. Same path as the single
+// send for every draft, in order, campaign-scoped like the queue itself.
+// Each refusal or failure is named against its recipient, and one failure
+// never stops the rest. The kill switch inside the mail layer still refuses
+// every send when it is on, and each refusal is reported as such.
+app.post('/api/outbound/drafts/send-all', async (req, res) => {
+  try {
+    const camp = campaignFilter(req);
     const { rows } = await pool.query(
-      `SELECT d.id, d.subject, d.body, d.status, d.lead_id, d.email_type, d.reply_id,
-              ct.email, ct.suppressed, ct.email_bounced_at,
-              r.graph_message_id AS inbound_message_id, r.mailbox AS inbound_mailbox,
-              COALESCE(l.region, co.region) AS region
-       FROM outbound_drafts d
+      `SELECT d.id, ct.full_name, ct.email FROM outbound_drafts d
        LEFT JOIN contacts ct ON ct.id = d.contact_id
-       LEFT JOIN outbound_replies r ON r.id = d.reply_id
-       LEFT JOIN leads l ON l.id = d.lead_id
-       LEFT JOIN companies co ON co.id = d.company_id
-       WHERE d.id = $1`, [req.params.id]);
-    if (!rows.length) return res.status(404).json({ error: 'draft not found' });
-    const d = rows[0];
-    const gate = canSendReal({ status: d.status, contactEmail: d.email, suppressed: d.suppressed });
-    if (!gate.ok) return res.status(409).json({ error: gate.reason });
-    if (d.email_bounced_at) return res.status(409).json({ error: 'the address on file has bounced; find a fresh one before sending' });
-
-    // A response threads as a true reply to the prospect's own message, through
-    // the mailbox the inbound message lives in; a cold open or follow-up sends
-    // as a tracked message from the lead's regional sender. Same footer rules,
-    // same kill switch.
-    const sender = senderFor(d.region);
-    const html = prospectHtml(d.body, sender);
-    const result = d.email_type === 'response' && d.inbound_message_id
-      ? await sendMailReply({ inboundMessageId: d.inbound_message_id, html, to: d.email, from: d.inbound_mailbox || null })
-      : await sendMail({ to: d.email, subject: d.subject, html, from: sender?.mailbox || null });
-    const sentFrom = d.email_type === 'response' && d.inbound_message_id
-      ? (d.inbound_mailbox || null) : (sender?.mailbox || null);
-    await pool.query(
-      `INSERT INTO outbound_sends (draft_id, to_email, subject, test_mode, sent, reason, graph_message_id, conversation_id, internet_message_id, sender_mailbox)
-       VALUES ($1, $2, $3, false, $4, $5, $6, $7, $8, $9)`,
-      [d.id, d.email, d.subject, !!result.sent, result.reason || null,
-       result.messageId || null, result.conversationId || null, result.internetMessageId || null, sentFrom]);
-
-    if (result.sent) {
-      const by = await actorFor('outbound_drafts', 'sent_by', req);
-      await pool.query(
-        `UPDATE outbound_drafts SET status = 'sent', sent_at = now(), updated_at = now()${by ? ', sent_by = $2' : ''} WHERE id = $1`,
-        by ? [d.id, by] : [d.id]);
-      if (d.lead_id) await pool.query(
-        `UPDATE leads SET stage = 'outbound', updated_at = now() WHERE id = $1 AND stage IN ('sourced','researched')`, [d.lead_id]);
+       WHERE d.status = 'approved' AND d.campaign <> 'rehearsal' AND ($1::text IS NULL OR d.campaign = $1)
+       ORDER BY d.created_at ASC`, [camp]);
+    const out = { considered: rows.length, sent: 0, failed: [] };
+    for (const r of rows) {
+      try {
+        const s = await sendDraftNow(r.id, req);
+        if (s.status === 200 && s.body?.sent) out.sent++;
+        else out.failed.push({ id: r.id, to: r.full_name || r.email || `draft ${r.id}`, reason: s.body?.error || s.body?.reason || 'not sent' });
+      } catch (e) {
+        out.failed.push({ id: r.id, to: r.full_name || r.email || `draft ${r.id}`, reason: String(e.message || e).slice(0, 160) });
+      }
     }
-    res.json(result);
+    res.json(out);
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
@@ -3016,7 +3060,7 @@ async function removeAndConfirm({ contactId, draftId = null, replyId = null, sub
   // The confirmation still needs a human click to send, like every outbound
   // email. It is drafted after the rejection sweep above, so it survives it.
   const note = removalConfirmation({
-    firstName: String(r.full_name || '').trim().split(/\s+/)[0] || null,
+    firstName: greetingName(r.full_name) || null,
     sender: senderFor(r.region), subject,
   });
   const ins = await pool.query(

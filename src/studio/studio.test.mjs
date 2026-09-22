@@ -3,6 +3,7 @@
 // are provable here.
 import { connectNote, cleanRole, companyDisplay, writePost, formatPost, hashtagsFor, renderPostText, storyComment, postSystem } from './liPosts.mjs';
 import { accountForCampaign } from '../research/unipile.mjs';
+import { knownAccounts, describeAccount, unhealthyNote } from '../research/linkedinAccounts.mjs';
 import { parsePublished, isStaleStory, freshOnly, signalMaxAgeDays, postMaxAgeDays } from '../research/freshness.mjs';
 import { companyFromHeadline, titleFitsCampaign, shapeEngager, analyseEngagers, sweepDue } from './postEngagers.mjs';
 import { londonClock, slotFor, slotDue, POST_DAYS, SLOT_WINDOW_MINUTES, rotationOrder } from './autopost.mjs';
@@ -368,6 +369,57 @@ await check('the campaign map decides the account, with the shared account as th
       if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
     }
   }
+});
+
+await check('a stand-down names whose account it was, and the Health page says which is disconnected', async () => {
+  // James's ask, 15 September 2026, after reconnecting his own Unipile: the
+  // report should say which account is disconnected. The accounts are
+  // derived from the campaign map and each campaign's named sender, so the
+  // note and the page speak of people and lanes, never of ids.
+  const saved = { ...process.env };
+  try {
+    process.env.UNIPILE_ACCOUNT_ID = 'james-account';
+    process.env.UNIPILE_CAMPAIGN_ACCOUNTS = '{"pharma_steriflow":"andy-account","food_beverage":"andy-account"}';
+    const accounts = knownAccounts();
+    assert(accounts.length === 2, `two accounts behind three active lanes: ${accounts.length}`);
+    const james = accounts.find(a => a.accountId === 'james-account');
+    const andy = accounts.find(a => a.accountId === 'andy-account');
+    assert(james?.owner?.name === 'James Kybird' && james.campaigns.map(c => c.id).join() === 'marwin_dc', 'the default account is James\'s and carries the data centre lane');
+    assert(andy?.owner?.name === 'Andy Mangell' && andy.campaigns.length === 2, 'the mapped account is Andy\'s and carries both his lanes');
+    assert(describeAccount('james-account') === "James Kybird's LinkedIn account (Data centres)", describeAccount('james-account'));
+    assert(describeAccount('andy-account') === "Andy Mangell's LinkedIn account (Food and beverage and Pharma)", describeAccount('andy-account'));
+    assert(describeAccount('mystery') === 'the LinkedIn account mystery' && describeAccount(null) === 'a LinkedIn account', 'an unknown id is still described honestly');
+    const note = unhealthyNote('the invite drip', 'Unipile reports an account health problem (401): checkpoint', 'james-account');
+    assert(note.startsWith("James Kybird's LinkedIn account (Data centres) reported an account health problem during the invite drip"), note);
+    assert(/checkpoint/.test(note) && /Reconnect that account in Unipile/.test(note) && /The other account is unaffected/.test(note),
+      'the note carries the provider\'s words, the remedy and the reassurance about the other account');
+    assert(!/[—–!]/.test(note) && !/genuinely/i.test(note), 'house voice holds');
+    delete process.env.UNIPILE_CAMPAIGN_ACCOUNTS;
+    assert(knownAccounts().length === 1 && !/other account/.test(unhealthyNote('x', 'y', 'james-account')),
+      'with one account there is no other account to reassure about');
+  } finally {
+    for (const k of ['UNIPILE_ACCOUNT_ID', 'UNIPILE_CAMPAIGN_ACCOUNTS']) {
+      if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+    }
+  }
+  const uni = freshRead('src/research/unipile.mjs');
+  assert(/unhealthy \? 'unhealthy' : `http_\$\{res\.status\}`/.test(uni), 'the ledger records an account-health refusal as unhealthy, against the acting account');
+  assert(/err\.accountId = acct \|\| null/.test(uni), 'and the error carries the account so the caller can name it');
+  for (const rel of ['src/studio/autopost.mjs', 'src/studio/liConnection.mjs', 'src/studio/postEngagers.mjs', 'src/studio/inviteDrip.mjs']) {
+    assert(/unhealthyAccount = e\.accountId/.test(freshRead(rel)), `${rel} passes the account up with the stand-down`);
+  }
+  assert(/report\.unhealthyAccount = e\.accountId/.test(freshRead('src/research/peopleDiscovery.mjs')), 'the people search does too');
+  const srv = freshRead('src/server.mjs');
+  assert((srv.match(/unhealthyNote\(/g) || []).length >= 3, 'every stand-down note goes through the one writer that names the account');
+  assert(/linkedinAccounts: await accountHealth\(\)/.test(srv), 'the engine status carries each account\'s state');
+  assert(/unhealthy, account \}/.test(srv), 'the studio and drip stand-down records keep the account');
+  const acc = freshRead('src/research/linkedinAccounts.mjs');
+  assert(/FILTER \(WHERE outcome = 'ok'\)/.test(acc) && /FILTER \(WHERE outcome = 'unhealthy'\)/.test(acc), 'state is read from the ledger, the last success against the last refusal');
+  assert(!/unipile\(/.test(acc), 'reading the state costs no LinkedIn call');
+  const health = freshRead('web/src/Health.jsx');
+  assert(/is disconnected: its last call was refused on account health/.test(health), 'the Health page says which account is disconnected, by owner');
+  assert(/LinkedIn accounts: \{accounts\.map/.test(health), 'and lists every account with its state');
+  assert(/stood itself down on a LinkedIn account-health error\$\{engine\.studioLast\.account/.test(health), 'the studio stand-down line names the account when the record has it');
 });
 
 await check('the data centre connect note is unchanged, byte for byte', async () => {
