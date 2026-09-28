@@ -18,7 +18,8 @@ import { GUIDE_UPSERT, buildGuideUpsert } from './storeGuide.mjs';
 import { superlativeIntent, decodeAcross, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIndex, colLetter, LIST_WHY } from './parseAlicat.mjs';
 import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows, parseGroupedColumns, joinWrappedBrackets } from './parseAlicatPdf.mjs';
-import { costFrom, renderCostLine, parseCostRule, costRuleFor, applyCostRule } from './supplierPrices.mjs';
+import { costFrom, renderCostLine, parseCostRule, costRuleFor, applyCostRule, matrixCost, sectionKey } from './supplierPrices.mjs';
+import { parseMatrixTables, parseRangeLabel, partFigure, matchBand, cellsOf } from './parseAlicatMatrix.mjs';
 import { syncDecision } from '../sharepointSync.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
@@ -324,6 +325,13 @@ await check('a columned list prices a merged group once, at its middle, and ever
     priceLine({ M: '$1,390', MS: '$1,870', MQ: '$1,515', MW: '$2,330' }),
     rowOf('M-100SLPM-D', 'MS-100SLPM-D', 'MQ-100SLPM-D', 'MW-50SLPM-D'),
     rowOf('M-250SLPM-D', 'MS-250SLPM-D', 'MQ-250SLPM-D', 'MW-100SLPM-D'),
+    priceLine({ M: '$1,970', MS: '$2,610', MQ: '$2,200', MW: '$2,745' }),
+    rowOf('M-500SLPM-D', 'MS-500SLPM-D', 'MQ-500SLPM-D', 'MW-250SLPM-D'),
+    // The table is cut here, so the last two rows are an artificial tail:
+    // one within the half-row placement tolerance joins the last group, the
+    // one beyond it is unpriced and named.
+    rowOf('M-1000SLPM-D', 'MS-1000SLPM-D', 'MQ-1000SLPM-D', 'MW-500SLPM-D'),
+    rowOf('M-2000SLPM-D', 'MS-2000SLPM-D', 'MQ-2000SLPM-D', 'MW-1000SLPM-D'),
     'Pressure controllers and other products follow on the next page of the list with their own heading.',
   ].join('\n');
   const g = parseGroupedColumns(usd, { currency: 'USD' });
@@ -334,12 +342,14 @@ await check('a columned list prices a merged group once, at its middle, and ever
   assert(price('M-5SCCM-D') === 1295 && price('M-10SCCM-D') === 1295 && price('M-20SCCM-D') === 1295 && price('M-50SCCM-D') === 1295, 'an even group of four takes the price on the line between its middle rows');
   assert(price('MQ-5SCCM-D') === 1420 && price('MQ-50SCCM-D') === 1420, 'a column that starts later starts its first group where its parts start');
   assert(price('M-50SLPM-D') === 1390 && price('M-100SLPM-D') === 1390 && price('MW-40SLPM-D') === 2330 && price('MW-50SLPM-D') === 2330, 'the next even group of two');
-  assert(price('M-250SLPM-D') === undefined && g.unpriced.includes('M-250SLPM-D') && g.unpriced.includes('MW-100SLPM-D'), 'a part past the last price is unpriced and named, never given the previous group\'s figure');
+  assert(price('M-250SLPM-D') === 1970 && price('M-500SLPM-D') === 1970 && price('MW-100SLPM-D') === 2745, 'the next group of two, its price between them');
+  assert(price('M-2000SLPM-D') === undefined && g.unpriced.includes('M-2000SLPM-D') && g.unpriced.includes('MW-1000SLPM-D'),
+    `a part beyond the placement tolerance at the end of a column is unpriced and named, never given the previous group's figure: ${JSON.stringify(g.unpriced)}`);
   assert(g.rows.every(r => r.currency === 'USD' && r.sourceTab === 'pdf'), 'rows carry the currency and the source');
   // Through the whole supplier read: the line-by-line pass prices the
   // middle row, the grouped pass prices the rest, and nothing conflicts.
   const whole = parseAlicatPdfText(usd, { mode: 'supplier' });
-  assert(whole.rows.length === 4 * 8 - 3 - 2 + 0 - 0 + 0 || whole.rows.length >= 20, `most parts priced: ${whole.rows.length}`);
+  assert(whole.rows.length >= 20, `most parts priced: ${whole.rows.length}`);
   assert(whole.rows.find(r => r.normKey === 'M-0.5SCCM-D')?.price === 1845 && whole.rows.find(r => r.normKey === 'MQ-50SCCM-D')?.price === 1420, 'grouped prices reach the rows');
   assert(whole.report.grouped >= 20 && whole.report.conflicts.length === 0, `grouped rows counted and none conflict: ${JSON.stringify([whole.report.grouped, whole.report.conflicts])}`);
   assert(!whole.report.partNoPrice.some(l => /M-5SCCM-D/.test(l)), 'a part priced by its group is no longer listed as unpriced');
@@ -398,6 +408,47 @@ await check('the pressure tables read whole: alternates share a cell, a price is
   const tp = k => tight.rows.find(r => r.normKey === k);
   assert(tp('P-1PSID-D')?.price === 700 && tp('P-1PSID-D').column === 'P' && tp('PS-1PSID-D')?.price === 900 && tp('PS-1PSID-D').column === 'PS',
     `alternates stay in their cell's column: ${JSON.stringify(tight.rows.map(r => r.partNumber + ':' + r.column + '=' + r.price))}`);
+  // The liquid tables verbatim, lines 215 to 236 of the supplier list on 28
+  // September 2026: the LCR and LCRS headings arrive part-way down over the
+  // right-hand columns while L and LS carry on, a group of seven prints its
+  // price between its third and fourth rows, and a group of three between
+  // its second and third. Every one of the fifty-three parts prices.
+  const liquid = verbatim([
+    '     215 |             Liquid Flow',
+    '     216 | ',
+    '     217 |                           L-Series                      LS-Series                      LC-Series                       LCS-Series',
+    '     218 |             L-0.5SCCM-D                       LS-0.5SCCM-D                                                 LCS-0.5SCCM-D-PCA11',
+    '     219 |             L-1CCM-D                   $1,910 LS-1CCM-D              $2,190                                LCS-1CCM-D-PCA12              $2,830',
+    '     220 |             L-2CCM-D                          LS-2CCM-D                                                    LCS-2CCM-D-PCA13',
+    '     221 |             L-5CCM-D                          LS-5CCM-D                       LC-5CCM-D                    LCS-5CCM-D',
+    '     222 |             L-10CCM-D                         LS-10CCM-D                      LC-10CCM-D                   LCS-10CCM-D',
+    '     223 |             L-20CCM-D                         LS-20CCM-D                      LC-20CCM-D                   LCS-20CCM-D',
+    '     224 |                                        $1,390                        $1,670                         $1,980                               $2,260',
+    '     225 |             L-50CCM-D                         LS-50CCM-D                      LC-50CCM-D                   LCS-50CCM-D',
+    '     226 |             L-100CCM-D                        LS-100CCM-D                     LC-100CCM-D                  LCS-100CCM-D',
+    '     227 |             L-200CCM-D                        LS-200CCM-D                     LC-200CCM-D                  LCS-200CCM-D',
+    '     228 |             L-500CCM-D                        LS-500CCM-D                     LC-500CCM-D                  LCS-500CCM-D',
+    '     229 |                                                                                        LCR-Series                     LCRS-Series',
+    '     230 |             L-1LPM-D                          LS-1LPM-D                       LCR-1LPM-D                   LCRS-1LPM-D',
+    '     231 |                                        $1,390                        $1,670',
+    '     232 |             L-2LPM-D                          LS-2LPM-D                       LCR-2LPM-D            $2,330 LCRS-2LPM-D                   $2,610',
+    '     233 |             L-5LPM-D                   $1,680 LS-5LPM-D              $1,960   LCR-5LPM-D                   LCRS-5LPM-D',
+    '     234 |             L-10LPM-D                  $2,090 LS-10LPM-D             $2,370   LCR-10LPM-D           $2,740 LCRS-10LPM-D                  $3,020',
+    '     235 | ',
+    '     236 |             LB                 $225 + meter     LBS         $225 + meter',
+  ].join('\n'));
+  const lq = parseAlicatPdfText(liquid, { mode: 'supplier' });
+  const lp = k => lq.rows.find(r => r.normKey === k)?.price;
+  assert(lq.rows.length === 53, `fourteen L, fourteen LS, seven LC, ten LCS, four LCR and four LCRS: ${lq.rows.length} (${JSON.stringify(lq.report.unpriced)})`);
+  assert(lp('L-0.5SCCM-D') === 1910 && lp('L-2CCM-D') === 1910 && lp('LCS-2CCM-D-PCA13') === 2830, 'the first groups of three take the price on their middle row');
+  assert(lp('L-5CCM-D') === 1390 && lp('L-200CCM-D') === 1390 && lp('L-500CCM-D') === 1390 && lp('L-1LPM-D') === 1390 && lp('L-2LPM-D') === 1390,
+    'the L column prices every row from 5 CCM to 2 LPM at the one figure, across the heading line and the half-row placements');
+  assert(lp('L-5LPM-D') === 1680 && lp('L-10LPM-D') === 2090 && lp('LS-5LPM-D') === 1960 && lp('LS-10LPM-D') === 2370, 'rows with a price of their own keep it, and the group before them stops short of them');
+  assert(lp('LC-5CCM-D') === 1980 && lp('LC-500CCM-D') === 1980 && lp('LCS-500CCM-D') === 2260,
+    'a group of seven with its price between the third and fourth rows takes all seven, the last within tolerance at the column\'s end');
+  assert(lp('LCR-1LPM-D') === 2330 && lp('LCR-5LPM-D') === 2330 && lp('LCR-10LPM-D') === 2740 && lp('LCRS-1LPM-D') === 2610 && lp('LCRS-10LPM-D') === 3020,
+    'the LCR and LCRS headings replace the LC and LCS columns in place, and their groups price');
+  assert(lq.report.groupedDisagreements.length === 0 && lq.report.unpriced.length === 0, `the two reads agree and nothing is left: ${JSON.stringify([lq.report.groupedDisagreements, lq.report.unpriced])}`);
   // Lines from the MC tables, verbatim, where headings arrive part-way down
   // and a price sits after the second cell on its line: "MCR-100SLPM-D
   // MCRS-2000SLPM-D $4,920" read as the first part's price, which is one of
@@ -437,6 +488,161 @@ await check('the pressure tables read whole: alternates share a cell, a price is
   const xp = k => x.rows.find(r => r.normKey === k)?.price;
   assert(xp('PCX-30PSIA-D-SFF') === 2385 && xp('PCX-15PSIA-D-SFF') === 2385 && !x.rows.some(r => [200, 400, 500, 1000].includes(r.price)),
     `a lone heading opens its column, and the valve adders beside it never price a part: ${JSON.stringify(x.rows.map(r => r.partNumber + '=' + r.price))}`);
+});
+
+await check('the tables priced by band read on both lists, and James\'s rules price them by table', async () => {
+  // The OEM, Coriolis and recalibration sections verbatim from John's reads
+  // of 22 and 28 September 2026: the supplier's list prints list and
+  // partner columns, the customer list list prices only, and both price
+  // recalibration and cleaning side by side under a heading that says no
+  // discount applies. None of these cells names a part number.
+  const verbatim = s => s.split('\n').map(l => l.replace(/^\s*\d+ \| ?/, '')).join('\n');
+  const supplier = verbatim([
+    '     313 |                                                                              OEM Products',
+    '     314 |             Basis MEMS Thermal (min. qty 1)',
+    '     316 |                                                 List Price              Partner Price',
+    '     317 |                    Flow Range                 B           BC            B          BC',
+    '     318 |                 100sccm - 20slpm              $281         $405         $211       $304',
+    '     319 |                  50slpm - 100slpm             $286         $461         $218       $359',
+    '     322 |             EPC (min. qty 50)',
+    '     324 |                                                               List Price                                    Partner Price                      Add. Options',
+    '     325 |                  Pressure Range',
+    '     326 |                                               EP            EPS         EPC       EPCD           EP        EPS       EPC        EPCD       Options      Add. Price',
+    '     327 |                     1PSI - 100PSI             $300           $375        $400       $450          $250      $325       $300       $350 IP65 or IP66          $75',
+    '     328 |                      500PSI                   $350           $400        $450       $500          $300      $350       $350       $400 IOLINKA              $100',
+    '     329 |                  1000PSI - 3000PSI            $350           $400       N/A        N/A            $300      $350      N/A        N/A   RS485                  $0',
+    '     334 |                                                                              CODA Coriolis',
+    '     335 |             Standard Accuracy CODA',
+    '     337 |                                                                List Price                            Partner Price (20% discount)',
+    '     338 |                       Flow Range',
+    '     339 |                                                K            KC            KF       KG            K         KC          KF         KG',
+    '     340 |                   40 g/h - 300 g/h           $3,500         $4,050      $3,850    $7,230        $2,800    $3,240      $3,080      $5,784',
+    '     341 |                    1 kg/h - 10 kg/h          $3,280         $3,890      $3,630    $7,010        $2,624    $3,112      $2,904      $5,608',
+    '     342 |                 30 kg/h - 100 kg/h           $3,700         $4,265      $4,050    $7,430        $2,960    $3,412      $3,240      $5,944',
+    '     345 |             High Accuracy CODA',
+    '     347 |                    Flow Range                  K            KC          KF         KG',
+    '     348 |                   40 g/h - 300 g/h           $5,370         $6,220     $6,220     $9,600',
+    '     349 |                    1 kg/h - 10 kg/h          $5,150         $6,060     $6,000     $9,380',
+    '     350 |                 30 kg/h - 100 kg/h           $5,570         $6,435     $6,420     $9,800',
+    '     353 |                                                                                   CODA Options',
+    '     354 |                                                              Partner Price / Discount determined by accuracy level above',
+    '     481 |                          Recalibrations and Cleaning (no discounts on Recalibrations)',
+    '     482 |             Mainline Recalibrations                                                    All Other Recalibrations',
+    '     483 |             Flow Range              Standard          High Accuracy                                Standard        High Accuracy',
+    '     484 |                 0.5sccm - 10sccm        $350                     N/A                   Pressure        $300                    $400',
+    '     485 |                  20sccm - 500slpm       $300                      $400                 Liquid          $350                  N/A',
+    '     486 |             1000slpm -    5000slpm      $350                     N/A                   CODA            $350                    $450',
+    '     487 |                    10000slpm            $400                     N/A                   Basis           $225                  N/A',
+    '     488 |                                                                                        EPC             $300                  N/A',
+    '     489 |                                                                                        FP-25          N/A                      $400',
+    '     490 |             Recalibration Add-Ons',
+    '     491 |             Expedited Service **with approval           $100                           Cleaning                low flow    mid flow        high flow',
+    '     492 |             Standard ISO17025                           $450                           Ultra-sonic cleaning       $125         $225               $300',
+    '     493 |             Expedited ISO 17025                         $550                           Oxygen cleaning            $300         $300               $400',
+    '     494 |             Additional Calibration Cert                  $25',
+    '     495 |             Additional Calibration Point                 $30',
+  ].join('\n'));
+  const s = parseMatrixTables(supplier, { currency: 'USD', mode: 'supplier' });
+  const at = (r, sec, row, col) => r.entries.find(e => e.section === sec && e.rowLabel === row && e.colLabel === col);
+  assert(s.entries.length === 65 && s.skipped.length === 0, `sixty-five priced cells, nothing skipped: ${s.entries.length} (${JSON.stringify(s.skipped)})`);
+  assert(s.sections.map(x => x.name).join('|') === 'Basis MEMS Thermal|EPC|Standard Accuracy CODA|High Accuracy CODA|Mainline Recalibrations|All Other Recalibrations|Recalibration Add-Ons|Cleaning',
+    `eight tables in order: ${s.sections.map(x => x.name).join('|')}`);
+  const basis = at(s, 'Basis MEMS Thermal', '100sccm - 20slpm', 'BC');
+  assert(basis?.price === 405 && basis.partnerPrice === 304 && basis.quantity === 'gas flow' && basis.min === 100 && basis.max === 20000,
+    `a band and a series give list, partner and the band in one unit: ${JSON.stringify(basis)}`);
+  assert(at(s, 'EPC', '500PSI', 'EPCD')?.partnerPrice === 400 && at(s, 'EPC', '1000PSI - 3000PSI', 'EP')?.price === 350 && !at(s, 'EPC', '1000PSI - 3000PSI', 'EPC'),
+    'the EPC columns pair list with partner by position, a lone band is its own min and max, and N/A is no cell');
+  assert(at(s, 'EPC options', 'IP65 or IP66', 'Add. Price')?.price === 75 && at(s, 'EPC options', 'RS485', 'Add. Price')?.price === 0,
+    'the option pair beyond the bands is the table\'s own options, zero included');
+  assert(at(s, 'Standard Accuracy CODA', '30 kg/h - 100 kg/h', 'KG')?.partnerPrice === 5944 && at(s, 'Standard Accuracy CODA', '40 g/h - 300 g/h', 'K')?.min === 40 && at(s, 'Standard Accuracy CODA', '1 kg/h - 10 kg/h', 'K')?.max === 10000,
+    'the Coriolis bands normalise kilograms to grams an hour, partner beside list');
+  assert(at(s, 'High Accuracy CODA', '1 kg/h - 10 kg/h', 'KC')?.price === 6060 && at(s, 'High Accuracy CODA', '1 kg/h - 10 kg/h', 'KC').partnerPrice === null, 'the high accuracy table has no partner column and says so');
+  const recal = at(s, 'Mainline Recalibrations', '20sccm - 500slpm', 'High Accuracy');
+  assert(recal?.price === 400 && recal.noDiscount && recal.min === 20 && recal.max === 500000 && at(s, 'Mainline Recalibrations', '1000slpm - 5000slpm', 'Standard')?.price === 350,
+    `the recalibration table reads by band with the no-discount note, a band broken by spaces made whole: ${JSON.stringify(recal)}`);
+  assert(at(s, 'All Other Recalibrations', 'Basis', 'Standard')?.price === 225 && at(s, 'All Other Recalibrations', 'FP-25', 'High Accuracy')?.price === 400 && !at(s, 'All Other Recalibrations', 'Pressure', 'Standard')?.range,
+    'the side-by-side table reads its own cells, by product family with no band');
+  assert(at(s, 'Recalibration Add-Ons', 'Additional Calibration Point', 'Price')?.price === 30 && at(s, 'Cleaning', 'Oxygen cleaning', 'high flow')?.price === 400 && at(s, 'Cleaning', 'Ultra-sonic cleaning', 'low flow')?.price === 125,
+    'a single-column table and a heading that shares its line with a row both read');
+  assert(!s.entries.some(e => e.section === 'EPC' && e.rowLabel === 'EPC'), 'the row label EPC in the recalibration table never opens a section');
+  // The customer list: list prices only, the same tables, the option pair
+  // under one heading.
+  const customer = verbatim([
+    '     282 | Basis MEMS Thermal (min. qty 1)',
+    '     284 |                                               List Price',
+    '     285 |           Flow Range                      B                BC',
+    '     286 |      100sccm - 20slpm                         £236          £340',
+    '     287 |       50slpm - 100slpm                        £240          £387',
+    '     290 | EPC (min. qty 50)',
+    '     292 |                                                              List Price                        Add. Options',
+    '     293 |         Pressure Range',
+    '     294 |                                          EP                EPS        EPC         EPCD      Options Add. Price',
+    '     295 |          1PSI - 100PSI                     £252             £315        £336         £378 IP65 / 66         £63',
+    '     296 |             500PSI                         £294             £336        £378         £420 IOLINKA           £84',
+    '     297 |       1000PSI - 3000PSI                    £294             £336       N/A         N/A    RS485              £0',
+    '     303 | Standard Accuracy CODA',
+    '     305 |                                                           List Price',
+    '     306 |            Flow Range',
+    '     307 |                                          K              KC           KF            KG',
+    '     308 |         40 g/h - 300 g/h                 £2,895        £3,350       £3,185         £5,981',
+    '     313 | High Accuracy CODA',
+    '     315 |            Flow Range                    K              KC             KF          KG                    *',
+    '     316 |         40 g/h - 300 g/h                 £4,442        £5,146         £5,146       £7,942                Only quote non-display variant until CODA display is released.',
+    '     317 |         1 kg/h - 10 kg/h                 £4,260        £5,013         £4,964       £7,760                      -£83',
+    '     321 |                                                                                 CODA Options',
+    '     446 |                                               Recalibrations and Cleaning (no discounts)',
+    '     447 | Approved Recalibration                                                                    Chell UKAS Calibrations 5 Point Runs',
+    '     450 |                              Standard                    =<50 SCCM Single Run =<50 SCCM Double Run <1300 SLPM Single Run                <1300 SLPM Double Run',
+    '     452 | 600 SLPM                 £            240                £              355.00    £               440.00   £              285.00    £                   355.00',
+    '     455 |       Mainline Recalibrations                                                                 All Other Recalibrations',
+    '     456 |       Flow Range                            Standard         High Accuracy                                Standard          High Accuracy',
+    '     457 |            0.5sccm - 10sccm                       £376                 N/A                    Pressure         £322                     £430',
+    '     463 |       Recalibration Add-Ons',
+    '     464 |       Expedited Service **with approval                       £107                            Cleaning                   low flow   mid flow        high flow',
+    '     465 |       Standard ISO17025                                       £483                            Ultra-sonic cleaning          £134        £242               £322',
+  ].join('\n'));
+  const c = parseMatrixTables(customer, { currency: 'GBP', mode: 'sell' });
+  assert(at(c, 'Basis MEMS Thermal', '100sccm - 20slpm', 'B')?.price === 236 && c.entries.every(e => e.partnerPrice === null), 'the customer list gives sell prices and never a partner price');
+  assert(at(c, 'EPC options', 'IP65 / 66', 'Add. Price')?.price === 63 && at(c, 'EPC options', 'RS485', 'Add. Price')?.price === 0 && !at(c, 'EPC', '1PSI - 100PSI', 'Options Add. Price'),
+    'the option pair under one heading is read as the pair, never as a band price');
+  assert(at(c, 'High Accuracy CODA', '40 g/h - 300 g/h', 'KG')?.price === 7942 && !c.entries.some(e => e.colLabel === '*'), 'a note column is not a column');
+  assert(at(c, 'Mainline Recalibrations', '0.5sccm - 10sccm', 'Standard')?.price === 376 && at(c, 'All Other Recalibrations', 'Pressure', 'High Accuracy')?.price === 430 && at(c, 'Cleaning', 'Ultra-sonic cleaning', 'mid flow')?.price === 242,
+    'the recalibration tables read the same way in sterling');
+  assert(!c.entries.some(e => /600 SLPM|Chell|Approved/.test(e.rowLabel + e.section)), 'the Chell UKAS block, laid out unlike any table, is not read into anything');
+  assert(c.skipped.length === 0, `nothing skipped on the customer list: ${JSON.stringify(c.skipped)}`);
+  // James's rules by table, 11 September 2026: partner price for Basis and
+  // EPC, the printed twenty per cent partner column for standard accuracy
+  // CODA, the stated price for recalibration and cleaning, which the list
+  // says itself. A table with no rule holds no cost, never the standing
+  // discount.
+  const rules = ['BASIS*=partner', 'EPC=partner', 'STANDARD ACCURACY CODA=partner'].map(parseCostRule);
+  const cost = e => { const st = matrixCost(e, rules, 35); return { ...st, cost: costFrom({ listPrice: e.price, discountPct: st.discountPct, netPrice: st.netPrice }) }; };
+  assert(sectionKey('Basis MEMS Thermal (min. qty 1)') === 'BASISMEMSTHERMALMINQTY1' && sectionKey('Standard Accuracy CODA') === 'STANDARDACCURACYCODA', 'a table name in the shape a rule takes');
+  assert(cost(basis).cost === 304 && cost(basis).costRule === 'partner price', 'Basis at the partner price');
+  assert(cost(at(s, 'EPC', '500PSI', 'EPCD')).cost === 400 && cost(at(s, 'Standard Accuracy CODA', '30 kg/h - 100 kg/h', 'KG')).cost === 5944, 'EPC and standard accuracy CODA at the partner price');
+  const high = cost(at(s, 'High Accuracy CODA', '1 kg/h - 10 kg/h', 'KC'));
+  assert(high.cost === null && /no rule stated/.test(high.costRule) && !/partner/.test(high.costRule), `no rule, no cost, and it says so: ${high.costRule}`);
+  const norule = cost({ ...basis, section: 'Some Other Table' });
+  assert(norule.cost === null && /no rule stated for this table; the list prints a partner price/.test(norule.costRule), 'a table with a partner column and no rule says the rule is missing, never the standing discount');
+  assert(cost(recal).cost === 400 && cost(recal).discountPct === 0 && /the list says no discount/.test(cost(recal).costRule) && cost(at(s, 'Cleaning', 'Oxygen cleaning', 'high flow')).cost === 400,
+    'recalibration and cleaning at the stated price, on the list\'s own words');
+  assert(cost(at(s, 'EPC options', 'IP65 or IP66', 'Add. Price')).cost === null, 'an EPC option has no partner price, so a partner rule for its table prices nothing');
+  // From a part number to its band: the segment after the series in the
+  // table's own unit, and the band it falls in.
+  assert(JSON.stringify(partFigure('BC-10SLPM-D')) === JSON.stringify({ quantity: 'gas flow', unit: 'sccm', value: 10000 }) && partFigure('EPCD-500PSIG-D')?.value === 500 && partFigure('KC-5KGH-D')?.value === 5000 && partFigure('MC-500SCCM-D')?.value === 500 && partFigure('BB3') === null,
+    'a part\'s figure in the table\'s unit, or nothing');
+  assert(matchBand(s.entries, { colLabel: 'BC', quantity: 'gas flow', value: 10000 })?.price === 405 && matchBand(s.entries, { colLabel: 'B', quantity: 'gas flow', value: 50000 })?.price === 286,
+    'a figure lands on its band by series');
+  assert(matchBand(s.entries, { colLabel: 'EPCD', quantity: 'pressure', value: 500 })?.price === 500 && matchBand(s.entries, { colLabel: 'K', quantity: 'mass flow', value: 5000 })?.price === 3280 && matchBand(s.entries, { colLabel: 'BC', quantity: 'gas flow', value: 30000 }) === null,
+    'a lone band matches its own figure, and a figure between bands matches nothing');
+  assert(parseRangeLabel('1000slpm -    5000slpm')?.max === 5000000 && parseRangeLabel('Pressure') === null && cellsOf('   1000slpm -    5000slpm      $350').map(x => x.text).join('|') === '1000slpm - 5000slpm|$350',
+    'a band broken after its dash is one cell and one band');
+  // The ingest stores each side wholesale, and the sell side never a partner price (static).
+  const ing = readFileSync(new URL('../../scripts/ingest-alicat-prices.mjs', import.meta.url), 'utf8');
+  assert(/DELETE FROM price_matrix WHERE product_line = \$1 AND side = \$2/.test(ing) && /side === 'supplier' \? e\.partnerPrice : null/.test(ing), 'each side replaces its own rows, and only the supplier side carries a partner price');
+  assert(/to_regclass\('price_matrix'\)/.test(ing) && /matrixCost\(e, rules, DISCOUNT\)/.test(ing), 'the store waits for migration 044 and prices the supplier side by James\'s rules');
+  const mig = readFileSync(new URL('../migrations/044_price_matrix.sql', import.meta.url), 'utf8');
+  assert(/CREATE TABLE IF NOT EXISTS price_matrix/.test(mig) && /UNIQUE \(product_line, side, section, row_label, col_label\)/.test(mig) && /CHECK \(side IN \('sell', 'supplier'\)\)/.test(mig), 'migration 044 holds the two sides apart in one table');
 });
 
 await check('when nothing matches as written or shortened, the family\'s stored parts answer, never a guess', async () => {

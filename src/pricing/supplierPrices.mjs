@@ -77,6 +77,26 @@ export function applyCostRule(row, rule, standingDiscount = 35) {
   return { discountPct: rule.value, netPrice: null, costRule: `list less ${rule.value}%` };
 }
 
+// A table's own name in the shape a rule pattern takes, so James's rules
+// can name a table rather than a part: "BASIS*" matches Basis MEMS Thermal,
+// "STANDARD ACCURACY CODA" its own table, "EPC" the EPC table.
+export const sectionKey = s => String(s || '').toUpperCase().replace(/[^A-Z0-9*]/g, '');
+
+// What a matrix row stores on the supplier side. A table the list says
+// carries no discount stores the stated price. Otherwise a rule matched by
+// the table's name or by the column's series code decides; with no rule
+// the row holds no cost, because the standing discount is a mainline
+// rule and James named these tables as the exceptions to it. Never the
+// standing discount by default.
+export function matrixCost(entry, rules = [], standingDiscount = 35) {
+  if (entry.noDiscount) return { discountPct: 0, netPrice: null, costRule: 'stated price, the list says no discount' };
+  const rule = costRuleFor(sectionKey(entry.section), rules) || costRuleFor(entry.colLabel, rules);
+  if (!rule) {
+    return { discountPct: null, netPrice: null, costRule: entry.partnerPrice != null ? 'no rule stated for this table; the list prints a partner price' : 'no rule stated for this table' };
+  }
+  return applyCostRule(entry, rule, standingDiscount);
+}
+
 // The one line the purchase price is ever given in, and only because it
 // was asked for: the figure, how it was arrived at, and where it came from.
 export function renderCostLine(c) {

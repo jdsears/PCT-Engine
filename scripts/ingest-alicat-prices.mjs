@@ -26,7 +26,8 @@ import { readFile } from 'node:fs/promises';
 import ExcelJS from 'exceljs';
 import { parseAlicatWorkbook, applyBlockers, colLetter } from '../src/pricing/parseAlicat.mjs';
 import { parseAlicatPdfText, pdfApplyBlockers, parseOptionRows } from '../src/pricing/parseAlicatPdf.mjs';
-import { costFrom, parseCostRule, costRuleFor, applyCostRule } from '../src/pricing/supplierPrices.mjs';
+import { parseMatrixTables } from '../src/pricing/parseAlicatMatrix.mjs';
+import { costFrom, parseCostRule, costRuleFor, applyCostRule, matrixCost, sectionKey } from '../src/pricing/supplierPrices.mjs';
 import { pool } from '../src/db.mjs';
 import { materialiseSource, isSharepointRef } from '../src/sharepoint.mjs';
 
@@ -151,7 +152,7 @@ console.log(SUPPLIER
   ? `\nAlicat supplier list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line, held apart from the sell prices and given only on an explicit ask.`
   : `\nAlicat price list, effective ${EFFECTIVE}, stored as "${LIST_NAME}" on the ${LINE} line.`);
 
-let rows, blockers, sourceNote, optionRows = null;
+let rows, blockers, sourceNote, optionRows = null, matrix = null;
 if (/\.pdf$/i.test(SOURCE)) {
   // The PDF path: pdftotext keeps the columns; the plain extractor is the
   // fallback and keeps the words in order but not the layout.
@@ -181,6 +182,11 @@ if (/\.pdf$/i.test(SOURCE)) {
   const parsed = parseAlicatPdfText(pdfText, { currency: CURRENCY, resolve, mode: SUPPLIER ? 'supplier' : 'sell' });
   rows = parsed.rows;
   const r = parsed.report;
+  // The tables that price by band or by table rather than by part number
+  // (migration 044): the OEM and Coriolis series, recalibration and
+  // cleaning. Read in both modes; the supplier side carries James's rules
+  // per table, and a table with no rule holds no cost.
+  matrix = parseMatrixTables(pdfText, { currency: SUPPLIER ? 'USD' : (r.currency.default || 'GBP'), mode: SUPPLIER ? 'supplier' : 'sell' });
   console.log(`  read as a PDF: ${r.lines} line(s) of text, currency for bare figures ${r.currency.default || 'unknown'}` +
     ` (symbols seen: £ ${r.currency.seen.GBP}, € ${r.currency.seen.EUR}, $ ${r.currency.seen.USD})`);
   console.log(`\n  ${r.parts} part(s), ${r.rows} price row(s).`);
@@ -206,8 +212,11 @@ if (/\.pdf$/i.test(SOURCE)) {
     const counts = {};
     for (const s of rows) { const k = storedFor(s).costRule; counts[k] = (counts[k] || 0) + 1; }
     console.log(`  rows by cost rule: ${Object.entries(counts).map(([k, n]) => `${n} ${k}`).join('; ')}`);
-    const unmatched = rules.filter(rule => !rows.some(s => costRuleFor(s.normKey, [rule]) === rule)).map(rule => `${rule.pattern}=${rule.value}`);
-    if (unmatched.length) console.log(`  rules that match no part on this list: ${unmatched.join(', ')}`);
+    // A rule may name a part by its code or a table by its heading or its
+    // series column; one that matches neither is named as idle.
+    const tableHit = rule => (matrix?.entries || []).some(e => costRuleFor(sectionKey(e.section), [rule]) === rule || costRuleFor(e.colLabel, [rule]) === rule);
+    const unmatched = rules.filter(rule => !rows.some(s => costRuleFor(s.normKey, [rule]) === rule) && !tableHit(rule)).map(rule => `${rule.pattern}=${rule.value}`);
+    if (unmatched.length) console.log(`  rules that match no part and no table on this list: ${unmatched.join(', ')}`);
     const noCost = rows.filter(s => costOf(s) == null);
     if (noCost.length) console.log(`  parts that would store no cost: ${noCost.slice(0, 10).map(s => `${s.partNumber} (${storedFor(s).costRule})`).join(', ')}${noCost.length > 10 ? `, and ${noCost.length - 10} more` : ''}`);
     const missing = Object.keys(nets).filter(k => !rows.some(s => s.normKey === k));
@@ -250,6 +259,23 @@ if (/\.pdf$/i.test(SOURCE)) {
     }
     show('option rows with more values than codes, per-series tables not read yet, not stored', optionRows.multi);
     show('option rows with no value beside them, not stored', optionRows.skipped);
+  }
+  if (matrix.sections.length) {
+    console.log(`\n  tables priced by band or by table: ${matrix.entries.length} priced cell(s) in ${matrix.sections.length} table(s)`);
+    for (const s of matrix.sections) {
+      const own = matrix.entries.filter(e => e.section === s.name || e.section === `${s.name} options`);
+      console.log(`    ${s.name}: columns ${(s.columns || []).map(c => c.label).join(', ') || 'none read'}${s.partner ? ', list and partner' : ''}${s.noDiscount ? ', the list says no discount' : ''}; ${s.rows.length} row(s), ${own.length} priced cell(s)`);
+      for (const e of own.slice(0, 48)) {
+        const st = SUPPLIER ? matrixCost(e, rules, DISCOUNT) : null;
+        const cost = st ? costFrom({ listPrice: e.price, discountPct: st.discountPct, netPrice: st.netPrice }) : null;
+        console.log(`      ${e.section === s.name ? '' : 'option '}${e.rowLabel} | ${e.colLabel}: ${e.currency} ${e.price}${e.partnerPrice != null ? `, partner ${e.partnerPrice}` : ''}${SUPPLIER ? `  cost ${cost ?? 'none'} (${st.costRule})` : ''}`);
+      }
+      if (own.length > 48) console.log(`      and ${own.length - 48} more`);
+    }
+    show('table rows not read', matrix.skipped);
+    show('table cells in another currency, set aside', matrix.otherCurrency);
+  } else {
+    console.log('\n  no table priced by band was found (Basis, EPC, CODA, recalibration); the headings the reader knows are not in this document');
   }
   show('conflicts settled on the command line', r.resolved);
   show('excluded lines, never ingested', r.excluded, SUPPLIER ? 'discount, margin or revision lines; read them for exceptions to state with --net or --discount-for' : 'cost, discount, margin or the supplier list by name');
@@ -310,6 +336,28 @@ if (!APPLY) {
   await stop(0);
 }
 
+// The band and table prices ride with their side, replaced wholesale with
+// it, when the reader found tables and migration 044 has run. The sell side
+// never stores a partner price; the supplier side stores the rule's cost.
+async function storeMatrix(client, side) {
+  if (!matrix?.entries?.length) return null;
+  const ready = (await client.query(`SELECT to_regclass('price_matrix') AS t`)).rows[0]?.t;
+  if (!ready) { console.log('\n  The table for band prices is not created yet (migration 044); the tables were read but not stored. Run npm run migrate and apply again.'); return null; }
+  await client.query(`DELETE FROM price_matrix WHERE product_line = $1 AND side = $2`, [LINE, side]);
+  let n = 0;
+  for (const e of matrix.entries) {
+    const st = side === 'supplier' ? matrixCost(e, rules, DISCOUNT) : null;
+    const ins = await client.query(
+      `INSERT INTO price_matrix (product_line, side, section, row_label, col_label, quantity, unit, range_min, range_max, currency, price, partner_price, discount_pct, net_price, cost_rule, list_name, effective_date, source_line)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+       ON CONFLICT (product_line, side, section, row_label, col_label) DO NOTHING`,
+      [LINE, side, e.section, e.rowLabel, e.colLabel, e.quantity, e.unit, e.min, e.max, e.currency, e.price,
+       side === 'supplier' ? e.partnerPrice : null, st?.discountPct ?? null, st?.netPrice ?? null, st?.costRule ?? null, LIST_NAME, EFFECTIVE, e.line]);
+    n += ins.rowCount;
+  }
+  return n;
+}
+
 const client = await pool.connect();
 try {
   await client.query('BEGIN');
@@ -327,8 +375,9 @@ try {
                list_name = EXCLUDED.list_name, effective_date = EXCLUDED.effective_date, ingested_at = now()`,
         [r.productLine, r.partNumber, r.normKey, r.description, r.currency, r.price, st.discountPct, st.netPrice, r.partnerPrice ?? null, st.costRule, LIST_NAME, EFFECTIVE]);
     }
+    const cells = await storeMatrix(client, 'supplier');
     await client.query('COMMIT');
-    console.log(`\nStored. ${rows.length} supplier list rows are held apart. The co-pilot gives the purchase price only when someone asks for it in so many words.`);
+    console.log(`\nStored. ${rows.length} supplier list rows are held apart${cells != null ? `, with ${cells} table cell(s) priced by band or by table` : ''}. The co-pilot gives the purchase price only when someone asks for it in so many words.`);
     client.release();
     await pool.end();
     process.exit(0);
@@ -363,8 +412,9 @@ try {
       console.log('\n  The option table is not created yet (migration 042); the adders were read but not stored. Run npm run migrate and apply again.');
     }
   }
+  const cells = await storeMatrix(client, 'sell');
   await client.query('COMMIT');
-  console.log(`\nStored. ${rows.length} Alicat price rows are live${optionsStored ? `, with ${optionsStored} option adder(s) by code` : ''}. The co-pilot answers Alicat part numbers from them once the price lookup switch on the Health page is on.`);
+  console.log(`\nStored. ${rows.length} Alicat price rows are live${optionsStored ? `, with ${optionsStored} option adder(s) by code` : ''}${cells != null ? ` and ${cells} table cell(s) priced by band or by table` : ''}. The co-pilot answers Alicat part numbers from them once the price lookup switch on the Health page is on.`);
 } catch (e) {
   await client.query('ROLLBACK');
   console.error(`\nFailed, nothing changed: ${e.message}`);

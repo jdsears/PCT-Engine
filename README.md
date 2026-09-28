@@ -745,6 +745,35 @@ rule in play, and names any rule that matches no part on the list, which
 is the cue to run `--find` and read what codes that series really carries.
 `--apply` replaces the line's supplier rows wholesale.
 
+### Prices by band and by table
+
+Not everything on the Alicat lists is priced by part number. The OEM and
+Coriolis sections (Basis MEMS Thermal, EPC, Standard and High Accuracy CODA)
+print a flow or pressure band down the side and the series codes across
+the top (B and BC; EP, EPS, EPC and EPCD; K, KC, KF and KG), a figure in
+each cell; the supplier's list repeats the codes under a Partner Price
+heading, the customer list prints list prices only. Recalibration and
+cleaning price the same way, by flow range or product family against
+Standard and High Accuracy, two tables side by side, under a heading that
+says no discount applies. `src/pricing/parseAlicatMatrix.mjs` reads those
+tables from the layout (a heading at the left margin starts a table and
+closes every open one, a heading further along opens beside what is open
+to its left, a band label normalises to one unit per quantity, the option
+pair beyond the EPC bands is the table's own options) into `price_matrix`
+(migration 044), one row per priced cell with its side, section, row and
+column labels and the band. The sell side never stores a partner price. On
+the supplier side a table takes its cost from a `--rule` that names the
+table (`--rule "BASIS*=partner"`, `--rule "EPC=partner"`, `--rule "STANDARD
+ACCURACY CODA=partner"`) or its series column; recalibration and cleaning
+take the stated price because the list says no discount; and a table with
+no rule holds no cost and says so, never the standing discount, which is a
+mainline rule. High Accuracy CODA prints no partner column and James has
+stated no rule for it, so it holds no cost until he does. A part in one of
+these series resolves to its band at lookup from the segment after its
+series (BC-10SLPM-D is ten litres a minute in the Basis table). The dry run
+prints every table with its columns and each priced cell, and the cost
+each would carry.
+
 ## Website trawl
 
 John's instruction of 9 September 2026: website trawl capabilities, which
