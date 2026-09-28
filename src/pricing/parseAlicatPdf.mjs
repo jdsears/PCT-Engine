@@ -460,16 +460,33 @@ export function parseGroupedColumns(src, { currency = 'USD', productLine = 'alic
   const out = { rows: [], blocks: 0, unpriced: [] };
   let cols = [];
   let row = 0;
+  // Tiling a column: each price is the centre of its group, so a group
+  // starting at row s under a price at row a ends at 2a - s. The layout
+  // places that text within half a row of the true centre (John's liquid
+  // table of 28 September 2026: a group of seven printed its price between
+  // its third and fourth rows, a group of three between its second and
+  // third), so the end may sit one row either side of the mirror. The next
+  // price settles it: its own group must start by the row after it, so
+  // this one ends at or before a' - 0.5. At the end of a column the rows
+  // that remain within that tolerance join the last group, because a
+  // columned table never ends with an unpriced part; a row beyond it is
+  // unpriced and named.
   const tile = (col) => {
     const parts = col.parts.sort((a, b) => a.row - b.row);
     const anchors = col.anchors.sort((a, b) => a.row - b.row);
+    const lastRow = parts.length ? parts[parts.length - 1].row : 0;
     let ai = 0;
     for (let pi = 0; pi < parts.length;) {
       const start = parts[pi].row;
       while (ai < anchors.length && anchors[ai].row < start) ai++;
       if (ai >= anchors.length) { for (const p of parts.slice(pi)) out.unpriced.push(p.part); break; }
       const anchor = anchors[ai++];
-      const end = start + 2 * (anchor.row - start);
+      const next = anchors[ai];
+      const mirror = 2 * anchor.row - start;
+      let hi = Math.min(mirror + 1, lastRow, next ? Math.floor(next.row - 0.5) : Infinity);
+      const lo = Math.max(mirror - 1, start);
+      if (hi < start) hi = start;
+      const end = next ? (mirror >= lo && mirror <= hi ? mirror : Math.min(Math.max(mirror, lo), hi)) : Math.max(hi, start);
       let taken = 0;
       while (pi < parts.length && parts[pi].row <= end) {
         const p = parts[pi++];
@@ -492,7 +509,12 @@ export function parseGroupedColumns(src, { currency = 'USD', productLine = 'alic
     const parts = tokens(PART_TOKEN, line).map(t => ({ part: t.m[1], at: t.at, end: t.end })).filter(p => !NOT_PART.test(p.part));
     const prices = pricesOn(line, currency).filter(p => p.currency === currency && !/\+\s*$/.test(line.slice(0, p.at)));
     if (heads.length) {
-      if (heads.length >= 2 && !parts.length) {
+      // Two or more headings on a line of their own start a fresh set of
+      // columns when they begin where the table begins; a pair printed over
+      // the right-hand columns part-way down ("LCR-Series  LCRS-Series"
+      // over LC and LCS while L and LS carry on, John's liquid table of 28
+      // September 2026) replaces those columns in place instead.
+      if (heads.length >= 2 && !parts.length && (!cols.length || heads[0].x <= cols[0].x + 15)) {
         flushAll();
         cols = heads.map(h => ({ name: h.name, x: h.x, parts: [], anchors: [] }));
         row = 0;
