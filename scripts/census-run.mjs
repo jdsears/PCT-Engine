@@ -1,9 +1,12 @@
+import { thinkingParams } from '../src/claudeParams.mjs';
 import { pool } from '../src/db.mjs';
 import { requireCampaign } from '../src/campaigns/registry.mjs';
 import { tavilySearch } from '../src/research/newsResearch.mjs';
 import { searchCompanies, candidateRows } from '../src/research/companiesHouse.mjs';
 import { resolveDomain } from '../src/research/domains.mjs';
 import { buildCensusSystem, parseCensus, censusDiff, censusProposalsMax } from '../src/research/census.mjs';
+
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 
 // The census run: population coverage for one campaign, proposed into the
 // confirm queue for a human to decide. John's instruction of 10 August 2026,
@@ -61,7 +64,8 @@ const res = await fetch('https://api.anthropic.com/v1/messages', {
   method: 'POST',
   headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
   body: JSON.stringify({
-    model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-6',
+    model: CLAUDE_MODEL,
+    ...thinkingParams(CLAUDE_MODEL),
     max_tokens: 2000,
     system: buildCensusSystem(def),
     messages: [{ role: 'user', content: `Research snippets:\n${snippets.join('\n').slice(0, 12000)}\n\nCompile the census.` }],

@@ -1,10 +1,11 @@
+import { thinkingParams } from './claudeParams.mjs';
 import { search } from './retrieve.mjs';
 import { route } from './configurator/converse.mjs';
 import { priceTurn, priceIntent } from './pricing/priceAnswer.mjs';
 import { quoteTurn } from './pricing/quote.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6'; // configurable; confirm against Anthropic docs if it errors
+const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5'; // configurable; confirm against Anthropic docs if it errors
 
 // Light query understanding: detect a named line or application and scope the search.
 const LINE_TERMS = [
@@ -153,7 +154,7 @@ export async function ask(question, { history = [], k = 10, configState = null, 
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, messages }),
+    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: 1024, system, messages }),
   });
   if (!res.ok) throw new Error(`Claude answer failed: ${res.status} ${await res.text()}`);
   const json = await res.json();

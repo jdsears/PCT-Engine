@@ -1,3 +1,4 @@
+import { thinkingParams } from '../claudeParams.mjs';
 import { emptySlots, applyValue, checkConstraints, checkCautions, assemble } from './engine.mjs';
 import { loadConfig, listModels } from './registry.mjs';
 import { voiceGate } from '../answer.mjs';
@@ -9,7 +10,7 @@ import { voiceGate } from '../answer.mjs';
 // unlisted value is raised back to the user, not accepted.
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
+const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 
 // The registry owns the models directory; re-exported so existing callers
 // keep their import path.
@@ -21,7 +22,7 @@ async function callClaude(system, user) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
     headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 600, system, messages: [{ role: 'user', content: user }] }),
+    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: 600, system, messages: [{ role: 'user', content: user }] }),
   });
   if (!res.ok) throw new Error(`configurator model call failed: ${res.status}`);
   const json = await res.json();

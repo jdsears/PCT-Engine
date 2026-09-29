@@ -1,3 +1,4 @@
+import { thinkingParams } from '../claudeParams.mjs';
 import { voiceGate } from '../answer.mjs';
 import { isOpenerGrade } from './openerGrade.mjs';
 import { requireCampaign, getCampaign } from '../campaigns/registry.mjs';
@@ -7,7 +8,7 @@ import { writtenCompanyName } from './companyName.mjs';
 import { meetingLinks } from './senders.mjs';
 
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
+const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 
 // Outbound prose gets a stricter pass than chat answers: no exclamation marks on
 // top of the shared voice gate (no em or en dashes, never "genuinely").
@@ -35,7 +36,7 @@ async function callClaude(system, user, { maxTokens = 700 } = {}) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
     headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
+    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
   });
   if (!res.ok) throw new Error(`Claude failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
