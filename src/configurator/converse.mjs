@@ -1,16 +1,13 @@
-import { thinkingParams } from '../claudeParams.mjs';
 import { emptySlots, applyValue, checkConstraints, checkCautions, assemble } from './engine.mjs';
 import { loadConfig, listModels } from './registry.mjs';
 import { voiceGate } from '../answer.mjs';
+import { CLAUDE_URL, claudeHeaders, claudeBody, claudeText } from '../claude.mjs';
 
 // The conversational layer. This is the only place the model works, and it works
 // only to interpret the user's words into slot values and to read intent. The
 // engine in engine.mjs decides validity and assembles the code. The model never
 // invents a code: every value it proposes is validated by applyValue, and an
 // unlisted value is raised back to the user, not accepted.
-
-const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 
 // The registry owns the models directory; re-exported so existing callers
 // keep their import path.
@@ -21,12 +18,12 @@ export { loadConfig, listModels };
 async function callClaude(system, user) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
-    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: 600, system, messages: [{ role: 'user', content: user }] }),
+    headers: claudeHeaders(),
+    body: JSON.stringify(claudeBody({ maxTokens: 600, system, messages: [{ role: 'user', content: user }] })),
   });
   if (!res.ok) throw new Error(`configurator model call failed: ${res.status}`);
   const json = await res.json();
-  return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  return claudeText(json, '');
 }
 
 const firstJson = (text) => { const m = String(text).match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : {}; };

@@ -1,10 +1,10 @@
-import { thinkingParams } from '../claudeParams.mjs';
 import { createHash } from 'node:crypto';
 import { pool } from '../db.mjs';
 import { graphJson } from '../msgraph.mjs';
 import { teamEmails } from '../mail.mjs';
 import { classifySignal } from '../research/relevance.mjs';
 import { writePost } from './liPosts.mjs';
+import { CLAUDE_URL, claudeHeaders, claudeBody, claudeText } from '../claude.mjs';
 
 // The intel inbox. The team forwards an industry newsletter to the engine
 // mailbox; the engine splits it into items and routes each through the same
@@ -15,18 +15,15 @@ import { writePost } from './liPosts.mjs';
 // instead. Everything a newsletter contains is treated as untrusted data to be
 // classified, never as instructions.
 
-const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
-
 async function callClaude(system, user, { maxTokens = 900 } = {}) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
-    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
+    headers: claudeHeaders(),
+    body: JSON.stringify(claudeBody({ maxTokens, system, messages: [{ role: 'user', content: user }] })),
   });
   if (!res.ok) throw new Error(`Claude failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
-  return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  return claudeText(json);
 }
 
 // Who may feed the intel inbox. Internal addresses only; an empty list turns

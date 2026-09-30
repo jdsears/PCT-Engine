@@ -1,11 +1,8 @@
-import { thinkingParams } from './claudeParams.mjs';
 import { search } from './retrieve.mjs';
 import { route } from './configurator/converse.mjs';
 import { priceTurn, priceIntent } from './pricing/priceAnswer.mjs';
 import { quoteTurn } from './pricing/quote.mjs';
-
-const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5'; // configurable; confirm against Anthropic docs if it errors
+import { CLAUDE_URL, claudeHeaders, claudeBody, claudeText } from './claude.mjs';
 
 // Light query understanding: detect a named line or application and scope the search.
 const LINE_TERMS = [
@@ -149,16 +146,12 @@ export async function ask(question, { history = [], k = 10, configState = null, 
 
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
-    headers: {
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: 1024, system, messages }),
+    headers: claudeHeaders(),
+    body: JSON.stringify(claudeBody({ maxTokens: 1024, system, messages })),
   });
   if (!res.ok) throw new Error(`Claude answer failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
-  const raw = (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  const raw = claudeText(json);
 
   const answer = voiceGate(raw);
 

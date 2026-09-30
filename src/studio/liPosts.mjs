@@ -1,22 +1,19 @@
-import { thinkingParams } from '../claudeParams.mjs';
 import { pool, hasColumn } from '../db.mjs';
 import { freshOnly, postMaxAgeDays } from '../research/freshness.mjs';
 import { outboundVoice, flagEndCustomers } from '../outbound/draft.mjs';
 import { unipile, ROUTES, unipileConfigured, accountForCampaign } from '../research/unipile.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
-
-const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
+import { CLAUDE_URL, claudeHeaders, claudeBody, claudeText } from '../claude.mjs';
 
 async function callClaude(system, user, { maxTokens = 500 } = {}) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
-    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
+    headers: claudeHeaders(),
+    body: JSON.stringify(claudeBody({ maxTokens, system, messages: [{ role: 'user', content: user }] })),
   });
   if (!res.ok) throw new Error(`Claude failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
-  return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  return claudeText(json);
 }
 
 // The post briefing follows the signal's campaign, and since 11 August 2026
