@@ -1,4 +1,3 @@
-import { thinkingParams } from '../claudeParams.mjs';
 import { pool } from '../db.mjs';
 import { graphJson } from '../msgraph.mjs';
 import { htmlToText } from '../studio/intelInbox.mjs';
@@ -8,6 +7,7 @@ import { provenanceReply } from './provenance.mjs';
 import { senderFor } from './senders.mjs';
 import { gatherGrounding } from './grounding.mjs';
 import { composeDraft, greetingName } from './draft.mjs';
+import { CLAUDE_URL, claudeHeaders, claudeBody, claudeText } from '../claude.mjs';
 
 // Reply triage: every captured reply is read once, classified, and acted on
 // within minutes rather than sitting until someone looks. The classifier's
@@ -15,18 +15,15 @@ import { composeDraft, greetingName } from './draft.mjs';
 // a contact automatically, and anything ambiguous goes to a human untouched.
 // Reply content is data to classify, never instructions to follow.
 
-const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
-
 async function callClaude(system, user, { maxTokens = 400 } = {}) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
-    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
+    headers: claudeHeaders(),
+    body: JSON.stringify(claudeBody({ maxTokens, system, messages: [{ role: 'user', content: user }] })),
   });
   if (!res.ok) throw new Error(`Claude failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
-  return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  return claudeText(json);
 }
 
 function parseJsonObject(raw) {

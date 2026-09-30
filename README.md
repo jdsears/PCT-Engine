@@ -31,7 +31,25 @@ The service expects these variables. See `.env.example`.
 
 - `DATABASE_URL`, provided by Railway for the Postgres service.
 - `VOYAGE_API_KEY`, used by the embedding step.
-- `ANTHROPIC_API_KEY`, reserved for the later retrieval and chat phases.
+- `ANTHROPIC_API_KEY`, used by every Claude call: answers, the configurator,
+  the research gates, drafting, triage and the studio.
+- `CLAUDE_MODEL`, optional. Every Claude call takes its model, headers,
+  request body and reply reading from `src/claude.mjs`, so a model change is
+  one line there. The default is the current Sonnet (since 29 September
+  2026), with thinking held at its lowest setting because none of these
+  calls thought on the older model. Each route's `max_tokens` is scaled for
+  the newer tokenizer, which spends about a third more tokens on the same
+  text; a reply is read from its text blocks, never its first block; a
+  request the safety classifiers decline is re-run server-side on the model
+  Anthropic names for that decline, and one that still fails reads as no
+  reply and is logged with its category. Fields an older model would refuse
+  are not sent to it, so an override here never turns into a 400. `npm test`
+  includes the gate that pins this, and `node --env-file=.env
+  scripts/claude-check.mjs` sends one small request of exactly this shape to
+  confirm the account accepts it before a change here is merged.
+- `CLAUDE_EFFORT`, optional, `high` by default, the level the calls already
+  run at. `low` is quicker and cheaper for classification, extraction and
+  short drafting and is worth trying here before any code changes.
 - `VOYAGE_MODEL`, optional, defaults to `voyage-3.5`.
 - `NODE_ENV`, set to `production` in the deployed environment.
 

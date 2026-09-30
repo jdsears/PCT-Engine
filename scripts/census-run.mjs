@@ -1,12 +1,10 @@
-import { thinkingParams } from '../src/claudeParams.mjs';
 import { pool } from '../src/db.mjs';
 import { requireCampaign } from '../src/campaigns/registry.mjs';
 import { tavilySearch } from '../src/research/newsResearch.mjs';
 import { searchCompanies, candidateRows } from '../src/research/companiesHouse.mjs';
 import { resolveDomain } from '../src/research/domains.mjs';
 import { buildCensusSystem, parseCensus, censusDiff, censusProposalsMax } from '../src/research/census.mjs';
-
-const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
+import { CLAUDE_URL, claudeHeaders, claudeBody, claudeText } from '../src/claude.mjs';
 
 // The census run: population coverage for one campaign, proposed into the
 // confirm queue for a human to decide. John's instruction of 10 August 2026,
@@ -60,20 +58,18 @@ if (!snippets.length) {
   process.exit(1);
 }
 
-const res = await fetch('https://api.anthropic.com/v1/messages', {
+const res = await fetch(CLAUDE_URL, {
   method: 'POST',
-  headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-  body: JSON.stringify({
-    model: CLAUDE_MODEL,
-    ...thinkingParams(CLAUDE_MODEL),
-    max_tokens: 2000,
+  headers: claudeHeaders(),
+  body: JSON.stringify(claudeBody({
+    maxTokens: 2000,
     system: buildCensusSystem(def),
     messages: [{ role: 'user', content: `Research snippets:\n${snippets.join('\n').slice(0, 12000)}\n\nCompile the census.` }],
-  }),
+  })),
 });
 if (!res.ok) { console.error(`Claude failed: ${res.status} ${await res.text()}`); process.exit(1); }
 const json = await res.json();
-const raw = (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+const raw = claudeText(json, '');
 const candidates = parseCensus(raw);
 console.log(`\nEnumerated ${candidates.length} candidate name(s).`);
 

@@ -1,4 +1,3 @@
-import { thinkingParams } from '../claudeParams.mjs';
 import { voiceGate } from '../answer.mjs';
 import { isOpenerGrade } from './openerGrade.mjs';
 import { requireCampaign, getCampaign } from '../campaigns/registry.mjs';
@@ -6,9 +5,7 @@ import { buildDraftSystem, buildRangeLines } from '../campaigns/prompts.mjs';
 import { approvedLinkList } from './links.mjs';
 import { writtenCompanyName } from './companyName.mjs';
 import { meetingLinks } from './senders.mjs';
-
-const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
+import { CLAUDE_URL, MODEL, claudeHeaders, claudeBody, claudeText } from '../claude.mjs';
 
 // Outbound prose gets a stricter pass than chat answers: no exclamation marks on
 // top of the shared voice gate (no em or en dashes, never "genuinely").
@@ -35,12 +32,12 @@ function parseJsonObject(raw) {
 async function callClaude(system, user, { maxTokens = 700 } = {}) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
-    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
+    headers: claudeHeaders(),
+    body: JSON.stringify(claudeBody({ maxTokens, system, messages: [{ role: 'user', content: user }] })),
   });
   if (!res.ok) throw new Error(`Claude failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
-  return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  return claudeText(json);
 }
 
 // Render the grounding as the only facts the drafter is permitted to use. The

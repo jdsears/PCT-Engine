@@ -1,5 +1,5 @@
-import { thinkingParams } from '../claudeParams.mjs';
 import { requireCampaign } from '../campaigns/registry.mjs';
+import { CLAUDE_URL, claudeHeaders, claudeBody, claudeText } from '../claude.mjs';
 
 // Two parties per signal.
 //
@@ -16,18 +16,15 @@ import { requireCampaign } from '../campaigns/registry.mjs';
 // either party null when the text does not name it, and any failure returns
 // both null rather than a guess.
 
-const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
-
 async function callClaude(system, user, { maxTokens = 200 } = {}) {
   const res = await fetch(CLAUDE_URL, {
     method: 'POST',
-    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, ...thinkingParams(MODEL), max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
+    headers: claudeHeaders(),
+    body: JSON.stringify(claudeBody({ maxTokens, system, messages: [{ role: 'user', content: user }] })),
   });
   if (!res.ok) throw new Error(`Claude failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
-  return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  return claudeText(json);
 }
 
 function parseJson(raw) {
