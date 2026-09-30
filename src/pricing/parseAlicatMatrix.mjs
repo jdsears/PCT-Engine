@@ -125,7 +125,11 @@ export function parseMatrixTables(src, { currency = 'GBP', mode = 'sell' } = {})
   const open = (def, cell, headerCells) => {
     if (def.first) active = [];
     else active = active.filter(s => Math.abs(s.x - cell.x) > 10);
-    const sec = { name: def.name, x: cell.x, noDiscount, columns: null, partner: false, groups: null, rows: [] };
+    // A minimum order in the heading ("EPC (min. qty 50)") is a note the
+    // table's prices carry; a minimum of one says nothing.
+    const qty = /\(min\.?\s*qty\.?\s*(\d+)\)/i.exec(cell.text);
+    const notes = qty && Number(qty[1]) > 1 ? [`Minimum order quantity ${qty[1]}.`] : [];
+    const sec = { name: def.name, x: cell.x, noDiscount, columns: null, partner: false, groups: null, rows: [], notes };
     if (headerCells?.length) sec.columns = headerCells.map(c => ({ label: text(c.text), x: c.x }));
     active.push(sec);
     active.sort((a, b) => a.x - b.x);
@@ -202,6 +206,11 @@ export function parseMatrixTables(src, { currency = 'GBP', mode = 'sell' } = {})
     const vals = rest.map(c => ({ text: text(c.text), value: valueOf(c.text) }));
     const row = { label, range, values: vals };
     sec.rows.push(row);
+    // Words printed past the last column are the table's note, whichever row
+    // the layout put them beside, and apply to every price in it.
+    for (const v of vals.slice(cols.length)) {
+      if (!v.value && /[a-z]{3,}.*[a-z]{3,}/i.test(v.text) && v.text.length >= 12 && !sec.notes.includes(v.text)) sec.notes.push(v.text);
+    }
     if (!range && sec.groups) { out.skipped.push(line.slice(0, 240)); return; }
     const entry = (colLabel, v, partner) => {
       if (v.currency !== currency) { out.otherCurrency.push(`${sec.name} ${label} ${colLabel} ${v.price}`); return; }
@@ -237,6 +246,11 @@ export function parseMatrixTables(src, { currency = 'GBP', mode = 'sell' } = {})
       if (v?.kind === 'price') entry(cols[i].label, v, null);
     }
   }
+  // Each priced cell carries its table's notes, gathered once the whole
+  // table is read. An option adder is not the unit, so it carries none.
+  const notes = new Map();
+  for (const s of out.sections) if (s.notes.length) notes.set(s.name, [...(notes.get(s.name) || []), ...s.notes]);
+  for (const e of out.entries) e.note = notes.has(e.section) ? [...new Set(notes.get(e.section))].join(' ') : null;
   return out;
 }
 

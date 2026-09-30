@@ -6,7 +6,7 @@
 import ExcelJS from 'exceljs';
 import { parseMegaWorkbook, extractTab, TAB_SPECS, normKey, priceNumber, cellValue } from './parseMega.mjs';
 import { quotedLine } from './quotedLines.mjs';
-import { priceIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost, familyKey, renderFamilyAnswer, renderConfiguredTotal } from './priceAnswer.mjs';
+import { priceIntent, moneyIntent, partTokens, renderPriceAnswer, renderLineSummary, baseKeys, optionsAfter, asksCost, familyKey, renderFamilyAnswer, renderConfiguredTotal } from './priceAnswer.mjs';
 import { readFileSync } from 'node:fs';
 import { computeGuide } from './richardsTransform.mjs';
 import { parseMarwinPages, parseModelRow, parseSizeHeader } from './parseMarwinPdf.mjs';
@@ -20,6 +20,7 @@ import { classifyHeader, pickSheet, parseAlicatWorkbook, applyBlockers, columnIn
 import { parseAlicatPdfText, pdfApplyBlockers, detectCurrency, PART_TOKEN, parseOptionRows, parseGroupedColumns, joinWrappedBrackets } from './parseAlicatPdf.mjs';
 import { costFrom, renderCostLine, parseCostRule, costRuleFor, applyCostRule, matrixCost, sectionKey } from './supplierPrices.mjs';
 import { parseMatrixTables, parseRangeLabel, partFigure, matchBand, cellsOf } from './parseAlicatMatrix.mjs';
+import { matrixQuestion, matrixTurn, serviceMoneyIntent, pickMatrix, renderMatrixAnswer, figureWords } from './matrixAnswer.mjs';
 import { syncDecision } from '../sharepointSync.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
@@ -196,8 +197,8 @@ await check('a configured code finds its base part, names its options, and cost 
   const plain = renderPriceAnswer({ partNumber: 'MC-500SCCM-D', description: null, prices: { GBP: 1071 }, basis: 'sell', sourceTab: 'pdf', listName: 'Alicat Q1 2026', effectiveDate: null });
   assert(!/reads as the base part|additions|Purchase price|purchase/i.test(plain), 'a plain part carries none of the configured or cost lines');
   const ans = readFileSync(new URL('../answer.mjs', import.meta.url), 'utf8');
-  assert(/priceIntent\(question\) && !\(configState && configState\.active\)\s*\?\s*\{ handled: false/.test(ans),
-    'a price question with no build in progress never goes to the configurator');
+  assert(/moneyIntent\(question\) && !\(configState && configState\.active\)\s*\?\s*\{ handled: false/.test(ans),
+    'a price question, a recalibration price question included, with no build in progress never goes to the configurator');
 });
 
 await check('option adders read from the list\'s own option table, and a configured code totals base plus the adders it names', async () => {
@@ -643,6 +644,137 @@ await check('the tables priced by band read on both lists, and James\'s rules pr
   assert(/to_regclass\('price_matrix'\)/.test(ing) && /matrixCost\(e, rules, DISCOUNT\)/.test(ing), 'the store waits for migration 044 and prices the supplier side by James\'s rules');
   const mig = readFileSync(new URL('../migrations/044_price_matrix.sql', import.meta.url), 'utf8');
   assert(/CREATE TABLE IF NOT EXISTS price_matrix/.test(mig) && /UNIQUE \(product_line, side, section, row_label, col_label\)/.test(mig) && /CHECK \(side IN \('sell', 'supplier'\)\)/.test(mig), 'migration 044 holds the two sides apart in one table');
+});
+
+await check('recalibration, cleaning and the OEM and Coriolis series answer from their tables, sell by default, cost only when asked', async () => {
+  // The questions of 30 September 2026 against the tables as both lists
+  // print them, verbatim from John's reads, stored as the ingest stores them.
+  const verbatim = a => a.map(l => l.replace(/^\s*\d+ \| ?/, '')).join('\n');
+  const customer = verbatim([
+    '     282 | Basis MEMS Thermal (min. qty 1)',
+    '     284 |                                               List Price',
+    '     285 |           Flow Range                      B                BC',
+    '     286 |      100sccm - 20slpm                         £236          £340',
+    '     287 |       50slpm - 100slpm                        £240          £387',
+    '     290 | EPC (min. qty 50)',
+    '     292 |                                                              List Price                        Add. Options',
+    '     293 |         Pressure Range',
+    '     294 |                                          EP                EPS        EPC         EPCD      Options Add. Price',
+    '     295 |          1PSI - 100PSI                     £252             £315        £336         £378 IP65 / 66         £63',
+    '     296 |             500PSI                         £294             £336        £378         £420 IOLINKA           £84',
+    '     297 |       1000PSI - 3000PSI                    £294             £336       N/A         N/A    RS485              £0',
+    '     303 | Standard Accuracy CODA',
+    '     305 |                                                           List Price',
+    '     307 |                                          K              KC           KF            KG',
+    '     309 |         1 kg/h - 10 kg/h                 £2,713        £3,218       £3,003         £5,799',
+    '     313 | High Accuracy CODA',
+    '     315 |            Flow Range                    K              KC             KF          KG                    *',
+    '     316 |         40 g/h - 300 g/h                 £4,442        £5,146         £5,146       £7,942                Only quote non-display variant until CODA display is released.',
+    '     317 |         1 kg/h - 10 kg/h                 £4,260        £5,013         £4,964       £7,760                      -£83',
+    '     321 |                                                                                 CODA Options',
+    '     446 |                                               Recalibrations and Cleaning (no discounts)',
+    '     455 |       Mainline Recalibrations                                                                 All Other Recalibrations',
+    '     456 |       Flow Range                            Standard         High Accuracy                                Standard          High Accuracy',
+    '     457 |            0.5sccm - 10sccm                       £376                 N/A                    Pressure         £322                     £430',
+    '     458 |             20sccm - 500slpm                      £322                   £430                 Liquid           £376                   N/A',
+    '     459 |       1000slpm -     5000slpm                     £376                 N/A                    CODA             £376                     £483',
+    '     460 |         10000slpm                                 £430                 N/A                    Basis            £242                   N/A',
+    '     463 |       Recalibration Add-Ons',
+    '     464 |       Expedited Service **with approval                       £107                            Cleaning                   low flow   mid flow        high flow',
+    '     465 |       Standard ISO17025                                       £483                            Ultra-sonic cleaning          £134        £242               £322',
+    '     466 |       Expedited ISO 17025                                     £591                            Oxygen cleaning               £322        £322               £430',
+    '     473 |                                                                                            Page 8 of 8',
+  ]);
+  const supplier = verbatim([
+    '     314 |             Basis MEMS Thermal (min. qty 1)',
+    '     316 |                                                 List Price              Partner Price',
+    '     317 |                    Flow Range                 B           BC            B          BC',
+    '     318 |                 100sccm - 20slpm              $281         $405         $211       $304',
+    '     335 |             Standard Accuracy CODA',
+    '     337 |                                                                List Price                            Partner Price (20% discount)',
+    '     339 |                                                K            KC            KF       KG            K         KC          KF         KG',
+    '     341 |                    1 kg/h - 10 kg/h          $3,280         $3,890      $3,630    $7,010        $2,624    $3,112      $2,904      $5,608',
+    '     345 |             High Accuracy CODA',
+    '     347 |                    Flow Range                  K            KC          KF         KG',
+    '     349 |                    1 kg/h - 10 kg/h          $5,150         $6,060     $6,000     $9,380',
+    '     353 |                                                                                   CODA Options',
+    '     481 |                          Recalibrations and Cleaning (no discounts on Recalibrations)',
+    '     482 |             Mainline Recalibrations                                                    All Other Recalibrations',
+    '     483 |             Flow Range              Standard          High Accuracy                                Standard        High Accuracy',
+    '     484 |                 0.5sccm - 10sccm        $350                     N/A                   Pressure        $300                    $400',
+    '     485 |                  20sccm - 500slpm       $300                      $400                 Liquid          $350                  N/A',
+  ]);
+  const sell = parseMatrixTables(customer, { currency: 'GBP', mode: 'sell' }).entries.map(e => ({ ...e, listName: 'Alicat Q1 2026', effectiveDate: '2026-09-28' }));
+  const rules = ['BASIS*=partner', 'EPC=partner', 'STANDARD ACCURACY CODA=partner'].map(parseCostRule);
+  const bought = parseMatrixTables(supplier, { currency: 'USD', mode: 'supplier' }).entries.map(e => ({ ...e, ...matrixCost(e, rules, 35), listName: 'Alicat Price List 101', effectiveDate: '2026-09-28' }));
+  const entries = async side => (side === 'sell' ? sell : bought);
+  const ask = async q => (await matrixTurn(q, { askedCost: asksCost(q), entries }))?.answer || null;
+
+  // The list's own notes ride with its prices, and only with its prices.
+  assert(sell.filter(e => e.section === 'EPC').every(e => e.note === 'Minimum order quantity 50.') && sell.filter(e => e.section === 'EPC options').every(e => e.note === null),
+    'the EPC minimum order rides with every EPC price and not with its option adders');
+  assert(sell.filter(e => e.section === 'High Accuracy CODA').every(e => /Only quote non-display variant/.test(e.note)) && sell.filter(e => e.section === 'Basis MEMS Thermal').every(e => e.note === null),
+    'the High Accuracy CODA quoting note rides with every row of its table, whichever row printed it; a minimum of one is no note');
+
+  // What counts as a question for the tables, and what never does.
+  assert(serviceMoneyIntent('How much is a recalibration for an MC-100SLPM-D?') && moneyIntent('how much is a recal') && !priceIntent('how much is a recal'),
+    '"how much" asks for money when the question is about a recalibration');
+  assert(!serviceMoneyIntent('how much flow can an MC-100SCCM-D pass') && !serviceMoneyIntent('how much would a product recall cost us'), 'a flow question and a recall are not recalibrations');
+  assert(matrixQuestion('price of an MC-100SCCM-D') === null && matrixQuestion('On what basis is the Marwin price calculated?') === null,
+    'a part price question is left to the parts, and "basis" as an ordinary word takes no table');
+  assert(figureWords({ unit: 'sccm', value: 100000 }) === '100 slpm' && figureWords({ unit: 'g/h', value: 5000 }) === '5 kg/h' && figureWords({ unit: 'psi', value: 15 }) === '15 psi', 'figures read as a reader writes them');
+
+  // Recalibration: mainline gas flow by band, the rest by family, add-ons on request.
+  const mc = await ask('How much is a recalibration for an MC-100SLPM-D?');
+  assert(/for MC-100SLPM-D, mainline gas flow at 100 slpm, in the list's 20sccm to 500slpm band/.test(mc) && /Standard £322, High Accuracy £430/.test(mc),
+    `a mainline part lands on its flow band, never on its own price: ${mc}`);
+  assert(!/\$/.test(mc) && !/Purchase price/.test(mc) && /not discounted/.test(mc), 'a sell answer carries no purchase price, and says the list does not discount recalibrations');
+  assert(/Pressure: Standard £322, High Accuracy £430/.test(await ask('price to recalibrate a PC-15PSIG-D')), 'a pressure part takes the Pressure row');
+  const gap = await ask('recal price for an M-15SCCM-D');
+  assert(/no band that holds 15 sccm/.test(gap) && (gap.match(/^- Mainline/gm) || []).length === 4, `a figure between bands is said to be so, and every band is shown: ${gap}`);
+  const iso = await ask('price of a recal with ISO 17025 for an M-5SCCM-D');
+  assert(/0\.5sccm to 10sccm: Standard £376/.test(iso) && /Standard ISO17025: £483/.test(iso) && !/Expedited/.test(iso), 'an add-on asked for is added, and only that one');
+  const liq = await ask('What does a high accuracy liquid recal cost?');
+  assert(/Liquid: Standard £376/.test(liq) && /no high accuracy recalibration for that row/.test(liq), 'a high accuracy ask on a row without one says so');
+
+  // Cleaning: the classes as printed, and the honest edge on what they mean.
+  const oxy = await ask('oxygen cleaning price');
+  assert(/Oxygen cleaning: low flow £322, mid flow £322, high flow £430/.test(oxy) && !/Ultra-sonic/.test(oxy) && /does not say where low, mid and high flow begin and end/.test(oxy),
+    'the named cleaning, every class, and no invented boundary');
+
+  // The OEM and Coriolis series: the table, the series, the band.
+  const basis = await ask('price of a Basis BC for 10 slpm');
+  assert(/BC at 10 slpm/.test(basis) && /100sccm to 20slpm: BC £340/.test(basis) && !/B £236/.test(basis), `the band and the series named: ${basis}`);
+  const epc = await ask('price of an EPC-100PSIG-D');
+  assert(/EPC\*\*, EPC-100PSIG-D at 100 psi/.test(epc) && /1PSI to 100PSI: EPC £336/.test(epc) && /Minimum order quantity 50\./.test(epc), 'a code names its series and its band, and the minimum order is repeated');
+  const coda = await ask('CODA KC price at 5 kg/h');
+  assert(/Standard Accuracy, 1 kg\/h to 10 kg\/h: KC £3,218/.test(coda) && /High Accuracy, 1 kg\/h to 10 kg\/h: KC £5,013/.test(coda) && /High Accuracy CODA: Only quote non-display variant/.test(coda),
+    'accuracy not stated: both tables, and the note named by its table');
+  const hi = await ask('high accuracy CODA KC price at 5 kg/h');
+  assert(/KC £5,013/.test(hi) && !/£3,218/.test(hi), 'accuracy stated: that table alone');
+
+  // The purchase price, only when asked, by the rule for its table.
+  const cost = await ask('What is our purchase price for a Basis BC at 10 slpm?');
+  assert(/BC £340/.test(cost) && /BC \$304, the supplier's partner price as printed/.test(cost) && /Never a figure to quote/.test(cost), `partner price for Basis, beside the sell price: ${cost}`);
+  assert(/Standard \$350, the supplier's stated price with no discount/.test(await ask('What does a high accuracy liquid recal cost?')), 'a recalibration costs its stated price, the list says no discount');
+  assert(/not held, no cost rule is set for this table/.test(await ask('what do we pay for a high accuracy CODA KC at 5 kg/h, purchase price')), 'a table with no rule gives no figure and says why');
+
+  // Not loaded: a recalibration question still never answers with the part's own price.
+  const none = await matrixTurn('How much is a recalibration for an MC-100SLPM-D?', { entries: async () => [] });
+  assert(none && /per enquiry/.test(none.answer), 'with no tables loaded a recalibration question is per enquiry, not the part price');
+  assert(await matrixTurn('price of a Basis BC for 10 slpm', { entries: async () => [] }) === null, 'an OEM question with nothing loaded falls through');
+
+  // House voice on every answer.
+  for (const a of [mc, gap, iso, liq, oxy, basis, epc, coda, hi, cost]) assert(!/[—–!]/.test(a) && !/\bgenuinely\b/i.test(a), `house voice: ${a.slice(0, 80)}`);
+
+  // Wiring (static): the tables answer before the parts, and the answer layer
+  // routes "how much is a recal" as a price question.
+  const pa = readFileSync(new URL('./priceAnswer.mjs', import.meta.url), 'utf8');
+  assert(pa.indexOf('await matrixTurn(question') > 0 && pa.indexOf('await matrixTurn(question') < pa.indexOf('for (const tok of partTokens(question))') && /if \(!moneyIntent\(question\)\) return null;/.test(pa),
+    'the table turn runs before the part lookup, under the wider money intent');
+  assert(/const routed = moneyIntent\(question\)/.test(readFileSync(new URL('../answer.mjs', import.meta.url), 'utf8')), 'the answer layer keeps a recalibration question from the configurator');
+  assert(/ADD COLUMN IF NOT EXISTS note text/.test(readFileSync(new URL('../migrations/045_price_matrix_note.sql', import.meta.url), 'utf8')) &&
+    /hasColumn\('price_matrix', 'note'\)/.test(readFileSync(new URL('../../scripts/ingest-alicat-prices.mjs', import.meta.url), 'utf8')), 'the notes are stored once migration 045 has run, and not before');
 });
 
 await check('when nothing matches as written or shortened, the family\'s stored parts answer, never a guess', async () => {
