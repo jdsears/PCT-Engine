@@ -792,6 +792,28 @@ series (BC-10SLPM-D is ten litres a minute in the Basis table). The dry run
 prints every table with its columns and each priced cell, and the cost
 each would carry.
 
+The co-pilot answers from these tables (`src/pricing/matrixAnswer.mjs`,
+30 September 2026), deterministically and ahead of the part lookup, because a
+recalibration question usually names a part and must never be answered with
+that part's own price. "How much is a recalibration for an MC-100SLPM-D"
+counts as a price question, where "how much flow" never does. A mainline gas
+flow part lands on its flow band in the mainline recalibration table, and
+pressure, liquid, CODA, Basis, EPC and FP-25 on their own rows; a figure the
+list prints no band for is said to be so, with every band shown. ISO 17025,
+expedited service and extra certificates or points are added when named.
+Cleaning answers with the low, mid and high flow classes as printed, and says
+the list does not define them. For Basis, EPC and CODA the question is read
+for the series (a code's own prefix, or BC, KC, EPCD and the like in
+capitals) and the figure, and answered from that band; CODA answers from both
+accuracy tables unless one is named. The word "basis" alone takes no table.
+A table's notes travel with its prices (migration 045): the minimum order
+quantity in a heading, and the High Accuracy CODA line to quote only the
+non-display variant. The purchase price is added only on an explicit ask,
+from the supplier's side of the same table, by the rule stored for it, and a
+table with no rule says so and gives no figure. With nothing loaded, a
+recalibration question answers per enquiry rather than falling through to a
+part price.
+
 ## Website trawl
 
 John's instruction of 9 September 2026: website trawl capabilities, which

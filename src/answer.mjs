@@ -1,6 +1,6 @@
 import { search } from './retrieve.mjs';
 import { route } from './configurator/converse.mjs';
-import { priceTurn, priceIntent } from './pricing/priceAnswer.mjs';
+import { priceTurn, moneyIntent } from './pricing/priceAnswer.mjs';
 import { quoteTurn } from './pricing/quote.mjs';
 import { CLAUDE_URL, claudeHeaders, claudeBody, claudeText } from './claude.mjs';
 
@@ -80,7 +80,7 @@ export async function ask(question, { history = [], k = 10, configState = null, 
   // because "part number" reads as build intent. With no build in progress,
   // money words send the turn to the price lookup first, and a build already
   // under way keeps its turn.
-  const routed = priceIntent(question) && !(configState && configState.active)
+  const routed = moneyIntent(question) && !(configState && configState.active)
     ? { handled: false, configState: null }
     : await route(question, configState);
   if (routed.handled) {

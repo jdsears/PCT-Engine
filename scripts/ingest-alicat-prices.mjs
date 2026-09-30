@@ -28,7 +28,7 @@ import { parseAlicatWorkbook, applyBlockers, colLetter } from '../src/pricing/pa
 import { parseAlicatPdfText, pdfApplyBlockers, parseOptionRows } from '../src/pricing/parseAlicatPdf.mjs';
 import { parseMatrixTables } from '../src/pricing/parseAlicatMatrix.mjs';
 import { costFrom, parseCostRule, costRuleFor, applyCostRule, matrixCost, sectionKey } from '../src/pricing/supplierPrices.mjs';
-import { pool } from '../src/db.mjs';
+import { pool, hasColumn } from '../src/db.mjs';
 import { materialiseSource, isSharepointRef } from '../src/sharepoint.mjs';
 
 const args = process.argv.slice(2);
@@ -265,6 +265,7 @@ if (/\.pdf$/i.test(SOURCE)) {
     for (const s of matrix.sections) {
       const own = matrix.entries.filter(e => e.section === s.name || e.section === `${s.name} options`);
       console.log(`    ${s.name}: columns ${(s.columns || []).map(c => c.label).join(', ') || 'none read'}${s.partner ? ', list and partner' : ''}${s.noDiscount ? ', the list says no discount' : ''}; ${s.rows.length} row(s), ${own.length} priced cell(s)`);
+      if (s.notes?.length) console.log(`      note carried with every price: ${s.notes.join(' ')}`);
       for (const e of own.slice(0, 48)) {
         const st = SUPPLIER ? matrixCost(e, rules, DISCOUNT) : null;
         const cost = st ? costFrom({ listPrice: e.price, discountPct: st.discountPct, netPrice: st.netPrice }) : null;
@@ -344,17 +345,21 @@ async function storeMatrix(client, side) {
   const ready = (await client.query(`SELECT to_regclass('price_matrix') AS t`)).rows[0]?.t;
   if (!ready) { console.log('\n  The table for band prices is not created yet (migration 044); the tables were read but not stored. Run npm run migrate and apply again.'); return null; }
   await client.query(`DELETE FROM price_matrix WHERE product_line = $1 AND side = $2`, [LINE, side]);
+  // The table notes (migration 045) are stored once the column exists.
+  const withNote = await hasColumn('price_matrix', 'note');
   let n = 0;
   for (const e of matrix.entries) {
     const st = side === 'supplier' ? matrixCost(e, rules, DISCOUNT) : null;
     const ins = await client.query(
-      `INSERT INTO price_matrix (product_line, side, section, row_label, col_label, quantity, unit, range_min, range_max, currency, price, partner_price, discount_pct, net_price, cost_rule, list_name, effective_date, source_line)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      `INSERT INTO price_matrix (product_line, side, section, row_label, col_label, quantity, unit, range_min, range_max, currency, price, partner_price, discount_pct, net_price, cost_rule, list_name, effective_date, source_line${withNote ? ', note' : ''})
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18${withNote ? ', $19' : ''})
        ON CONFLICT (product_line, side, section, row_label, col_label) DO NOTHING`,
       [LINE, side, e.section, e.rowLabel, e.colLabel, e.quantity, e.unit, e.min, e.max, e.currency, e.price,
-       side === 'supplier' ? e.partnerPrice : null, st?.discountPct ?? null, st?.netPrice ?? null, st?.costRule ?? null, LIST_NAME, EFFECTIVE, e.line]);
+       side === 'supplier' ? e.partnerPrice : null, st?.discountPct ?? null, st?.netPrice ?? null, st?.costRule ?? null, LIST_NAME, EFFECTIVE, e.line,
+       ...(withNote ? [e.note || null] : [])]);
     n += ins.rowCount;
   }
+  if (!withNote && matrix.entries.some(e => e.note)) console.log('\n  The tables carry notes (a minimum order, a quoting instruction) that need migration 045 to be stored. Run npm run migrate and apply again.');
   return n;
 }
 

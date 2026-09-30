@@ -4,6 +4,7 @@ import { quotedLine } from './quotedLines.mjs';
 import { marwinSeriesOf, renderSeriesSummary } from './marwinRanges.mjs';
 import { superlativeIntent, cheapestOf, renderCheapestValve } from './cheapest.mjs';
 import { lookupCost, renderCostLine, isoDay } from './supplierPrices.mjs';
+import { matrixTurn, serviceMoneyIntent } from './matrixAnswer.mjs';
 import { allConfigs } from '../configurator/registry.mjs';
 
 // Price questions in the co-pilot answer deterministically, never through the
@@ -18,6 +19,9 @@ import { allConfigs } from '../configurator/registry.mjs';
 // bare "how much" does not qualify.
 const PRICE_INTENT = /\b(price[sd]?|pricing|cost(s|ed)?|quote|quotation|quoted|cheapest|rrp)\b/i;
 export const priceIntent = q => PRICE_INTENT.test(String(q || ''));
+// A price question, including "how much is a recal", which asks for money
+// where "how much flow" never does (30 September 2026).
+export const moneyIntent = q => priceIntent(q) || serviceMoneyIntent(q);
 
 // Candidate part tokens: words carrying a digit (SEM203/P, 7100, CV3861-10),
 // most specific first.
@@ -225,9 +229,14 @@ async function lineSummary(lineLabel) {
 // with its range, and the enquiry note remains only for lines with nothing
 // loaded.
 export async function priceTurn(question) {
-  if (!priceIntent(question)) return null;
+  if (!moneyIntent(question)) return null;
   if (!(await priceEnabled())) return null;
   const askedCost = asksCost(question);
+  // Recalibration, cleaning and the OEM and Coriolis series are priced by
+  // table, not by part. A recalibration question that names a part asks for
+  // the service, never for the part's own price, so the tables answer first.
+  const table = await matrixTurn(question, { askedCost }).catch(() => null);
+  if (table) return table;
   // The supplier table is read only on an explicit ask, never otherwise.
   const costFor = async key => (askedCost ? lookupCost(key).catch(() => null) : null);
   for (const tok of partTokens(question)) {
